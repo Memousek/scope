@@ -31,7 +31,7 @@ export function setCurrentLanguage(lang: string) {
 }
 
 export function useTranslation() {
-  const [lang, setLang] = useState(getCurrentLanguage());
+  const [lang] = useState(getCurrentLanguage());
   const [dict, setDict] = useState<Record<string, string>>({});
 
   useEffect(() => {

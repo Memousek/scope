@@ -7,7 +7,7 @@
  */
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 const useAuth = () => {
@@ -42,7 +42,7 @@ export default function ScopesListPage() {
     }
   }, [loading, user, router]);
 
-  const fetchScopes = async () => {
+  const fetchScopes = useCallback(async () => {
     setFetching(true);
     const supabase = createClient();
     const [owned, shared] = await Promise.all([
@@ -62,13 +62,13 @@ export default function ScopesListPage() {
     const unique = Array.from(new Map(scopes.map(s => [s.id, s])).values());
     setScopes(unique);
     setFetching(false);
-  };
+  }, [userId, user]);
 
   useEffect(() => {
     if (!loading && userId && user) {
       fetchScopes();
     }
-  }, [loading, userId, user]);
+  }, [loading, userId, user, fetchScopes]);
 
   const handleDeleteScope = async (scopeId: string) => {
     setError(null);
@@ -92,8 +92,14 @@ export default function ScopesListPage() {
       const { error: scErr } = await supabase.from('scopes').delete().eq('id', scopeId);
       if (scErr) throw scErr;
       await fetchScopes();
-    } catch (err: any) {
-      setError('Chyba při mazání scope: ' + (err?.message || err?.toString() || 'Neznámá chyba.'));
+    } catch (err: unknown) {
+      let message = 'Neznámá chyba.';
+      if (err && typeof err === 'object' && 'message' in err && typeof (err as { message?: string }).message === 'string') {
+        message = (err as { message: string }).message;
+      } else if (typeof err === 'string') {
+        message = err;
+      }
+      setError('Chyba při mazání scope: ' + message);
       console.error('Mazání scope selhalo:', err);
     }
   };
@@ -109,8 +115,14 @@ export default function ScopesListPage() {
         .or(`user_id.eq.${userId},email.eq.${user?.email}`);
       if (error) throw error;
       await fetchScopes();
-    } catch (err: any) {
-      setError('Chyba při odebírání scope: ' + (err?.message || err?.toString() || 'Neznámá chyba.'));
+    } catch (err: unknown) {
+      let message = 'Neznámá chyba.';
+      if (err && typeof err === 'object' && 'message' in err && typeof (err as { message?: string }).message === 'string') {
+        message = (err as { message: string }).message;
+      } else if (typeof err === 'string') {
+        message = err;
+      }
+      setError('Chyba při odebírání scope: ' + message);
       console.error('Odebírání scope selhalo:', err);
     }
   };
