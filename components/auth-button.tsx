@@ -1,27 +1,38 @@
+'use client';
+
 import Link from "next/link";
 import { Button } from "./ui/button";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/client";
 import { LogoutButton } from "./logout-button";
+import { useEffect, useState } from "react";
 
-export async function AuthButton() {
-  const supabase = await createClient();
+export function AuthButton() {
+  const [user, setUser] = useState<{ email: string } | null>(null);
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user && data.user.email ? { email: data.user.email } : null);
+    });
+  }, []);
 
-  return user ? (
-    <div className="flex items-center gap-4">
-      Hey, {user.email}!
-      <LogoutButton />
-    </div>
-  ) : (
+  if (user) {
+    return (
+      <div className="flex items-center gap-4">
+        <Link href="/scopes">Seznam scopů</Link>
+        <div className="flex items-center gap-2 border-l border-gray-200 pl-4 border-r border-gray-200 pr-4 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors cursor-pointer py-1 px-2">
+          <Link href="/scopes/new">+ Scope</Link>
+        </div>
+        {user.email}
+        <LogoutButton />
+      </div>
+    );
+  }
+
+  return (
     <div className="flex gap-2">
       <Button asChild size="sm" variant={"outline"}>
         <Link href="/auth/login">Sign in</Link>
-      </Button>
-      <Button asChild size="sm" variant={"default"}>
-        <Link href="/auth/sign-up">Sign up</Link>
       </Button>
     </div>
   );
