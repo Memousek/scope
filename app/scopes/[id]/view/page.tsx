@@ -33,6 +33,18 @@ interface ProjectProgress {
   dpl_done?: number;
 }
 
+// Interface for burndown chart data
+interface BurndownChartData {
+  date: string;
+  ideal: number | null;
+  realPlan: number | null;
+  fe: number;
+  be: number;
+  qa: number;
+  pm: number;
+  dpl: number;
+}
+
 export default function ScopeViewPage() {
   const params = useParams();
   const { id } = params;
@@ -91,7 +103,7 @@ export default function ScopeViewPage() {
     const feBeDays = Math.ceil(Math.max(feDays, beDays));
     const totalDays = feBeDays + Math.ceil(qaDays);
     const today = new Date();
-    const data: any[] = [];
+    const data: BurndownChartData[] = [];
     const totalMandays = Number(project.fe_mandays) + Number(project.be_mandays) + Number(project.qa_mandays);
     const feBeShare = (Number(project.fe_mandays) + Number(project.be_mandays)) / totalMandays;
     const qaShare = Number(project.qa_mandays) / totalMandays;
@@ -121,7 +133,16 @@ export default function ScopeViewPage() {
         continue;
       }
       const key = currentDate.toISOString().slice(0, 10);
-      const entry: any = { date: `${currentDate.getDate()}.${currentDate.getMonth() + 1}.` };
+      const entry: BurndownChartData = {
+        date: `${currentDate.getDate()}.${currentDate.getMonth() + 1}.`,
+        ideal: null,
+        realPlan: null,
+        fe: 0,
+        be: 0,
+        qa: 0,
+        pm: 0,
+        dpl: 0,
+      };
       if (day <= plannedDays) {
         entry.ideal = feBeShare > 0 ? (day / plannedDays) * (feBeShare / (feBeShare + qaShare)) * 100 : 0;
         if (day > feBeDays && plannedDays > feBeDays) {
@@ -141,27 +162,36 @@ export default function ScopeViewPage() {
         entry.realPlan = null;
       }
       if (day === 0) {
-        ['fe', 'be', 'qa', 'pm', 'dpl'].forEach(role => {
-          entry[role] = 0;
-          lastKnown[role] = 0;
+        (['fe', 'be', 'qa', 'pm', 'dpl'] as const).forEach(role => {
+          switch (role) {
+            case 'fe': entry.fe = 0; lastKnown.fe = 0; break;
+            case 'be': entry.be = 0; lastKnown.be = 0; break;
+            case 'qa': entry.qa = 0; lastKnown.qa = 0; break;
+            case 'pm': entry.pm = 0; lastKnown.pm = 0; break;
+            case 'dpl': entry.dpl = 0; lastKnown.dpl = 0; break;
+          }
         });
       } else if (historyMap[key]) {
         const progress = historyMap[key];
-        ['fe', 'be', 'qa', 'pm', 'dpl'].forEach(role => {
+        (['fe', 'be', 'qa', 'pm', 'dpl'] as const).forEach(role => {
           let value = 0;
           switch (role) {
-            case 'fe': value = progress.fe_done ?? 0; break;
-            case 'be': value = progress.be_done ?? 0; break;
-            case 'qa': value = progress.qa_done ?? 0; break;
-            case 'pm': value = progress.pm_done ?? 0; break;
-            case 'dpl': value = progress.dpl_done ?? 0; break;
+            case 'fe': value = progress.fe_done ?? 0; entry.fe = value; lastKnown.fe = value; break;
+            case 'be': value = progress.be_done ?? 0; entry.be = value; lastKnown.be = value; break;
+            case 'qa': value = progress.qa_done ?? 0; entry.qa = value; lastKnown.qa = value; break;
+            case 'pm': value = progress.pm_done ?? 0; entry.pm = value; lastKnown.pm = value; break;
+            case 'dpl': value = progress.dpl_done ?? 0; entry.dpl = value; lastKnown.dpl = value; break;
           }
-          entry[role] = value;
-          lastKnown[role] = value;
         });
       } else {
-        ['fe', 'be', 'qa', 'pm', 'dpl'].forEach(role => {
-          entry[role] = lastKnown[role];
+        (['fe', 'be', 'qa', 'pm', 'dpl'] as const).forEach(role => {
+          switch (role) {
+            case 'fe': entry.fe = lastKnown.fe; break;
+            case 'be': entry.be = lastKnown.be; break;
+            case 'qa': entry.qa = lastKnown.qa; break;
+            case 'pm': entry.pm = lastKnown.pm; break;
+            case 'dpl': entry.dpl = lastKnown.dpl; break;
+          }
         });
       }
       data.push(entry);
@@ -170,9 +200,15 @@ export default function ScopeViewPage() {
     }
     if (history.length === 0 && totalDays > 0) {
       data[data.length - 1] = { ...data[data.length - 1] };
-      ['fe', 'be', 'qa', 'pm', 'dpl'].forEach(role => {
+      (['fe', 'be', 'qa', 'pm', 'dpl'] as const).forEach(role => {
         const roleDoneKey = `${role}_done` as keyof Project;
-        data[data.length - 1][role] = Number(project[roleDoneKey]) || 0;
+        switch (role) {
+          case 'fe': data[data.length - 1].fe = Number(project[roleDoneKey]) || 0; break;
+          case 'be': data[data.length - 1].be = Number(project[roleDoneKey]) || 0; break;
+          case 'qa': data[data.length - 1].qa = Number(project[roleDoneKey]) || 0; break;
+          case 'pm': data[data.length - 1].pm = Number(project[roleDoneKey]) || 0; break;
+          case 'dpl': data[data.length - 1].dpl = Number(project[roleDoneKey]) || 0; break;
+        }
       });
     }
     return data;
@@ -197,7 +233,7 @@ export default function ScopeViewPage() {
             {team.length === 0 ? (
               <div className="text-gray-400">Žádní členové</div>
             ) : (
-              team.map(member => (
+              team.map((member: TeamMember) => (
                 <div className="flex items-center mb-2" key={member.id}>
                   <span className="flex-1">{member.name}</span>
                   <span className="w-32">{member.role}</span>
@@ -230,7 +266,7 @@ export default function ScopeViewPage() {
                 {projects.length === 0 ? (
                   <tr><td colSpan={15} className="text-gray-400 text-center py-4">Žádné projekty</td></tr>
                 ) : (
-                  projects.map(project => (
+                  projects.map((project: Project) => (
                     <tr key={project.id} className="hover:bg-blue-50 transition">
                       <td className="px-3 py-2 align-middle font-medium text-gray-900 whitespace-nowrap">{project.name}</td>
                       <td className="px-3 py-2 align-middle text-right">{project.priority}</td>
@@ -251,7 +287,7 @@ export default function ScopeViewPage() {
       </section>
       <div className="my-8">
         <h3 className="text-lg font-semibold mb-2">Burndown & termíny</h3>
-        {projects.map(project => (
+        {projects.map((project: Project) => (
           <div key={project.id} className="mb-6 p-4 rounded-lg border bg-gray-50">
             <div className="flex flex-wrap gap-4 items-center mb-2">
               <span className="font-semibold">{project.name}</span>
