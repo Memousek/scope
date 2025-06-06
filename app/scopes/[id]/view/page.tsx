@@ -96,17 +96,11 @@ export default function ScopeViewPage() {
     const feBeShare = (Number(project.fe_mandays) + Number(project.be_mandays)) / totalMandays;
     const qaShare = Number(project.qa_mandays) / totalMandays;
     const history = progressHistory[project.id] || [];
-    const historyMap: Record<string, any> = {};
+    const historyMap: Record<string, ProjectProgress> = {};
     history.forEach((h: ProjectProgress) => {
       const d = new Date(h.date);
       const key = d.toISOString().slice(0, 10);
-      historyMap[key] = {
-        fe: h.fe_done,
-        be: h.be_done,
-        qa: h.qa_done,
-        pm: h.pm_done,
-        dpl: h.dpl_done,
-      };
+      historyMap[key] = h;
     });
     let plannedDays = totalDays;
     if (project.delivery_date) {
@@ -152,13 +146,18 @@ export default function ScopeViewPage() {
           lastKnown[role] = 0;
         });
       } else if (historyMap[key]) {
+        const progress = historyMap[key];
         ['fe', 'be', 'qa', 'pm', 'dpl'].forEach(role => {
-          if (typeof historyMap[key][role] === 'number') {
-            entry[role] = historyMap[key][role];
-            lastKnown[role] = historyMap[key][role];
-          } else {
-            entry[role] = lastKnown[role];
+          let value = 0;
+          switch (role) {
+            case 'fe': value = progress.fe_done ?? 0; break;
+            case 'be': value = progress.be_done ?? 0; break;
+            case 'qa': value = progress.qa_done ?? 0; break;
+            case 'pm': value = progress.pm_done ?? 0; break;
+            case 'dpl': value = progress.dpl_done ?? 0; break;
           }
+          entry[role] = value;
+          lastKnown[role] = value;
         });
       } else {
         ['fe', 'be', 'qa', 'pm', 'dpl'].forEach(role => {
