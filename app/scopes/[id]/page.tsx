@@ -22,7 +22,7 @@ import {
   ResponsiveContainer
 } from 'recharts';
 import { useCallback } from 'react';
-import { FiEdit2, FiTrash2, FiDownload, FiPlus, FiShare2, FiCopy } from 'react-icons/fi';
+import { FiShare2, FiCopy } from 'react-icons/fi';
 import { useTranslation } from '@/lib/translation';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -84,6 +84,30 @@ interface ProjectProgress {
   dpl_done?: number;
 }
 
+interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  fte: number;
+}
+
+interface Project {
+  id: string;
+  name: string;
+  priority: number;
+  fe_mandays: number;
+  be_mandays: number;
+  qa_mandays: number;
+  pm_mandays: number;
+  dpl_mandays: number;
+  fe_done: number;
+  be_done: number;
+  qa_done: number;
+  pm_done: number;
+  dpl_done: number;
+  delivery_date: string;
+}
+
 export default function ScopeBurndownPage({ params }: { params: Promise<{ id: string }> }) {
   const { loading, user, userId } = useAuth();
   const router = useRouter();
@@ -96,13 +120,13 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
   const { t } = useTranslation();
 
   // --- Tým ---
-  const [team, setTeam] = useState<any[]>([]);
+  const [team, setTeam] = useState<TeamMember[]>([]);
   const [teamLoading, setTeamLoading] = useState(false);
   const [newMember, setNewMember] = useState({ name: '', role: ROLES[0].value, fte: 1 });
   const [savingMember, setSavingMember] = useState(false);
 
   // --- Projekty ---
-  const [projects, setProjects] = useState<any[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(false);
   const [newProject, setNewProject] = useState({
     name: '',
@@ -156,6 +180,10 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
   const hasQA = teamRoles.includes('QA');
   const hasPM = teamRoles.includes('PM');
   const hasDPL = teamRoles.includes('DPL');
+
+  // Pomocná pole pro klíče
+  const projectMandaysKeys: (keyof Project)[] = ['fe_mandays', 'be_mandays', 'qa_mandays', 'pm_mandays', 'dpl_mandays'];
+  const projectDoneKeys: (keyof Project)[] = ['fe_done', 'be_done', 'qa_done', 'pm_done', 'dpl_done'];
 
   // Pokud není přihlášený uživatel, přesměruj na login
   useEffect(() => {
@@ -568,7 +596,7 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
     if (history.length === 0 && totalDays > 0) {
       data[data.length - 1] = { ...data[data.length - 1] };
       projectRoles.forEach(role => {
-        data[data.length - 1][role.key] = Number(project[role.done]) || 0;
+        data[data.length - 1][role.key] = Number(project[role.done as keyof Project]) || 0;
       });
     }
     return data;
@@ -1008,7 +1036,7 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
                       <th className="px-3 py-2 text-left rounded-tl-lg">Název projektu</th>
                       <th className="px-3 py-2 text-right">Priorita</th>
                       {projectRoles.map(role =>
-                        projects.some(p => Number(p[role.mandays]) > 0) && (
+                        projects.some(p => Number(p[role.mandays as keyof Project]) > 0) && (
                           <Fragment key={role.key}>
                             <th className="px-3 py-2 text-right">Odhad {role.label} (MD)</th>
                             <th className="px-3 py-2 text-right">% {role.label} hotovo</th>
@@ -1034,10 +1062,10 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
                             <td className="px-3 py-2 align-middle font-medium text-gray-900 whitespace-nowrap">{project.name}</td>
                             <td className="px-3 py-2 align-middle text-right">{project.priority}</td>
                             {projectRoles.map(role =>
-                              Number(project[role.mandays]) > 0 && (
+                              Number(project[role.mandays as keyof Project]) > 0 && (
                                 <Fragment key={role.key}>
-                                  <td className="px-3 py-2 align-middle text-right">{Number(project[role.mandays]) || 0}</td>
-                                  <td className="px-3 py-2 align-middle text-right">{Number(project[role.done]) || 0} %</td>
+                                  <td className="px-3 py-2 align-middle text-right">{Number(project[role.mandays as keyof Project]) || 0}</td>
+                                  <td className="px-3 py-2 align-middle text-right">{Number(project[role.done as keyof Project]) || 0} %</td>
                                 </Fragment>
                               )
                             )}
@@ -1090,7 +1118,7 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
                       <Tooltip labelFormatter={d => d} />
                       <Legend />
                       {projectRoles.map(role =>
-                        Number(project[role.mandays]) > 0 && (
+                        Number(project[role.mandays as keyof Project]) > 0 && (
                           <Line key={role.key} type="monotone" dataKey={role.key} stroke={role.color} name={`${role.label} % hotovo`} />
                         )
                       )}
@@ -1205,7 +1233,7 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
               </div>
               <div className="border-t pt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
                 {projectRoles.map(role =>
-                  Number(editProject[role.mandays]) > 0 && (
+                  Number(editProject[role.mandays as keyof Project]) > 0 && (
                     <div className="flex flex-col gap-2" key={role.key}>
                       <div className="flex gap-2">
                         <div className="flex-1">
@@ -1215,7 +1243,7 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
                             type="number"
                             min={0.01}
                             step={0.01}
-                            value={Number(editProject[role.mandays]) || ''}
+                            value={Number(editProject[role.mandays as keyof Project]) || ''}
                             onChange={e => setEditProject((p: typeof editProject) => ({ ...p, [role.mandays]: Number(e.target.value) }))}
                           />
                         </div>
@@ -1226,7 +1254,7 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
                             type="number"
                             min={0}
                             max={100}
-                            value={Number(editProject[role.done]) || ''}
+                            value={Number(editProject[role.done as keyof Project]) || ''}
                             onChange={e => setEditProject((p: typeof editProject) => ({ ...p, [role.done]: Number(e.target.value) }))}
                           />
                         </div>
