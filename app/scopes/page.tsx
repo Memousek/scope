@@ -50,7 +50,7 @@ export default function ScopesListPage() {
         let scopes: { id: string; name: string }[] = [];
         if (owned.data) scopes = owned.data;
         if (shared.data && shared.data.length > 0) {
-          const ids = shared.data.map((e: any) => e.scope_id);
+          const ids = shared.data.map((e: { scope_id: string }) => e.scope_id);
           if (ids.length > 0) {
             const { data: sharedScopes } = await supabase.from('scopes').select('id, name').in('id', ids);
             if (sharedScopes) scopes = scopes.concat(sharedScopes);

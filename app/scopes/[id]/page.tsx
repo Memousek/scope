@@ -169,7 +169,7 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
 
   useEffect(() => {
     if (projects.length > 0) {
-      fetchProgressHistory(projects.map((p: any) => p.id));
+      fetchProgressHistory(projects.map((p: Project) => p.id));
     }
   }, [projects, fetchProgressHistory]);
 
@@ -345,7 +345,7 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
   };
 
   // --- Export do CSV ---
-  function downloadCSV(filename: string, rows: any[], columns: string[], headerMap?: Record<string, string>) {
+  function downloadCSV(filename: string, rows: Record<string, unknown>[], columns: string[], headerMap?: Record<string, string>) {
     const csv = [
       columns.map(col => headerMap?.[col] || col).join(','),
       ...rows.map(row => columns.map(col => '"' + (row[col] ?? '') + '"').join(',')),
@@ -360,24 +360,13 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
   }
 
   const handleExportTeam = () => {
-    if (!team.length) return;
-    downloadCSV(
-      `tym_${scope?.name || 'scope'}.csv`,
-      team,
-      ['name', 'role', 'fte'],
-      { name: 'Jméno člena týmu', role: 'Role', fte: 'Úvazek v FTE' }
-    );
+    downloadCSV('tym.csv', team as unknown as Record<string, unknown>[], ['name', 'role', 'fte'], { name: 'Jméno', role: 'Role', fte: 'FTE' });
   };
 
-  // Projekty budou napojeny později
   const handleExportProjects = () => {
-    if (!projects.length) return;
-    downloadCSV(
-      `projekty_${scope?.name || 'scope'}.csv`,
-      projects,
-      ['name', 'priority', 'fe_mandays', 'be_mandays', 'qa_mandays', 'fe_done'],
-      { name: 'Název', priority: 'Priorita', fe_mandays: 'FE (MD)', be_mandays: 'BE (MD)', qa_mandays: 'QA (MD)', fe_done: '% FE hotovo' }
-    );
+    downloadCSV('projekty.csv', projects as unknown as Record<string, unknown>[], ['name', 'priority', 'fe_mandays', 'be_mandays', 'qa_mandays', 'pm_mandays', 'dpl_mandays', 'delivery_date'], {
+      name: 'Název', priority: 'Priorita', fe_mandays: 'FE MD', be_mandays: 'BE MD', qa_mandays: 'QA MD', pm_mandays: 'PM MD', dpl_mandays: 'DPL MD', delivery_date: 'Termín'
+    });
   };
 
   // Funkce pro uložení popisu
@@ -394,11 +383,11 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
   };
 
   const [editModalOpen, setEditModalOpen] = useState(false);
-  const [editProject, setEditProject] = useState<any | null>(null);
-  const initialEditState = useRef<any>(null);
+  const [editProject, setEditProject] = useState<Project | null>(null);
+  const initialEditState = useRef<Project | null>(null);
 
   // Otevření modalu pro úpravu projektu
-  const handleOpenEditModal = (project: any) => {
+  const handleOpenEditModal = (project: Project) => {
     setEditProject({ ...project });
     initialEditState.current = { ...project };
     setEditModalOpen(true);
@@ -458,7 +447,7 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
    * FE/BE run in parallel, QA follows after both are done.
    * Nově: počítá pouze pracovní dny (víkendy se nepočítají).
    */
-  function getProjectDeliveryInfo(project: any, team: any[]) {
+  function getProjectDeliveryInfo(project: Project, team: TeamMember[]) {
     // Zjisti FTE pro FE, BE, QA
     const feFte = team.filter(m => m.role === 'FE').reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
     const beFte = team.filter(m => m.role === 'BE').reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
@@ -476,8 +465,8 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
     const today = new Date();
     const calculatedDeliveryDate = addWorkdays(today, totalDays);
     // Uživatelský termín dodání
-    let deliveryDate = project.delivery_date ? new Date(project.delivery_date) : null;
-    let diffDays = deliveryDate ? Math.ceil((deliveryDate.getTime() - calculatedDeliveryDate.getTime()) / (1000 * 60 * 60 * 24)) : null;
+    const deliveryDate = project.delivery_date ? new Date(project.delivery_date) : null;
+    const diffDays = deliveryDate ? Math.ceil((deliveryDate.getTime() - calculatedDeliveryDate.getTime()) / (1000 * 60 * 60 * 24)) : null;
     return {
       calculatedDeliveryDate,
       deliveryDate,
@@ -488,7 +477,7 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
   }
 
   // Funkce pro generování dat pro burndown graf s datumy na ose X
-  function getBurndownDataWithDates(project: any) {
+  function getBurndownDataWithDates(project: Project) {
     // FE/BE paralelně, QA až po nich
     const feRem = Number(project.fe_mandays) * (1 - (Number(project.fe_done) || 0) / 100);
     const beRem = Number(project.be_mandays) * (1 - (Number(project.be_done) || 0) / 100);
@@ -502,7 +491,7 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
     const feBeDays = Math.ceil(Math.max(feDays, beDays));
     const totalDays = feBeDays + Math.ceil(qaDays);
     const today = new Date();
-    const data: any[] = [];
+    const data: Record<string, number | string | null>[] = [];
     // Celkový podíl FE/BE a QA na projektu
     const totalMandays = Number(project.fe_mandays) + Number(project.be_mandays) + Number(project.qa_mandays);
     const feBeShare = (Number(project.fe_mandays) + Number(project.be_mandays)) / totalMandays;
@@ -511,7 +500,7 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
     // --- Skutečný průběh z historie ---
     const history = progressHistory[project.id] || [];
     // Mapování: datum (YYYY-MM-DD) -> hodnoty
-    const historyMap: Record<string, any> = {};
+    const historyMap: Record<string, Record<string, number | undefined>> = {};
     history.forEach(h => {
       const d = new Date(h.date);
       const key = d.toISOString().slice(0, 10); // YYYY-MM-DD
@@ -547,7 +536,7 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
         continue;
       }
       const key = currentDate.toISOString().slice(0, 10); // YYYY-MM-DD
-      const entry: any = { date: `${currentDate.getDate()}.${currentDate.getMonth() + 1}.` };
+      const entry: Record<string, number | string | null> = { date: `${currentDate.getDate()}.${currentDate.getMonth() + 1}.` };
       // Ideální průběh: podle původního plánu
       if (day <= plannedDays) {
         entry.ideal = feBeShare > 0 ? (day / plannedDays) * (feBeShare / (feBeShare + qaShare)) * 100 : 0;
@@ -576,9 +565,9 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
         });
       } else if (historyMap[key]) {
         projectRoles.forEach(role => {
-          if (typeof historyMap[key][role.key] === 'number') {
-            entry[role.key] = historyMap[key][role.key];
-            lastKnown[role.key] = historyMap[key][role.key];
+          if (typeof (historyMap[key] as any)[role.key] === 'number') {
+            entry[role.key] = (historyMap[key] as any)[role.key];
+            lastKnown[role.key] = (historyMap[key] as any)[role.key];
           } else {
             entry[role.key] = lastKnown[role.key];
           }
@@ -656,7 +645,7 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
       user_id = userRows[0].id;
     }
     const token = uuidv4();
-    const insertObj: any = { scope_id: scope.id, email: inviteEmail, invite_token: token };
+    const insertObj: Record<string, unknown> = { scope_id: scope.id, email: inviteEmail, invite_token: token };
     if (user_id) {
       insertObj.user_id = user_id;
       insertObj.accepted_at = new Date().toISOString();
@@ -697,7 +686,7 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
   };
 
   const [shareModalOpen, setShareModalOpen] = useState(false);
-  const [editors, setEditors] = useState<any[]>([]);
+  const [editors, setEditors] = useState<{ id: string; email: string; user_id: string | null; invite_token?: string; accepted_at?: string }[]>([]);
   const [editorsLoading, setEditorsLoading] = useState(false);
 
   // Načti editory a pozvané uživatele
@@ -1220,15 +1209,15 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block mb-1 font-medium">Název projektu</label>
-                  <input className="border rounded px-3 py-2 w-full" value={editProject.name} onChange={e => setEditProject((p: typeof editProject) => ({ ...p, name: e.target.value }))} required />
+                  <input className="border rounded px-3 py-2 w-full" value={editProject.name} onChange={e => setEditProject((p) => p ? { ...p, name: e.target.value } : p)} required />
                 </div>
                 <div>
                   <label className="block mb-1 font-medium">Priorita</label>
-                  <input className="border rounded px-3 py-2 w-full" type="number" min={1} value={editProject.priority} onChange={e => setEditProject((p: typeof editProject) => ({ ...p, priority: Number(e.target.value) }))} required />
+                  <input className="border rounded px-3 py-2 w-full" type="number" min={1} value={editProject.priority} onChange={e => setEditProject((p) => p ? { ...p, priority: Number(e.target.value) } : p)} required />
                 </div>
                 <div>
                   <label className="block mb-1 font-medium">Termín dodání</label>
-                  <input className="border rounded px-3 py-2 w-full" type="date" value={editProject.delivery_date || ''} onChange={e => setEditProject((p: typeof editProject) => ({ ...p, delivery_date: e.target.value }))} />
+                  <input className="border rounded px-3 py-2 w-full" type="date" value={editProject.delivery_date || ''} onChange={e => setEditProject((p) => p ? { ...p, delivery_date: e.target.value } : p)} />
                 </div>
               </div>
               <div className="border-t pt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1244,7 +1233,7 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
                             min={0.01}
                             step={0.01}
                             value={Number(editProject[role.mandays as keyof Project]) || ''}
-                            onChange={e => setEditProject((p: typeof editProject) => ({ ...p, [role.mandays]: Number(e.target.value) }))}
+                            onChange={e => setEditProject((p) => p ? { ...p, [role.mandays]: Number(e.target.value) } : p)}
                           />
                         </div>
                         <div className="flex-1">
@@ -1255,7 +1244,7 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
                             min={0}
                             max={100}
                             value={Number(editProject[role.done as keyof Project]) || ''}
-                            onChange={e => setEditProject((p: typeof editProject) => ({ ...p, [role.done]: Number(e.target.value) }))}
+                            onChange={e => setEditProject((p) => p ? { ...p, [role.done]: Number(e.target.value) } : p)}
                           />
                         </div>
                       </div>
@@ -1263,17 +1252,6 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
                   )
                 )}
               </div>
-              {/* Historie priorit */}
-              {editProject && editProject.priority_history && (
-                <div className="mt-4">
-                  <h4 className="font-semibold mb-1">Historie priorit</h4>
-                  <ul className="text-sm text-gray-600">
-                    {editProject.priority_history.map((h: any) => (
-                      <li key={h.id}>{h.priority} (od {new Date(h.changed_at).toLocaleDateString()})</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
               <div className="flex gap-2 justify-end mt-2">
                 <button type="button" className="px-5 py-2 rounded bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300" onClick={handleCloseEditModal}>Zrušit</button>
                 <button type="submit" className="px-5 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700 shadow">Uložit změny</button>

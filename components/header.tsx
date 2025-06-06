@@ -6,7 +6,6 @@
  */
 import Link from "next/link";
 import { AuthButton } from "./auth-button";
-import LanguageSwitcher from "./ui/languageSwitcher";
 import { useTranslation } from "../lib/translation";
 
 export function Header() {
