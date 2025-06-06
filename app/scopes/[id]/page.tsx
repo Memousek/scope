@@ -549,12 +549,14 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
       currentDate.setDate(currentDate.getDate() + 1);
       day++;
     }
-    // Pokud není žádná historie, nastav poslední bod na aktuální hodnotu projektu
+    // Pokud není žádná historie, generuj lineární průběh od 0 do aktuálního stavu
     if (history.length === 0 && totalDays > 0) {
-      data[data.length - 1] = { ...data[data.length - 1] };
-      projectRoles.forEach(role => {
-        data[data.length - 1][role.key] = Number(project[role.done as keyof Project]) || 0;
-      });
+      for (let i = 0; i < data.length; i++) {
+        projectRoles.forEach(role => {
+          const done = Number(project[role.done as keyof Project]) || 0;
+          data[i][role.key] = Math.round((done * i) / (data.length - 1));
+        });
+      }
     }
     return data;
   }
@@ -726,7 +728,7 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
                     {t('save')}
                   </button>
                   <button
-                    className="bg-gray-300 text-gray-700 px-4 py-1 rounded font-semibold shadow hover:bg-gray-400 transition"
+                    className="text-gray-700 px-4 py-1 rounded font-semibold shadow transition"
                     onClick={() => { setEditingDescription(false); setDescription(scope.description || ''); }}
                     disabled={savingDescription}
                   >
@@ -810,7 +812,7 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
           <section className="mb-6">
             <div className="rounded-lg shadow p-4">
               <h2 className="text-xl font-semibold mb-4">Členové týmu</h2>
-              <div className="bg-gray-50 rounded p-3">
+              <div className="rounded p-3">
                 <div className="flex font-semibold mb-2 text-gray-700">
                   <div className="flex-1">Jméno člena týmu</div>
                   <div className="w-32">Role</div>
@@ -986,7 +988,7 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm rounded-lg shadow border border-gray-200">
                   <thead>
-                    <tr className="bg-gray-50 text-gray-700 font-semibold">
+                    <tr className=" text-gray-700 font-semibold">
                       <th className="px-3 py-2 text-left rounded-tl-lg">Název projektu</th>
                       <th className="px-3 py-2 text-right">Priorita</th>
                       {projectRoles.map(role =>
@@ -1048,7 +1050,7 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
             {projects.map(project => {
               const info = getProjectDeliveryInfo(project, team);
               return (
-                <div key={project.id} className="mb-6 p-4 rounded-lg border bg-gray-50">
+                <div key={project.id} className="mb-6 p-4 rounded-lg border">
                   <div className="flex flex-wrap gap-4 items-center mb-2">
                     <span className="font-semibold">{project.name}</span>
                     <span>Spočítaný termín dodání: <b>{info.calculatedDeliveryDate.toLocaleDateString()}</b></span>
@@ -1089,7 +1091,7 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
       {/* Modal pro sdílení a správu editorů */}
       {shareModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-          <div className="rounded-2xl bg-white shadow-2xl p-8 w-full max-w-lg relative overflow-y-auto max-h-[90vh]">
+          <div className="rounded-2xl bg-background shadow-2xl p-8 w-full max-w-lg relative overflow-y-auto max-h-[90vh]">
             <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-3xl font-bold" onClick={() => setShareModalOpen(false)} aria-label="Zavřít">×</button>
             <h3 className="text-2xl font-bold mb-4 text-center">Sdílení scope</h3>
             {/* Magický link pro sdílení scope (vždy viditelný) */}
@@ -1167,7 +1169,7 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
       {/* Modal pro editaci projektu */}
       {editModalOpen && editProject && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-          <div className="rounded-2xl bg-white shadow-2xl p-8 w-full max-w-2xl relative overflow-y-auto max-h-[90vh]">
+          <div className="rounded-2xl bg-background shadow-2xl p-8 w-full max-w-2xl relative overflow-y-auto max-h-[90vh]">
             <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-3xl font-bold" onClick={handleCloseEditModal} aria-label="Zavřít">×</button>
             <h3 className="text-2xl font-bold mb-6 text-center">Upravit projekt</h3>
             <form className="flex flex-col gap-6" onSubmit={e => { e.preventDefault(); handleSaveEditProject(); }}>

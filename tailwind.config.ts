@@ -58,7 +58,7 @@ export default {
         sm: "calc(var(--radius) - 4px)",
       },
       boxShadow: {
-        DEFAULT: '2px 4px 12px 0px rgba(0,56,178,0.17)',
+        DEFAULT: '2px 4px 12px 0px #7373732b',
       },
     },
   },

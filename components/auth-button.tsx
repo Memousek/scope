@@ -19,10 +19,7 @@ export function AuthButton() {
   if (user) {
     return (
       <div className="flex items-center gap-4">
-        <Link href="/scopes">Seznam scopů</Link>
-        <div className="flex items-center gap-2 border-l border-gray-200 pl-4 border-r border-gray-200 pr-4 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors cursor-pointer py-1 px-2">
-          <Link href="/scopes/new">+ Scope</Link>
-        </div>
+        <Link href="/scopes" className="border-l border-gray-200 pl-4 border-r border-gray-200 pr-4 rounded-md  transition-colors cursor-pointer py-1 px-2">Seznam scopů</Link>  
         {user.email}
         <LogoutButton />
       </div>

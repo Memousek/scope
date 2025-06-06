@@ -224,7 +224,7 @@ export default function ScopeViewPage() {
       <section className="mb-6">
         <div className="rounded-lg shadow p-4">
           <h2 className="text-xl font-semibold mb-4">Členové týmu</h2>
-          <div className="bg-gray-50 rounded p-3">
+          <div className=" rounded p-3">
             <div className="flex font-semibold mb-2 text-gray-700">
               <div className="flex-1">Jméno člena týmu</div>
               <div className="w-32">Role</div>
@@ -250,7 +250,7 @@ export default function ScopeViewPage() {
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm rounded-lg shadow border border-gray-200">
               <thead>
-                <tr className="bg-gray-50 text-gray-700 font-semibold">
+                <tr className=" text-gray-700 font-semibold">
                   <th className="px-3 py-2 text-left rounded-tl-lg">Název projektu</th>
                   <th className="px-3 py-2 text-right">Priorita</th>
                   <th className="px-3 py-2 text-right">FE (MD)</th>
@@ -288,7 +288,7 @@ export default function ScopeViewPage() {
       <div className="my-8">
         <h3 className="text-lg font-semibold mb-2">Burndown & termíny</h3>
         {projects.map((project: Project) => (
-          <div key={project.id} className="mb-6 p-4 rounded-lg border bg-gray-50">
+          <div key={project.id} className="mb-6 p-4 rounded-lg border">
             <div className="flex flex-wrap gap-4 items-center mb-2">
               <span className="font-semibold">{project.name}</span>
               <span>Spočítaný termín dodání: <b>{project.delivery_date ? new Date(project.delivery_date).toLocaleDateString() : ''}</b></span>

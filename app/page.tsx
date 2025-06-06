@@ -16,13 +16,6 @@ export default function Home() {
             <p>It is a tool that helps you track the progress of your project.</p>
           </main>
         </div>
-
-        <footer className="w-full flex items-center justify-center border-t mx-auto text-center text-xs gap-8 py-16">
-          <p>
-            <Link href={"/"}>Scope burndown</Link> made with 🖤
-          </p>
-          <ThemeSwitcher />
-        </footer>
       </div>
     </main>
   );
