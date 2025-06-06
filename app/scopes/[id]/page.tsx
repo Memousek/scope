@@ -181,10 +181,6 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
   const hasPM = teamRoles.includes('PM');
   const hasDPL = teamRoles.includes('DPL');
 
-  // Pomocná pole pro klíče
-  const projectMandaysKeys: (keyof Project)[] = ['fe_mandays', 'be_mandays', 'qa_mandays', 'pm_mandays', 'dpl_mandays'];
-  const projectDoneKeys: (keyof Project)[] = ['fe_done', 'be_done', 'qa_done', 'pm_done', 'dpl_done'];
-
   // Pokud není přihlášený uživatel, přesměruj na login
   useEffect(() => {
     if (!loading && !user) {
@@ -314,11 +310,6 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
         dpl_done: 0
       });
     }
-  };
-
-  // Kopírování URL scope do schránky
-  const handleCopyUrl = () => {
-    navigator.clipboard.writeText(window.location.href);
   };
 
   // --- Export do CSV ---
@@ -542,9 +533,9 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
         });
       } else if (historyMap[key]) {
         projectRoles.forEach(role => {
-          if (typeof (historyMap[key] as any)[role.key] === 'number') {
-            entry[role.key] = (historyMap[key] as any)[role.key];
-            lastKnown[role.key] = (historyMap[key] as any)[role.key];
+          if (typeof (historyMap[key] as Record<string, number | undefined>)[role.key] === 'number') {
+            entry[role.key] = (historyMap[key] as Record<string, number | undefined>)[role.key] ?? 0;
+            lastKnown[role.key] = (historyMap[key] as Record<string, number | undefined>)[role.key] ?? 0;
           } else {
             entry[role.key] = lastKnown[role.key];
           }

@@ -63,7 +63,7 @@ export default function ScopeViewPage() {
       .order('date', { ascending: true });
     if (data) {
       const grouped: Record<string, ProjectProgress[]> = {};
-      data.forEach((row: any) => {
+      data.forEach((row: ProjectProgress) => {
         if (!grouped[row.project_id]) grouped[row.project_id] = [];
         grouped[row.project_id].push(row);
       });
@@ -73,18 +73,18 @@ export default function ScopeViewPage() {
 
   useEffect(() => {
     if (projects.length > 0) {
-      fetchProgressHistory(projects.map((p: any) => p.id));
+      fetchProgressHistory(projects.map((p: Project) => p.id));
     }
   }, [projects, fetchProgressHistory]);
 
   // Burndown data (stejné jako v hlavní stránce)
-  function getBurndownDataWithDates(project: any) {
+  function getBurndownDataWithDates(project: Project) {
     const feRem = Number(project.fe_mandays) * (1 - (Number(project.fe_done) || 0) / 100);
     const beRem = Number(project.be_mandays) * (1 - (Number(project.be_done) || 0) / 100);
     const qaRem = Number(project.qa_mandays) * (1 - (Number(project.qa_done) || 0) / 100);
-    const feFte = team.filter(m => m.role === 'FE').reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
-    const beFte = team.filter(m => m.role === 'BE').reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
-    const qaFte = team.filter(m => m.role === 'QA').reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
+    const feFte = team.filter((m: TeamMember) => m.role === 'FE').reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
+    const beFte = team.filter((m: TeamMember) => m.role === 'BE').reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
+    const qaFte = team.filter((m: TeamMember) => m.role === 'QA').reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
     const feDays = feRem / feFte;
     const beDays = beRem / beFte;
     const qaDays = qaRem / qaFte;
@@ -97,7 +97,7 @@ export default function ScopeViewPage() {
     const qaShare = Number(project.qa_mandays) / totalMandays;
     const history = progressHistory[project.id] || [];
     const historyMap: Record<string, any> = {};
-    history.forEach(h => {
+    history.forEach((h: ProjectProgress) => {
       const d = new Date(h.date);
       const key = d.toISOString().slice(0, 10);
       historyMap[key] = {
@@ -172,7 +172,8 @@ export default function ScopeViewPage() {
     if (history.length === 0 && totalDays > 0) {
       data[data.length - 1] = { ...data[data.length - 1] };
       ['fe', 'be', 'qa', 'pm', 'dpl'].forEach(role => {
-        data[data.length - 1][role] = Number(project[`${role}_done`]) || 0;
+        const roleDoneKey = `${role}_done` as keyof Project;
+        data[data.length - 1][role] = Number(project[roleDoneKey]) || 0;
       });
     }
     return data;
