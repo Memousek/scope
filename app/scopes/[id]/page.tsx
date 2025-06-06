@@ -312,6 +312,21 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
     }
   };
 
+  // Smazání projektu
+  const handleDeleteProject = async (projectId: string) => {
+    if (!confirm('Opravdu chcete tento projekt nenávratně smazat včetně všech dat?')) return;
+    const supabase = createClient();
+    // Smaž navázané progressy
+    await supabase.from('project_progress').delete().eq('project_id', projectId);
+    // Smaž projekt
+    const { error } = await supabase.from('projects').delete().eq('id', projectId);
+    if (!error) {
+      setProjects(p => p.filter(pr => pr.id !== projectId));
+    } else {
+      alert('Chyba při mazání projektu.');
+    }
+  };
+
   // --- Export do CSV ---
   function downloadCSV(filename: string, rows: Record<string, unknown>[], columns: string[], headerMap?: Record<string, string>) {
     const csv = [
@@ -1032,7 +1047,7 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
                             </td>
                             <td className="px-3 py-2 align-middle text-center whitespace-nowrap">
                               <button className="text-blue-600 font-semibold hover:underline mr-2" onClick={() => handleOpenEditModal(project)}>Upravit</button>
-                              <button className="text-red-600 font-semibold hover:underline" onClick={() => { /* handleDeleteProject(project.id) */ }}>Smazat</button>
+                              <button className="text-red-600 font-semibold hover:underline" onClick={() => handleDeleteProject(project.id)}>Smazat</button>
                             </td>
                           </tr>
                         );
