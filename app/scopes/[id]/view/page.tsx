@@ -5,7 +5,7 @@
  * - Žádné editace, žádné akce, žádné exporty
  * - Nepotřebuje přihlášení
  */
-import { useEffect, useState, Fragment, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import {
@@ -105,7 +105,7 @@ export default function ScopeViewPage() {
       }
       plannedDays = planned - 1;
     }
-    let lastKnown: Record<string, number> = { fe: 0, be: 0, qa: 0, pm: 0, dpl: 0 };
+    const lastKnown: Record<string, number> = { fe: 0, be: 0, qa: 0, pm: 0, dpl: 0 };
     let currentDate = new Date(today);
     for (let day = 0; day <= Math.max(totalDays, plannedDays); ) {
       if (currentDate.getDay() === 0 || currentDate.getDay() === 6) {

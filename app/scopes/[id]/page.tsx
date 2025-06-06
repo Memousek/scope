@@ -316,29 +316,6 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
     }
   };
 
-  // Editace projektu (inline update)
-  const handleEditProject = async (projectId: string, field: string, value: string | number) => {
-    setProjects(p => p.map(pr => pr.id === projectId ? { ...pr, [field]: value } : pr));
-    const supabase = createClient();
-    await supabase.from('projects').update({ [field]: value }).eq('id', projectId);
-    // Pokud se mění % hotovo, ulož do historie
-    if (["fe_done", "be_done", "qa_done", "pm_done", "dpl_done"].includes(field)) {
-      const progress: ProjectProgress = {
-        project_id: projectId,
-        date: new Date().toISOString(),
-        [`${field}`]: typeof value === 'number' ? value : Number(value)
-      };
-      await supabase.from('project_progress').insert([progress]);
-    }
-  };
-
-  // Smazání projektu
-  const handleDeleteProject = async (projectId: string) => {
-    setProjects(p => p.filter(pr => pr.id !== projectId));
-    const supabase = createClient();
-    await supabase.from('projects').delete().eq('id', projectId);
-  };
-
   // Kopírování URL scope do schránky
   const handleCopyUrl = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -518,7 +495,7 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
     if (project.delivery_date) {
       const plannedDate = new Date(project.delivery_date);
       let planned = 0;
-      let d = new Date(today);
+      const d = new Date(today);
       while (d <= plannedDate) {
         if (d.getDay() !== 0 && d.getDay() !== 6) planned++;
         d.setDate(d.getDate() + 1);
@@ -527,8 +504,8 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
     }
 
     // --- Generuj dny v rozsahu projektu (pouze pracovní dny) ---
-    let lastKnown: Record<string, number> = { fe: 0, be: 0, qa: 0, pm: 0, dpl: 0 };
-    let currentDate = new Date(today);
+    const lastKnown: Record<string, number> = { fe: 0, be: 0, qa: 0, pm: 0, dpl: 0 };
+    const currentDate = new Date(today);
     for (let day = 0; day <= Math.max(totalDays, plannedDays); ) {
       // Přeskoč víkendy
       if (currentDate.getDay() === 0 || currentDate.getDay() === 6) {
@@ -601,7 +578,6 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
   ];
 
   const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteLink, setInviteLink] = useState('');
   const [inviteError, setInviteError] = useState('');
   const [isOwner, setIsOwner] = useState(false);
 
@@ -625,7 +601,6 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     setInviteError('');
-    setInviteLink('');
     if (!inviteEmail || !scope) return;
     const supabase = createClient();
     // Zkontroluj, zda už není editor
@@ -655,7 +630,6 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
       setInviteError('Chyba při pozvání.');
       return;
     }
-    setInviteLink(`${window.location.origin}/scopes/${scope.id}/accept?token=${token}`);
     setInviteEmail('');
     // Refresh editorů
     if (scope && isOwner) {
@@ -1065,7 +1039,7 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
                             </td>
                             <td className="px-3 py-2 align-middle text-center whitespace-nowrap">
                               <button className="text-blue-600 font-semibold hover:underline mr-2" onClick={() => handleOpenEditModal(project)}>Upravit</button>
-                              <button className="text-red-600 font-semibold hover:underline" onClick={() => handleDeleteProject(project.id)}>Smazat</button>
+                              <button className="text-red-600 font-semibold hover:underline" onClick={() => { /* handleDeleteProject(project.id) */ }}>Smazat</button>
                             </td>
                           </tr>
                         );
