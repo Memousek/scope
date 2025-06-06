@@ -50,12 +50,12 @@ export default function ScopesListPage() {
       supabase.from('scope_editors').select('scope_id, user_id, email').or(`user_id.eq.${userId},email.eq.${user?.email}`)
     ]);
     let scopes: ScopeListItem[] = [];
-    if (owned.data) scopes = owned.data.map((s: any) => ({ ...s, type: 'owned' }));
+    if (owned.data) scopes = owned.data.map((s: { id: string; name: string; owner_id: string }) => ({ ...s, type: 'owned' }));
     if (shared.data && shared.data.length > 0) {
       const ids = shared.data.map((e: { scope_id: string }) => e.scope_id);
       if (ids.length > 0) {
         const { data: sharedScopes } = await supabase.from('scopes').select('id, name, owner_id').in('id', ids);
-        if (sharedScopes) scopes = scopes.concat(sharedScopes.map((s: any) => ({ ...s, type: 'shared' })));
+        if (sharedScopes) scopes = scopes.concat(sharedScopes.map((s: { id: string; name: string; owner_id: string }) => ({ ...s, type: 'shared' })));
       }
     }
     // Odstraním duplicity podle id

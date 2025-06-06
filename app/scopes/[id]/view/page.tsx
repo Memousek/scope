@@ -19,13 +19,27 @@ import {
   ResponsiveContainer
 } from 'recharts';
 
+interface TeamMember { id: string; name: string; role: string; fte: number }
+interface Project { id: string; name: string; priority: number; fe_mandays: number; be_mandays: number; qa_mandays: number; pm_mandays: number; dpl_mandays: number; fe_done: number; be_done: number; qa_done: number; pm_done: number; dpl_done: number; delivery_date: string }
+interface Scope { id: string; name: string; description?: string }
+interface ProjectProgress {
+  id?: string;
+  project_id: string;
+  date: string; // ISO string
+  fe_done?: number;
+  be_done?: number;
+  qa_done?: number;
+  pm_done?: number;
+  dpl_done?: number;
+}
+
 export default function ScopeViewPage() {
   const params = useParams();
   const { id } = params;
-  const [scope, setScope] = useState<any>(null);
-  const [team, setTeam] = useState<any[]>([]);
-  const [projects, setProjects] = useState<any[]>([]);
-  const [progressHistory, setProgressHistory] = useState<Record<string, any[]>>({});
+  const [scope, setScope] = useState<Scope | null>(null);
+  const [team, setTeam] = useState<TeamMember[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [progressHistory, setProgressHistory] = useState<Record<string, ProjectProgress[]>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -48,7 +62,7 @@ export default function ScopeViewPage() {
       .in('project_id', projectIds)
       .order('date', { ascending: true });
     if (data) {
-      const grouped: Record<string, any[]> = {};
+      const grouped: Record<string, ProjectProgress[]> = {};
       data.forEach((row: any) => {
         if (!grouped[row.project_id]) grouped[row.project_id] = [];
         grouped[row.project_id].push(row);
@@ -98,7 +112,7 @@ export default function ScopeViewPage() {
     if (project.delivery_date) {
       const plannedDate = new Date(project.delivery_date);
       let planned = 0;
-      let d = new Date(today);
+      const d = new Date(today);
       while (d <= plannedDate) {
         if (d.getDay() !== 0 && d.getDay() !== 6) planned++;
         d.setDate(d.getDate() + 1);
@@ -106,7 +120,7 @@ export default function ScopeViewPage() {
       plannedDays = planned - 1;
     }
     const lastKnown: Record<string, number> = { fe: 0, be: 0, qa: 0, pm: 0, dpl: 0 };
-    let currentDate = new Date(today);
+    const currentDate = new Date(today);
     for (let day = 0; day <= Math.max(totalDays, plannedDays); ) {
       if (currentDate.getDay() === 0 || currentDate.getDay() === 6) {
         currentDate.setDate(currentDate.getDate() + 1);
