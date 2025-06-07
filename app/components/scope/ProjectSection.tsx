@@ -18,21 +18,6 @@ interface ProjectSectionProps {
 }
 
 export function ProjectSection({ scopeId, projects, team, onProjectsChange, hasFE, hasBE, hasQA, hasPM, hasDPL }: ProjectSectionProps) {
-  const [newProject, setNewProject] = useState({
-    name: '',
-    priority: 1,
-    fe_mandays: 0,
-    be_mandays: 0,
-    qa_mandays: 0,
-    pm_mandays: 0,
-    dpl_mandays: 0,
-    delivery_date: '',
-    fe_done: 0,
-    be_done: 0,
-    qa_done: 0,
-    pm_done: 0,
-    dpl_done: 0
-  });
   const [savingProject, setSavingProject] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editProject, setEditProject] = useState<Project | null>(null);
@@ -46,7 +31,7 @@ export function ProjectSection({ scopeId, projects, team, onProjectsChange, hasF
     { key: 'dpl', label: 'DPL', mandays: 'dpl_mandays', done: 'dpl_done', color: '#e11d48' },
   ];
 
-  const handleAddProject = async (project: any) => {
+  const handleAddProject = async (project: Omit<Project, 'id' | 'scope_id' | 'created_at'>) => {
     setSavingProject(true);
     const supabase = createClient();
     const { error, data } = await supabase.from('projects').insert([

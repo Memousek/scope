@@ -1,7 +1,7 @@
 'use client';
 
 import { Header } from "@/components/header";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -25,7 +25,7 @@ export default function Home() {
     });
   }, []);
 
-  const fetchScopes = async () => {
+  const fetchScopes = useCallback(async () => {
     if (!userId || !user) return;
     const supabase = createClient();
     const [owned, shared] = await Promise.all([
@@ -43,7 +43,7 @@ export default function Home() {
     }
     const unique = Array.from(new Map(scopes.map(s => [s.id, s])).values());
     setScopes(unique);
-  };
+  }, [userId, user]);
 
   useEffect(() => {
     if (userId && user) {

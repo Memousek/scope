@@ -1,9 +1,10 @@
 import { useState } from 'react';
+import { Project } from './types';
 
 interface AddProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddProject: (project: any) => Promise<void>;
+  onAddProject: (project: Omit<Project, 'id' | 'scope_id' | 'created_at'>) => Promise<void>;
   savingProject: boolean;
   hasFE: boolean;
   hasBE: boolean;
@@ -13,7 +14,7 @@ interface AddProjectModalProps {
 }
 
 export const AddProjectModal: React.FC<AddProjectModalProps> = ({ isOpen, onClose, onAddProject, savingProject, hasFE, hasBE, hasQA, hasPM, hasDPL }) => {
-  const [newProject, setNewProject] = useState({
+  const [newProject, setNewProject] = useState<Omit<Project, 'id' | 'scope_id' | 'created_at'>>({
     name: '',
     priority: 1,
     fe_mandays: 0,
@@ -21,7 +22,7 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({ isOpen, onClos
     qa_mandays: 0,
     pm_mandays: 0,
     dpl_mandays: 0,
-    delivery_date: '',
+    delivery_date: null,
     fe_done: 0,
     be_done: 0,
     qa_done: 0,
@@ -53,7 +54,7 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({ isOpen, onClos
       qa_mandays: 0,
       pm_mandays: 0,
       dpl_mandays: 0,
-      delivery_date: '',
+      delivery_date: null,
       fe_done: 0,
       be_done: 0,
       qa_done: 0,
@@ -171,14 +172,13 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({ isOpen, onClos
           )}
 
           <div className="flex gap-2 justify-end mt-2">
-
             <div className="flex flex-col">
               <label className="mb-1 font-medium text-gray-700">Termín dodání</label>
               <input
                 className="border rounded px-3 py-2 focus:outline-blue-400"
                 type="date"
-                value={newProject.delivery_date}
-                onChange={e => setNewProject(p => ({ ...p, delivery_date: e.target.value }))}
+                value={newProject.delivery_date || ''}
+                onChange={e => setNewProject(p => ({ ...p, delivery_date: e.target.value || null }))}
                 disabled={savingProject}
                 required
               />
