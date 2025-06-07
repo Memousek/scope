@@ -60,6 +60,15 @@ export default {
       boxShadow: {
         DEFAULT: '2px 4px 12px 0px #7373732b',
       },
+      keyframes: {
+        'slide-in-left': {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(0)' },
+        },
+      },
+      animation: {
+        'slide-in-left': 'slide-in-left 0.3s cubic-bezier(0.4,0,0.2,1) both',
+      },
     },
   },
   plugins: [require("tailwindcss-animate")],

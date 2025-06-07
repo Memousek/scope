@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { ScopeList, ScopeListItem } from "@/app/components/scope/ScopeList";
 
 type ScopeListItem = { id: string; name: string; owner_id: string; type: 'owned' | 'shared' };
 
@@ -128,47 +129,13 @@ export default function Home() {
                 Vytvořit nový scope
               </button>
             </div>
-            {error && <div className="text-red-600 mb-4">{error}</div>}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {scopes.length === 0 ? (
-                <div className="col-span-full text-center text-gray-500 py-8">
-                  Zatím nemáte žádné scopy. Vytvořte si nový scope pro sledování projektů.
-                </div>
-              ) : (
-                scopes.map(scope => (
-                  <div key={scope.id} className="bg-white rounded-lg shadow-lg p-6 flex flex-col">
-                    <div className="flex-1">
-                      <Link 
-                        href={`/scopes/${scope.id}`}
-                        className="text-xl font-semibold mb-2 block hover:text-blue-600 transition-colors"
-                      >
-                        {scope.name}
-                      </Link>
-                      <span className="text-sm text-gray-500 block mb-4">
-                        {scope.type === 'owned' ? 'Vlastní scope' : 'Sdílený scope'}
-                      </span>
-                    </div>
-                    <div className="flex justify-end gap-2">
-                      {scope.type === 'owned' ? (
-                        <button
-                          onClick={() => handleDeleteScope(scope.id)}
-                          className="text-red-600 hover:text-red-700 text-sm px-3 py-1 rounded border border-red-600 hover:border-red-700 transition-colors"
-                        >
-                          Smazat
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleRemoveScope(scope.id)}
-                          className="text-gray-600 hover:text-gray-700 text-sm px-3 py-1 rounded border border-gray-600 hover:border-gray-700 transition-colors"
-                        >
-                          Odebrat
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+            <ScopeList
+              scopes={scopes}
+              loading={loading}
+              error={error}
+              onDelete={handleDeleteScope}
+              onRemove={handleRemoveScope}
+            />
           </div>
         </div>
       </main>

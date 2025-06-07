@@ -13,5 +13,5 @@ export function LogoutButton() {
     router.push("/auth/login");
   };
 
-  return <Button onClick={logout}>Odhlásit se</Button>;
+  return <Button onClick={logout} className="w-full"  >Odhlásit se</Button>;
 }

@@ -9,8 +9,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
+import { ScopeList } from "@/app/components/scope/ScopeList";
 
 const useAuth = () => {
   const [loading, setLoading] = useState(true);
@@ -146,63 +145,13 @@ export default function ScopesListPage() {
               Vytvořit nový scope
             </button>
           </div>
-          {error && <div className="text-red-600 mb-4">{error}</div>}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-            <AnimatePresence>
-              {fetching ? (
-                <div className="col-span-full text-center text-gray-500 py-8">Načítám scopy…</div>
-              ) : scopes.length === 0 ? (
-                <motion.div
-                  className="col-span-full text-center text-gray-500 py-8"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 20 }}
-                >
-                  Zatím nemáte žádné scopy. Vytvořte si nový scope pro sledování projektů.
-                </motion.div>
-              ) : (
-                scopes.map((scope, idx) => (
-                  <motion.div
-                    key={scope.id}
-                    initial={{ opacity: 0, scale: 0.95, y: 30 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: 30 }}
-                    transition={{ duration: 0.3, delay: idx * 0.07 }}
-                    className="bg-white rounded-2xl shadow-xl p-8 flex flex-col min-h-[200px] justify-between hover:shadow-2xl transition-shadow"
-                  >
-                    <div className="flex-1">
-                      <Link
-                        href={`/scopes/${scope.id}`}
-                        className="text-2xl font-semibold mb-2 block hover:text-blue-600 transition-colors"
-                      >
-                        {scope.name}
-                      </Link>
-                      <span className="text-base text-gray-500 block mb-6">
-                        {scope.type === 'owned' ? 'Vlastní scope' : 'Sdílený scope'}
-                      </span>
-                    </div>
-                    <div className="flex justify-end gap-2 mt-4">
-                      {scope.type === 'owned' ? (
-                        <button
-                          onClick={() => handleDeleteScope(scope.id)}
-                          className="text-red-600 hover:text-red-700 text-base px-4 py-2 rounded border border-red-600 hover:border-red-700 transition-colors"
-                        >
-                          Smazat
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleRemoveScope(scope.id)}
-                          className="text-gray-600 hover:text-gray-700 text-base px-4 py-2 rounded border border-gray-600 hover:border-gray-700 transition-colors"
-                        >
-                          Odebrat
-                        </button>
-                      )}
-                    </div>
-                  </motion.div>
-                ))
-              )}
-            </AnimatePresence>
-          </div>
+          <ScopeList
+            scopes={scopes}
+            loading={fetching}
+            error={error}
+            onDelete={handleDeleteScope}
+            onRemove={handleRemoveScope}
+          />
         </div>
       </div>
     </main>
