@@ -373,16 +373,17 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
   // Uložení změn v modalu
   const handleSaveEditProject = async () => {
     if (!editProject) return;
-    // Validace: žádný odhad nesmí být 0 (pro použité role)
-    const usedMandays = [
-      hasFE ? editProject.fe_mandays : 1,
-      hasBE ? editProject.be_mandays : 1,
-      hasQA ? editProject.qa_mandays : 1,
-      hasPM ? editProject.pm_mandays : 1,
-      hasDPL ? editProject.dpl_mandays : 1,
+    // Validace: pouze role, které už v projektu mají mandays > 0, musí mít nenulový odhad
+    const projectMandays = [
+      { key: 'fe_mandays', label: 'FE' },
+      { key: 'be_mandays', label: 'BE' },
+      { key: 'qa_mandays', label: 'QA' },
+      { key: 'pm_mandays', label: 'PM' },
+      { key: 'dpl_mandays', label: 'DPL' },
     ];
-    if (usedMandays.some(v => v === 0)) {
-      alert('Odhad mandays nesmí být 0.');
+    const missing = projectMandays.filter(r => Number(editProject[r.key as keyof Project]) > 0 && Number(editProject[r.key as keyof Project]) === 0);
+    if (missing.length > 0) {
+      alert('Odhad mandays nesmí být 0 pro existující role v projektu.');
       return;
     }
     const supabase = createClient();
