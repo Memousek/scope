@@ -325,6 +325,8 @@ export function ProjectSection({ scopeId, projects, team, onProjectsChange, hasF
                 ) : (
                   projects.map(project => {
                     const info = getProjectDeliveryInfo(project, team);
+                    // Přidej slip do projektu pro ProjectBurndown
+                    const projectWithSlip = { ...project, slip: info.diffWorkdays };
                     return (
                       <tr key={project.id} className="hover:bg-blue-50 transition">
                         <td className="px-3 py-2 align-middle font-medium text-gray-900 whitespace-nowrap">{project.name}</td>
@@ -339,8 +341,8 @@ export function ProjectSection({ scopeId, projects, team, onProjectsChange, hasF
                         )}
                         <td className="px-3 py-2 align-middle text-center">{project.delivery_date ? new Date(project.delivery_date).toLocaleDateString() : ''}</td>
                         <td className="px-3 py-2 align-middle text-center">{info.calculatedDeliveryDate.toLocaleDateString()}</td>
-                        <td className={`px-3 py-2 align-middle text-center font-semibold ${info.onTime === null ? '' : info.onTime ? 'text-green-600' : 'text-red-600'}`}>
-                          {info.onTime === null ? '' : info.onTime ? `+${info.diffWorkdays} dní` : `${info.diffWorkdays} dní`}
+                        <td className={`px-3 py-2 align-middle text-center font-semibold ${info.diffWorkdays === null ? '' : info.diffWorkdays >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {info.diffWorkdays === null ? '' : info.diffWorkdays >= 0 ? `+${info.diffWorkdays} dní` : `${info.diffWorkdays} dní`}
                         </td>
                         <td className="px-3 py-2 align-middle text-center whitespace-nowrap">
                           <button className="text-blue-600 font-semibold hover:underline mr-2" onClick={() => handleOpenEditModal(project)}>Upravit</button>
@@ -361,11 +363,12 @@ export function ProjectSection({ scopeId, projects, team, onProjectsChange, hasF
         <h3 className="text-lg font-semibold mb-2">Burndown & termíny</h3>
         {projects.map(project => {
           const info = getProjectDeliveryInfo(project, team);
+          // Přidej slip do projektu pro ProjectBurndown
+          const projectWithSlip = { ...project, slip: info.diffWorkdays };
           return (
             <ProjectBurndown
               key={project.id}
-              project={project}
-              team={team}
+              project={projectWithSlip}
               deliveryInfo={info}
             />
           );

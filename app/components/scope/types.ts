@@ -19,7 +19,7 @@ export interface Project {
   qa_done: number;
   pm_done: number;
   dpl_done: number;
-  delivery_date: string;
+  delivery_date: string | null;
   created_at: string;
 }
 
@@ -36,10 +36,9 @@ export interface ProjectProgress {
 
 export interface ProjectDeliveryInfo {
   calculatedDeliveryDate: Date;
-  deliveryDate: Date | null;
-  totalWorkdays: number;
+  slip: number;
   diffWorkdays: number | null;
-  onTime: boolean | null;
+  deliveryDate: Date | null;
 }
 
 export const ROLES = [

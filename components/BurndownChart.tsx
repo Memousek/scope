@@ -1,21 +1,28 @@
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LegendProps, ReferenceLine } from 'recharts';
-import React, { useState } from 'react';
+import React from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 
 export interface BurndownChartRoleData {
-  role: string; // např. 'FE'
+  value: string;
+  label: string;
   color: string;
-  data: { date: string; percentDone: number }[];
+}
+
+interface ChartData {
+  date: string;
+  ideal: number | null;
+  total: number;
+  [key: string]: string | number | null;
 }
 
 interface BurndownChartProps {
-  roles: { value: string; label: string }[];
-  totalData: { date: string; [key: string]: number }[];
+  roles: BurndownChartRoleData[];
+  totalData: { date: string; percentDone: number; [key: string]: number | string }[];
   slip: number;
   calculatedDeliveryDate: Date;
-  deliveryDate: Date | null;
+  deliveryDate: Date;
 }
 
-export const BurndownChart: React.FC<BurndownChartProps> = ({ roles, totalData, slip, calculatedDeliveryDate, deliveryDate }) => {
+export default function BurndownChart({ roles, totalData, slip, calculatedDeliveryDate, deliveryDate }: BurndownChartProps) {
   // Najdi index, kde je datum == deliveryDate
   let deliveryIdx = -1;
   if (deliveryDate) {
@@ -41,15 +48,14 @@ export const BurndownChart: React.FC<BurndownChartProps> = ({ roles, totalData, 
     }
   }
   // Sloučím data pro graf podle data
-  const chartData: Record<string, string | number | undefined>[] = totalData.map((d, idx) => {
-    const entry: Record<string, string | number | undefined> = {
+  const chartData: ChartData[] = totalData.map((d, idx) => {
+    const entry: ChartData = {
       date: d.date,
+      ideal: idealData[idx]?.ideal ?? 0,
       total: d.percentDone,
-      ideal: idealData[idx].ideal ?? 0,
     };
     roles.forEach(role => {
-      if (!role.value) return;
-      (entry as any)[role.value as string] = d[role.value as string] ?? 0;
+      entry[role.value] = d[role.value] ?? 0;
     });
     // Přidej červenou čáru po termínu dodání
     if (afterDeliveryLine.length && idx >= deliveryIdx) {
@@ -72,7 +78,6 @@ export const BurndownChart: React.FC<BurndownChartProps> = ({ roles, totalData, 
   }
 
   // Najdi odpovídající hodnotu na ose X pro ReferenceLine
-  // Předpokládáme, že date v chartData je ve formátu 'D.M.'
   let refLineX: string | null = null;
   if (calculatedDeliveryDate) {
     const calcDate = new Date(calculatedDeliveryDate);
@@ -82,91 +87,26 @@ export const BurndownChart: React.FC<BurndownChartProps> = ({ roles, totalData, 
     }
   }
 
-  // Stav pro skrytí/zobrazení čar
-  const [hidden, setHidden] = useState<{ [role: string]: boolean }>({});
-  // Stav pro zvýraznění čáry při najetí na legendu
-  const [highlighted, setHighlighted] = useState<string | null>(null);
-
-  // Typuj správně podle LegendProps
-  const handleLegendClick: LegendProps['onClick'] = (e) => {
-    if (!e || typeof e.dataKey !== 'string') return;
-    setHidden(h => ({ ...h, [e.dataKey]: !h[e.dataKey] }));
-  };
-  const handleLegendMouseEnter: LegendProps['onMouseEnter'] = (e) => {
-    if (!e || typeof e.dataKey !== 'string') return;
-    setHighlighted(e.dataKey);
-  };
-  const handleLegendMouseLeave: LegendProps['onMouseLeave'] = () => {
-    setHighlighted(null);
-  };
-
-  // Custom Tooltip pro lepší přehlednost
-  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: { dataKey: string; color: string; name: string; value: number }[]; label?: string }) => {
-    if (!active || !payload || !payload.length) return null;
-    return (
-      <div className="bg-white border rounded shadow p-2 text-xs">
-        <div className="font-semibold mb-1">{label}</div>
-        {payload.map((item) => (
-          <div key={item.dataKey} style={{ color: item.color, fontWeight: item.dataKey === 'total' ? 'bold' : undefined }}>
-            {item.name}: {item.value}%
-          </div>
-        ))}
-      </div>
-    );
-  };
-
   // Barva reference podle skluzu
   const refColor = typeof slip === 'number' ? (slip < 0 ? '#e11d48' : '#059669') : '#2563eb';
-
-  // Custom label komponenta pro ReferenceLine
-  const RefLineLabel = (props: { x?: number; y?: number; viewBox?: { width: number }; }) => {
-    const { x, y, viewBox } = props;
-    if (x == null || y == null || !viewBox) return null;
-    const width = viewBox.width;
-    let textAnchor: 'start' | 'middle' | 'end' = 'middle';
-    let xPos = x;
-    if (x < 60) {
-      textAnchor = 'start';
-      xPos = x + 4;
-    } else if (x > width - 60) {
-      textAnchor = 'end';
-      xPos = x - 4;
-    }
-    const mainText = slip !== undefined && slip !== null
-      ? (slip < 0 ? 'Ve skluzu' : 'Na čas')
-      : '';
-    const mainColor = slip !== undefined && slip !== null
-      ? (slip < 0 ? '#e11d48' : '#059669')
-      : refColor;
-    return (
-      <g>
-        <text x={xPos} y={y - 20} textAnchor={textAnchor} fontWeight="bold" fontSize="16" fill={mainColor}>{mainText}</text>
-        <text x={xPos} y={y - 2} textAnchor={textAnchor} fontSize="12" fill={mainColor} opacity="0.7">Spočítaný termín</text>
-      </g>
-    );
-  };
+  const refLabel = typeof slip === 'number' ? (slip < 0 ? 'Skluz' : 'Rezerva') : '';
 
   return (
     <div style={{ maxWidth: '100%', overflowX: 'auto', padding: '8px 0' }}>
-      <ResponsiveContainer width="100%" height={320} minWidth={600}>
+      <ResponsiveContainer width="100%" height={320}>
         <LineChart data={chartData} margin={{ top: 24, right: 40, left: 8, bottom: 24 }}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="date" minTickGap={0} interval={0} />
           <YAxis domain={[0, 100]} tickFormatter={v => `${v}%`} />
-          <Tooltip content={<CustomTooltip />} />
-          <Legend
-            onClick={handleLegendClick}
-            onMouseEnter={handleLegendMouseEnter}
-            onMouseLeave={handleLegendMouseLeave}
-          />
+          <Tooltip />
+          <Legend />
           <Line
             type="monotone"
             dataKey="total"
             stroke="#111"
             name="Celkem % hotovo"
             dot
-            hide={!!hidden['total']}
-            strokeWidth={highlighted === 'total' ? 4 : 2}
+            strokeWidth={2}
             isAnimationActive={false}
           />
           {roles.map(role => (
@@ -177,8 +117,7 @@ export const BurndownChart: React.FC<BurndownChartProps> = ({ roles, totalData, 
               stroke={role.color}
               name={`${role.label} % hotovo`}
               dot
-              hide={!!hidden[role.value as string]}
-              strokeWidth={highlighted === role.value ? 4 : 2}
+              strokeWidth={2}
               isAnimationActive={false}
             />
           ))}
@@ -189,8 +128,7 @@ export const BurndownChart: React.FC<BurndownChartProps> = ({ roles, totalData, 
             name="Ideální průběh"
             strokeDasharray="5 5"
             dot={false}
-            hide={!!hidden['ideal']}
-            strokeWidth={highlighted === 'ideal' ? 4 : 2}
+            strokeWidth={2}
             isAnimationActive={false}
             connectNulls={false}
           />
@@ -207,21 +145,21 @@ export const BurndownChart: React.FC<BurndownChartProps> = ({ roles, totalData, 
               connectNulls={false}
             />
           )}
-          {/* Svislá čára pro termín dodání */}
+          {/* Svislá čára pro plánovaný termín */}
           {deliveryLineX && (
             <ReferenceLine
               x={deliveryLineX}
               stroke="#e11d48"
-              label={{ value: 'Termín dodání', position: 'top', fill: '#e11d48', fontWeight: 'bold', fontSize: 12 }}
+              label={{ value: 'Plánovaný termín', position: 'top', fill: '#e11d48', fontWeight: 'bold', fontSize: 12 }}
               strokeDasharray="2 2"
             />
           )}
-          {/* Svislá čára pro spočítaný termín (původní) */}
+          {/* Svislá čára pro odhadovaný termín */}
           {refLineX && (
             <ReferenceLine
               x={refLineX}
               stroke={refColor}
-              label={<RefLineLabel />}
+              label={{ value: refLabel ? refLabel : 'Odhadovaný termín', position: 'top', fill: refColor, fontWeight: 'bold', fontSize: 12 }}
               strokeDasharray="3 3"
             />
           )}
@@ -229,11 +167,9 @@ export const BurndownChart: React.FC<BurndownChartProps> = ({ roles, totalData, 
       </ResponsiveContainer>
       {typeof slip === 'number' && (
         <div className={slip < 0 ? 'text-red-600 font-bold mt-2' : 'text-green-600 font-bold mt-2'}>
-          {slip < 0 ? `Ve skluzu (${Math.abs(slip)} dní)` : `Na čas (+${slip} dní rezerva)`}
+          {slip < 0 ? `Ve skluzu (${Math.abs(slip)} dní)` : `Rezerva (+${slip} dní)`}
         </div>
       )}
     </div>
   );
-};
-
-export default BurndownChart; 
+} 
