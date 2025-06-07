@@ -11,20 +11,11 @@
 import { use, useEffect, useState, Fragment, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer
-} from 'recharts';
 import { useCallback } from 'react';
 import { FiShare2, FiCopy } from 'react-icons/fi';
 import { useTranslation } from '@/lib/translation';
 import { v4 as uuidv4 } from 'uuid';
+import BurndownChart, { BurndownChartRoleData } from '@/components/BurndownChart';
 
 // Statické role, později načítat ze Supabase
 const ROLES = [
@@ -106,6 +97,7 @@ interface Project {
   pm_done: number;
   dpl_done: number;
   delivery_date: string;
+  created_at: string;
 }
 
 export default function ScopeBurndownPage({ params }: { params: Promise<{ id: string }> }) {
@@ -145,9 +137,6 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
   });
   const [savingProject, setSavingProject] = useState(false);
 
-  // --- Historie postupu projektů (hooky musí být uvnitř komponenty) ---
-  const [progressHistory, setProgressHistory] = useState<Record<string, ProjectProgress[]>>({});
-
   const fetchProgressHistory = useCallback(async (projectIds: string[]) => {
     if (!projectIds.length) return;
     const supabase = createClient();
@@ -163,7 +152,6 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
         if (!grouped[row.project_id]) grouped[row.project_id] = [];
         grouped[row.project_id].push(row);
       });
-      setProgressHistory(grouped);
     }
   }, []);
 
@@ -232,7 +220,7 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
       const supabase = createClient();
       supabase
         .from('projects')
-        .select('id, name, priority, fe_mandays, be_mandays, qa_mandays, pm_mandays, dpl_mandays, fe_done, be_done, qa_done, pm_done, dpl_done, delivery_date, required_delivery_date')
+        .select('id, name, priority, fe_mandays, be_mandays, qa_mandays, pm_mandays, dpl_mandays, fe_done, be_done, qa_done, pm_done, dpl_done, delivery_date, required_delivery_date, created_at')
         .eq('scope_id', id)
         .order('created_at', { ascending: true })
         .then(({ data, error }) => {
@@ -425,155 +413,47 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
     }
   };
 
-  /**
-   * Calculates delivery info for a project using only remaining mandays (based on % done) for each role.
-   * FE/BE run in parallel, QA follows after both are done.
-   * Nově: počítá pouze pracovní dny (víkendy se nepočítají).
-   */
+  // Pomocná funkce: vygeneruje pole pracovních dnů mezi dvěma daty (včetně start, včetně end)
+  function getWorkdaysBetween(start: Date, end: Date): Date[] {
+    const days: Date[] = [];
+    const d = new Date(start);
+    d.setHours(0,0,0,0);
+    while (d <= end) {
+      if (d.getDay() !== 0 && d.getDay() !== 6) {
+        days.push(new Date(d));
+      }
+      d.setDate(d.getDate() + 1);
+    }
+    return days;
+  }
+
+  // Refaktorovaná funkce pro výpočet termínu a skluzu (pouze pracovní dny)
   function getProjectDeliveryInfo(project: Project, team: TeamMember[]) {
-    // Zjisti FTE pro FE, BE, QA
     const feFte = team.filter(m => m.role === 'FE').reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
     const beFte = team.filter(m => m.role === 'BE').reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
     const qaFte = team.filter(m => m.role === 'QA').reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
-    // Zbývající mandays (pouze nedokončená práce)
     const feRem = Number(project.fe_mandays) * (1 - (Number(project.fe_done) || 0) / 100);
     const beRem = Number(project.be_mandays) * (1 - (Number(project.be_done) || 0) / 100);
     const qaRem = Number(project.qa_mandays) * (1 - (Number(project.qa_done) || 0) / 100);
-    // Výpočet trvání v pracovních dnech
     const feDays = feRem / feFte;
     const beDays = beRem / beFte;
     const qaDays = qaRem / qaFte;
-    const totalDays = Math.ceil(Math.max(feDays, beDays) + qaDays);
-    // Výpočet spočítaného termínu dodání (od dneška, pouze pracovní dny)
+    const totalWorkdays = Math.ceil(Math.max(feDays, beDays)) + Math.ceil(qaDays);
     const today = new Date();
-    const calculatedDeliveryDate = addWorkdays(today, totalDays);
-    // Uživatelský termín dodání
+    const calculatedDeliveryDate = addWorkdays(today, totalWorkdays);
     const deliveryDate = project.delivery_date ? new Date(project.delivery_date) : null;
-    const diffDays = deliveryDate ? Math.ceil((deliveryDate.getTime() - calculatedDeliveryDate.getTime()) / (1000 * 60 * 60 * 24)) : null;
+    let diffWorkdays: number | null = null;
+    if (deliveryDate) {
+      const workdaysToPlanned = getWorkdaysBetween(today, deliveryDate).length - 1;
+      diffWorkdays = workdaysToPlanned - totalWorkdays;
+    }
     return {
       calculatedDeliveryDate,
       deliveryDate,
-      totalDays,
-      diffDays,
-      onTime: diffDays === null ? null : diffDays >= 0
+      totalWorkdays,
+      diffWorkdays,
+      onTime: diffWorkdays === null ? null : diffWorkdays >= 0
     };
-  }
-
-  // Funkce pro generování dat pro burndown graf s datumy na ose X
-  function getBurndownDataWithDates(project: Project) {
-    // FE/BE paralelně, QA až po nich
-    const feRem = Number(project.fe_mandays) * (1 - (Number(project.fe_done) || 0) / 100);
-    const beRem = Number(project.be_mandays) * (1 - (Number(project.be_done) || 0) / 100);
-    const qaRem = Number(project.qa_mandays) * (1 - (Number(project.qa_done) || 0) / 100);
-    const feFte = team.filter(m => m.role === 'FE').reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
-    const beFte = team.filter(m => m.role === 'BE').reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
-    const qaFte = team.filter(m => m.role === 'QA').reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
-    const feDays = feRem / feFte;
-    const beDays = beRem / beFte;
-    const qaDays = qaRem / qaFte;
-    const feBeDays = Math.ceil(Math.max(feDays, beDays));
-    const totalDays = feBeDays + Math.ceil(qaDays);
-    const today = new Date();
-    const data: Record<string, number | string | null>[] = [];
-    // Celkový podíl FE/BE a QA na projektu
-    const totalMandays = Number(project.fe_mandays) + Number(project.be_mandays) + Number(project.qa_mandays);
-    const feBeShare = (Number(project.fe_mandays) + Number(project.be_mandays)) / totalMandays;
-    const qaShare = Number(project.qa_mandays) / totalMandays;
-
-    // --- Skutečný průběh z historie ---
-    const history = progressHistory[project.id] || [];
-    // Mapování: datum (YYYY-MM-DD) -> hodnoty
-    const historyMap: Record<string, Record<string, number | undefined>> = {};
-    history.forEach(h => {
-      const d = new Date(h.date);
-      const key = d.toISOString().slice(0, 10); // YYYY-MM-DD
-      historyMap[key] = {
-        fe: h.fe_done,
-        be: h.be_done,
-        qa: h.qa_done,
-        pm: h.pm_done,
-        dpl: h.dpl_done,
-      };
-    });
-
-    // --- Ideální průběh podle původního plánu (delivery_date) ---
-    let plannedDays = totalDays;
-    if (project.delivery_date) {
-      const plannedDate = new Date(project.delivery_date);
-      let planned = 0;
-      const d = new Date(today);
-      while (d <= plannedDate) {
-        if (d.getDay() !== 0 && d.getDay() !== 6) planned++;
-        d.setDate(d.getDate() + 1);
-      }
-      plannedDays = planned - 1; // -1 protože dnes je první den
-    }
-
-    // --- Generuj dny v rozsahu projektu (pouze pracovní dny) ---
-    const lastKnown: Record<string, number> = { fe: 0, be: 0, qa: 0, pm: 0, dpl: 0 };
-    const currentDate = new Date(today);
-    for (let day = 0; day <= Math.max(totalDays, plannedDays); ) {
-      // Přeskoč víkendy
-      if (currentDate.getDay() === 0 || currentDate.getDay() === 6) {
-        currentDate.setDate(currentDate.getDate() + 1);
-        continue;
-      }
-      const key = currentDate.toISOString().slice(0, 10); // YYYY-MM-DD
-      const entry: Record<string, number | string | null> = { date: `${currentDate.getDate()}.${currentDate.getMonth() + 1}.` };
-      // Ideální průběh: podle původního plánu
-      if (day <= plannedDays) {
-        entry.ideal = feBeShare > 0 ? (day / plannedDays) * (feBeShare / (feBeShare + qaShare)) * 100 : 0;
-        if (day > feBeDays && plannedDays > feBeDays) {
-          entry.ideal = feBeShare * 100 + ((day - feBeDays) / (plannedDays - feBeDays)) * qaShare * 100;
-        }
-        if (entry.ideal > 100) entry.ideal = 100;
-      } else {
-        entry.ideal = null;
-      }
-      // Reálný plán (ve skluzu): podle spočítaného termínu
-      if (day <= totalDays) {
-        entry.realPlan = feBeShare > 0 ? (day / totalDays) * (feBeShare / (feBeShare + qaShare)) * 100 : 0;
-        if (day > feBeDays && totalDays > feBeDays) {
-          entry.realPlan = feBeShare * 100 + ((day - feBeDays) / (totalDays - feBeDays)) * qaShare * 100;
-        }
-        if (entry.realPlan > 100) entry.realPlan = 100;
-      } else {
-        entry.realPlan = null;
-      }
-      // Skutečný průběh: step line
-      if (day === 0) {
-        projectRoles.forEach(role => {
-          entry[role.key] = 0;
-          lastKnown[role.key] = 0;
-        });
-      } else if (historyMap[key]) {
-        projectRoles.forEach(role => {
-          if (typeof (historyMap[key] as Record<string, number | undefined>)[role.key] === 'number') {
-            entry[role.key] = (historyMap[key] as Record<string, number | undefined>)[role.key] ?? 0;
-            lastKnown[role.key] = (historyMap[key] as Record<string, number | undefined>)[role.key] ?? 0;
-          } else {
-            entry[role.key] = lastKnown[role.key];
-          }
-        });
-      } else {
-        projectRoles.forEach(role => {
-          entry[role.key] = lastKnown[role.key];
-        });
-      }
-      data.push(entry);
-      currentDate.setDate(currentDate.getDate() + 1);
-      day++;
-    }
-    // Pokud není žádná historie, generuj lineární průběh od 0 do aktuálního stavu
-    if (history.length === 0 && totalDays > 0) {
-      for (let i = 0; i < data.length; i++) {
-        projectRoles.forEach(role => {
-          const done = Number(project[role.done as keyof Project]) || 0;
-          data[i][role.key] = Math.round((done * i) / (data.length - 1));
-        });
-      }
-    }
-    return data;
   }
 
   // Dynamicky generuj sloupce v tabulce projektů podle zapojených rolí
@@ -1028,6 +908,58 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
                     ) : (
                       projects.map(project => {
                         const info = getProjectDeliveryInfo(project, team);
+                        const start = new Date(project.created_at);
+                        const end = info.calculatedDeliveryDate;
+                        const days: Date[] = [];
+                        const d = new Date(start);
+                        while (d <= end) {
+                          days.push(new Date(d));
+                          d.setDate(d.getDate() + 1);
+                        }
+                        // Pokud je days jen jeden den, přidej ještě jeden den navíc
+                        if (days.length === 1) {
+                          const nextDay = new Date(days[0]);
+                          nextDay.setDate(nextDay.getDate() + 1);
+                          days.push(nextDay);
+                        }
+                        // Barvy pro role
+                        const roleColors: Record<string, string> = {
+                          FE: '#2563eb',
+                          BE: '#059669',
+                          QA: '#f59e42',
+                          PM: '#a21caf',
+                          DPL: '#e11d48',
+                        };
+                        // Vygeneruj data pro každou roli
+                        const roles: BurndownChartRoleData[] = projectRoles
+                          .filter(role => Number(project[role.mandays as keyof Project]) > 0)
+                          .map(role => {
+                            const percentDone = Number(project[role.done as keyof Project]) || 0;
+                            // index posledního dne s reálným datem (plánovaný termín)
+                            const plannedEnd = new Date(project.delivery_date);
+                            const plannedEndIdx = days.findIndex(d => d.getTime() === plannedEnd.getTime());
+                            return {
+                              role: role.label,
+                              color: roleColors[role.label] || '#888',
+                              data: days.map((date, idx) => ({
+                                date: `${date.getDate()}.${date.getMonth() + 1}.`,
+                                percentDone: idx === 0
+                                  ? 0
+                                  : (plannedEndIdx !== -1 && idx > plannedEndIdx ? percentDone : percentDone),
+                              })),
+                            };
+                          });
+                        // Celkový průměr všech rolí
+                        const total: { date: string; percentDone: number }[] = days.map((date, idx) => {
+                          const sum = roles.reduce((acc, role) => acc + (role.data[idx]?.percentDone ?? 0), 0);
+                          const avg = roles.length > 0 ? sum / roles.length : 0;
+                          return {
+                            date: `${date.getDate()}.${date.getMonth() + 1}.`,
+                            percentDone: avg,
+                          };
+                        });
+                        // Skluz
+                        const slip = info.diffWorkdays;
                         return (
                           <tr key={project.id} className="hover:bg-blue-50 transition">
                             <td className="px-3 py-2 align-middle font-medium text-gray-900 whitespace-nowrap">{project.name}</td>
@@ -1043,7 +975,7 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
                             <td className="px-3 py-2 align-middle text-center">{project.delivery_date ? new Date(project.delivery_date).toLocaleDateString() : ''}</td>
                             <td className="px-3 py-2 align-middle text-center">{info.calculatedDeliveryDate.toLocaleDateString()}</td>
                             <td className={`px-3 py-2 align-middle text-center font-semibold ${info.onTime === null ? '' : info.onTime ? 'text-green-600' : 'text-red-600'}`}>
-                              {info.onTime === null ? '' : info.onTime ? `+${info.diffDays} dní` : `${info.diffDays} dní`}
+                              {info.onTime === null ? '' : info.onTime ? `+${info.diffWorkdays} dní` : `${info.diffWorkdays} dní`}
                             </td>
                             <td className="px-3 py-2 align-middle text-center whitespace-nowrap">
                               <button className="text-blue-600 font-semibold hover:underline mr-2" onClick={() => handleOpenEditModal(project)}>Upravit</button>
@@ -1063,40 +995,74 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
           <div className="my-8">
             <h3 className="text-lg font-semibold mb-2">Burndown & termíny</h3>
             {projects.map(project => {
+              // Připrav data pro graf pro každou roli a celkově
+              const start = new Date(project.created_at);
               const info = getProjectDeliveryInfo(project, team);
+              const end = info.calculatedDeliveryDate;
+              const days: Date[] = [];
+              const d = new Date(start);
+              while (d <= end) {
+                days.push(new Date(d));
+                d.setDate(d.getDate() + 1);
+              }
+              // Pokud je days jen jeden den, přidej ještě jeden den navíc
+              if (days.length === 1) {
+                const nextDay = new Date(days[0]);
+                nextDay.setDate(nextDay.getDate() + 1);
+                days.push(nextDay);
+              }
+              // Barvy pro role
+              const roleColors: Record<string, string> = {
+                FE: '#2563eb',
+                BE: '#059669',
+                QA: '#f59e42',
+                PM: '#a21caf',
+                DPL: '#e11d48',
+              };
+              // Vygeneruj data pro každou roli
+              const roles: BurndownChartRoleData[] = projectRoles
+                .filter(role => Number(project[role.mandays as keyof Project]) > 0)
+                .map(role => {
+                  const percentDone = Number(project[role.done as keyof Project]) || 0;
+                  // index posledního dne s reálným datem (plánovaný termín)
+                  const plannedEnd = new Date(project.delivery_date);
+                  const plannedEndIdx = days.findIndex(d => d.getTime() === plannedEnd.getTime());
+                  return {
+                    role: role.label,
+                    color: roleColors[role.label] || '#888',
+                    data: days.map((date, idx) => ({
+                      date: `${date.getDate()}.${date.getMonth() + 1}.`,
+                      percentDone: idx === 0
+                        ? 0
+                        : (plannedEndIdx !== -1 && idx > plannedEndIdx ? percentDone : percentDone),
+                    })),
+                  };
+                });
+              // Celkový průměr všech rolí
+              const total: { date: string; percentDone: number }[] = days.map((date, idx) => {
+                const sum = roles.reduce((acc, role) => acc + (role.data[idx]?.percentDone ?? 0), 0);
+                const avg = roles.length > 0 ? sum / roles.length : 0;
+                return {
+                  date: `${date.getDate()}.${date.getMonth() + 1}.`,
+                  percentDone: avg,
+                };
+              });
+              // Skluz
+              const slip = info.diffWorkdays;
               return (
                 <div key={project.id} className="mb-6 p-4 rounded-lg border">
                   <div className="flex flex-wrap gap-4 items-center mb-2">
                     <span className="font-semibold">{project.name}</span>
                     <span>Spočítaný termín dodání: <b>{info.calculatedDeliveryDate.toLocaleDateString()}</b></span>
-                    {info.deliveryDate && (
-                      <span>Termín dodání: <b>{info.deliveryDate.toLocaleDateString()}</b></span>
-                    )}
-                    {info.onTime !== null && (
-                      <span className={info.onTime ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}>
-                        {info.onTime
-                          ? `Na čas (${typeof info.diffDays === 'number' && !isNaN(info.diffDays) ? info.diffDays : 0} dní rezerva)`
-                          : `Ve skluzu (${typeof info.diffDays === 'number' && !isNaN(info.diffDays) ? Math.abs(info.diffDays) : 0} dní)`}
-                      </span>
+                    {project.delivery_date && (
+                      <span>Termín dodání: <b>{new Date(project.delivery_date).toLocaleDateString()}</b></span>
                     )}
                   </div>
-                  {/* Burndown graf s datumy na ose X */}
-                  <ResponsiveContainer width="100%" height={220}>
-                    <LineChart data={getBurndownDataWithDates(project)} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" tickFormatter={d => d} />
-                      <YAxis domain={[0, 100]} tickFormatter={v => `${v}%`} />
-                      <Tooltip labelFormatter={d => d} />
-                      <Legend />
-                      {projectRoles.map(role =>
-                        Number(project[role.mandays as keyof Project]) > 0 && (
-                          <Line key={role.key} type="monotone" dataKey={role.key} stroke={role.color} name={`${role.label} % hotovo`} />
-                        )
-                      )}
-                      <Line type="monotone" dataKey="ideal" stroke="#888" name="Ideální průběh" strokeDasharray="5 5" />
-                      <Line type="monotone" dataKey="realPlan" stroke="#ccc" name="Reálný plán (ve skluzu)" strokeDasharray="5 5" />
-                    </LineChart>
-                  </ResponsiveContainer>
+                  {days.length < 2 ? (
+                    <div className="text-gray-500 italic py-8 text-center">Není dostatek dat pro zobrazení grafu</div>
+                  ) : (
+                    <BurndownChart roles={roles} total={total} slip={slip} calculatedDeliveryDate={info.calculatedDeliveryDate.toISOString()} deliveryDate={project.delivery_date} />
+                  )}
                 </div>
               );
             })}
