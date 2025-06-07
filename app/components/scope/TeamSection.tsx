@@ -26,10 +26,10 @@ export function TeamSection({ scopeId, team, onTeamChange }: TeamSectionProps) {
   };
 
   const handleEditMember = async (memberId: string, field: keyof TeamMember, value: string | number) => {
-    setSavingMember(null);
+    setSavingMember(true);
     const supabase = createClient();
     const { error } = await supabase.from('team_members').update({ [field]: value }).eq('id', memberId);
-    setSavingMember(null);
+    setSavingMember(false);
     if (!error) {
       const updated = team.map(m => m.id === memberId ? { ...m, [field]: value } : m);
       onTeamChange(updated);
