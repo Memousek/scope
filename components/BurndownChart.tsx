@@ -15,13 +15,6 @@ interface BurndownChartProps {
   deliveryDate: string; // nový prop pro termín dodání
 }
 
-type ChartDatum = {
-  date: string;
-  total: number;
-  ideal: number;
-  [role: string]: string | number;
-};
-
 export const BurndownChart: React.FC<BurndownChartProps> = ({ roles, total, slip, calculatedDeliveryDate, deliveryDate }) => {
   // Najdi index, kde je datum == deliveryDate
   let deliveryIdx = -1;
@@ -39,27 +32,31 @@ export const BurndownChart: React.FC<BurndownChartProps> = ({ roles, total, slip
     };
   });
   // Pro červenou čáru po termínu dodání
-  let afterDeliveryLine: { date: string; value: number | null }[] = [];
+  const afterDeliveryLine: { date: string; value: number }[] = [];
   if (deliveryIdx !== -1) {
     const endIdx = total.length - 1;
     const lastIdeal = idealData[deliveryIdx]?.ideal ?? 100;
     for (let i = deliveryIdx; i <= endIdx; i++) {
-      afterDeliveryLine.push({ date: total[i].date, value: lastIdeal });
+      afterDeliveryLine.push({ date: total[i].date, value: typeof lastIdeal === 'number' ? lastIdeal : 100 });
     }
   }
   // Sloučím data pro graf podle data
-  const chartData: ChartDatum[] = total.map((d, idx) => {
-    const entry: ChartDatum = {
+  const chartData: Record<string, string | number | undefined>[] = total.map((d, idx) => {
+    const entry: Record<string, string | number | undefined> = {
       date: d.date,
       total: d.percentDone,
-      ideal: idealData[idx].ideal,
+      ideal: idealData[idx].ideal ?? 0,
     };
     roles.forEach(role => {
-      entry[role.role] = role.data[idx]?.percentDone ?? 0;
+      if (!role.role) return;
+      (entry as any)[role.role as string] = role.data[idx]?.percentDone ?? 0;
     });
     // Přidej červenou čáru po termínu dodání
     if (afterDeliveryLine.length && idx >= deliveryIdx) {
-      entry['afterDelivery'] = afterDeliveryLine[idx - deliveryIdx]?.value ?? null;
+      const val = afterDeliveryLine[idx - deliveryIdx]?.value;
+      if (typeof val === 'number') {
+        entry['afterDelivery'] = val;
+      }
     }
     return entry;
   });
@@ -104,12 +101,12 @@ export const BurndownChart: React.FC<BurndownChartProps> = ({ roles, total, slip
   };
 
   // Custom Tooltip pro lepší přehlednost
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: { dataKey: string; color: string; name: string; value: number }[]; label?: string }) => {
     if (!active || !payload || !payload.length) return null;
     return (
       <div className="bg-white border rounded shadow p-2 text-xs">
         <div className="font-semibold mb-1">{label}</div>
-        {payload.map((item: any) => (
+        {payload.map((item) => (
           <div key={item.dataKey} style={{ color: item.color, fontWeight: item.dataKey === 'total' ? 'bold' : undefined }}>
             {item.name}: {item.value}%
           </div>
@@ -122,13 +119,12 @@ export const BurndownChart: React.FC<BurndownChartProps> = ({ roles, total, slip
   const refColor = typeof slip === 'number' ? (slip < 0 ? '#e11d48' : '#059669') : '#2563eb';
 
   // Custom label komponenta pro ReferenceLine
-  const RefLineLabel = (props: any) => {
+  const RefLineLabel = (props: { x?: number; y?: number; viewBox?: { width: number }; }) => {
     const { x, y, viewBox } = props;
     if (x == null || y == null || !viewBox) return null;
     const width = viewBox.width;
     let textAnchor: 'start' | 'middle' | 'end' = 'middle';
     let xPos = x;
-    // Pokud je čára blízko levému okraji
     if (x < 60) {
       textAnchor = 'start';
       xPos = x + 4;

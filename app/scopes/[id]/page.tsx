@@ -950,7 +950,7 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
                               })),
                             };
                           });
-                        // Celkový průměr všech rolí
+                        // těsně před <BurndownChart ...>
                         const total: { date: string; percentDone: number }[] = days.map((date, idx) => {
                           const sum = roles.reduce((acc, role) => acc + (role.data[idx]?.percentDone ?? 0), 0);
                           const avg = roles.length > 0 ? sum / roles.length : 0;
@@ -959,8 +959,6 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
                             percentDone: avg,
                           };
                         });
-                        // Skluz
-                        const slip = info.diffWorkdays;
                         return (
                           <tr key={project.id} className="hover:bg-blue-50 transition">
                             <td className="px-3 py-2 align-middle font-medium text-gray-900 whitespace-nowrap">{project.name}</td>
@@ -1039,7 +1037,7 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
                     })),
                   };
                 });
-              // Celkový průměr všech rolí
+              // těsně před <BurndownChart ...>
               const total: { date: string; percentDone: number }[] = days.map((date, idx) => {
                 const sum = roles.reduce((acc, role) => acc + (role.data[idx]?.percentDone ?? 0), 0);
                 const avg = roles.length > 0 ? sum / roles.length : 0;
@@ -1048,8 +1046,6 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
                   percentDone: avg,
                 };
               });
-              // Skluz
-              const slip = info.diffWorkdays;
               return (
                 <div key={project.id} className="mb-6 p-4 rounded-lg border">
                   <div className="flex flex-wrap gap-4 items-center mb-2">
@@ -1062,7 +1058,7 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
                   {days.length < 2 ? (
                     <div className="text-gray-500 italic py-8 text-center">Není dostatek dat pro zobrazení grafu</div>
                   ) : (
-                    <BurndownChart roles={roles} total={total} slip={slip} calculatedDeliveryDate={info.calculatedDeliveryDate.toISOString()} deliveryDate={project.delivery_date} />
+                    <BurndownChart roles={roles} total={total} calculatedDeliveryDate={info.calculatedDeliveryDate.toISOString()} deliveryDate={project.delivery_date} />
                   )}
                 </div>
               );
