@@ -9,27 +9,32 @@ interface TeamSectionProps {
 }
 
 export function TeamSection({ scopeId, team, onTeamChange }: TeamSectionProps) {
-  const [newMember, setNewMember] = useState({ name: '', role: ROLES[0].value, fte: 1 });
-  const [savingMember, setSavingMember] = useState(false);
+  const [newMember, setNewMember] = useState<{ name: string; role: string; fte: number }>({ name: '', role: ROLES[0].value, fte: 1 });
+  const [savingMember, setSavingMember] = useState<string | null>(null);
 
   const handleAddMember = async () => {
     if (!newMember.name.trim()) return;
-    setSavingMember(true);
+    setSavingMember(null);
     const supabase = createClient();
     const { error, data } = await supabase.from('team_members').insert([
       { ...newMember, scope_id: scopeId }
     ]).select();
-    setSavingMember(false);
+    setSavingMember(null);
     if (!error && data && data[0]) {
       onTeamChange([...team, data[0]]);
       setNewMember({ name: '', role: ROLES[0].value, fte: 1 });
     }
   };
 
-  const handleEditMember = async (memberId: string, field: string, value: string | number) => {
-    onTeamChange(team.map(m => m.id === memberId ? { ...m, [field]: value } : m));
+  const handleEditMember = async (memberId: string, field: keyof TeamMember, value: string | number) => {
+    setSavingMember(null);
     const supabase = createClient();
-    await supabase.from('team_members').update({ [field]: value }).eq('id', memberId);
+    const { error } = await supabase.from('team_members').update({ [field]: value }).eq('id', memberId);
+    setSavingMember(null);
+    if (!error) {
+      const updated = team.map(m => m.id === memberId ? { ...m, [field]: value } : m);
+      onTeamChange(updated);
+    }
   };
 
   const handleDeleteMember = async (memberId: string) => {
@@ -52,7 +57,7 @@ export function TeamSection({ scopeId, team, onTeamChange }: TeamSectionProps) {
                 placeholder="Jana Nováková"
                 value={newMember.name}
                 onChange={e => setNewMember(m => ({ ...m, name: e.target.value }))}
-                disabled={savingMember}
+                disabled={!!savingMember}
                 required
               />
             </div>
@@ -62,7 +67,7 @@ export function TeamSection({ scopeId, team, onTeamChange }: TeamSectionProps) {
                 className="border rounded px-3 py-2 min-w-[140px] focus:outline-blue-400"
                 value={newMember.role}
                 onChange={e => setNewMember(m => ({ ...m, role: e.target.value }))}
-                disabled={savingMember}
+                disabled={!!savingMember}
               >
                 {ROLES.map(role => (
                   <option key={role.value} value={role.value}>{role.label}</option>
@@ -79,14 +84,14 @@ export function TeamSection({ scopeId, team, onTeamChange }: TeamSectionProps) {
                 step={0.01}
                 value={newMember.fte}
                 onChange={e => setNewMember(m => ({ ...m, fte: Number(e.target.value) }))}
-                disabled={savingMember}
+                disabled={!!savingMember}
                 required
               />
             </div>
             <button
               className="bg-blue-600 text-white px-5 py-2 rounded font-semibold shadow hover:bg-blue-700 transition disabled:opacity-60"
               type="submit"
-              disabled={savingMember || !newMember.name.trim()}
+              disabled={!!savingMember || !newMember.name.trim()}
             >
               Přidat člena
             </button>
