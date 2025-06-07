@@ -1,0 +1,51 @@
+export interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  fte: number;
+}
+
+export interface Project {
+  id: string;
+  name: string;
+  priority: number;
+  fe_mandays: number;
+  be_mandays: number;
+  qa_mandays: number;
+  pm_mandays: number;
+  dpl_mandays: number;
+  fe_done: number;
+  be_done: number;
+  qa_done: number;
+  pm_done: number;
+  dpl_done: number;
+  delivery_date: string;
+  created_at: string;
+}
+
+export interface ProjectProgress {
+  id?: string;
+  project_id: string;
+  date: string;
+  fe_done?: number;
+  be_done?: number;
+  qa_done?: number;
+  pm_done?: number;
+  dpl_done?: number;
+}
+
+export interface ProjectDeliveryInfo {
+  calculatedDeliveryDate: Date;
+  deliveryDate: Date | null;
+  totalWorkdays: number;
+  diffWorkdays: number | null;
+  onTime: boolean | null;
+}
+
+export const ROLES = [
+  { value: 'FE', label: 'FE' },
+  { value: 'QA', label: 'QA' },
+  { value: 'BE', label: 'BE' },
+  { value: 'PM', label: 'PM' },
+  { value: 'DPL', label: 'DPL' },
+] as const; 
