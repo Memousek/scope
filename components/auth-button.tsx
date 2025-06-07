@@ -37,7 +37,7 @@ export function AuthButton() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem disabled>
-              <span className="text-sm text-gray-500">{user.email}</span>
+              <span className="text-sm">{user.email}</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>

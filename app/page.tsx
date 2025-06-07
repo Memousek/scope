@@ -8,8 +8,6 @@ import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { ScopeList, ScopeListItem } from "@/app/components/scope/ScopeList";
 
-type ScopeListItem = { id: string; name: string; owner_id: string; type: 'owned' | 'shared' };
-
 export default function Home() {
   const [user, setUser] = useState<{ email: string } | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
@@ -51,7 +49,7 @@ export default function Home() {
     if (userId && user) {
       fetchScopes();
     }
-  }, [userId, user]);
+  }, [userId, user, fetchScopes]);
 
   const handleDeleteScope = async (scopeId: string) => {
     setError(null);
