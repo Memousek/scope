@@ -15,7 +15,7 @@ import { useCallback } from 'react';
 import { FiShare2, FiCopy } from 'react-icons/fi';
 import { useTranslation } from '@/lib/translation';
 import { v4 as uuidv4 } from 'uuid';
-import BurndownChart, { BurndownChartRoleData } from '@/components/BurndownChart';
+import BurndownChart from '@/components/BurndownChart';
 
 // Statické role, později načítat ze Supabase
 const ROLES = [
@@ -923,7 +923,7 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
                           nextDay.setDate(nextDay.getDate() + 1);
                           days.push(nextDay);
                         }
-                        // Barvy pro role
+                        // V sekci s grafem (před <BurndownChart ...>)
                         const roleColors: Record<string, string> = {
                           FE: '#2563eb',
                           BE: '#059669',
@@ -931,27 +931,20 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
                           PM: '#a21caf',
                           DPL: '#e11d48',
                         };
-                        // Vygeneruj data pro každou roli
-                        const roles: BurndownChartRoleData[] = projectRoles
+                        const roles = days.length < 2 ? [] : projectRoles
                           .filter(role => Number(project[role.mandays as keyof Project]) > 0)
                           .map(role => {
                             const percentDone = Number(project[role.done as keyof Project]) || 0;
-                            // index posledního dne s reálným datem (plánovaný termín)
-                            const plannedEnd = new Date(project.delivery_date);
-                            const plannedEndIdx = days.findIndex(d => d.getTime() === plannedEnd.getTime());
                             return {
                               role: role.label,
                               color: roleColors[role.label] || '#888',
                               data: days.map((date, idx) => ({
                                 date: `${date.getDate()}.${date.getMonth() + 1}.`,
-                                percentDone: idx === 0
-                                  ? 0
-                                  : (plannedEndIdx !== -1 && idx > plannedEndIdx ? percentDone : percentDone),
+                                percentDone: idx === 0 ? 0 : percentDone,
                               })),
                             };
                           });
-                        // těsně před <BurndownChart ...>
-                        const total: { date: string; percentDone: number }[] = days.map((date, idx) => {
+                        const total = days.length < 2 ? [] : days.map((date, idx) => {
                           const sum = roles.reduce((acc, role) => acc + (role.data[idx]?.percentDone ?? 0), 0);
                           const avg = roles.length > 0 ? sum / roles.length : 0;
                           return {
@@ -1010,7 +1003,7 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
                 nextDay.setDate(nextDay.getDate() + 1);
                 days.push(nextDay);
               }
-              // Barvy pro role
+              // V sekci s grafem (před <BurndownChart ...>)
               const roleColors: Record<string, string> = {
                 FE: '#2563eb',
                 BE: '#059669',
@@ -1018,27 +1011,20 @@ export default function ScopeBurndownPage({ params }: { params: Promise<{ id: st
                 PM: '#a21caf',
                 DPL: '#e11d48',
               };
-              // Vygeneruj data pro každou roli
-              const roles: BurndownChartRoleData[] = projectRoles
+              const roles = days.length < 2 ? [] : projectRoles
                 .filter(role => Number(project[role.mandays as keyof Project]) > 0)
                 .map(role => {
                   const percentDone = Number(project[role.done as keyof Project]) || 0;
-                  // index posledního dne s reálným datem (plánovaný termín)
-                  const plannedEnd = new Date(project.delivery_date);
-                  const plannedEndIdx = days.findIndex(d => d.getTime() === plannedEnd.getTime());
                   return {
                     role: role.label,
                     color: roleColors[role.label] || '#888',
                     data: days.map((date, idx) => ({
                       date: `${date.getDate()}.${date.getMonth() + 1}.`,
-                      percentDone: idx === 0
-                        ? 0
-                        : (plannedEndIdx !== -1 && idx > plannedEndIdx ? percentDone : percentDone),
+                      percentDone: idx === 0 ? 0 : percentDone,
                     })),
                   };
                 });
-              // těsně před <BurndownChart ...>
-              const total: { date: string; percentDone: number }[] = days.map((date, idx) => {
+              const total = days.length < 2 ? [] : days.map((date, idx) => {
                 const sum = roles.reduce((acc, role) => acc + (role.data[idx]?.percentDone ?? 0), 0);
                 const avg = roles.length > 0 ? sum / roles.length : 0;
                 return {
