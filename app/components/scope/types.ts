@@ -21,7 +21,7 @@ export interface Project {
   dpl_done: number;
   delivery_date: string | null;
   created_at: string;
-  slip?: number;
+  slip?: number | null;
 }
 
 export interface ProjectProgress {
@@ -37,7 +37,7 @@ export interface ProjectProgress {
 
 export interface ProjectDeliveryInfo {
   calculatedDeliveryDate: Date;
-  slip: number;
+  slip: number | null;
   diffWorkdays: number | null;
   deliveryDate: Date | null;
 }

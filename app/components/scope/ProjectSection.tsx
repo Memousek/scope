@@ -134,10 +134,9 @@ export function ProjectSection({ scopeId, projects, team, onProjectsChange, hasF
     }
     return {
       calculatedDeliveryDate,
-      deliveryDate,
-      totalWorkdays,
+      slip: diffWorkdays,
       diffWorkdays,
-      onTime: diffWorkdays === null ? null : diffWorkdays >= 0
+      deliveryDate,
     };
   }
 
