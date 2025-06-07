@@ -14,6 +14,7 @@ interface Editor {
   id: string;
   email: string;
   user_id: string | null;
+  invite_token?: string;
   accepted_at?: string;
   invited_at?: string;
 }
