@@ -16,18 +16,7 @@ interface ProjectSectionProps {
   hasDPL: boolean;
 }
 
-export const ProjectSection: React.FC<ProjectSectionProps> = ({
-  scopeId,
-  projects,
-  team,
-  onProjectsChange,
-  hasFE,
-  hasBE,
-  hasQA,
-  hasPM,
-  hasDPL,
-}) => {
-  const [projectsLoading, setProjectsLoading] = useState(false);
+export function ProjectSection({ scopeId, projects, team, onProjectsChange, hasFE, hasBE, hasQA, hasPM, hasDPL }: ProjectSectionProps) {
   const [newProject, setNewProject] = useState({
     name: '',
     priority: 1,
@@ -331,9 +320,7 @@ export const ProjectSection: React.FC<ProjectSectionProps> = ({
                 </tr>
               </thead>
               <tbody>
-                {projectsLoading ? (
-                  <tr><td colSpan={15} className="text-gray-400 text-center py-4">Načítám projekty…</td></tr>
-                ) : projects.length === 0 ? (
+                {projects.length === 0 ? (
                   <tr><td colSpan={15} className="text-gray-400 text-center py-4">Žádné projekty</td></tr>
                 ) : (
                   projects.map(project => {
@@ -397,4 +384,4 @@ export const ProjectSection: React.FC<ProjectSectionProps> = ({
       )}
     </>
   );
-}; 
+} 

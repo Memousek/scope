@@ -8,48 +8,48 @@ export interface BurndownChartRoleData {
 }
 
 interface BurndownChartProps {
-  roles: BurndownChartRoleData[];
-  total: { date: string; percentDone: number }[];
-  slip?: number | null;
-  calculatedDeliveryDate: string; // ve formátu YYYY-MM-DD nebo Date
-  deliveryDate: string; // nový prop pro termín dodání
+  roles: { value: string; label: string }[];
+  totalData: { date: string; [key: string]: number }[];
+  slip: number;
+  calculatedDeliveryDate: Date;
+  deliveryDate: Date | null;
 }
 
-export const BurndownChart: React.FC<BurndownChartProps> = ({ roles, total, slip, calculatedDeliveryDate, deliveryDate }) => {
+export const BurndownChart: React.FC<BurndownChartProps> = ({ roles, totalData, slip, calculatedDeliveryDate, deliveryDate }) => {
   // Najdi index, kde je datum == deliveryDate
   let deliveryIdx = -1;
   if (deliveryDate) {
     const d = new Date(deliveryDate);
     const label = `${d.getDate()}.${d.getMonth() + 1}.`;
-    deliveryIdx = total.findIndex(t => t.date === label);
+    deliveryIdx = totalData.findIndex(t => t.date === label);
   }
   // Vygeneruj ideální průběh pouze do termínu dodání
-  const idealData = total.map((d, idx) => {
+  const idealData = totalData.map((d, idx) => {
     if (deliveryIdx !== -1 && idx > deliveryIdx) return { date: d.date, ideal: null };
     return {
       date: d.date,
-      ideal: Math.round((idx / (deliveryIdx !== -1 ? deliveryIdx : total.length - 1)) * 100),
+      ideal: Math.round((idx / (deliveryIdx !== -1 ? deliveryIdx : totalData.length - 1)) * 100),
     };
   });
   // Pro červenou čáru po termínu dodání
   const afterDeliveryLine: { date: string; value: number }[] = [];
   if (deliveryIdx !== -1) {
-    const endIdx = total.length - 1;
+    const endIdx = totalData.length - 1;
     const lastIdeal = idealData[deliveryIdx]?.ideal ?? 100;
     for (let i = deliveryIdx; i <= endIdx; i++) {
-      afterDeliveryLine.push({ date: total[i].date, value: typeof lastIdeal === 'number' ? lastIdeal : 100 });
+      afterDeliveryLine.push({ date: totalData[i].date, value: typeof lastIdeal === 'number' ? lastIdeal : 100 });
     }
   }
   // Sloučím data pro graf podle data
-  const chartData: Record<string, string | number | undefined>[] = total.map((d, idx) => {
+  const chartData: Record<string, string | number | undefined>[] = totalData.map((d, idx) => {
     const entry: Record<string, string | number | undefined> = {
       date: d.date,
       total: d.percentDone,
       ideal: idealData[idx].ideal ?? 0,
     };
     roles.forEach(role => {
-      if (!role.role) return;
-      (entry as any)[role.role as string] = role.data[idx]?.percentDone ?? 0;
+      if (!role.value) return;
+      (entry as any)[role.value as string] = d[role.value as string] ?? 0;
     });
     // Přidej červenou čáru po termínu dodání
     if (afterDeliveryLine.length && idx >= deliveryIdx) {
@@ -171,14 +171,14 @@ export const BurndownChart: React.FC<BurndownChartProps> = ({ roles, total, slip
           />
           {roles.map(role => (
             <Line
-              key={role.role}
+              key={role.value}
               type="monotone"
-              dataKey={role.role}
+              dataKey={role.value}
               stroke={role.color}
-              name={`${role.role} % hotovo`}
+              name={`${role.label} % hotovo`}
               dot
-              hide={!!hidden[role.role]}
-              strokeWidth={highlighted === role.role ? 4 : 2}
+              hide={!!hidden[role.value as string]}
+              strokeWidth={highlighted === role.value ? 4 : 2}
               isAnimationActive={false}
             />
           ))}

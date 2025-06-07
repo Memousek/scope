@@ -8,7 +8,7 @@
  * - Příprava na napojení na Supabase
  */
 
-import { use, useEffect, useState, Fragment, useRef } from 'react';
+import { use, useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useCallback } from 'react';
@@ -83,7 +83,7 @@ export default function ScopePage({ params }: { params: { id: string } }) {
   const { loading, user, userId } = useAuth();
   const router = useRouter();
   const { id } = use(params);
-  const [scope, setScope] = useState<any>(null);
+  const [scope, setScope] = useState<{ id: string; name: string; description?: string } | null>(null);
   const [fetching, setFetching] = useState(false);
   const [description, setDescription] = useState('');
   const [editingDescription, setEditingDescription] = useState(false);

@@ -8,8 +8,7 @@ interface TeamSectionProps {
   onTeamChange: (team: TeamMember[]) => void;
 }
 
-export const TeamSection: React.FC<TeamSectionProps> = ({ scopeId, team, onTeamChange }) => {
-  const [teamLoading, setTeamLoading] = useState(false);
+export function TeamSection({ scopeId, team, onTeamChange }: TeamSectionProps) {
   const [newMember, setNewMember] = useState({ name: '', role: ROLES[0].value, fte: 1 });
   const [savingMember, setSavingMember] = useState(false);
 
@@ -106,9 +105,7 @@ export const TeamSection: React.FC<TeamSectionProps> = ({ scopeId, team, onTeamC
               <div className="w-32">Úvazek v FTE</div>
               <div className="w-20">Akce</div>
             </div>
-            {teamLoading ? (
-              <div className="text-gray-400">Načítám členy…</div>
-            ) : team.length === 0 ? (
+            {team.length === 0 ? (
               <div className="text-gray-400">Žádní členové</div>
             ) : (
               team.map(member => (
@@ -144,4 +141,4 @@ export const TeamSection: React.FC<TeamSectionProps> = ({ scopeId, team, onTeamC
       </section>
     </>
   );
-}; 
+} 

@@ -3,11 +3,10 @@ import BurndownChart from '@/components/BurndownChart';
 
 interface ProjectBurndownProps {
   project: Project;
-  team: TeamMember[];
   deliveryInfo: ProjectDeliveryInfo;
 }
 
-export const ProjectBurndown: React.FC<ProjectBurndownProps> = ({ project, team, deliveryInfo }) => {
+export function ProjectBurndown({ project, deliveryInfo }: ProjectBurndownProps) {
   // Připrav data pro graf pro každou roli a celkově
   const start = new Date(project.created_at);
   const end = deliveryInfo.calculatedDeliveryDate;
@@ -76,4 +75,4 @@ export const ProjectBurndown: React.FC<ProjectBurndownProps> = ({ project, team,
       )}
     </div>
   );
-}; 
+} 
