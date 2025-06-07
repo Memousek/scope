@@ -325,8 +325,6 @@ export function ProjectSection({ scopeId, projects, team, onProjectsChange, hasF
                 ) : (
                   projects.map(project => {
                     const info = getProjectDeliveryInfo(project, team);
-                    // Přidej slip do projektu pro ProjectBurndown
-                    const projectWithSlip = { ...project, slip: info.diffWorkdays };
                     return (
                       <tr key={project.id} className="hover:bg-blue-50 transition">
                         <td className="px-3 py-2 align-middle font-medium text-gray-900 whitespace-nowrap">{project.name}</td>
@@ -363,12 +361,10 @@ export function ProjectSection({ scopeId, projects, team, onProjectsChange, hasF
         <h3 className="text-lg font-semibold mb-2">Burndown & termíny</h3>
         {projects.map(project => {
           const info = getProjectDeliveryInfo(project, team);
-          // Přidej slip do projektu pro ProjectBurndown
-          const projectWithSlip = { ...project, slip: info.diffWorkdays };
           return (
             <ProjectBurndown
               key={project.id}
-              project={projectWithSlip}
+              project={{ ...project, slip: info.diffWorkdays }}
               deliveryInfo={info}
             />
           );

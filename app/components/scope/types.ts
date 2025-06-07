@@ -21,6 +21,7 @@ export interface Project {
   dpl_done: number;
   delivery_date: string | null;
   created_at: string;
+  slip?: number;
 }
 
 export interface ProjectProgress {
