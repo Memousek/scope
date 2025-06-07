@@ -86,7 +86,7 @@ export function ProjectBurndown({ project, deliveryInfo }: ProjectBurndownProps)
         <BurndownChart
           roles={roles}
           totalData={totalData}
-          slip={slip}
+          slip={typeof slip === 'number' ? slip : 0}
           calculatedDeliveryDate={deliveryInfo.calculatedDeliveryDate}
           deliveryDate={project.delivery_date ? new Date(project.delivery_date) : deliveryInfo.calculatedDeliveryDate}
         />
