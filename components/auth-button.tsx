@@ -27,12 +27,11 @@ export function AuthButton() {
   if (user) {
     return (
       <div className="flex items-center gap-4">
-        <Link href="/scopes" className=" border-gray-200 pl-4 border-gray-200 pr-4 rounded-md  transition-colors cursor-pointer py-1 px-2">Seznam scopů</Link>  
-        <Link href="/teams" className="border-l border-gray-200 pl-4 border-gray-200 pr-4 rounded-md  transition-colors cursor-pointer py-1 px-2">Seznam týmů</Link>  
+        <Link href="/scopes" className="border-gray-200 pl-4 border-gray-200 pr-4 rounded-md  transition-colors cursor-pointer py-1 px-2">Seznam scopů</Link>  
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="border-l border-gray-200 pl-4 border-gray-200 pr-4 rounded-md transition-colors cursor-pointer py-1 px-2 flex items-center gap-2">
+            <button className="border-gray-200 pl-4 border-gray-200 pr-4 rounded-md transition-colors cursor-pointer py-1 px-2 flex items-center gap-2">
               <UserIcon className="w-4 h-4" />
             </button>
           </DropdownMenuTrigger>
