@@ -29,7 +29,7 @@ export function AuthButton() {
   return (
     <div className="flex gap-2">
       <Button asChild size="sm" variant={"outline"}>
-        <Link href="/auth/login">Sign in</Link>
+        <Link href="/auth/login">Přihlásit se</Link>
       </Button>
     </div>
   );

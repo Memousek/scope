@@ -82,9 +82,9 @@ export function LoginForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">Login</CardTitle>
+          <CardTitle className="text-2xl">Přihlášení</CardTitle>
           <CardDescription>
-            Enter your email below to login to your account
+            Vložte svůj email a heslo pro přihlášení
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -97,7 +97,7 @@ export function LoginForm({
               aria-label="Login with Google"
             >
               <GoogleIcon />
-              {isLoading ? "Logging in..." : "Continue with Google"}
+              {isLoading ? "Přihlašuji se..." : "Přihlásit se přes Google"}
             </Button>
             <div className="relative my-2">
               <div className="absolute inset-0 flex items-center">
@@ -110,11 +110,11 @@ export function LoginForm({
             <form onSubmit={handleLogin}>
               <div className="flex flex-col gap-6">
                 <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">Emailová adresa</Label>
                   <Input
                     id="email"
                     type="email"
-                    placeholder="m@example.com"
+                    placeholder="jiri.babica@example.com"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -122,17 +122,18 @@ export function LoginForm({
                 </div>
                 <div className="grid gap-2">
                   <div className="flex items-center">
-                    <Label htmlFor="password">Password</Label>
+                    <Label htmlFor="password">Heslo</Label>
                     <Link
                       href="/auth/forgot-password"
                       className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
                     >
-                      Forgot your password?
+                      Zapomněli jste heslo?
                     </Link>
                   </div>
                   <Input
                     id="password"
                     type="password"
+                    placeholder="********"
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -140,16 +141,16 @@ export function LoginForm({
                 </div>
                 {error && <p className="text-sm text-red-500">{error}</p>}
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Logging in..." : "Login"}
+                  {isLoading ? "Přihlašuji se..." : "Přihlásit se"}
                 </Button>
               </div>
               <div className="mt-4 text-center text-sm">
-                Don&apos;t have an account?{" "}
+                Nemáte účet?{" "}
                 <Link
                   href="/auth/sign-up"
                   className="underline underline-offset-4"
                 >
-                  Sign up
+                  Registrovat se
                 </Link>
               </div>
             </form>
