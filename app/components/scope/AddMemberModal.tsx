@@ -1,15 +1,21 @@
 import { useState } from 'react';
 import { ROLES } from './types';
 
+type Role = typeof ROLES[number]['value'];
+
 interface AddMemberModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddMember: (member: { name: string; role: string; fte: number }) => Promise<void>;
+  onAddMember: (member: { name: string; role: Role; fte: number }) => Promise<void>;
   savingMember: boolean;
 }
 
 export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, onClose, onAddMember, savingMember }) => {
-  const [newMember, setNewMember] = useState({ name: '', role: ROLES[0].value, fte: 1 });
+  const [newMember, setNewMember] = useState<{ name: string; role: Role; fte: number }>({ 
+    name: '', 
+    role: ROLES[0].value, 
+    fte: 1 
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,7 +49,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, onClose,
             <select
               className="border rounded px-3 py-2 min-w-[140px] focus:outline-blue-400"
               value={newMember.role}
-              onChange={e => setNewMember(m => ({ ...m, role: e.target.value }))}
+              onChange={e => setNewMember(m => ({ ...m, role: e.target.value as Role }))}
               disabled={savingMember}
             >
               {ROLES.map(role => (
