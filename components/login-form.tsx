@@ -58,7 +58,7 @@ export function LoginForm({
       // Update this route to redirect to an authenticated route. The user already has an active session.
       router.push("/protected");
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred");
+      setError(error instanceof Error ? error.message : "Nastala chyba při přihlášení");
     } finally {
       setIsLoading(false);
     }
@@ -73,7 +73,7 @@ export function LoginForm({
       if (error) throw error;
       // Redirect will happen automatically
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred");
+      setError(error instanceof Error ? error.message : "Nastala chyba při přihlášení přes Google");
       setIsLoading(false);
     }
   };
@@ -94,10 +94,11 @@ export function LoginForm({
               className="w-full flex items-center justify-center gap-2 border border-gray-300 bg-white text-gray-800 hover:bg-gray-50 mb-2"
               onClick={handleGoogleLogin}
               disabled={isLoading}
-              aria-label="Login with Google"
+              aria-label="Přihlásit se přes Google"
             >
               <GoogleIcon />
               {isLoading ? "Přihlašuji se..." : "Přihlásit se přes Google"}
+
             </Button>
             <div className="relative my-2">
               <div className="absolute inset-0 flex items-center">
