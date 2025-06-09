@@ -124,10 +124,6 @@ export default function ScopeViewPage() {
       }
       plannedDays = planned - 1;
     }
-    // Pomocná funkce pro porovnání pouze podle data (YYYY-MM-DD)
-    function formatDateOnly(date: Date) {
-      return date.toISOString().slice(0, 10);
-    }
     for (let day = 0; day <= Math.max(totalDays, plannedDays); ) {
       if (currentDate.getDay() === 0 || currentDate.getDay() === 6) {
         currentDate.setDate(currentDate.getDate() + 1);

@@ -69,7 +69,7 @@ export function ProjectBurndown({ project, deliveryInfo }: ProjectBurndownProps)
   }
 
   // Generuj data pro graf podle historie progressů
-  const totalData = days.map((date, idx) => {
+  const totalData = days.map(date => {
     const entry: { date: string; percentDone: number; [key: string]: number | string } = {
       date: `${date.getDate()}.${date.getMonth() + 1}.`,
       percentDone: 0,
