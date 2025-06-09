@@ -141,7 +141,6 @@ export function ProjectBurndown({ project, deliveryInfo, priorityStartDate, prio
           calculatedDeliveryDate={deliveryInfo.calculatedDeliveryDate}
           deliveryDate={project.delivery_date ? new Date(project.delivery_date) : deliveryInfo.calculatedDeliveryDate}
           priorityStartDate={priorityStartDate}
-          priorityEndDate={priorityEndDate}
           createdAt={new Date(project.created_at)}
           blockingProjectName={blockingProjectName}
           showBlockingBg={showBlockingBg}
