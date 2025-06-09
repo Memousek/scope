@@ -92,7 +92,6 @@ export default function ScopeViewPage() {
   // Burndown data (stejné jako v hlavní stránce)
   function getBurndownDataWithDates(project: Project) {
     // DEBUG: výrazný log na začátku funkce
-    console.log('BURNDOWN FUNKCE VOLÁNA', project);
     const feRem = Number(project.fe_mandays) * (1 - (Number(project.fe_done) || 0) / 100);
     const beRem = Number(project.be_mandays) * (1 - (Number(project.be_done) || 0) / 100);
     const qaRem = Number(project.qa_mandays) * (1 - (Number(project.qa_done) || 0) / 100);
@@ -169,8 +168,6 @@ export default function ScopeViewPage() {
         const last = relevant.length > 0 ? relevant.reduce((a, b) => new Date(a.date) > new Date(b.date) ? a : b) : null;
         const value = last ? Number(last[doneKey]) : 0;
         entry[role] = value;
-        // DEBUG výpis
-        console.log(`[BURNDOWN DEBUG] Den: ${entry.date}, Role: ${role}, Hodnota: ${value}, Relevantních záznamů: ${relevant.length}, Last:`, last);
       });
       data.push(entry);
       currentDate.setDate(currentDate.getDate() + 1);
@@ -194,9 +191,6 @@ export default function ScopeViewPage() {
 
   if (loading) return <div className="text-center mt-16">Načítám…</div>;
   if (!scope) return <div className="text-center mt-16 text-red-600">Scope nenalezen.</div>;
-
-  // DEBUG: výrazný log v renderu stránky
-  console.log('RENDERUJE SE view/page.tsx, projekty:', projects);
 
   return (
     <div className="max-w-7xl mx-auto p-6 rounded-lg shadow mt-8">

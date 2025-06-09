@@ -8,7 +8,7 @@ import Link from "next/link";
 import { AuthButton } from "./auth-button";
 import { useTranslation } from "../lib/translation";
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, User, Settings as SettingsIcon } from "lucide-react";
 
 export function Header() {
   const { t } = useTranslation();
@@ -46,7 +46,12 @@ export function Header() {
                 {t('appName')}
               </Link>
               <div className="flex flex-col gap-4 flex-1">
-                {/* You can add more nav links here if needed */}
+                <Link href="/profile" className="flex items-center gap-2 text-gray-700 hover:text-blue-600 transition" onClick={() => setMobileOpen(false)}>
+                  <User className="w-5 h-5" /> Profil
+                </Link>
+                <Link href="/settings" className="flex items-center gap-2 text-gray-700 hover:text-blue-600 transition" onClick={() => setMobileOpen(false)}>
+                  <SettingsIcon className="w-5 h-5" /> Nastavení
+                </Link>
                 <AuthButton />
               </div>
             </div>
