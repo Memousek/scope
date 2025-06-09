@@ -37,6 +37,12 @@ export default function ScopePage({ params }: { params: Promise<{ id: string }> 
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
 
+  // --- Název ---
+  const [editingName, setEditingName] = useState(false);
+  const [name, setName] = useState('');
+  const [savingName, setSavingName] = useState(false);
+  const [errorName, setErrorName] = useState<string | null>(null);
+
   // Zjistím, které role jsou v týmu
   const teamRoles = Array.from(new Set(team.map(m => m.role)));
   const hasFE = teamRoles.includes('FE');
@@ -84,6 +90,7 @@ export default function ScopePage({ params }: { params: Promise<{ id: string }> 
           if (!error && data) {
             setScope(data as { id: string; name: string; description?: string });
             setDescription(data.description || '');
+            setName(data.name || '');
           }
           setFetching(false);
         });
@@ -149,6 +156,23 @@ export default function ScopePage({ params }: { params: Promise<{ id: string }> 
     }
   };
 
+  // Funkce pro uložení názvu
+  const handleSaveName = async () => {
+    if (!scope) return;
+    setSavingName(true);
+    setErrorName(null);
+    const supabase = createClient();
+    const { error } = await supabase.from('scopes').update({ name }).eq('id', scope.id);
+    setSavingName(false);
+    if (!error) {
+      setScope(s => s ? { ...s, name } : s);
+      setEditingName(false);
+    } else {
+      setErrorName(error.message || 'Chyba při ukládání názvu.');
+      console.error('Chyba při ukládání názvu scopu:', error);
+    }
+  };
+
   if (loading || !user || fetching) {
     return <div>{t('loading')}</div>;
   }
@@ -159,7 +183,48 @@ export default function ScopePage({ params }: { params: Promise<{ id: string }> 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold">{scope.name}</h1>
+        <div className="flex items-center gap-3">
+          {editingName ? (
+            <>
+              <input
+                className="text-2xl font-bold border rounded px-2 py-1 mr-2 min-w-[120px]"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                disabled={savingName}
+                maxLength={100}
+                autoFocus
+              />
+              <button
+                onClick={handleSaveName}
+                disabled={savingName || !name.trim()}
+                className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition text-sm"
+              >
+                {savingName ? 'Ukládání...' : 'Uložit'}
+              </button>
+              <button
+                onClick={() => { setEditingName(false); setName(scope.name); setErrorName(null); }}
+                className="bg-gray-400 text-white px-3 py-1 rounded hover:bg-gray-500 transition text-sm"
+              >
+                Zrušit
+              </button>
+              {errorName && (
+                <div className="text-red-600 text-sm mt-2 ml-1">{errorName}</div>
+              )}
+            </>
+          ) : (
+            <>
+              <h1 className="text-2xl font-bold">{scope.name}</h1>
+              {isOwner && (
+                <button
+                  onClick={() => { setEditingName(true); setName(scope.name); }}
+                  className="text-blue-500 hover:text-blue-600 ml-2 text-sm"
+                >
+                  Upravit název
+                </button>
+              )}
+            </>
+          )}
+        </div>
         <div className="flex gap-4">
           <button
             onClick={handleExportTeam}
