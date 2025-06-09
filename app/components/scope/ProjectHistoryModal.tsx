@@ -44,30 +44,26 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ projec
   // Propsání posledních hodnot z historie do projektu
   const syncProjectWithHistory = async () => {
     if (!history.length) return;
-    // Najdi poslední záznam pro každou roli
-    const last: Partial<Project> = {};
+    // Build last as a plain object
+    const last: Record<string, number> = {};
     roles.forEach(role => {
       // Najdi poslední progress s hodnotou % hotovo
       const lastDone = [...history].reverse().find(h => typeof h[role.done as keyof ProjectProgress] === 'number');
-      if (lastDone) {
-        last[role.done as keyof Project] = typeof lastDone[role.done as keyof ProjectProgress] === 'number'
-          ? Number(lastDone[role.done as keyof ProjectProgress])
-          : null;
+      if (lastDone && typeof lastDone[role.done as keyof ProjectProgress] === 'number') {
+        last[role.done] = Number(lastDone[role.done as keyof ProjectProgress]);
       }
       // Najdi poslední progress s hodnotou mandays
       const lastMandays = [...history].reverse().find(h => typeof h[role.mandays as keyof ProjectProgress] === 'number');
-      if (lastMandays) {
-        last[role.mandays as keyof Project] = typeof lastMandays[role.mandays as keyof ProjectProgress] === 'number'
-          ? Number(lastMandays[role.mandays as keyof ProjectProgress])
-          : null;
+      if (lastMandays && typeof lastMandays[role.mandays as keyof ProjectProgress] === 'number') {
+        last[role.mandays] = Number(lastMandays[role.mandays as keyof ProjectProgress]);
       }
     });
     // Aktualizuj projekt v DB
     const supabase = createClient();
-    await supabase.from('projects').update(last).eq('id', project.id);
+    await supabase.from('projects').update(last as Partial<Project>).eq('id', project.id);
     // Zavolej callback pro refresh v hlavní tabulce
     if (onProjectUpdate) {
-      onProjectUpdate({ ...project, ...last });
+      onProjectUpdate({ ...project, ...last } as Project);
     }
   };
 
