@@ -49,13 +49,17 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ projec
     roles.forEach(role => {
       // Najdi poslední progress s hodnotou % hotovo
       const lastDone = [...history].reverse().find(h => typeof h[role.done as keyof ProjectProgress] === 'number');
-      if (lastDone && typeof lastDone[role.done as keyof ProjectProgress] === 'number') {
-        last[role.done as keyof Project] = (lastDone[role.done as keyof ProjectProgress] !== undefined ? Number(lastDone[role.done as keyof ProjectProgress]) : null) as number | null;
+      if (lastDone) {
+        last[role.done as keyof Project] = typeof lastDone[role.done as keyof ProjectProgress] === 'number'
+          ? Number(lastDone[role.done as keyof ProjectProgress])
+          : null;
       }
       // Najdi poslední progress s hodnotou mandays
       const lastMandays = [...history].reverse().find(h => typeof h[role.mandays as keyof ProjectProgress] === 'number');
-      if (lastMandays && typeof lastMandays[role.mandays as keyof ProjectProgress] === 'number') {
-        last[role.mandays as keyof Project] = (lastMandays[role.mandays as keyof ProjectProgress] !== undefined ? Number(lastMandays[role.mandays as keyof ProjectProgress]) : null) as number | null;
+      if (lastMandays) {
+        last[role.mandays as keyof Project] = typeof lastMandays[role.mandays as keyof ProjectProgress] === 'number'
+          ? Number(lastMandays[role.mandays as keyof ProjectProgress])
+          : null;
       }
     });
     // Aktualizuj projekt v DB
