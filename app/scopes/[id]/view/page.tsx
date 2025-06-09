@@ -91,6 +91,8 @@ export default function ScopeViewPage() {
 
   // Burndown data (stejné jako v hlavní stránce)
   function getBurndownDataWithDates(project: Project) {
+    // DEBUG: výrazný log na začátku funkce
+    console.log('BURNDOWN FUNKCE VOLÁNA', project);
     const feRem = Number(project.fe_mandays) * (1 - (Number(project.fe_done) || 0) / 100);
     const beRem = Number(project.be_mandays) * (1 - (Number(project.be_done) || 0) / 100);
     const qaRem = Number(project.qa_mandays) * (1 - (Number(project.qa_done) || 0) / 100);
@@ -108,12 +110,9 @@ export default function ScopeViewPage() {
     const feBeShare = (Number(project.fe_mandays) + Number(project.be_mandays)) / totalMandays;
     const qaShare = Number(project.qa_mandays) / totalMandays;
     const history = progressHistory[project.id] || [];
-    const historyMap: Record<string, ProjectProgress> = {};
-    history.forEach((h: ProjectProgress) => {
-      const d = new Date(h.date);
-      const key = d.toISOString().slice(0, 10);
-      historyMap[key] = h;
-    });
+    // Připrav pole všech progress záznamů, seřazených podle data vzestupně
+    const sortedHistory = [...history].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const currentDate = new Date(today);
     let plannedDays = totalDays;
     if (project.delivery_date) {
       const plannedDate = new Date(project.delivery_date);
@@ -125,14 +124,15 @@ export default function ScopeViewPage() {
       }
       plannedDays = planned - 1;
     }
-    const lastKnown: Record<string, number> = { fe: 0, be: 0, qa: 0, pm: 0, dpl: 0 };
-    const currentDate = new Date(today);
+    // Pomocná funkce pro porovnání pouze podle data (YYYY-MM-DD)
+    function formatDateOnly(date: Date) {
+      return date.toISOString().slice(0, 10);
+    }
     for (let day = 0; day <= Math.max(totalDays, plannedDays); ) {
       if (currentDate.getDay() === 0 || currentDate.getDay() === 6) {
         currentDate.setDate(currentDate.getDate() + 1);
         continue;
       }
-      const key = currentDate.toISOString().slice(0, 10);
       const entry: BurndownChartData = {
         date: `${currentDate.getDate()}.${currentDate.getMonth() + 1}.`,
         ideal: null,
@@ -161,39 +161,21 @@ export default function ScopeViewPage() {
       } else {
         entry.realPlan = null;
       }
-      if (day === 0) {
-        (['fe', 'be', 'qa', 'pm', 'dpl'] as const).forEach(role => {
-          switch (role) {
-            case 'fe': entry.fe = 0; lastKnown.fe = 0; break;
-            case 'be': entry.be = 0; lastKnown.be = 0; break;
-            case 'qa': entry.qa = 0; lastKnown.qa = 0; break;
-            case 'pm': entry.pm = 0; lastKnown.pm = 0; break;
-            case 'dpl': entry.dpl = 0; lastKnown.dpl = 0; break;
-          }
-        });
-      } else if (historyMap[key]) {
-        const progress = historyMap[key];
-        (['fe', 'be', 'qa', 'pm', 'dpl'] as const).forEach(role => {
-          let value = 0;
-          switch (role) {
-            case 'fe': value = progress.fe_done ?? 0; entry.fe = value; lastKnown.fe = value; break;
-            case 'be': value = progress.be_done ?? 0; entry.be = value; lastKnown.be = value; break;
-            case 'qa': value = progress.qa_done ?? 0; entry.qa = value; lastKnown.qa = value; break;
-            case 'pm': value = progress.pm_done ?? 0; entry.pm = value; lastKnown.pm = value; break;
-            case 'dpl': value = progress.dpl_done ?? 0; entry.dpl = value; lastKnown.dpl = value; break;
-          }
-        });
-      } else {
-        (['fe', 'be', 'qa', 'pm', 'dpl'] as const).forEach(role => {
-          switch (role) {
-            case 'fe': entry.fe = lastKnown.fe; break;
-            case 'be': entry.be = lastKnown.be; break;
-            case 'qa': entry.qa = lastKnown.qa; break;
-            case 'pm': entry.pm = lastKnown.pm; break;
-            case 'dpl': entry.dpl = lastKnown.dpl; break;
-          }
-        });
-      }
+      (['fe', 'be', 'qa', 'pm', 'dpl'] as const).forEach(role => {
+        const doneKey = `${role}_done` as keyof ProjectProgress;
+        // Najdi všechny progress záznamy pro danou roli do konce aktuálního dne (včetně času)
+        const endOfDay = new Date(currentDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        const relevant = sortedHistory.filter(h =>
+          new Date(h.date) <= endOfDay && typeof h[doneKey] === 'number'
+        );
+        // Najdi nejnovější záznam podle času
+        const last = relevant.length > 0 ? relevant.reduce((a, b) => new Date(a.date) > new Date(b.date) ? a : b) : null;
+        const value = last ? Number(last[doneKey]) : 0;
+        entry[role] = value;
+        // DEBUG výpis
+        console.log(`[BURNDOWN DEBUG] Den: ${entry.date}, Role: ${role}, Hodnota: ${value}, Relevantních záznamů: ${relevant.length}, Last:`, last);
+      });
       data.push(entry);
       currentDate.setDate(currentDate.getDate() + 1);
       day++;
@@ -216,6 +198,9 @@ export default function ScopeViewPage() {
 
   if (loading) return <div className="text-center mt-16">Načítám…</div>;
   if (!scope) return <div className="text-center mt-16 text-red-600">Scope nenalezen.</div>;
+
+  // DEBUG: výrazný log v renderu stránky
+  console.log('RENDERUJE SE view/page.tsx, projekty:', projects);
 
   return (
     <div className="max-w-7xl mx-auto p-6 rounded-lg shadow mt-8">

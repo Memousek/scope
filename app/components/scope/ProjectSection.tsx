@@ -18,6 +18,8 @@ interface ProjectSectionProps {
 }
 
 export function ProjectSection({ scopeId, projects, team, onProjectsChange, hasFE, hasBE, hasQA, hasPM, hasDPL }: ProjectSectionProps) {
+  // DEBUG: výrazný log v ProjectSection
+  console.log('RENDERUJE SE ProjectSection.tsx, props:', { scopeId, projects, team, onProjectsChange, hasFE, hasBE, hasQA, hasPM, hasDPL });
   const [savingProject, setSavingProject] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editProject, setEditProject] = useState<Project | null>(null);

@@ -1,6 +1,14 @@
+/**
+ * Komponenta ProjectBurndown
+ * - Načte historii progressů z Supabase pro daný projekt
+ * - Pro každý den a roli najde poslední progress záznam do daného dne (včetně času)
+ * - Vykreslí burndown graf a procenta hotovo podle historických hodnot
+ */
+import { useEffect, useState } from 'react';
 import { Project } from './types';
 import BurndownChart from '@/components/BurndownChart';
-import { ProjectDeliveryInfo } from './types';
+import { ProjectDeliveryInfo, ProjectProgress } from './types';
+import { createClient } from '@/lib/supabase/client';
 
 interface ProjectBurndownProps {
   project: Project;
@@ -8,20 +16,24 @@ interface ProjectBurndownProps {
 }
 
 export function ProjectBurndown({ project, deliveryInfo }: ProjectBurndownProps) {
-  // Připrav data pro graf pro každou roli a celkově
-  const start = new Date(project.created_at);
-  const end = deliveryInfo.calculatedDeliveryDate;
-  const days: Date[] = [];
-  const d = new Date(start);
-  while (d <= end) {
-    days.push(new Date(d));
-    d.setDate(d.getDate() + 1);
-  }
-  if (days.length === 1) {
-    const nextDay = new Date(days[0]);
-    nextDay.setDate(nextDay.getDate() + 1);
-    days.push(nextDay);
-  }
+  const [progressHistory, setProgressHistory] = useState<ProjectProgress[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Načti historii progressů pro tento projekt
+  useEffect(() => {
+    const fetchProgress = async () => {
+      setLoading(true);
+      const supabase = createClient();
+      const { data } = await supabase
+        .from('project_progress')
+        .select('*')
+        .eq('project_id', project.id)
+        .order('date', { ascending: true });
+      setProgressHistory(data || []);
+      setLoading(false);
+    };
+    fetchProgress();
+  }, [project.id]);
 
   // Definice rolí
   const projectRoles = [
@@ -41,7 +53,22 @@ export function ProjectBurndown({ project, deliveryInfo }: ProjectBurndownProps)
       color: role.color,
     }));
 
-  // Data pro graf: pro každý den a každou roli
+  // Připrav dny od začátku do konce projektu
+  const start = new Date(project.created_at);
+  const end = deliveryInfo.calculatedDeliveryDate;
+  const days: Date[] = [];
+  const d = new Date(start);
+  while (d <= end) {
+    days.push(new Date(d));
+    d.setDate(d.getDate() + 1);
+  }
+  if (days.length === 1) {
+    const nextDay = new Date(days[0]);
+    nextDay.setDate(nextDay.getDate() + 1);
+    days.push(nextDay);
+  }
+
+  // Generuj data pro graf podle historie progressů
   const totalData = days.map((date, idx) => {
     const entry: { date: string; percentDone: number; [key: string]: number | string } = {
       date: `${date.getDate()}.${date.getMonth() + 1}.`,
@@ -50,9 +77,16 @@ export function ProjectBurndown({ project, deliveryInfo }: ProjectBurndownProps)
     let sum = 0;
     let count = 0;
     roles.forEach(role => {
-      // První den je vždy 0, pak aktuální % hotovo
-      const percentDone = Number(project[`${role.value}_done` as keyof Project]) || 0;
-      const value = idx === 0 ? 0 : percentDone;
+      const doneKey = `${role.value}_done` as keyof ProjectProgress;
+      // Najdi všechny progress záznamy pro danou roli do konce aktuálního dne (včetně času)
+      const endOfDay = new Date(date);
+      endOfDay.setHours(23, 59, 59, 999);
+      const relevant = progressHistory.filter(h =>
+        new Date(h.date) <= endOfDay && typeof h[doneKey] === 'number'
+      );
+      // Najdi nejnovější záznam podle času
+      const last = relevant.length > 0 ? relevant.reduce((a, b) => new Date(a.date) > new Date(b.date) ? a : b) : null;
+      const value = last ? Number(last[doneKey]) : 0;
       entry[role.value] = value;
       sum += value;
       count++;
@@ -80,7 +114,9 @@ export function ProjectBurndown({ project, deliveryInfo }: ProjectBurndownProps)
         )}
         <span className={slipColor}>{slipText}</span>
       </div>
-      {days.length < 2 ? (
+      {loading ? (
+        <div className="text-gray-500 italic py-8 text-center">Načítám data…</div>
+      ) : days.length < 2 ? (
         <div className="text-gray-500 italic py-8 text-center">Není dostatek dat pro zobrazení grafu</div>
       ) : (
         <BurndownChart
