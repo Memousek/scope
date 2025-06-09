@@ -2,9 +2,10 @@
  * BurndownChart
  * - Zobrazuje burndown graf s možností exportu do PNG
  * - Klikací legenda umožňuje skrývat/zobrazovat jednotlivé čáry
+ * - Zobrazí šedé pozadí pro období čekání na začátek dle priority
  */
 import React, { useRef, useState } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceArea } from 'recharts';
 
 export interface BurndownChartRoleData {
   value: string;
@@ -25,9 +26,29 @@ interface BurndownChartProps {
   slip: number;
   calculatedDeliveryDate: Date;
   deliveryDate: Date;
+  /**
+   * Začátek dle priority (vypočtený start podle priority projektů)
+   */
+  priorityStartDate: Date;
+  /**
+   * Konec dle priority (vypočtený konec podle priority řetězení)
+   */
+  priorityEndDate: Date;
+  /**
+   * Skutečný start projektu (created_at)
+   */
+  createdAt: Date;
+  /**
+   * Název projektu, na který se čeká (blokuje start)
+   */
+  blockingProjectName?: string;
+  /**
+   * Zobrazit šedý background (jen pokud je blokován)
+   */
+  showBlockingBg: boolean;
 }
 
-export default function BurndownChart({ roles, totalData, slip, calculatedDeliveryDate, deliveryDate }: BurndownChartProps) {
+export default function BurndownChart({ roles, totalData, slip, calculatedDeliveryDate, deliveryDate, priorityStartDate, priorityEndDate, createdAt, blockingProjectName, showBlockingBg }: BurndownChartProps) {
   // --- Export ---
   const chartRef = useRef<HTMLDivElement>(null);
   const handleExport = async () => {
@@ -155,6 +176,10 @@ export default function BurndownChart({ roles, totalData, slip, calculatedDelive
     afterDeliveryLine.length > 1 ? { key: 'afterDelivery', label: 'Skluz po termínu', color: '#e11d48', dash: false } : null,
   ].filter(Boolean) as { key: string; label: string; color: string; dash?: boolean }[];
 
+  // Najdi labely pro createdAt a priorityStartDate
+  const createdAtLabel = `${createdAt.getDate()}.${createdAt.getMonth() + 1}.`;
+  const priorityStartLabel = `${priorityStartDate.getDate()}.${priorityStartDate.getMonth() + 1}.`;
+
   return (
     <div>
       <div className="flex items-center gap-4 mb-2">
@@ -196,6 +221,19 @@ export default function BurndownChart({ roles, totalData, slip, calculatedDelive
             <XAxis dataKey="date" minTickGap={0} interval={0} />
             <YAxis domain={[0, 100]} tickFormatter={v => `${v}%`} />
             <Tooltip />
+            {/* Šedé pozadí pro období čekání na začátek dle priority */}
+            {showBlockingBg && createdAtLabel !== priorityStartLabel && (
+              <ReferenceArea
+                x1={createdAtLabel}
+                x2={priorityStartLabel}
+                y1={0}
+                y2={100}
+                fill="#e5e7eb"
+                fillOpacity={0.6}
+                ifOverflow="extendDomain"
+                label={{ value: blockingProjectName ? `Čeká na dokončení: ${blockingProjectName}` : 'Čekání na start', position: 'insideTopLeft', fill: '#888', fontSize: 12 }}
+              />
+            )}
             {/* Čáry podle hiddenLines */}
             {!hiddenLines.includes('total') && (
               <Line

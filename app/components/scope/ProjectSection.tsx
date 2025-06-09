@@ -133,6 +133,54 @@ export function ProjectSection({ scopeId, projects, team, onProjectsChange, hasF
     return days;
   }
 
+  // --- Výpočet začátku a konce dle priority ---
+  // Vrací mapu: projectId -> { priorityStartDate, priorityEndDate, blockingProjectName }
+  function getPriorityStartDatesAndEnds(projects: Project[], team: TeamMember[]): Record<string, { priorityStartDate: Date; priorityEndDate: Date; blockingProjectName?: string }> {
+    // Seřaď projekty podle priority (vzestupně), pak podle created_at
+    const sorted = [...projects].sort((a, b) => {
+      if (a.priority !== b.priority) return a.priority - b.priority;
+      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    });
+    const result: Record<string, { priorityStartDate: Date; priorityEndDate: Date; blockingProjectName?: string }> = {};
+    let currentStart = new Date(); // Začínáme dnes
+    for (let i = 0; i < sorted.length; i++) {
+      const project = sorted[i];
+      // Výpočet délky projektu v pracovních dnech (stejně jako v getProjectDeliveryInfo)
+      const feFte = team.filter(m => m.role === 'FE').reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
+      const beFte = team.filter(m => m.role === 'BE').reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
+      const qaFte = team.filter(m => m.role === 'QA').reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
+      const feRem = Number(project.fe_mandays) * (1 - (Number(project.fe_done) || 0) / 100);
+      const beRem = Number(project.be_mandays) * (1 - (Number(project.be_done) || 0) / 100);
+      const qaRem = Number(project.qa_mandays) * (1 - (Number(project.qa_done) || 0) / 100);
+      const feDays = feRem / feFte;
+      const beDays = beRem / beFte;
+      const qaDays = qaRem / qaFte;
+      const projectWorkdays = Math.ceil(Math.max(feDays, beDays)) + Math.ceil(qaDays);
+      let priorityStartDate: Date;
+      let blockingProjectName: string | undefined = undefined;
+      if (i === 0) {
+        priorityStartDate = new Date(currentStart);
+      } else {
+        const prev = sorted[i - 1];
+        const prevEnd = result[prev.id].priorityEndDate;
+        let nextStart = new Date(prevEnd);
+        nextStart.setDate(nextStart.getDate() + 1);
+        while (nextStart.getDay() === 0 || nextStart.getDay() === 6) {
+          nextStart.setDate(nextStart.getDate() + 1);
+        }
+        priorityStartDate = nextStart;
+        blockingProjectName = prev.name;
+      }
+      // Konec dle priority = start + délka projektu v pracovních dnech
+      const priorityEndDate = addWorkdays(priorityStartDate, projectWorkdays);
+      result[project.id] = { priorityStartDate, priorityEndDate, blockingProjectName };
+    }
+    return result;
+  }
+
+  // Výpočet priority start a end dat pro všechny projekty
+  const priorityDates = getPriorityStartDatesAndEnds(projects, team);
+
   return (
     <>
       <AddProjectModal
@@ -187,6 +235,7 @@ export function ProjectSection({ scopeId, projects, team, onProjectsChange, hasF
                 ) : (
                   projects.map(project => {
                     const info = getProjectDeliveryInfo(project, team);
+                    const { priorityStartDate, priorityEndDate, blockingProjectName } = priorityDates[project.id] || { priorityStartDate: new Date(project.created_at), priorityEndDate: info.calculatedDeliveryDate };
                     return (
                       <tr key={project.id} className="hover:bg-blue-50 transition">
                         <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle font-medium text-gray-900 whitespace-nowrap">{project.name}</td>
@@ -231,11 +280,16 @@ export function ProjectSection({ scopeId, projects, team, onProjectsChange, hasF
         <h3 className="text-lg font-semibold mb-2">Burndown & termíny</h3>
         {projects.map(project => {
           const info = getProjectDeliveryInfo(project, team);
+          const { priorityStartDate, priorityEndDate, blockingProjectName } = priorityDates[project.id] || { priorityStartDate: new Date(project.created_at), priorityEndDate: info.calculatedDeliveryDate };
           return (
             <ProjectBurndown
               key={project.id + '-' + refreshKey}
               project={{ ...project, slip: info.diffWorkdays }}
               deliveryInfo={info}
+              priorityStartDate={priorityStartDate}
+              priorityEndDate={priorityEndDate}
+              blockingProjectName={blockingProjectName}
+              showBlockingBg={!!blockingProjectName}
             />
           );
         })}

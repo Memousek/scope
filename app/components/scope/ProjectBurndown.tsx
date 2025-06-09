@@ -3,6 +3,8 @@
  * - Načte historii progressů z Supabase pro daný projekt
  * - Pro každý den a roli najde poslední progress záznam do daného dne (včetně času)
  * - Vykreslí burndown graf a procenta hotovo podle historických hodnot
+ * - Zohledňuje začátek dle priority (priorityStartDate)
+ * - Zobrazuje blokující projekt v šedé oblasti
  */
 import { useEffect, useState } from 'react';
 import { Project } from './types';
@@ -13,9 +15,22 @@ import { createClient } from '@/lib/supabase/client';
 interface ProjectBurndownProps {
   project: Project;
   deliveryInfo: ProjectDeliveryInfo;
+  /**
+   * Začátek dle priority (vypočtený start podle priority projektů)
+   */
+  priorityStartDate: Date;
+  /**
+   * Konec dle priority (vypočtený konec podle priority řetězení)
+   */
+  priorityEndDate: Date;
+  /**
+   * Název projektu, na který se čeká (blokuje start)
+   */
+  blockingProjectName?: string;
+  showBlockingBg: boolean;
 }
 
-export function ProjectBurndown({ project, deliveryInfo }: ProjectBurndownProps) {
+export function ProjectBurndown({ project, deliveryInfo, priorityStartDate, priorityEndDate, blockingProjectName, showBlockingBg }: ProjectBurndownProps) {
   const [progressHistory, setProgressHistory] = useState<ProjectProgress[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -53,12 +68,12 @@ export function ProjectBurndown({ project, deliveryInfo }: ProjectBurndownProps)
       color: role.color,
     }));
 
-  // Připrav dny od začátku do konce projektu
-  const start = new Date(project.created_at);
-  const end = deliveryInfo.calculatedDeliveryDate;
+  // Začátek grafu
+  const chartStart = showBlockingBg ? priorityStartDate : new Date(project.created_at);
+  const chartEnd = priorityEndDate;
   const days: Date[] = [];
-  const d = new Date(start);
-  while (d <= end) {
+  const d = new Date(chartStart);
+  while (d <= chartEnd) {
     days.push(new Date(d));
     d.setDate(d.getDate() + 1);
   }
@@ -113,11 +128,11 @@ export function ProjectBurndown({ project, deliveryInfo }: ProjectBurndownProps)
           <span>Termín dodání: <b>{new Date(project.delivery_date).toLocaleDateString()}</b></span>
         )}
         <span className={slipColor}>{slipText}</span>
+        <span className="text-gray-600">Začátek dle priority: <b>{priorityStartDate.toLocaleDateString()}</b></span>
+        <span className="text-gray-600">Konec dle priority: <b>{priorityEndDate.toLocaleDateString()}</b></span>
       </div>
       {loading ? (
         <div className="text-gray-500 italic py-8 text-center">Načítám data…</div>
-      ) : days.length < 2 ? (
-        <div className="text-gray-500 italic py-8 text-center">Není dostatek dat pro zobrazení grafu</div>
       ) : (
         <BurndownChart
           roles={roles}
@@ -125,6 +140,11 @@ export function ProjectBurndown({ project, deliveryInfo }: ProjectBurndownProps)
           slip={typeof slip === 'number' ? slip : 0}
           calculatedDeliveryDate={deliveryInfo.calculatedDeliveryDate}
           deliveryDate={project.delivery_date ? new Date(project.delivery_date) : deliveryInfo.calculatedDeliveryDate}
+          priorityStartDate={priorityStartDate}
+          priorityEndDate={priorityEndDate}
+          createdAt={new Date(project.created_at)}
+          blockingProjectName={blockingProjectName}
+          showBlockingBg={showBlockingBg}
         />
       )}
     </div>
