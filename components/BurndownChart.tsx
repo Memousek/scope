@@ -31,10 +31,6 @@ interface BurndownChartProps {
    */
   priorityStartDate: Date;
   /**
-   * Konec dle priority (vypočtený konec podle priority řetězení)
-   */
-  priorityEndDate: Date;
-  /**
    * Skutečný start projektu (created_at)
    */
   createdAt: Date;
@@ -48,7 +44,7 @@ interface BurndownChartProps {
   showBlockingBg: boolean;
 }
 
-export default function BurndownChart({ roles, totalData, slip, calculatedDeliveryDate, deliveryDate, priorityStartDate, priorityEndDate, createdAt, blockingProjectName, showBlockingBg }: BurndownChartProps) {
+export default function BurndownChart({ roles, totalData, slip, calculatedDeliveryDate, deliveryDate, priorityStartDate, createdAt, blockingProjectName, showBlockingBg }: BurndownChartProps) {
   // --- Export ---
   const chartRef = useRef<HTMLDivElement>(null);
   const handleExport = async () => {
