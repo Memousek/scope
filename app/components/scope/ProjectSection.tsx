@@ -163,14 +163,17 @@ export function ProjectSection({ scopeId, projects, team, onProjectsChange, hasF
                 <tr className="text-gray-700 font-semibold">
                   <th className="px-3 py-2 text-left rounded-tl-lg">Název projektu</th>
                   <th className="px-3 py-2 text-right">Priorita</th>
-                  {projectRoles.map(role =>
-                    projects.some(p => Number(p[role.mandays as keyof Project]) > 0) && (
-                      <Fragment key={role.key}>
-                        <th className="px-3 py-2 text-right">Odhad {role.label} (MD)</th>
-                        <th className="px-3 py-2 text-right">% {role.label} hotovo</th>
-                      </Fragment>
-                    )
-                  )}
+                  {/* Vždy všechny role */}
+                  <th className="px-3 py-2 text-right">Odhad FE (MD)</th>
+                  <th className="px-3 py-2 text-right">% FE hotovo</th>
+                  <th className="px-3 py-2 text-right">Odhad BE (MD)</th>
+                  <th className="px-3 py-2 text-right">% BE hotovo</th>
+                  <th className="px-3 py-2 text-right">Odhad QA (MD)</th>
+                  <th className="px-3 py-2 text-right">% QA hotovo</th>
+                  <th className="px-3 py-2 text-right">Odhad PM (MD)</th>
+                  <th className="px-3 py-2 text-right">% PM hotovo</th>
+                  <th className="px-3 py-2 text-right">Odhad DPL (MD)</th>
+                  <th className="px-3 py-2 text-right">% DPL hotovo</th>
                   <th className="px-3 py-2 text-center">Termín dodání</th>
                   <th className="px-3 py-2 text-center">Spočítaný termín</th>
                   <th className="px-3 py-2 text-center">Skluz</th>
@@ -187,14 +190,21 @@ export function ProjectSection({ scopeId, projects, team, onProjectsChange, hasF
                       <tr key={project.id} className="hover:bg-blue-50 transition">
                         <td className="px-3 py-2 align-middle font-medium text-gray-900 whitespace-nowrap">{project.name}</td>
                         <td className="px-3 py-2 align-middle text-right">{project.priority}</td>
-                        {projectRoles.map(role =>
-                          Number(project[role.mandays as keyof Project]) > 0 && (
-                            <Fragment key={role.key}>
-                              <td className="px-3 py-2 align-middle text-right">{Number(project[role.mandays as keyof Project]) || 0}</td>
-                              <td className="px-3 py-2 align-middle text-right">{Number(project[role.done as keyof Project]) || 0} %</td>
-                            </Fragment>
-                          )
-                        )}
+                        {/* FE */}
+                        <td className="px-3 py-2 align-middle text-right">{Number(project.fe_mandays) > 0 ? Number(project.fe_mandays) : '-'}</td>
+                        <td className="px-3 py-2 align-middle text-right">{Number(project.fe_mandays) > 0 ? (Number(project.fe_done) || 0) + ' %' : '-'}</td>
+                        {/* BE */}
+                        <td className="px-3 py-2 align-middle text-right">{Number(project.be_mandays) > 0 ? Number(project.be_mandays) : '-'}</td>
+                        <td className="px-3 py-2 align-middle text-right">{Number(project.be_mandays) > 0 ? (Number(project.be_done) || 0) + ' %' : '-'}</td>
+                        {/* QA */}
+                        <td className="px-3 py-2 align-middle text-right">{Number(project.qa_mandays) > 0 ? Number(project.qa_mandays) : '-'}</td>
+                        <td className="px-3 py-2 align-middle text-right">{Number(project.qa_mandays) > 0 ? (Number(project.qa_done) || 0) + ' %' : '-'}</td>
+                        {/* PM */}
+                        <td className="px-3 py-2 align-middle text-right">{Number(project.pm_mandays) > 0 ? Number(project.pm_mandays) : '-'}</td>
+                        <td className="px-3 py-2 align-middle text-right">{Number(project.pm_mandays) > 0 ? (Number(project.pm_done) || 0) + ' %' : '-'}</td>
+                        {/* DPL */}
+                        <td className="px-3 py-2 align-middle text-right">{Number(project.dpl_mandays) > 0 ? Number(project.dpl_mandays) : '-'}</td>
+                        <td className="px-3 py-2 align-middle text-right">{Number(project.dpl_mandays) > 0 ? (Number(project.dpl_done) || 0) + ' %' : '-'}</td>
                         <td className="px-3 py-2 align-middle text-center">{project.delivery_date ? new Date(project.delivery_date).toLocaleDateString() : ''}</td>
                         <td className="px-3 py-2 align-middle text-center">{info.calculatedDeliveryDate.toLocaleDateString()}</td>
                         <td className={`px-3 py-2 align-middle text-center font-semibold ${info.diffWorkdays === null ? '' : info.diffWorkdays >= 0 ? 'text-green-600' : 'text-red-600'}`}>
