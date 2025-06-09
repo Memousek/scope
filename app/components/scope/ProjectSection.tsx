@@ -24,6 +24,8 @@ export function ProjectSection({ scopeId, projects, team, onProjectsChange, hasF
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editProject, setEditProject] = useState<Project | null>(null);
   const [addModalOpen, setAddModalOpen] = useState(false);
+  // Klíč pro refresh grafu po změně projektu
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const projectRoles = [
     { key: 'fe', label: 'FE', mandays: 'fe_mandays', done: 'fe_done', color: '#2563eb' },
@@ -71,6 +73,7 @@ export function ProjectSection({ scopeId, projects, team, onProjectsChange, hasF
 
   const handleProjectChange = (updatedProject: Project) => {
     onProjectsChange(projects.map(p => p.id === updatedProject.id ? updatedProject : p));
+    setRefreshKey(k => k + 1);
   };
 
   // Funkce pro výpočet termínu a skluzu (pouze pracovní dny)
@@ -218,7 +221,7 @@ export function ProjectSection({ scopeId, projects, team, onProjectsChange, hasF
           const info = getProjectDeliveryInfo(project, team);
           return (
             <ProjectBurndown
-              key={project.id}
+              key={project.id + '-' + refreshKey}
               project={{ ...project, slip: info.diffWorkdays }}
               deliveryInfo={info}
             />
