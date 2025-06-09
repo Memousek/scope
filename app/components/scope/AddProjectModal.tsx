@@ -103,7 +103,7 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({ isOpen, onClos
                 type="number"
                 min={0.01}
                 step={0.01}
-                value={newProject.fe_mandays}
+                value={newProject.fe_mandays ?? ''}
                 onChange={e => setNewProject(p => ({ ...p, fe_mandays: Number(e.target.value) }))}
                 disabled={savingProject}
                 required
@@ -118,7 +118,7 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({ isOpen, onClos
                 type="number"
                 min={0.01}
                 step={0.01}
-                value={newProject.be_mandays}
+                value={newProject.be_mandays ?? ''}
                 onChange={e => setNewProject(p => ({ ...p, be_mandays: Number(e.target.value) }))}
                 disabled={savingProject}
                 required
@@ -133,7 +133,7 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({ isOpen, onClos
                 type="number"
                 min={0.01}
                 step={0.01}
-                value={newProject.qa_mandays}
+                value={newProject.qa_mandays ?? ''}
                 onChange={e => setNewProject(p => ({ ...p, qa_mandays: Number(e.target.value) }))}
                 disabled={savingProject}
                 required
@@ -148,7 +148,7 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({ isOpen, onClos
                 type="number"
                 min={0.01}
                 step={0.01}
-                value={newProject.pm_mandays}
+                value={newProject.pm_mandays ?? ''}
                 onChange={e => setNewProject(p => ({ ...p, pm_mandays: Number(e.target.value) }))}
                 disabled={savingProject}
                 required
@@ -163,7 +163,7 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({ isOpen, onClos
                 type="number"
                 min={0.01}
                 step={0.01}
-                value={newProject.dpl_mandays}
+                value={newProject.dpl_mandays ?? ''}
                 onChange={e => setNewProject(p => ({ ...p, dpl_mandays: Number(e.target.value) }))}
                 disabled={savingProject}
                 required
