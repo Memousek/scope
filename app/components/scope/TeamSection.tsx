@@ -54,34 +54,34 @@ export function TeamSection({ scopeId, team, onTeamChange }: TeamSectionProps) {
       {/* Členové týmu */}
       <section className="mb-6">
         <div className="rounded-lg shadow p-4">
-          <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold mb-4">Členové týmu</h2>
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
+              <h2 className="text-xl font-semibold mb-2 sm:mb-0">Členové týmu</h2>
               <button
-                className="bg-blue-600 text-white px-5 py-2 rounded font-semibold shadow hover:bg-blue-700 transition"
+                className="bg-blue-600 text-white px-5 py-2 rounded font-semibold shadow hover:bg-blue-700 transition w-full sm:w-auto mt-2 sm:mt-0"
                 onClick={() => setAddModalOpen(true)}
               >
                 Přidat člena
               </button>
           </div>
-          <div className="rounded p-3">
-            <div className="flex font-semibold mb-2 text-gray-700">
+          <div className="rounded p-2 sm:p-3">
+            <div className="flex font-semibold mb-2 text-gray-700 text-xs sm:text-base">
               <div className="flex-1">Jméno člena týmu</div>
-              <div className="w-32">Role</div>
-              <div className="w-32">Úvazek v FTE</div>
-              <div className="w-20">Akce</div>
+              <div className="w-24 sm:w-32">Role</div>
+              <div className="w-24 sm:w-32">Úvazek v FTE</div>
+              <div className="w-16 sm:w-20">Akce</div>
             </div>
             {team.length === 0 ? (
               <div className="text-gray-400">Žádní členové</div>
             ) : (
               team.map(member => (
-                <div className="flex items-center mb-2" key={member.id}>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center mb-2 gap-1 sm:gap-0" key={member.id}>
                   <input
-                    className="flex-1 border rounded px-2 py-1 mr-2 focus:outline-blue-400"
+                    className="flex-1 border rounded px-2 py-1 mr-0 sm:mr-2 focus:outline-blue-400"
                     value={member.name}
                     onChange={e => handleEditMember(member.id, 'name', e.target.value)}
                   />
                   <select
-                    className="w-32 border rounded px-2 py-1 mr-2 focus:outline-blue-400"
+                    className="w-24 sm:w-32 border rounded px-2 py-1 mr-0 sm:mr-2 focus:outline-blue-400"
                     value={member.role}
                     onChange={e => handleEditMember(member.id, 'role', e.target.value)}
                   >
@@ -90,14 +90,14 @@ export function TeamSection({ scopeId, team, onTeamChange }: TeamSectionProps) {
                     ))}
                   </select>
                   <input
-                    className="w-32 border rounded px-2 py-1 mr-2 focus:outline-blue-400"
+                    className="w-24 sm:w-32 border rounded px-2 py-1 mr-0 sm:mr-2 focus:outline-blue-400"
                     type="number"
                     min={0.1}
                     step={0.01}
                     value={member.fte}
                     onChange={e => handleEditMember(member.id, 'fte', Number(e.target.value))}
                   />
-                  <button className="text-red-600 font-semibold hover:underline ml-2" onClick={() => handleDeleteMember(member.id)}>Smazat</button>
+                  <button className="text-red-600 font-semibold hover:underline ml-0 sm:ml-2 mt-1 sm:mt-0" onClick={() => handleDeleteMember(member.id)}>Smazat</button>
                 </div>
               ))
             )}
