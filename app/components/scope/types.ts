@@ -9,11 +9,11 @@ export interface Project {
   id: string;
   name: string;
   priority: number;
-  fe_mandays: number;
-  be_mandays: number;
-  qa_mandays: number;
-  pm_mandays: number;
-  dpl_mandays: number;
+  fe_mandays: number | null;
+  be_mandays: number | null;
+  qa_mandays: number | null;
+  pm_mandays: number | null;
+  dpl_mandays: number | null;
   fe_done: number;
   be_done: number;
   qa_done: number;
@@ -33,6 +33,11 @@ export interface ProjectProgress {
   qa_done?: number;
   pm_done?: number;
   dpl_done?: number;
+  fe_mandays?: number;
+  be_mandays?: number;
+  qa_mandays?: number;
+  pm_mandays?: number;
+  dpl_mandays?: number;
 }
 
 export interface ProjectDeliveryInfo {

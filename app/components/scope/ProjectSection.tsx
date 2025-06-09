@@ -4,6 +4,7 @@ import { Project, TeamMember, ProjectDeliveryInfo } from './types';
 import { EditProjectModal } from './EditProjectModal';
 import { ProjectBurndown } from './ProjectBurndown';
 import { AddProjectModal } from './AddProjectModal';
+import { ProjectHistoryModal } from './ProjectHistoryModal';
 
 interface ProjectSectionProps {
   scopeId: string;
@@ -26,6 +27,7 @@ export function ProjectSection({ scopeId, projects, team, onProjectsChange, hasF
   const [addModalOpen, setAddModalOpen] = useState(false);
   // Klíč pro refresh grafu po změně projektu
   const [refreshKey, setRefreshKey] = useState(0);
+  const [historyModalProject, setHistoryModalProject] = useState<Project | null>(null);
 
   const projectRoles = [
     { key: 'fe', label: 'FE', mandays: 'fe_mandays', done: 'fe_done', color: '#2563eb' },
@@ -211,6 +213,7 @@ export function ProjectSection({ scopeId, projects, team, onProjectsChange, hasF
                         </td>
                         <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle text-center whitespace-nowrap">
                           <button className="text-blue-600 font-semibold hover:underline mr-2" onClick={() => handleOpenEditModal(project)}>Upravit</button>
+                          <button className="text-blue-600 font-semibold hover:underline mr-2" onClick={() => setHistoryModalProject(project)}>Historie</button>
                           <button className="text-red-600 font-semibold hover:underline" onClick={() => handleDeleteProject(project.id)}>Smazat</button>
                         </td>
                       </tr>
@@ -246,6 +249,14 @@ export function ProjectSection({ scopeId, projects, team, onProjectsChange, hasF
           project={editProject}
           onProjectChange={handleProjectChange}
           projectRoles={projectRoles}
+        />
+      )}
+
+      {/* Modal pro historii úprav */}
+      {historyModalProject && (
+        <ProjectHistoryModal
+          project={historyModalProject}
+          onClose={() => setHistoryModalProject(null)}
         />
       )}
     </>
