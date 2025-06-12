@@ -8,8 +8,10 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/header";
 import { UserIcon } from "lucide-react";
-import type { User } from "@supabase/supabase-js";
 import Image from "next/image";
+import {ContainerService} from "@/lib/container.service";
+import {UserRepository} from "@/lib/domain/repositories/user.repository";
+import {User} from "@/lib/domain/models/user.model";
 import { useTranslation } from "@/lib/translation";
 
 export default function ProfilePage() {
@@ -19,11 +21,12 @@ export default function ProfilePage() {
   const { t } = useTranslation();
 
   useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user);
-      setLoading(false);
-      if (!data.user) router.push("/auth/login");
+    const userRepository = ContainerService.getInstance().get(UserRepository);
+
+    userRepository.getLoggedInUser().then((user) => {
+        setUser(user);
+        setLoading(false);
+        if (!user) router.push("/auth/login");
     });
   }, [router]);
 
@@ -53,13 +56,13 @@ export default function ProfilePage() {
       <div className="max-w-lg mx-auto p-8 mt-10 rounded-lg shadow bg-white dark:bg-gray-800">
         <h1 className="text-2xl font-bold mb-4 text-center">{t("profile")}</h1>
         <div className="mb-6 flex flex-col gap-2 text-gray-700 dark:text-gray-300">
-          <div><b>{t("avatar")}:</b> {user.user_metadata?.avatar_url ? <Image src={user.user_metadata.avatar_url} alt="Avatar" width={40} height={40} className="w-10 h-10 rounded-full" /> : <UserIcon className="w-10 h-10" />}</div>
+          <div><b>{t("avatar")}:</b> {user.avatarUrl ? <Image src={user.avatarUrl} alt="Avatar" width={40} height={40} className="w-10 h-10 rounded-full" /> : <UserIcon className="w-10 h-10" />}</div>
           <div><b>{t("email")}:</b> {user.email}</div>
-          {user.user_metadata?.full_name && (
-            <div><b>{t("name")}:</b> {user.user_metadata.full_name}</div>
+          {user.fullName && (
+            <div><b>{t("name")}:</b> {user.fullName}</div>
           )}
-          <div><b>{t("created")}:</b> {user.created_at ? new Date(user.created_at).toLocaleString() : 'N/A'}</div>
-          <div><b>{t("updated")}:</b> {user.updated_at ? new Date(user.updated_at).toLocaleString() : 'N/A'}</div>
+          <div><b>{t("created")}:</b> {new Date(user.createdAt).toLocaleString()}</div>
+          <div><b>{t("updated")}:</b> {user.updatedAt ? new Date(user.updatedAt).toLocaleString() : 'N/A'}</div>
           <div><b>{t("id")}:</b> {user.id}</div>
         </div>
         <button

@@ -10,6 +10,8 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { ScopeList } from "@/app/components/scope/ScopeList";
+import {ContainerService} from "@/lib/container.service";
+import {DeleteScopeService} from "@/lib/domain/services/delete-scope.service";
 
 const useAuth = () => {
   const [loading, setLoading] = useState(true);
@@ -74,24 +76,10 @@ export default function ScopesListPage() {
   const handleDeleteScope = async (scopeId: string) => {
     setError(null);
     if (!confirm('Opravdu chcete tento scope nenávratně smazat včetně všech dat?')) return;
-    const supabase = createClient();
+    const deleteScopeService = ContainerService.getInstance().get(DeleteScopeService, {autobind: true});
+
     try {
-      // Smažu navázané projekty a jejich progress
-      const { data: projects, error: projErr } = await supabase.from('projects').select('id').eq('scope_id', scopeId);
-      if (projErr) throw projErr;
-      if (projects && projects.length > 0) {
-        const projectIds = projects.map((p: { id: string }) => p.id);
-        const { error: progErr } = await supabase.from('project_progress').delete().in('project_id', projectIds);
-        if (progErr) throw progErr;
-        const { error: delProjErr } = await supabase.from('projects').delete().in('id', projectIds);
-        if (delProjErr) throw delProjErr;
-      }
-      const { error: tmErr } = await supabase.from('team_members').delete().eq('scope_id', scopeId);
-      if (tmErr) throw tmErr;
-      const { error: edErr } = await supabase.from('scope_editors').delete().eq('scope_id', scopeId);
-      if (edErr) throw edErr;
-      const { error: scErr } = await supabase.from('scopes').delete().eq('id', scopeId);
-      if (scErr) throw scErr;
+      await deleteScopeService.deleteScope(scopeId);
       await fetchScopes();
     } catch (err: unknown) {
       let message = 'Neznámá chyba.';
