@@ -71,6 +71,41 @@ export class SupabaseScopeEditorRepository extends ScopeEditorRepository {
         return data.map(this.mapToModel);
     }
 
+    async findByUserId(userId: string): Promise<ScopeEditor[]> {
+        const supabase = createClient();
+        const { data, error } = await supabase
+            .from('scope_editors')
+            .select('*')
+            .eq('user_id', userId);
+
+        if (error || !data) return [];
+
+        return data.map(this.mapToModel);
+    }
+    async findBy(params: { email: string | null; scopeId?: string | null; userId?: string | null }): Promise<ScopeEditor[]> {
+        const supabase = createClient();
+        const orConditions: string[] = [];
+    
+        if (params.email !== undefined && params.email !== null) {
+            orConditions.push(`email.eq.${params.email}`);
+        }
+        if (params.scopeId !== undefined && params.scopeId !== null) {
+            orConditions.push(`scope_id.eq.${params.scopeId}`);
+        }
+        if (params.userId !== undefined && params.userId !== null) {
+            orConditions.push(`user_id.eq.${params.userId}`);
+        }
+    
+        let query = supabase.from('scope_editors').select('*');
+        if (orConditions.length > 0) {
+            query = query.or(orConditions.join(','));
+        }
+    
+        const { data, error } = await query;
+        if (error || !data) return [];
+        return data.map(this.mapToModel);
+    }
+
     async update(id: string, scopeEditor: Partial<ScopeEditor>): Promise<ScopeEditor> {
         const supabase = createClient();
         const updateData: Record<string, string | null | undefined> = {};

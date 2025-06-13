@@ -16,6 +16,18 @@ export class SupabaseScopeRepository implements ScopeRepository {
         return this.mapToModel(data);
     }
 
+    async findByIds(ids: string[]): Promise<Scope[]> {
+        const supabase = createClient();
+        const { data, error } = await supabase
+            .from('scopes')
+            .select('*')
+            .in('id', ids);
+
+        if (error || !data) return [];
+
+        return data.map(this.mapToModel);
+    }
+
     async findByOwnerId(ownerId: string): Promise<Scope[]> {
         const supabase = createClient();
         const { data, error } = await supabase
