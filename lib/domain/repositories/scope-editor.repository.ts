@@ -19,5 +19,5 @@ export abstract class ScopeEditorRepository {
 
     abstract delete(id: string): Promise<void>;
 
-    abstract deleteByScopeId(scopeId: string): Promise<void>;
+    abstract deleteByScopeId(filter: {scopeId?: string | null, userId?: string | null}): Promise<void>;
 }

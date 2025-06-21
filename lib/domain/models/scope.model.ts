@@ -6,3 +6,8 @@ export interface Scope {
     createdAt: Date;
     updatedAt: Date;
 }
+
+export enum ScopeType {
+    OWNED = 'owned',
+    SHARED = 'shared'
+}
