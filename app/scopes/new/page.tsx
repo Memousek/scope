@@ -7,16 +7,18 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import {ContainerService} from "@/lib/container.service";
+import {UserRepository} from "@/lib/domain/repositories/user.repository";
+import {ScopeRepository} from "@/lib/domain/repositories/scope.repository";
+import {User} from "@/lib/domain/models/user.model";
 
 const useAuth = () => {
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<null | { email: string }>(null);
+  const [user, setUser] = useState<null | User>(null);
 
   useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user && data.user.email ? { email: data.user.email } : null);
+    ContainerService.getInstance().get(UserRepository).getLoggedInUser().then((user) => {
+      setUser(user);
       setLoading(false);
     });
   }, []);
@@ -32,7 +34,7 @@ export default function NewScopePage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && user === null) {
       router.push('/auth/login');
     }
   }, [loading, user, router]);
@@ -41,17 +43,20 @@ export default function NewScopePage() {
     e.preventDefault();
     setSaving(true);
     setError('');
-    const supabase = createClient();
-    const userData = await supabase.auth.getUser();
-    const owner_id = userData.data.user?.id;
-    const { data, error } = await supabase.from('scopes').insert([
-      { name: newScope.name, description: newScope.description, owner_id }
-    ]).select();
-    setSaving(false);
-    if (!error && data && data[0]) {
-      router.push(`/scopes/${data[0].id}`);
-    } else {
-      setError('Nepodařilo se vytvořit scope.');
+    const scopeRepository = ContainerService.getInstance().get(ScopeRepository);
+
+    try {
+      const scope = await scopeRepository.create({
+        name: newScope.name,
+        description: newScope.description,
+        ownerId: user!.id,
+      });
+
+      router.push(`/scopes/${scope.id}`);
+    } catch {
+      setError('Nepodařilo se vytvořit scope.')
+    } finally {
+      setSaving(false);
     }
   };
 
