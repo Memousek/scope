@@ -43,7 +43,7 @@ export class DeleteScopeService {
         }
 
         await this.teamMemberRepository.deleteByScopeId(scopeId);
-        await this.scopeEditorRepository.deleteByScopeId(scopeId);
+        await this.scopeEditorRepository.deleteByScopeId({scopeId: scopeId});
         await this.scopeRepository.delete(scopeId);
     }
 

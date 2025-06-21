@@ -34,12 +34,20 @@ export class SupabaseScopeEditorRepository extends ScopeEditorRepository {
         }
     }
 
-    async deleteByScopeId(scopeId: string): Promise<void> {
+    async deleteByScopeId(filter: {scopeId?: string | null, userId?: string | null}): Promise<void> {
         const supabase = createClient();
-        const { error } = await supabase
-            .from('scope_editors')
-            .delete()
-            .eq('scope_id', scopeId);
+
+        const query = supabase.from('scope_editors').delete();
+
+        if (filter.scopeId !== null) {
+            query.eq('scope_id', filter.scopeId);
+        }
+
+        if (filter.userId !== null) {
+            query.eq('user_id', filter.userId);
+        }
+
+        const { error } = await query;
 
         if (error) {
             throw new Error(`Failed to delete scope editors by scope ID: ${error.message}`);
