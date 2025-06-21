@@ -15,6 +15,8 @@ import {GetAccessibleScopesService} from "@/lib/domain/services/get-accessible-s
 import {User} from "@/lib/domain/models/user.model";
 import {UserRepository} from "@/lib/domain/repositories/user.repository";
 import {ScopeEditorRepository} from "@/lib/domain/repositories/scope-editor.repository";
+import {Scope} from "@/lib/domain/models/scope.model";
+import {handleErrorMessage} from "@/lib/utils";
 
 const useAuth = () => {
     const [loading, setLoading] = useState(true);
@@ -34,12 +36,10 @@ const useAuth = () => {
     return {loading, user};
 };
 
-type ScopeListItem = { id: string; name: string; owner_id: string; type: 'owned' | 'shared' };
-
 export default function ScopesListPage() {
     const {loading, user} = useAuth();
     const router = useRouter();
-    const [scopes, setScopes] = useState<ScopeListItem[]>([]);
+    const [scopes, setScopes] = useState<Scope[]>([]);
     const [fetching, setFetching] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -51,19 +51,12 @@ export default function ScopesListPage() {
 
     const fetchScopes = useCallback(async () => {
         setFetching(true);
-        const scopeService = ContainerService.getInstance()
-            .get(GetAccessibleScopesService, {autobind: true});
 
-        const scopes = await scopeService.getAccessibleScopes(user!);
+        const scopes = await ContainerService.getInstance()
+            .get(GetAccessibleScopesService, {autobind: true})
+            .getAccessibleScopes(user!);
 
-        const scopeItems = scopes.map(scope => ({
-            id: scope.id,
-            name: scope.name,
-            owner_id: scope.ownerId,
-            type: scope.ownerId === user!.id ? 'owned' : 'shared'
-        })) as ScopeListItem[];
-
-        setScopes(scopeItems);
+        setScopes(scopes);
         setFetching(false);
     }, [user]);
 
@@ -82,12 +75,7 @@ export default function ScopesListPage() {
             await deleteScopeService.deleteScope(scopeId);
             await fetchScopes();
         } catch (err: unknown) {
-            let message = 'Neznámá chyba.';
-            if (err && typeof err === 'object' && 'message' in err) {
-                message = (err as { message: string }).message;
-            } else if (typeof err === 'string') {
-                message = err;
-            }
+            const message = handleErrorMessage(err);
             setError('Chyba při mazání scope: ' + message);
             console.error('Mazání scope selhalo:', err);
         }
@@ -98,15 +86,10 @@ export default function ScopesListPage() {
         if (!user?.email) return;
         const scopeEditorRepository = ContainerService.getInstance().get(ScopeEditorRepository);
         try {
-            await scopeEditorRepository.deleteByScopeId(scopeId);
+            await scopeEditorRepository.deleteByScopeId({scopeId: scopeId});
             await fetchScopes();
         } catch (err: unknown) {
-            let message = 'Neznámá chyba.';
-            if (err && typeof err === 'object' && 'message' in err) {
-                message = (err as { message: string }).message;
-            } else if (typeof err === 'string') {
-                message = err;
-            }
+            const message = handleErrorMessage(err);
             setError('Chyba při odebírání scope: ' + message);
             console.error('Odebírání scope selhalo:', err);
         }
@@ -131,6 +114,7 @@ export default function ScopesListPage() {
                     </div>
                     <ScopeList
                         scopes={scopes}
+                        user={user}
                         loading={fetching}
                         error={error}
                         onDelete={handleDeleteScope}
