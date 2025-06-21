@@ -39,11 +39,11 @@ export class SupabaseScopeEditorRepository extends ScopeEditorRepository {
 
         const query = supabase.from('scope_editors').delete();
 
-        if (filter.scopeId !== null) {
+        if (filter.scopeId !== undefined && filter.scopeId !== null) {
             query.eq('scope_id', filter.scopeId);
         }
 
-        if (filter.userId !== null) {
+        if (filter.userId !== undefined && filter.userId !== null) {
             query.eq('user_id', filter.userId);
         }
 

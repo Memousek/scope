@@ -7,19 +7,21 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import {ContainerService} from "@/lib/container.service";
+import {UserRepository} from "@/lib/domain/repositories/user.repository";
+import {ScopeRepository} from "@/lib/domain/repositories/scope.repository";
+import {User} from "@/lib/domain/models/user.model";
 import { ArrowLeft } from 'lucide-react';
 import { useTranslation } from '@/lib/translation';
 import Link from 'next/link';
 
 const useAuth = () => {
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<null | { email: string }>(null);
+  const [user, setUser] = useState<null | User>(null);
 
   useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user && data.user.email ? { email: data.user.email } : null);
+    ContainerService.getInstance().get(UserRepository).getLoggedInUser().then((user) => {
+      setUser(user);
       setLoading(false);
     });
   }, []);
@@ -34,8 +36,9 @@ export default function NewScopePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const { t } = useTranslation();
+
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && user === null) {
       router.push('/auth/login');
     }
   }, [loading, user, router]);
@@ -44,17 +47,20 @@ export default function NewScopePage() {
     e.preventDefault();
     setSaving(true);
     setError('');
-    const supabase = createClient();
-    const userData = await supabase.auth.getUser();
-    const owner_id = userData.data.user?.id;
-    const { data, error } = await supabase.from('scopes').insert([
-      { name: newScope.name, description: newScope.description, owner_id }
-    ]).select();
-    setSaving(false);
-    if (!error && data && data[0]) {
-      router.push(`/scopes/${data[0].id}`);
-    } else {
-      setError('Nepodařilo se vytvořit scope.');
+    const scopeRepository = ContainerService.getInstance().get(ScopeRepository);
+
+    try {
+      const scope = await scopeRepository.create({
+        name: newScope.name,
+        description: newScope.description,
+        ownerId: user!.id,
+      });
+
+      router.push(`/scopes/${scope.id}`);
+    } catch {
+      setError('Nepodařilo se vytvořit scope.')
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -69,7 +75,7 @@ export default function NewScopePage() {
         {t('back')}
       </Link>
     <div className="p-6 rounded-lg shadow mt-8 bg-white dark:bg-gray-800 max-w-lg mx-auto w-full">
-      
+
       <h1 className="text-2xl font-bold mb-4 text-center">Nový Scope</h1>
       <form className="flex flex-col gap-4" onSubmit={handleCreate}>
         <div>
