@@ -3,12 +3,13 @@
  * Stránka nastavení uživatele
  * Umožňuje přepínat dark mode a další nastavení do budoucna.
  */
-import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
-import { Header } from "@/components/header";
-import { ThemeSwitcher } from "@/app/components/ui/ThemeSwitcher";
-import type { User } from "@supabase/supabase-js";
+import {useEffect, useState} from "react";
+import {useRouter} from "next/navigation";
+import {Header} from "@/components/header";
+import {ThemeSwitcher} from "@/app/components/ui/ThemeSwitcher";
+import {ContainerService} from "@/lib/container.service";
+import {UserRepository} from "@/lib/domain/repositories/user.repository";
+import {User} from "@/lib/domain/models/user.model";
 
 export default function SettingsPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -16,11 +17,12 @@ export default function SettingsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user);
+    ContainerService.getInstance().get(UserRepository).getLoggedInUser().then((user) => {
+      setUser(user);
       setLoading(false);
-      if (!data.user) router.push("/auth/login");
+      if (user === null) {
+        router.push("/auth/login");
+      }
     });
   }, [router]);
 
