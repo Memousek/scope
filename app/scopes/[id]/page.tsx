@@ -301,9 +301,6 @@ export default function ScopePage({ params }: { params: Promise<{ id: string }> 
 
       <ProjectSection
         scopeId={id}
-        projects={projects}
-        team={team}
-        onProjectsChange={setProjects}
         hasFE={hasFE}
         hasBE={hasBE}
         hasQA={hasQA}
