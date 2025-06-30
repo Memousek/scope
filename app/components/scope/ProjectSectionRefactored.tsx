@@ -43,8 +43,6 @@ export function ProjectSectionRefactored({
   
   const { 
     team, 
-    loading: teamLoading, 
-    error: teamError,
     loadTeam 
   } = useTeam(scopeId);
 
