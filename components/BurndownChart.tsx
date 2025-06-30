@@ -50,7 +50,7 @@ export default function BurndownChart({ roles, totalData, slip, calculatedDelive
   const handleExport = async () => {
     if (!chartRef.current) return;
     const htmlToImage = await import('html-to-image');
-    const dataUrl = await htmlToImage.toPng(chartRef.current, { backgroundColor: '#fff' });
+    const dataUrl = await htmlToImage.toPng(chartRef.current, { backgroundColor: 'transparent' });
     const link = document.createElement('a');
     link.download = 'burndown-chart.png';
     link.href = dataUrl;
@@ -198,7 +198,7 @@ export default function BurndownChart({ roles, totalData, slip, calculatedDelive
             <span
               key={item.key}
               onClick={() => toggleLine(item.key)}
-              className={`flex items-center gap-1 px-2 py-1 rounded cursor-pointer border ${hiddenLines.includes(item.key) ? 'opacity-40 bg-gray-100' : 'bg-gray-200'} hover:bg-blue-100 transition`}
+              className={`flex items-center gap-1 px-2 py-1 rounded cursor-pointer border ${hiddenLines.includes(item.key) ? 'opacity-40' : ''} transition`}
               style={{ borderColor: item.color }}
               aria-pressed={!hiddenLines.includes(item.key)}
               tabIndex={0}
@@ -210,7 +210,7 @@ export default function BurndownChart({ roles, totalData, slip, calculatedDelive
           ))}
         </div>
       </div>
-      <div ref={chartRef} style={{ maxWidth: '100%', overflowX: 'auto', padding: '8px 0', background: '#fff' }}>
+      <div ref={chartRef} style={{ maxWidth: '100%', overflowX: 'auto', padding: '8px 0' }}>
         <ResponsiveContainer width="100%" height={320}>
           <LineChart data={chartData} margin={{ top: 24, right: 40, left: 8, bottom: 24 }}>
             <CartesianGrid strokeDasharray="3 3" />

@@ -46,7 +46,7 @@ export const ScopeList: React.FC<ScopeListProps> = ({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 30 }}
               transition={{ duration: 0.3, delay: idx * 0.07 }}
-              className="bg-white rounded-2xl shadow-xl p-8 flex flex-col min-h-[200px] justify-between hover:shadow-2xl transition-shadow"
+              className="shadow hover:shadow-2xl rounded-2xl p-8 flex flex-col min-h-[200px] justify-between transition-shadow bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700"
             >
               <div className="flex-1">
                 <Link

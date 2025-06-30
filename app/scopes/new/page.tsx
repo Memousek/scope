@@ -60,7 +60,7 @@ export default function NewScopePage() {
   }
 
   return (
-    <div className="max-w-lg mx-auto p-6 rounded-lg shadow mt-8">
+    <div className="max-w-lg mx-auto p-6 rounded-lg shadow mt-8 bg-white dark:bg-gray-800">
       <h1 className="text-2xl font-bold mb-4 text-center">Nový Scope</h1>
       <form className="flex flex-col gap-4" onSubmit={handleCreate}>
         <div>
@@ -77,7 +77,7 @@ export default function NewScopePage() {
         <div>
           <label className="block mb-1 font-medium text-gray-700">Popis (volitelné)</label>
           <textarea
-            className="border rounded px-3 py-2 w-full min-h-[60px] focus:outline-blue-400"
+            className="border rounded px-3 py-2 w-full min-h-[60px] focus:outline-blue-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
             placeholder="Popis scope..."
             value={newScope.description}
             onChange={e => setNewScope(s => ({ ...s, description: e.target.value }))}

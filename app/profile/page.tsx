@@ -37,7 +37,7 @@ export default function ProfilePage() {
   return (
     <>
       <Header />
-      <div className="max-w-lg mx-auto p-8 mt-10 rounded-lg shadow bg-white">
+      <div className="max-w-lg mx-auto p-8 mt-10 rounded-lg shadow bg-white dark:bg-gray-800">
         <h1 className="text-2xl font-bold mb-4 text-center">Profil uživatele</h1>
         <div className="mb-6 flex flex-col gap-2 text-gray-700">
           <div><b>Avatar:</b> {user.user_metadata?.avatar_url ? <Image src={user.user_metadata.avatar_url} alt="Avatar" width={40} height={40} className="w-10 h-10 rounded-full" /> : <UserIcon className="w-10 h-10" />}</div>

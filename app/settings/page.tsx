@@ -30,7 +30,7 @@ export default function SettingsPage() {
   return (
     <>
       <Header />
-      <div className="max-w-lg mx-auto p-8 mt-10 rounded-lg shadow bg-white">
+      <div className="max-w-lg mx-auto p-8 mt-10 rounded-lg shadow bg-white dark:bg-gray-800">
         <h1 className="text-2xl font-bold mb-4 text-center">Nastavení</h1>
         <div className="mb-6">
           <ThemeSwitcher />
