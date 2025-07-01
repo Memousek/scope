@@ -21,16 +21,13 @@ export function AuthButton() {
   if (user) {
     return (
       <div className="flex items-center gap-4">
-        {/* Avatar jako dekorace */}
-        {user.avatar_url ? (
-          <Image src={user.avatar_url} alt="User avatar" width={32} height={32} className="w-8 h-8 rounded-full" />
-        ) : (
-          <UserIcon className="w-8 h-8" />
-        )}
         {/* Menu položky */}
-        <Link href="/profile" className="flex items-center gap-2 text-gray-700 dark:text-gray-200 hover:text-blue-600 transition px-2 py-1 rounded">
-          <UserIcon className="w-5 h-5" />
-          <span>Profil</span>
+        <Link href="/profile" className="rounded-full w-auto h-auto flex items-center justify-center">
+          {user.avatar_url ? (
+            <Image src={user.avatar_url} alt="User avatar" width={32} height={32} className="rounded-full" style={{ maxWidth: 'max-content', maxHeight: 'max-content' }} />
+          ) : (
+            <UserIcon className="w-5 h-5" />
+          )}
         </Link>
         <Link href="/settings" className="flex items-center gap-2 text-gray-700 dark:text-gray-200 hover:text-blue-600 transition px-2 py-1 rounded">
           <SettingsIcon className="w-5 h-5" />
