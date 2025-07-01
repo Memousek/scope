@@ -181,8 +181,8 @@ export default function ScopePage({ params }: { params: Promise<{ id: string }> 
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
+    <div className="container mx-auto px-4 py-8 bg-white dark:bg-gray-800">
+      <div className="flex justify-between items-center mb-8 flex-col gap-4 md:flex-row">
         <div className="flex items-center gap-3">
           {editingName ? (
             <>
@@ -256,7 +256,7 @@ export default function ScopePage({ params }: { params: Promise<{ id: string }> 
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full p-2 border rounded"
+              className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
               rows={3}
             />
             <div className="flex flex-col gap-2">
@@ -301,9 +301,6 @@ export default function ScopePage({ params }: { params: Promise<{ id: string }> 
 
       <ProjectSection
         scopeId={id}
-        projects={projects}
-        team={team}
-        onProjectsChange={setProjects}
         hasFE={hasFE}
         hasBE={hasBE}
         hasQA={hasQA}

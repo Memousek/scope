@@ -98,9 +98,9 @@ export default function ScopesListPage() {
     if (loading || !user) {
         return <div className="min-h-screen flex items-center justify-center">Načítání…</div>;
     }
-
+  
     return (
-        <main className="min-h-screen flex flex-col items-center">
+        <main className="min-h-screen flex flex-col items-center bg-gray-50 dark:bg-gray-900">
             <div className="flex-1 w-full flex flex-col gap-20 items-center">
                 <div className="flex-1 flex flex-col gap-20 max-w-5xl p-5">
                     <div className="flex justify-between items-center mb-8">

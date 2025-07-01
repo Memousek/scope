@@ -129,16 +129,6 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
               </>;
             })()}
           </div>
-          <div className="flex items-center gap-2 text-blue-700 text-sm break-all">
-            <span>Link pouze pro zobrazení:</span>
-            {(() => {
-              const viewLink = `${window.location.origin}/scopes/${scopeId}/view`;
-              return <>
-                <a href={viewLink} className="underline text-blue-700" target="_blank" rel="noopener noreferrer">{viewLink}</a>
-                <button onClick={() => navigator.clipboard.writeText(viewLink)} title="Kopírovat" className="text-blue-600 hover:text-blue-800"><FiCopy /></button>
-              </>;
-            })()}
-          </div>
         </div>
         <form className="flex gap-2 mb-4" onSubmit={handleInvite}>
           <input

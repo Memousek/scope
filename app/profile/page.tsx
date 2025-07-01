@@ -12,11 +12,13 @@ import Image from "next/image";
 import {ContainerService} from "@/lib/container.service";
 import {UserRepository} from "@/lib/domain/repositories/user.repository";
 import {User} from "@/lib/domain/models/user.model";
+import { useTranslation } from "@/lib/translation";
 
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const { t } = useTranslation();
 
   useEffect(() => {
     const userRepository = ContainerService.getInstance().get(UserRepository);
@@ -34,7 +36,18 @@ export default function ProfilePage() {
     router.push("/auth/login");
   };
 
-  if (loading) return <div className="p-8 text-center">Načítání…</div>;
+  const handleRemoveAccount = async () => {
+    if (!user?.id) return;
+    const supabase = createClient();
+    const { error } = await supabase.auth.admin.deleteUser(user.id);
+    if (error) {
+      console.error(error);
+    } else {
+      console.log("User deleted");
+    }
+  };
+
+  if (loading) return <div className="p-8 text-center">{t("loading")}</div>;
   if (!user) return null;
 
   return (
@@ -54,9 +67,16 @@ export default function ProfilePage() {
         </div>
         <button
           onClick={handleLogout}
-          className="bg-red-600 text-white px-5 py-2 rounded font-semibold shadow hover:bg-red-700 transition w-full"
+          className="bg-gray-600 dark:bg-gray-700 text-white px-5 py-2 rounded font-semibold shadow hover:bg-gray-700 transition w-full"
         >
-          Odhlásit se
+          {t("logout")}
+        </button>
+        <button
+          onClick={handleRemoveAccount}
+          className="bg-red-600 text-white px-5 py-2 rounded font-semibold shadow hover:bg-red-700 transition w-full mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={true}
+        >
+          {t("delete_account")}
         </button>
       </div>
     </>

@@ -76,12 +76,12 @@ export function TeamSection({ scopeId, team, onTeamChange }: TeamSectionProps) {
               team.map(member => (
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center mb-2 gap-1 sm:gap-0" key={member.id}>
                   <input
-                    className="flex-1 border rounded px-2 py-1 mr-0 sm:mr-2 focus:outline-blue-400"
+                    className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 flex-1 border rounded px-2 py-1 mr-0 sm:mr-2 focus:outline-blue-400"
                     value={member.name}
                     onChange={e => handleEditMember(member.id, 'name', e.target.value)}
                   />
                   <select
-                    className="w-24 sm:w-32 border rounded px-2 py-1 mr-0 sm:mr-2 focus:outline-blue-400"
+                    className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 w-24 sm:w-32 border rounded px-2 py-1 mr-0 sm:mr-2 focus:outline-blue-400"
                     value={member.role}
                     onChange={e => handleEditMember(member.id, 'role', e.target.value)}
                   >
@@ -90,7 +90,7 @@ export function TeamSection({ scopeId, team, onTeamChange }: TeamSectionProps) {
                     ))}
                   </select>
                   <input
-                    className="w-24 sm:w-32 border rounded px-2 py-1 mr-0 sm:mr-2 focus:outline-blue-400"
+                    className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 w-24 sm:w-32 border rounded px-2 py-1 mr-0 sm:mr-2 focus:outline-blue-400"
                     type="number"
                     min={0.1}
                     step={0.01}

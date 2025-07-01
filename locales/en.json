@@ -41,5 +41,19 @@
   "realPlan": "Real plan (delayed)",
   "currentProgress": "% done",
   "editProject": "Edit project",
-  "projectName": "Project name"
+  "projectName": "Project name",
+  "profile": "Profile",
+  "avatar": "Avatar",
+  "email": "Email",
+  "created": "Created",
+  "updated": "Updated",
+  "id": "ID",
+  "delete_account": "Delete account",
+  "logout": "Logout",
+  "settings": "Settings",
+  "language": "Language",
+  "theme": "Theme",
+  "dark_mode": "Dark mode",
+  "light_mode": "Light mode",
+  "system_mode": "System mode"
 } 

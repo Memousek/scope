@@ -7,12 +7,24 @@
 import Link from "next/link";
 import { AuthButton } from "./auth-button";
 import { useTranslation } from "../lib/translation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Menu, X, User, Settings as SettingsIcon } from "lucide-react";
+import { LogoutButton } from "./logout-button";
+import { createClient } from "@/lib/supabase/client";
+import Image from "next/image";
 
 export function Header() {
   const { t } = useTranslation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [user, setUser] = useState<{ email: string, avatar_url: string, name: string } | null>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user && data.user.email ? { email: data.user.email, avatar_url: data.user.user_metadata.avatar_url || null, name: data.user.user_metadata.name || data.user.email } : null);
+    });
+  }, []);
+
   return (
     <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
       <div className="mx-auto container flex justify-between items-center p-3 px-5 text-sm">
@@ -34,7 +46,7 @@ export function Header() {
         {/* Mobile drawer */}
         {mobileOpen && (
           <div className="fixed inset-0 z-50 bg-black/40 flex">
-            <div className="bg-white w-4/5 max-w-xs h-full shadow-xl flex flex-col p-6 animate-slide-in-left relative">
+            <div className="dark:bg-gray-800 dark:text-gray-100 bg-white w-4/5 max-w-xs h-full shadow-xl flex flex-col p-6 animate-slide-in-left relative">
               <button
                 className="absolute top-4 right-4 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 onClick={() => setMobileOpen(false)}
@@ -46,13 +58,28 @@ export function Header() {
                 {t('appName')}
               </Link>
               <div className="flex flex-col gap-4 flex-1">
-                <Link href="/profile" className="flex items-center gap-2 text-gray-700 hover:text-blue-600 transition" onClick={() => setMobileOpen(false)}>
-                  <User className="w-5 h-5" /> Profil
-                </Link>
-                <Link href="/settings" className="flex items-center gap-2 text-gray-700 hover:text-blue-600 transition" onClick={() => setMobileOpen(false)}>
-                  <SettingsIcon className="w-5 h-5" /> Nastavení
-                </Link>
-                <AuthButton />
+                {user && (
+                  <>
+                    {/* Avatar jako dekorace */}
+                    {user.avatar_url ? (
+                      <Image src={user.avatar_url} alt="User avatar" width={40} height={40} className="w-10 h-10 rounded-full mb-2" />
+                    ) : (
+                      <User className="w-10 h-10 mb-2" />
+                    )}
+                    <Link href="/profile" className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 transition" onClick={() => setMobileOpen(false)}>
+                      <User className="w-5 h-5" /> Profil
+                    </Link>
+                    <Link href="/settings" className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 transition" onClick={() => setMobileOpen(false)}>
+                      <SettingsIcon className="w-5 h-5" /> Nastavení
+                    </Link>
+                    <LogoutButton />
+                  </>
+                )}
+                {!user && (
+                  <Link href="/auth/login" className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 transition" onClick={() => setMobileOpen(false)}>
+                    Přihlásit se
+                  </Link>
+                )}
               </div>
             </div>
             {/* Click outside to close */}

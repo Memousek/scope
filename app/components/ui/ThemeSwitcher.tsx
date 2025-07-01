@@ -40,8 +40,6 @@ export function ThemeSwitcher() {
 
   return (
     <div className="flex flex-col gap-2 w-full">
-      <label className="font-medium text-gray-700 mb-1">Vzhled</label>
-      <p className="text-gray-500 text-sm italic mb-1">100% funkční je pouze světlý režim</p>
       <div className="flex items-center gap-2 justify-center">
         <button
           onClick={() => handleSetTheme("light")}

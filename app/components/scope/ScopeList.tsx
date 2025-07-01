@@ -33,28 +33,32 @@ export const ScopeList: React.FC<ScopeListProps> = ({
   }));
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+    <div className="relative grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 min-h-[250px]">
       <AnimatePresence>
         {loading ? (
-          <div className="col-span-full text-center text-gray-500 py-8">Načítám scopy…</div>
+          <div className="col-span-full text-center text-gray-500 py-8">
+            <span className="text-base">Načítám scopy…</span>
+          </div>
         ) : scopes.length === 0 ? (
           <motion.div
-            className="col-span-full text-center text-gray-500 py-8"
-            initial={{ opacity: 0, y: 20 }}
+            className="absolute inset-0 flex items-center justify-center pointer-events-none"
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
+            exit={{ opacity: 0, y: 10 }}
           >
-            Zatím nemáte žádné scopy. Vytvořte si nový scope pro sledování projektů.
+            <span className="text-base text-gray-500 dark:text-gray-400 px-4 py-2">
+              Zatím nemáte žádné scopy. Vytvořte si nový scope pro sledování projektů.
+            </span>
           </motion.div>
         ) : (
           scopeItems.map((scopeItem, idx) => (
             <motion.div
-              key={scopeItem.scope.id}
-              initial={{ opacity: 0, scale: 0.95, y: 30 }}
+              key={scope.id}
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 30 }}
-              transition={{ duration: 0.3, delay: idx * 0.07 }}
-              className="bg-white rounded-2xl shadow-xl p-8 flex flex-col min-h-[200px] justify-between hover:shadow-2xl transition-shadow"
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.3, delay: idx * 0.02 }}
+              className="shadow hover:shadow-2xl rounded-2xl p-8 flex flex-col min-h-[200px] justify-between transition-shadow bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700"
             >
               <div className="flex-1">
                 <Link

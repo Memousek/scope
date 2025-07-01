@@ -1,16 +1,15 @@
-import { useState } from 'react';   
-import { createClient } from '@/lib/supabase/client';
-import { Project, TeamMember, ProjectDeliveryInfo } from './types';
+import { useState, useEffect } from 'react';
+import { Project } from './types';
 import { EditProjectModal } from './EditProjectModal';
 import { ProjectBurndown } from './ProjectBurndown';
 import { AddProjectModal } from './AddProjectModal';
 import { ProjectHistoryModal } from './ProjectHistoryModal';
+import { useProjects } from '@/app/hooks/useProjects';
+import { useTeam } from '@/app/hooks/useTeam';
+import { calculateProjectDeliveryInfo, calculatePriorityDates } from '@/app/utils/dateUtils';
 
 interface ProjectSectionProps {
   scopeId: string;
-  projects: Project[];
-  team: TeamMember[];
-  onProjectsChange: (projects: Project[]) => void;
   hasFE: boolean;
   hasBE: boolean;
   hasQA: boolean;
@@ -18,46 +17,46 @@ interface ProjectSectionProps {
   hasDPL: boolean;
 }
 
-export function ProjectSection({ scopeId, projects, team, onProjectsChange, hasFE, hasBE, hasQA, hasPM, hasDPL }: ProjectSectionProps) {
-  const [savingProject, setSavingProject] = useState(false);
+export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: ProjectSectionProps) {
+  const { 
+    projects, 
+    loading: projectsLoading, 
+    addProject, 
+    updateProject, 
+    deleteProject,
+    loadProjects 
+  } = useProjects(scopeId);
+  
+  const { 
+    team, 
+    loadTeam 
+  } = useTeam(scopeId);
+
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editProject, setEditProject] = useState<Project | null>(null);
   const [addModalOpen, setAddModalOpen] = useState(false);
-  // Klíč pro refresh grafu po změně projektu
   const [refreshKey, setRefreshKey] = useState(0);
   const [historyModalProject, setHistoryModalProject] = useState<Project | null>(null);
 
-  const projectRoles = [
-    { key: 'fe', label: 'FE', mandays: 'fe_mandays', done: 'fe_done', color: '#2563eb' },
-    { key: 'be', label: 'BE', mandays: 'be_mandays', done: 'be_done', color: '#059669' },
-    { key: 'qa', label: 'QA', mandays: 'qa_mandays', done: 'qa_done', color: '#f59e42' },
-    { key: 'pm', label: 'PM', mandays: 'pm_mandays', done: 'pm_done', color: '#a21caf' },
-    { key: 'dpl', label: 'DPL', mandays: 'dpl_mandays', done: 'dpl_done', color: '#e11d48' },
-  ];
+  // Load data on component mount
+  useEffect(() => {
+    loadProjects();
+    loadTeam();
+  }, [loadProjects, loadTeam]);
 
   const handleAddProject = async (project: Omit<Project, 'id' | 'scope_id' | 'created_at'>) => {
-    setSavingProject(true);
-    const supabase = createClient();
-    const { error, data } = await supabase.from('projects').insert([
-      { ...project, scope_id: scopeId }
-    ]).select();
-    setSavingProject(false);
-    if (!error && data && data[0]) {
-      onProjectsChange([...projects, data[0]]);
+    try {
+      await addProject(project);
+      setRefreshKey(k => k + 1);
+    } catch (error) {
+      console.error('Failed to add project:', error);
     }
   };
 
   const handleDeleteProject = async (projectId: string) => {
-    if (!confirm('Opravdu chcete tento projekt nenávratně smazat včetně všech dat?')) return;
-    const supabase = createClient();
-    // Smaž navázané progressy
-    await supabase.from('project_progress').delete().eq('project_id', projectId);
-    // Smaž projekt
-    const { error } = await supabase.from('projects').delete().eq('id', projectId);
-    if (!error) {
-      onProjectsChange(projects.filter(pr => pr.id !== projectId));
-    } else {
-      alert('Chyba při mazání projektu.');
+    const success = await deleteProject(projectId);
+    if (success) {
+      setRefreshKey(k => k + 1);
     }
   };
 
@@ -71,113 +70,28 @@ export function ProjectSection({ scopeId, projects, team, onProjectsChange, hasF
     setEditProject(null);
   };
 
-  const handleProjectChange = (updatedProject: Project) => {
-    onProjectsChange(projects.map(p => p.id === updatedProject.id ? updatedProject : p));
-    setRefreshKey(k => k + 1);
+  const handleProjectChange = async (updatedProject: Project) => {
+    try {
+      await updateProject(updatedProject.id, updatedProject);
+      setRefreshKey(k => k + 1);
+    } catch (error) {
+      console.error('Failed to update project:', error);
+    }
   };
 
-  // Funkce pro výpočet termínu a skluzu (pouze pracovní dny)
-  function getProjectDeliveryInfo(project: Project, team: TeamMember[]): ProjectDeliveryInfo {
-    const feFte = team.filter(m => m.role === 'FE').reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
-    const beFte = team.filter(m => m.role === 'BE').reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
-    const qaFte = team.filter(m => m.role === 'QA').reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
-    const feRem = Number(project.fe_mandays) * (1 - (Number(project.fe_done) || 0) / 100);
-    const beRem = Number(project.be_mandays) * (1 - (Number(project.be_done) || 0) / 100);
-    const qaRem = Number(project.qa_mandays) * (1 - (Number(project.qa_done) || 0) / 100);
-    const feDays = feRem / feFte;
-    const beDays = beRem / beFte;
-    const qaDays = qaRem / qaFte;
-    const totalWorkdays = Math.ceil(Math.max(feDays, beDays)) + Math.ceil(qaDays);
-    const today = new Date();
-    const calculatedDeliveryDate = addWorkdays(today, totalWorkdays);
-    const deliveryDate = project.delivery_date ? new Date(project.delivery_date) : null;
-    let diffWorkdays: number | null = null;
-    if (deliveryDate) {
-      const workdaysToPlanned = getWorkdaysBetween(today, deliveryDate).length - 1;
-      diffWorkdays = workdaysToPlanned - totalWorkdays;
-    }
-    return {
-      calculatedDeliveryDate,
-      slip: diffWorkdays,
-      diffWorkdays,
-      deliveryDate,
-    };
-  }
 
-  // Pomocné funkce pro práci s pracovními dny
-  function addWorkdays(date: Date, workdays: number): Date {
-    const result = new Date(date);
-    let added = 0;
-    while (added < workdays) {
-      result.setDate(result.getDate() + 1);
-      const day = result.getDay();
-      if (day !== 0 && day !== 6) { // 0 = neděle, 6 = sobota
-        added++;
-      }
-    }
-    return result;
-  }
 
-  function getWorkdaysBetween(start: Date, end: Date): Date[] {
-    const days: Date[] = [];
-    const d = new Date(start);
-    d.setHours(0,0,0,0);
-    while (d <= end) {
-      if (d.getDay() !== 0 && d.getDay() !== 6) {
-        days.push(new Date(d));
-      }
-      d.setDate(d.getDate() + 1);
-    }
-    return days;
-  }
+  // Calculate priority dates for all projects
+  const priorityDates = calculatePriorityDates(projects, team);
 
-  // --- Výpočet začátku a konce dle priority ---
-  // Vrací mapu: projectId -> { priorityStartDate, priorityEndDate, blockingProjectName }
-  function getPriorityStartDatesAndEnds(projects: Project[], team: TeamMember[]): Record<string, { priorityStartDate: Date; priorityEndDate: Date; blockingProjectName?: string }> {
-    // Seřaď projekty podle priority (vzestupně), pak podle created_at
-    const sorted = [...projects].sort((a, b) => {
-      if (a.priority !== b.priority) return a.priority - b.priority;
-      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-    });
-    const result: Record<string, { priorityStartDate: Date; priorityEndDate: Date; blockingProjectName?: string }> = {};
-    const currentStart = new Date(); // Začínáme dnes
-    for (let i = 0; i < sorted.length; i++) {
-      const project = sorted[i];
-      // Výpočet délky projektu v pracovních dnech (stejně jako v getProjectDeliveryInfo)
-      const feFte = team.filter(m => m.role === 'FE').reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
-      const beFte = team.filter(m => m.role === 'BE').reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
-      const qaFte = team.filter(m => m.role === 'QA').reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
-      const feRem = Number(project.fe_mandays) * (1 - (Number(project.fe_done) || 0) / 100);
-      const beRem = Number(project.be_mandays) * (1 - (Number(project.be_done) || 0) / 100);
-      const qaRem = Number(project.qa_mandays) * (1 - (Number(project.qa_done) || 0) / 100);
-      const feDays = feRem / feFte;
-      const beDays = beRem / beFte;
-      const qaDays = qaRem / qaFte;
-      const projectWorkdays = Math.ceil(Math.max(feDays, beDays)) + Math.ceil(qaDays);
-      let priorityStartDate: Date;
-      let blockingProjectName: string | undefined = undefined;
-      if (i === 0) {
-        priorityStartDate = new Date(currentStart);
-      } else {
-        const prev = sorted[i - 1];
-        const prevEnd = result[prev.id].priorityEndDate;
-        const nextStart = new Date(prevEnd);
-        nextStart.setDate(nextStart.getDate() + 1);
-        while (nextStart.getDay() === 0 || nextStart.getDay() === 6) {
-          nextStart.setDate(nextStart.getDate() + 1);
-        }
-        priorityStartDate = nextStart;
-        blockingProjectName = prev.name;
-      }
-      // Konec dle priority = start + délka projektu v pracovních dnech
-      const priorityEndDate = addWorkdays(priorityStartDate, projectWorkdays);
-      result[project.id] = { priorityStartDate, priorityEndDate, blockingProjectName };
-    }
-    return result;
-  }
-
-  // Výpočet priority start a end dat pro všechny projekty
-  const priorityDates = getPriorityStartDatesAndEnds(projects, team);
+  // Define project roles for EditProjectModal
+  const projectRoles = [
+    { key: 'fe', label: 'FE', mandays: 'fe_mandays', done: 'fe_done', color: '#2563eb' },
+    { key: 'be', label: 'BE', mandays: 'be_mandays', done: 'be_done', color: '#059669' },
+    { key: 'qa', label: 'QA', mandays: 'qa_mandays', done: 'qa_done', color: '#f59e42' },
+    { key: 'pm', label: 'PM', mandays: 'pm_mandays', done: 'pm_done', color: '#a21caf' },
+    { key: 'dpl', label: 'DPL', mandays: 'dpl_mandays', done: 'dpl_done', color: '#e11d48' },
+  ];
 
   return (
     <>
@@ -185,7 +99,7 @@ export function ProjectSection({ scopeId, projects, team, onProjectsChange, hasF
         isOpen={addModalOpen}
         onClose={() => setAddModalOpen(false)}
         onAddProject={handleAddProject}
-        savingProject={savingProject}
+        savingProject={projectsLoading}
         hasFE={hasFE}
         hasBE={hasBE}
         hasQA={hasQA}
@@ -232,10 +146,10 @@ export function ProjectSection({ scopeId, projects, team, onProjectsChange, hasF
                   <tr><td colSpan={15} className="text-gray-400 text-center py-4">Žádné projekty</td></tr>
                 ) : (
                   projects.map(project => {
-                    const info = getProjectDeliveryInfo(project, team);
+                    const info = calculateProjectDeliveryInfo(project, team);
                     return (
-                      <tr key={project.id} className="hover:bg-blue-50 transition">
-                        <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle font-medium text-gray-900 whitespace-nowrap">{project.name}</td>
+                      <tr key={project.id} className="hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                        <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">{project.name}</td>
                         <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle text-right">{project.priority}</td>
                         {/* FE */}
                         <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle text-right">{Number(project.fe_mandays) > 0 ? Number(project.fe_mandays) : '-'}</td>
@@ -276,7 +190,7 @@ export function ProjectSection({ scopeId, projects, team, onProjectsChange, hasF
       <div className="my-8">
         <h3 className="text-lg font-semibold mb-2">Burndown & termíny</h3>
         {projects.map(project => {
-          const info = getProjectDeliveryInfo(project, team);
+          const info = calculateProjectDeliveryInfo(project, team);
           return (
             <ProjectBurndown
               key={project.id + '-' + refreshKey}
