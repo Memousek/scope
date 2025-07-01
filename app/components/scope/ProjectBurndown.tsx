@@ -8,7 +8,8 @@
  */
 import { useEffect, useState } from 'react';
 import { Project } from './types';
-import BurndownChart from '@/components/BurndownChart';
+import dynamic from 'next/dynamic';
+const BurndownChart = dynamic(() => import('@/components/BurndownChart'), { ssr: false, loading: () => <div>Loading…</div> });
 import { ProjectDeliveryInfo, ProjectProgress } from './types';
 import { createClient } from '@/lib/supabase/client';
 import { useTranslation } from '@/lib/translation';
