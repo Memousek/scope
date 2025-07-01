@@ -7,10 +7,10 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import {ContainerService} from "@/lib/container.service";
-import {UserRepository} from "@/lib/domain/repositories/user.repository";
-import {ScopeRepository} from "@/lib/domain/repositories/scope.repository";
-import {User} from "@/lib/domain/models/user.model";
+import { ContainerService } from "@/lib/container.service";
+import { UserRepository } from "@/lib/domain/repositories/user.repository";
+import { ScopeRepository } from "@/lib/domain/repositories/scope.repository";
+import { User } from "@/lib/domain/models/user.model";
 
 const useAuth = () => {
   const [loading, setLoading] = useState(true);
@@ -23,13 +23,13 @@ const useAuth = () => {
     });
   }, []);
 
-  return { loading, user };
+  return {loading, user};
 };
 
 export default function NewScopePage() {
-  const { loading, user } = useAuth();
+  const {loading, user} = useAuth();
   const router = useRouter();
-  const [newScope, setNewScope] = useState({ name: '', description: '' });
+  const [newScope, setNewScope] = useState({name: '', description: ''});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -74,7 +74,7 @@ export default function NewScopePage() {
             className="border rounded px-3 py-2 w-full focus:outline-blue-400"
             placeholder="Název scope"
             value={newScope.name}
-            onChange={e => setNewScope(s => ({ ...s, name: e.target.value }))}
+            onChange={e => setNewScope(s => ({...s, name: e.target.value}))}
             required
             disabled={saving}
           />
@@ -85,7 +85,7 @@ export default function NewScopePage() {
             className="border rounded px-3 py-2 w-full min-h-[60px] focus:outline-blue-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
             placeholder="Popis scope..."
             value={newScope.description}
-            onChange={e => setNewScope(s => ({ ...s, description: e.target.value }))}
+            onChange={e => setNewScope(s => ({...s, description: e.target.value}))}
             disabled={saving}
           />
         </div>
