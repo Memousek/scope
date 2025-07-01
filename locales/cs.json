@@ -57,7 +57,7 @@
   "light_mode": "Světlý režim",
   "system_mode": "Systémový režim",
   "bug_report": "Nahlásit chybu nebo navrhnout novou funkci",
-  "your_scopes": "Vaše scopy",
+  "your_scopes": "Vaše scopy / projekty",
   "track_progress_and_manage_resources": "Sledujte průběh vašich projektů a efektivně spravujte zdroje týmu.",
   "create_new_scope": "Vytvořit nový scope",
   "scope_burndown": "Scope Burndown",
@@ -124,5 +124,6 @@
   "waitingForCompletion": "Čeká na dokončení: {name}",
   "waitingForStart": "Čekání na start",
   "slipLabel": "Ve skluzu ({days} dní)",
-  "reserveLabel": "Rezerva (+{days} dní)"
+  "reserveLabel": "Rezerva (+{days} dní)",
+  "back": "Zpět"
 } 

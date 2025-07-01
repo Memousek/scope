@@ -125,5 +125,6 @@
   "waitingForCompletion": "Waiting for completion: {name}",
   "waitingForStart": "Waiting for start",
   "slipLabel": "Delayed ({days} days)",
-  "reserveLabel": "Reserve (+{days} days)"
+  "reserveLabel": "Reserve (+{days} days)",
+  "back": "Back"
 } 

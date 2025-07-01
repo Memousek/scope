@@ -8,6 +8,9 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { ArrowLeft } from 'lucide-react';
+import { useTranslation } from '@/lib/translation';
+import Link from 'next/link';
 
 const useAuth = () => {
   const [loading, setLoading] = useState(true);
@@ -30,7 +33,7 @@ export default function NewScopePage() {
   const [newScope, setNewScope] = useState({ name: '', description: '' });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-
+  const { t } = useTranslation();
   useEffect(() => {
     if (!loading && !user) {
       router.push('/auth/login');
@@ -60,7 +63,13 @@ export default function NewScopePage() {
   }
 
   return (
-    <div className="max-w-lg mx-auto p-6 rounded-lg shadow mt-8 bg-white dark:bg-gray-800">
+    <div className="flex flex-col gap-4 w-full">
+    <Link href="/" className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 mb-4 flex items-center gap-2 self-start p-4">
+        <ArrowLeft className="w-5 h-5" />
+        {t('back')}
+      </Link>
+    <div className="p-6 rounded-lg shadow mt-8 bg-white dark:bg-gray-800 max-w-lg mx-auto w-full">
+      
       <h1 className="text-2xl font-bold mb-4 text-center">Nový Scope</h1>
       <form className="flex flex-col gap-4" onSubmit={handleCreate}>
         <div>
@@ -93,6 +102,7 @@ export default function NewScopePage() {
           Vytvořit scope
         </button>
       </form>
+    </div>
     </div>
   );
 } 
