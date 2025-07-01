@@ -30,7 +30,7 @@ export default function RootLayout({
       <body className={`${geistSans.className} antialiased bg-gray-50 dark:bg-gray-900`}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="light"
+          defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >

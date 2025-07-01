@@ -41,5 +41,19 @@
   "realPlan": "Reálný plán (ve skluzu)",
   "currentProgress": "% hotovo",
   "editProject": "Upravit projekt",
-  "projectName": "Název projektu"
+  "projectName": "Název projektu",
+  "profile": "Profil",
+  "avatar": "Avatar",
+  "email": "Email",
+  "created": "Vytvořeno",
+  "updated": "Aktualizováno",
+  "id": "ID",
+  "delete_account": "Odstranit účet",
+  "logout": "Odhlásit se",
+  "settings": "Nastavení",
+  "language": "Jazyk",
+  "theme": "Motiv",
+  "dark_mode": "Tmavý režim",
+  "light_mode": "Světlý režim",
+  "system_mode": "Systémový režim"
 } 

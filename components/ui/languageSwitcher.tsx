@@ -7,8 +7,8 @@ import React, { useEffect, useState } from 'react';
 import { getCurrentLanguage, setCurrentLanguage } from '../../lib/translation';
 
 const languages = [
-  { code: 'cs', label: 'Čeština' },
-  { code: 'en', label: 'English' },
+  { code: 'cs', label: 'Čeština', flag: 'cz' },
+  { code: 'en', label: 'English', flag: 'gb' },
 ];
 
 export const LanguageSwitcher: React.FC = () => {
@@ -26,24 +26,17 @@ export const LanguageSwitcher: React.FC = () => {
   if (!lang) return null; // or fallback
 
   return (
-    <div style={{ display: 'flex', gap: 8 }} aria-label="Language switcher">
+    <div className="flex gap-2" aria-label="Language switcher">
       {languages.map((l) => (
         <button
           key={l.code}
           onClick={() => setLang(l.code)}
-          style={{
-            fontWeight: lang === l.code ? 'bold' : 'normal',
-            textDecoration: lang === l.code ? 'underline' : 'none',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            padding: 4,
-            borderRadius: 4,
-            outline: lang === l.code ? '2px solid #2563eb' : 'none',
-          }}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors font-semibold ${lang === l.code ? "bg-blue-600 text-white border-blue-600" : "bg-gray-100 text-gray-700 border-gray-300 hover:bg-blue-50"}`}
           aria-current={lang === l.code ? 'true' : undefined}
+          aria-label={l.label}
+          aria-pressed={lang === l.code}
         >
-          {l.label}
+          <img src={`https://flagcdn.com/w20/${l.flag}.png`} alt={l.label} width={20} height={10} aria-hidden={true} /> {l.label}
         </button>
       ))}
     </div>
