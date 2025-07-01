@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { FiCopy } from 'react-icons/fi';
 import { v4 as uuidv4 } from 'uuid';
+import { useTranslation } from '@/lib/translation';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ interface Editor {
 }
 
 export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId, isOwner }) => {
+  const { t } = useTranslation();
   const [editors, setEditors] = useState<Editor[]>([]);
   const [editorsLoading, setEditorsLoading] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
@@ -52,7 +54,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
       .eq('scope_id', scopeId)
       .eq('email', inviteEmail);
     if (existing && existing.length > 0) {
-      setInviteError('Tento uživatel už má přístup.');
+      setInviteError('already_has_access');
       return;
     }
     // Zjisti, jestli uživatel existuje v auth.users
@@ -69,7 +71,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
     }
     const { error } = await supabase.from('scope_editors').insert([insertObj]);
     if (error) {
-      setInviteError('Chyba při pozvání.');
+      setInviteError('invite_error');
       return;
     }
     setInviteEmail('');
@@ -114,18 +116,18 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm">
       <div className="rounded-2xl bg-background shadow-2xl p-8 w-full max-w-lg relative overflow-y-auto max-h-[90vh]">
-        <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-3xl font-bold" onClick={onClose} aria-label="Zavřít">×</button>
-        <h3 className="text-2xl font-bold mb-4 text-center">Sdílení scope</h3>
+        <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-3xl font-bold" onClick={onClose} aria-label={t('close')}>×</button>
+        <h3 className="text-2xl font-bold mb-4 text-center">{t('share_scope')}</h3>
         {/* Magický link pro sdílení scope (vždy viditelný) */}
         <div className="flex flex-col gap-2 mb-4">
           <div className="flex items-center gap-2 text-green-700 text-sm break-all">
-            <span>Link pro sdílení (editace):</span>
+            <span>{t('share_link_edit')}:</span>
             {(() => {
               const token = getLastInviteToken();
               const link = token ? `${window.location.origin}/scopes/${scopeId}/accept?token=${token}` : `${window.location.origin}/scopes/${scopeId}/accept`;
               return <>
                 <a href={link} className="underline text-blue-700" target="_blank" rel="noopener noreferrer">{link}</a>
-                <button onClick={() => navigator.clipboard.writeText(link)} title="Kopírovat" className="text-blue-600 hover:text-blue-800"><FiCopy /></button>
+                <button onClick={() => navigator.clipboard.writeText(link)} title={t('copy')} className="text-blue-600 hover:text-blue-800"><FiCopy /></button>
               </>;
             })()}
           </div>
@@ -134,7 +136,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
           <input
             type="email"
             className="border rounded px-3 py-2 min-w-[220px] focus:outline-blue-400"
-            placeholder="E-mail uživatele"
+            placeholder={t('user_email')}
             value={inviteEmail}
             onChange={e => setInviteEmail(e.target.value)}
             required
@@ -143,32 +145,32 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
             className="bg-blue-600 text-white px-4 py-2 rounded font-semibold shadow hover:bg-blue-700 transition"
             type="submit"
           >
-            Pozvat
+            {t('invite')}
           </button>
         </form>
-        {inviteError && <div className="text-red-600 text-sm mb-2">{inviteError}</div>}
+        {inviteError && <div className="text-red-600 text-sm mb-2">{t(inviteError)}</div>}
         <div className="mt-4">
-          <h4 className="font-semibold mb-2">Pozvaní a editoři</h4>
+          <h4 className="font-semibold mb-2">{t('invited_and_editors')}</h4>
           {editorsLoading ? (
-            <div className="text-gray-400">Načítám…</div>
+            <div className="text-gray-400">{t('loading')}…</div>
           ) : editors.length === 0 ? (
-            <div className="text-gray-400">Žádní pozvaní ani editoři</div>
+            <div className="text-gray-400">{t('no_invited_or_editors')}</div>
           ) : (
             <ul className="divide-y">
               {editors.map(editor => (
                 <li key={editor.id} className="py-2 flex items-center gap-2">
                   <span className="font-mono text-sm">{editor.email || editor.user_id}</span>
                   {editor.accepted_at ? (
-                    <span className="text-green-600 text-xs ml-2">editor</span>
+                    <span className="text-green-600 text-xs ml-2">{t('editor')}</span>
                   ) : (
-                    <span className="text-yellow-600 text-xs ml-2">pozván</span>
+                    <span className="text-yellow-600 text-xs ml-2">{t('invited')}</span>
                   )}
                   <button
                     className="ml-2 text-red-600 text-xs hover:underline"
                     onClick={() => handleRemoveEditor(editor.id)}
-                    title="Odebrat práva"
+                    title={t('remove_rights')}
                   >
-                    Odebrat
+                    {t('remove')}
                   </button>
                 </li>
               ))}

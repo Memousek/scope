@@ -67,12 +67,12 @@ export default function ScopePage({ params }: { params: Promise<{ id: string }> 
   }
 
   const handleExportTeam = () => {
-    downloadCSV('tym.csv', team as unknown as Record<string, unknown>[], ['name', 'role', 'fte'], { name: 'Jméno', role: 'Role', fte: 'FTE' });
+    downloadCSV('tym.csv', team as unknown as Record<string, unknown>[], ['name', 'role', 'fte'], { name: t('name'), role: t('role'), fte: t('fte') });
   };
 
   const handleExportProjects = () => {
     downloadCSV('projekty.csv', projects as unknown as Record<string, unknown>[], ['name', 'priority', 'fe_mandays', 'be_mandays', 'qa_mandays', 'pm_mandays', 'dpl_mandays', 'delivery_date'], {
-      name: 'Název', priority: 'Priorita', fe_mandays: 'FE MD', be_mandays: 'BE MD', qa_mandays: 'QA MD', pm_mandays: 'PM MD', dpl_mandays: 'DPL MD', delivery_date: 'Termín'
+      name: t('projectName'), priority: t('priority'), fe_mandays: t('fe_mandays'), be_mandays: t('be_mandays'), qa_mandays: t('qa_mandays'), pm_mandays: t('pm_mandays'), dpl_mandays: t('dpl_mandays'), delivery_date: t('deliveryDate')
     });
   };
 
@@ -230,20 +230,20 @@ export default function ScopePage({ params }: { params: Promise<{ id: string }> 
             onClick={handleExportTeam}
             className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition"
           >
-            Exportovat tým do CSV
+            {t('exportTeam')}
           </button>
           <button
             onClick={handleExportProjects}
             className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition"
           >
-            Exportovat projekty do CSV
+            {t('exportProjects')}
           </button>
           {isOwner && (
             <button
               onClick={() => setShareModalOpen(true)}
               className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
             >
-              Sdílet
+              {t('share')}
             </button>
           )}
         </div>
@@ -265,7 +265,7 @@ export default function ScopePage({ params }: { params: Promise<{ id: string }> 
                 disabled={savingDescription}
                 className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
               >
-                {savingDescription ? 'Ukládání...' : 'Uložit'}
+                {savingDescription ? t('saving') : t('save')}
               </button>
               <button
                 onClick={() => {
@@ -274,19 +274,19 @@ export default function ScopePage({ params }: { params: Promise<{ id: string }> 
                 }}
                 className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition"
               >
-                Zrušit
+                {t('cancel')}
               </button>
             </div>
           </div>
         ) : (
           <div className="flex justify-between items-start">
-            <p className="text-gray-600 whitespace-pre-wrap">{description || 'Žádný popis'}</p>
+            <p className="text-gray-600 whitespace-pre-wrap">{description || t('no_description')}</p>
             {isOwner && (
               <button
                 onClick={() => setEditingDescription(true)}
                 className="text-blue-500 hover:text-blue-600"
               >
-                Upravit
+                {t('editDescription')}
               </button>
             )}
           </div>

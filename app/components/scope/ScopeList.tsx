@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "@/lib/translation";
 
 export type ScopeListItem = {
   id: string;
@@ -24,12 +25,13 @@ export const ScopeList: React.FC<ScopeListProps> = ({
   onDelete,
   onRemove,
 }) => {
+  const { t } = useTranslation();
   return (
     <div className="relative grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 min-h-[250px]">
       <AnimatePresence>
         {loading ? (
           <div className="col-span-full text-center text-gray-500 py-8">
-            <span className="text-base">Načítám scopy…</span>
+            <span className="text-base">{t("loading_scopes")}</span>
           </div>
         ) : scopes.length === 0 ? (
           <motion.div
@@ -39,7 +41,7 @@ export const ScopeList: React.FC<ScopeListProps> = ({
             exit={{ opacity: 0, y: 10 }}
           >
             <span className="text-base text-gray-500 dark:text-gray-400 px-4 py-2">
-              Zatím nemáte žádné scopy. Vytvořte si nový scope pro sledování projektů.
+              {t("no_scopes")}
             </span>
           </motion.div>
         ) : (
@@ -60,7 +62,7 @@ export const ScopeList: React.FC<ScopeListProps> = ({
                   {scope.name}
                 </Link>
                 <span className="text-base text-gray-500 block mb-6">
-                  {scope.type === "owned" ? "Vlastní scope" : "Sdílený scope"}
+                  {scope.type === "owned" ? t("owned_scope") : t("shared_scope")}
                 </span>
               </div>
               <div className="flex justify-end gap-2 mt-4">
@@ -69,7 +71,7 @@ export const ScopeList: React.FC<ScopeListProps> = ({
                     onClick={() => onDelete(scope.id)}
                     className="text-red-600 hover:text-red-700 text-base px-4 py-2 rounded border border-red-600 hover:border-red-700 transition-colors"
                   >
-                    Smazat
+                    {t("delete")}
                   </button>
                 ) : null}
                 {scope.type === "shared" && onRemove ? (
@@ -77,7 +79,7 @@ export const ScopeList: React.FC<ScopeListProps> = ({
                     onClick={() => onRemove(scope.id)}
                     className="text-gray-600 hover:text-gray-700 text-base px-4 py-2 rounded border border-gray-600 hover:border-gray-700 transition-colors"
                   >
-                    Odebrat
+                    {t("remove")}
                   </button>
                 ) : null}
               </div>

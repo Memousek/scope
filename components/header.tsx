@@ -39,7 +39,7 @@ export function Header() {
         <button
           className="md:hidden flex items-center justify-center p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
           onClick={() => setMobileOpen(true)}
-          aria-label="Otevřít menu"
+          aria-label={t('open_menu')}
         >
           <Menu className="w-6 h-6" />
         </button>
@@ -50,7 +50,7 @@ export function Header() {
               <button
                 className="absolute top-4 right-4 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 onClick={() => setMobileOpen(false)}
-                aria-label="Zavřít menu"
+                aria-label={t('close_menu')}
               >
                 <X className="w-6 h-6" />
               </button>
@@ -62,22 +62,22 @@ export function Header() {
                   <>
                     {/* Avatar jako dekorace */}
                     {user.avatar_url ? (
-                      <Image src={user.avatar_url} alt="User avatar" width={40} height={40} className="w-10 h-10 rounded-full mb-2" />
+                      <Image src={user.avatar_url} alt={t('user_avatar')} width={40} height={40} className="w-10 h-10 rounded-full mb-2" />
                     ) : (
                       <User className="w-10 h-10 mb-2" />
                     )}
                     <Link href="/profile" className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 transition" onClick={() => setMobileOpen(false)}>
-                      <User className="w-5 h-5" /> Profil
+                      <User className="w-5 h-5" /> {t('profile')}
                     </Link>
                     <Link href="/settings" className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 transition" onClick={() => setMobileOpen(false)}>
-                      <SettingsIcon className="w-5 h-5" /> Nastavení
+                      <SettingsIcon className="w-5 h-5" /> {t('settings')}
                     </Link>
                     <LogoutButton />
                   </>
                 )}
                 {!user && (
                   <Link href="/auth/login" className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 transition" onClick={() => setMobileOpen(false)}>
-                    Přihlásit se
+                    {t('login')}
                   </Link>
                 )}
               </div>

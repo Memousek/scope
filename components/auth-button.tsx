@@ -7,8 +7,10 @@ import { LogoutButton } from "./logout-button";
 import { useEffect, useState } from "react";
 import { SettingsIcon, UserIcon } from "lucide-react";
 import Image from "next/image";
+import { useTranslation } from "@/lib/translation";
 
 export function AuthButton() {
+  const { t } = useTranslation();
   const [user, setUser] = useState<{ email: string, avatar_url: string, name: string } | null>(null);
 
   useEffect(() => {
@@ -31,7 +33,7 @@ export function AuthButton() {
         </Link>
         <Link href="/settings" className="flex items-center gap-2 text-gray-700 dark:text-gray-200 hover:text-blue-600 transition px-2 py-1 rounded">
           <SettingsIcon className="w-5 h-5" />
-          <span>Nastavení</span>
+          <span>{t('settings')}</span>
         </Link>
         <LogoutButton />
       </div>
@@ -41,7 +43,7 @@ export function AuthButton() {
   return (
     <div className="flex gap-2">
       <Button asChild size="sm" variant={"outline"}>
-        <Link href="/auth/login">Přihlásit se</Link>
+        <Link href="/auth/login">{t('login')}</Link>
       </Button>
     </div>
   );

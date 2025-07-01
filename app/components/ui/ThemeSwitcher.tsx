@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { Sun, Moon, Monitor } from "lucide-react";
+import { useTranslation } from "@/lib/translation";
 
 /**
  * ThemeSwitcher komponenta umožňuje přepínat světlý, tmavý a systémový režim.
  * Ukládá volbu do localStorage a aplikuje na <html>.
  */
 export function ThemeSwitcher() {
+  const { t } = useTranslation();
   const [theme, setTheme] = useState<"light"|"dark"|"system">("light");
 
   useEffect(() => {
@@ -46,21 +48,21 @@ export function ThemeSwitcher() {
           className={`flex items-center gap-1 px-4 py-2 rounded-lg border transition-colors font-semibold ${theme === "light" ? "bg-blue-600 text-white border-blue-600" : "bg-gray-100 text-gray-700 border-gray-300 hover:bg-blue-50"}`}
           aria-pressed={theme === "light"}
         >
-          <Sun className="w-5 h-5" /> Světlý
+          <Sun className="w-5 h-5" /> {t('light_mode')}
         </button>
         <button
           onClick={() => handleSetTheme("dark")}
           className={`flex items-center gap-1 px-4 py-2 rounded-lg border transition-colors font-semibold ${theme === "dark" ? "bg-blue-600 text-white border-blue-600" : "bg-gray-100 text-gray-700 border-gray-300 hover:bg-blue-50"}`}
           aria-pressed={theme === "dark"}
         >
-          <Moon className="w-5 h-5" /> Tmavý
+          <Moon className="w-5 h-5" /> {t('dark_mode')}
         </button>
         <button
           onClick={() => handleSetTheme("system")}
           className={`flex items-center gap-1 px-4 py-2 rounded-lg border transition-colors font-semibold ${theme === "system" ? "bg-blue-600 text-white border-blue-600" : "bg-gray-100 text-gray-700 border-gray-300 hover:bg-blue-50"}`}
           aria-pressed={theme === "system"}
         >
-          <Monitor className="w-5 h-5" /> Systémový
+          <Monitor className="w-5 h-5" /> {t('system_mode')}
         </button>
       </div>
     </div>

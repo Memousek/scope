@@ -7,6 +7,7 @@ import { ProjectHistoryModal } from './ProjectHistoryModal';
 import { useProjects } from '@/app/hooks/useProjects';
 import { useTeam } from '@/app/hooks/useTeam';
 import { calculateProjectDeliveryInfo, calculatePriorityDates } from '@/app/utils/dateUtils';
+import { useTranslation } from '@/lib/translation';
 
 interface ProjectSectionProps {
   scopeId: string;
@@ -18,6 +19,7 @@ interface ProjectSectionProps {
 }
 
 export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: ProjectSectionProps) {
+  const { t } = useTranslation();
   const { 
     projects, 
     loading: projectsLoading, 
@@ -79,8 +81,6 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
     }
   };
 
-
-
   // Calculate priority dates for all projects
   const priorityDates = calculatePriorityDates(projects, team);
 
@@ -111,39 +111,39 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
       <section>
         <div className="rounded-lg shadow p-4">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
-            <h2 className="text-xl font-semibold mb-2 sm:mb-0">Projekty</h2>
+            <h2 className="text-xl font-semibold mb-2 sm:mb-0">{t('projects')}</h2>
             <button
               className="bg-blue-600 text-white px-5 py-2 rounded font-semibold shadow hover:bg-blue-700 transition w-full sm:w-auto mt-2 sm:mt-0"
               onClick={() => setAddModalOpen(true)}
             >
-              Přidat projekt
+              {t('addProject')}
             </button>
           </div>
           <div className="overflow-x-auto rounded-lg">
             <table className="min-w-[700px] w-full text-sm rounded-lg shadow border border-gray-200">
               <thead>
                 <tr className="text-gray-700 font-semibold">
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-left rounded-tl-lg">Název projektu</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">Priorita</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">Odhad FE (MD)</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">% FE hotovo</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">Odhad BE (MD)</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">% BE hotovo</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">Odhad QA (MD)</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">% QA hotovo</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">Odhad PM (MD)</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">% PM hotovo</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">Odhad DPL (MD)</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">% DPL hotovo</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-center">Termín dodání</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-center">Spočítaný termín</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-center">Skluz</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-center rounded-tr-lg">Akce</th>
+                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-left rounded-tl-lg">{t('projectName')}</th>
+                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">{t('priority')}</th>
+                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">{t('fe_mandays')}</th>
+                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">% FE {t('done')}</th>
+                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">{t('be_mandays')}</th>
+                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">% BE {t('done')}</th>
+                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">{t('qa_mandays')}</th>
+                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">% QA {t('done')}</th>
+                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">{t('pm_mandays')}</th>
+                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">% PM {t('done')}</th>
+                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">{t('dpl_mandays')}</th>
+                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">% DPL {t('done')}</th>
+                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-center">{t('deliveryDate')}</th>
+                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-center">{t('calculatedDelivery')}</th>
+                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-center">{t('delay')}</th>
+                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-center rounded-tr-lg">{t('actions')}</th>
                 </tr>
               </thead>
               <tbody>
                 {projects.length === 0 ? (
-                  <tr><td colSpan={15} className="text-gray-400 text-center py-4">Žádné projekty</td></tr>
+                  <tr><td colSpan={15} className="text-gray-400 text-center py-4">{t('noProjects')}</td></tr>
                 ) : (
                   projects.map(project => {
                     const info = calculateProjectDeliveryInfo(project, team);
@@ -169,12 +169,12 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
                         <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle text-center">{project.delivery_date ? new Date(project.delivery_date).toLocaleDateString() : ''}</td>
                         <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle text-center">{info.calculatedDeliveryDate.toLocaleDateString()}</td>
                         <td className={`px-2 py-1 sm:px-3 sm:py-2 align-middle text-center font-semibold ${info.diffWorkdays === null ? '' : info.diffWorkdays >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {info.diffWorkdays === null ? '' : info.diffWorkdays >= 0 ? `+${info.diffWorkdays} dní` : `${info.diffWorkdays} dní`}
+                          {info.diffWorkdays === null ? '' : info.diffWorkdays >= 0 ? `+${info.diffWorkdays} ${t('days')}` : `${info.diffWorkdays} ${t('days')}`}
                         </td>
                         <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle text-center whitespace-nowrap">
-                          <button className="text-blue-600 font-semibold hover:underline mr-2" onClick={() => handleOpenEditModal(project)}>Upravit</button>
-                          <button className="text-blue-600 font-semibold hover:underline mr-2" onClick={() => setHistoryModalProject(project)}>Historie</button>
-                          <button className="text-red-600 font-semibold hover:underline" onClick={() => handleDeleteProject(project.id)}>Smazat</button>
+                          <button className="text-blue-600 font-semibold hover:underline mr-2" onClick={() => handleOpenEditModal(project)}>{t('edit')}</button>
+                          <button className="text-blue-600 font-semibold hover:underline mr-2" onClick={() => setHistoryModalProject(project)}>{t('history')}</button>
+                          <button className="text-red-600 font-semibold hover:underline" onClick={() => handleDeleteProject(project.id)}>{t('delete')}</button>
                         </td>
                       </tr>
                     );
@@ -188,7 +188,7 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
 
       {/* Výsledky a burndown grafy */}
       <div className="my-8">
-        <h3 className="text-lg font-semibold mb-2">Burndown & termíny</h3>
+        <h3 className="text-lg font-semibold mb-2">{t('burndown')}</h3>
         {projects.map(project => {
           const info = calculateProjectDeliveryInfo(project, team);
           return (
@@ -221,6 +221,7 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
         <ProjectHistoryModal
           project={historyModalProject}
           onClose={() => setHistoryModalProject(null)}
+          onProjectUpdate={loadProjects}
         />
       )}
     </>

@@ -11,6 +11,7 @@ import { Project } from './types';
 import BurndownChart from '@/components/BurndownChart';
 import { ProjectDeliveryInfo, ProjectProgress } from './types';
 import { createClient } from '@/lib/supabase/client';
+import { useTranslation } from '@/lib/translation';
 
 interface ProjectBurndownProps {
   project: Project;
@@ -33,6 +34,7 @@ interface ProjectBurndownProps {
 export function ProjectBurndown({ project, deliveryInfo, priorityStartDate, priorityEndDate, blockingProjectName, showBlockingBg }: ProjectBurndownProps) {
   const [progressHistory, setProgressHistory] = useState<ProjectProgress[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useTranslation();
 
   // Načti historii progressů pro tento projekt
   useEffect(() => {
@@ -113,26 +115,28 @@ export function ProjectBurndown({ project, deliveryInfo, priorityStartDate, prio
   // --- Skluz ---
   const slip = typeof project.slip === 'number' ? project.slip : (typeof deliveryInfo.slip === 'number' ? deliveryInfo.slip : undefined);
   let slipColor = '';
-  let slipText = 'Skluz: -';
+  let slipText = t('slipNone');
   if (typeof slip === 'number' && !isNaN(slip)) {
     slipColor = slip < 0 ? 'text-red-600' : 'text-green-600';
-    slipText = slip < 0 ? `Skluz: ${slip} dní` : `Skluz: +${slip} dní`;
+    slipText = slip < 0
+      ? t('slipNegative').replace('{slip}', String(slip))
+      : t('slipPositive').replace('{slip}', String(slip));
   }
 
   return (
     <div className="mb-6 p-4 rounded-lg border">
       <div className="flex flex-wrap gap-4 items-center mb-2">
         <span className="font-semibold">{project.name}</span>
-        <span>Spočítaný termín dodání: <b>{deliveryInfo.calculatedDeliveryDate.toLocaleDateString()}</b></span>
+        <span>{t('calculatedDelivery')}: <b>{deliveryInfo.calculatedDeliveryDate.toLocaleDateString()}</b></span>
         {project.delivery_date && (
-          <span>Termín dodání: <b>{new Date(project.delivery_date).toLocaleDateString()}</b></span>
+          <span>{t('deliveryDate')}: <b>{new Date(project.delivery_date).toLocaleDateString()}</b></span>
         )}
         <span className={slipColor}>{slipText}</span>
-        <span className="text-gray-600">Začátek dle priority: <b>{priorityStartDate.toLocaleDateString()}</b></span>
-        <span className="text-gray-600">Konec dle priority: <b>{priorityEndDate.toLocaleDateString()}</b></span>
+        <span className="text-gray-600">{t('priorityStart')}: <b>{priorityStartDate.toLocaleDateString()}</b></span>
+        <span className="text-gray-600">{t('priorityEnd')}: <b>{priorityEndDate.toLocaleDateString()}</b></span>
       </div>
       {loading ? (
-        <div className="text-gray-500 italic py-8 text-center">Načítám data…</div>
+        <div className="text-gray-500 italic py-8 text-center">{t('loadingData')}</div>
       ) : (
         <BurndownChart
           roles={roles}

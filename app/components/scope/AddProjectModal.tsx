@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Project } from './types';
+import { useTranslation } from '@/lib/translation';
 
 interface AddProjectModalProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ interface AddProjectModalProps {
 }
 
 export const AddProjectModal: React.FC<AddProjectModalProps> = ({ isOpen, onClose, onAddProject, savingProject, hasFE, hasBE, hasQA, hasPM, hasDPL }) => {
+  const { t } = useTranslation();
   const [newProject, setNewProject] = useState<Omit<Project, 'id' | 'scope_id' | 'created_at'>>({
     name: '',
     priority: 1,
@@ -67,16 +69,16 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({ isOpen, onClos
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm">
+    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm ${!isOpen ? 'hidden' : ''}`}>
       <div className="rounded-2xl bg-background shadow-2xl p-8 w-full max-w-2xl relative overflow-y-auto max-h-[90vh]">
-        <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-3xl font-bold" onClick={onClose} aria-label="Zavřít">×</button>
-        <h3 className="text-2xl font-bold mb-6 text-center">Přidat nový projekt</h3>
+        <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-3xl font-bold" onClick={onClose} aria-label={t('close')}>×</button>
+        <h3 className="text-2xl font-bold mb-6 text-center">{t('addNewProject')}</h3>
         <form className="flex flex-wrap gap-4 items-end" onSubmit={handleSubmit}>
           <div className="flex flex-col">
-            <label className="mb-1 font-medium text-gray-700">Název projektu</label>
+            <label className="mb-1 font-medium text-gray-700">{t('projectName')}</label>
             <input
               className="border rounded px-3 py-2 min-w-[180px] focus:outline-blue-400"
-              placeholder="Nový projekt"
+              placeholder={t('projectName')}
               value={newProject.name}
               onChange={e => setNewProject(p => ({ ...p, name: e.target.value }))}
               disabled={savingProject}
@@ -84,7 +86,7 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({ isOpen, onClos
             />
           </div>
           <div className="flex flex-col">
-            <label className="mb-1 font-medium text-gray-700">Priorita</label>
+            <label className="mb-1 font-medium text-gray-700">{t('priority')}</label>
             <input
               className="border rounded px-3 py-2 w-16 focus:outline-blue-400"
               type="number"
@@ -97,7 +99,7 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({ isOpen, onClos
           </div>
           {hasFE && (
             <div className="flex flex-col">
-              <label className="mb-1 font-medium text-gray-700">Odhad FE (MD)</label>
+              <label className="mb-1 font-medium text-gray-700">{t('feEstimate')}</label>
               <input
                 className="border rounded px-3 py-2 w-24 focus:outline-blue-400"
                 type="number"
@@ -112,7 +114,7 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({ isOpen, onClos
           )}
           {hasBE && (
             <div className="flex flex-col">
-              <label className="mb-1 font-medium text-gray-700">Odhad BE (MD)</label>
+              <label className="mb-1 font-medium text-gray-700">{t('beEstimate')}</label>
               <input
                 className="border rounded px-3 py-2 w-24 focus:outline-blue-400"
                 type="number"
@@ -127,7 +129,7 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({ isOpen, onClos
           )}
           {hasQA && (
             <div className="flex flex-col">
-              <label className="mb-1 font-medium text-gray-700">Odhad QA (MD)</label>
+              <label className="mb-1 font-medium text-gray-700">{t('qaEstimate')}</label>
               <input
                 className="border rounded px-3 py-2 w-24 focus:outline-blue-400"
                 type="number"
@@ -142,7 +144,7 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({ isOpen, onClos
           )}
           {hasPM && (
             <div className="flex flex-col">
-              <label className="mb-1 font-medium text-gray-700">Odhady PM (MD)</label>
+              <label className="mb-1 font-medium text-gray-700">{t('pmEstimate')}</label>
               <input
                 className="border rounded px-3 py-2 w-24 focus:outline-blue-400"
                 type="number"
@@ -157,7 +159,7 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({ isOpen, onClos
           )}
           {hasDPL && (
             <div className="flex flex-col">
-              <label className="mb-1 font-medium text-gray-700">Odhady DPL (MD)</label>
+              <label className="mb-1 font-medium text-gray-700">{t('dplEstimate')}</label>
               <input
                 className="border rounded px-3 py-2 w-24 focus:outline-blue-400"
                 type="number"
@@ -170,10 +172,9 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({ isOpen, onClos
               />
             </div>
           )}
-
           <div className="flex gap-2 justify-end mt-2">
             <div className="flex flex-col">
-              <label className="mb-1 font-medium text-gray-700">Termín dodání</label>
+              <label className="mb-1 font-medium text-gray-700">{t('deliveryDate')}</label>
               <input
                 className="border rounded px-3 py-2 focus:outline-blue-400"
                 type="date"
@@ -184,13 +185,13 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({ isOpen, onClos
               />
             </div>
             <div className="flex gap-2 justify-end mt-2">
-              <button type="button" className="px-5 py-2 rounded bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300" onClick={onClose}>Zrušit</button>
+              <button type="button" className="px-5 py-2 rounded bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300" onClick={onClose}>{t('cancel')}</button>
               <button
                 className="bg-blue-600 text-white px-5 py-2 rounded font-semibold shadow hover:bg-blue-700 transition disabled:opacity-60"
                 type="submit"
                 disabled={savingProject || !newProject.name.trim()}
               >
-                Přidat projekt
+                {savingProject ? t('saving') : t('addProject')}
               </button>
             </div>
           </div>

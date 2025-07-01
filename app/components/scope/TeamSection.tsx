@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { TeamMember, ROLES } from './types';
 import { AddMemberModal } from './AddMemberModal';
+import { useTranslation } from '@/lib/translation';
 
 interface TeamSectionProps {
   scopeId: string;
@@ -10,6 +11,7 @@ interface TeamSectionProps {
 }
 
 export function TeamSection({ scopeId, team, onTeamChange }: TeamSectionProps) {
+  const { t } = useTranslation();
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [savingMember, setSavingMember] = useState(false);
 
@@ -55,23 +57,23 @@ export function TeamSection({ scopeId, team, onTeamChange }: TeamSectionProps) {
       <section className="mb-6">
         <div className="rounded-lg shadow p-4">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
-              <h2 className="text-xl font-semibold mb-2 sm:mb-0">Členové týmu</h2>
+              <h2 className="text-xl font-semibold mb-2 sm:mb-0">{t('teamMembers')}</h2>
               <button
                 className="bg-blue-600 text-white px-5 py-2 rounded font-semibold shadow hover:bg-blue-700 transition w-full sm:w-auto mt-2 sm:mt-0"
                 onClick={() => setAddModalOpen(true)}
               >
-                Přidat člena
+                {t('addMember')}
               </button>
           </div>
           <div className="rounded p-2 sm:p-3">
             <div className="flex font-semibold mb-2 text-gray-700 text-xs sm:text-base">
-              <div className="flex-1">Jméno člena týmu</div>
-              <div className="w-24 sm:w-32">Role</div>
-              <div className="w-24 sm:w-32">Úvazek v FTE</div>
-              <div className="w-16 sm:w-20">Akce</div>
+              <div className="flex-1">{t('name')}</div>
+              <div className="w-24 sm:w-32">{t('role')}</div>
+              <div className="w-24 sm:w-32">{t('fte')}</div>
+              <div className="w-16 sm:w-20">{t('actions')}</div>
             </div>
             {team.length === 0 ? (
-              <div className="text-gray-400">Žádní členové</div>
+              <div className="text-gray-400">{t('noMembers')}</div>
             ) : (
               team.map(member => (
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center mb-2 gap-1 sm:gap-0" key={member.id}>
@@ -97,7 +99,7 @@ export function TeamSection({ scopeId, team, onTeamChange }: TeamSectionProps) {
                     value={member.fte}
                     onChange={e => handleEditMember(member.id, 'fte', Number(e.target.value))}
                   />
-                  <button className="text-red-600 font-semibold hover:underline ml-0 sm:ml-2 mt-1 sm:mt-0" onClick={() => handleDeleteMember(member.id)}>Smazat</button>
+                  <button className="text-red-600 font-semibold hover:underline ml-0 sm:ml-2 mt-1 sm:mt-0" onClick={() => handleDeleteMember(member.id)}>{t('delete')}</button>
                 </div>
               ))
             )}

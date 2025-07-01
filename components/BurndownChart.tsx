@@ -6,6 +6,7 @@
  */
 import React, { useRef, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceArea } from 'recharts';
+import { useTranslation } from '@/lib/translation';
 
 export interface BurndownChartRoleData {
   value: string;
@@ -45,6 +46,8 @@ interface BurndownChartProps {
 }
 
 export default function BurndownChart({ roles, totalData, slip, calculatedDeliveryDate, deliveryDate, priorityStartDate, createdAt, blockingProjectName, showBlockingBg }: BurndownChartProps) {
+  const { t } = useTranslation();
+
   // --- Export ---
   const chartRef = useRef<HTMLDivElement>(null);
   const handleExport = async () => {
@@ -69,12 +72,12 @@ export default function BurndownChart({ roles, totalData, slip, calculatedDelive
       'afterDelivery',
     ];
     const header = allKeys.map(k => {
-      if (k === 'date') return 'Datum';
-      if (k === 'total') return 'Celkem % hotovo';
-      if (k === 'ideal') return 'Ideální průběh';
-      if (k === 'afterDelivery') return 'Skluz po termínu';
+      if (k === 'date') return t('date');
+      if (k === 'total') return t('totalPercentDone');
+      if (k === 'ideal') return t('idealProgress');
+      if (k === 'afterDelivery') return t('slipAfterDelivery');
       const role = roles.find(r => r.value === k);
-      return role ? `${role.label} % hotovo` : k;
+      return role ? `${role.label} % ${t('done')}` : k;
     });
     // Sestav řádky
     const rows = totalData.map(row =>
@@ -162,14 +165,14 @@ export default function BurndownChart({ roles, totalData, slip, calculatedDelive
 
   // Barva reference podle skluzu
   const refColor = typeof slip === 'number' ? (slip < 0 ? '#e11d48' : '#059669') : '#2563eb';
-  const refLabel = typeof slip === 'number' ? (slip < 0 ? 'Skluz' : 'Rezerva') : '';
+  const refLabel = typeof slip === 'number' ? (slip < 0 ? t('slip') : t('reserve')) : '';
 
   // --- Vlastní legenda ---
   const legendItems = [
-    { key: 'total', label: 'Celkem % hotovo', color: '#111' },
-    ...roles.map(r => ({ key: r.value, label: `${r.label} % hotovo`, color: r.color })),
-    { key: 'ideal', label: 'Ideální průběh', color: '#888', dash: true },
-    afterDeliveryLine.length > 1 ? { key: 'afterDelivery', label: 'Skluz po termínu', color: '#e11d48', dash: false } : null,
+    { key: 'total', label: t('totalPercentDone'), color: '#111' },
+    ...roles.map(r => ({ key: r.value, label: `${r.label} % ${t('done')}`, color: r.color })),
+    { key: 'ideal', label: t('idealProgress'), color: '#888', dash: true },
+    afterDeliveryLine.length > 1 ? { key: 'afterDelivery', label: t('slipAfterDelivery'), color: '#e11d48', dash: false } : null,
   ].filter(Boolean) as { key: string; label: string; color: string; dash?: boolean }[];
 
   // Najdi labely pro createdAt a priorityStartDate
@@ -182,16 +185,16 @@ export default function BurndownChart({ roles, totalData, slip, calculatedDelive
         <button
           onClick={handleExport}
           className="px-3 py-1 rounded bg-blue-600 text-white font-semibold shadow hover:bg-blue-700 transition text-sm"
-          aria-label="Exportovat graf jako PNG"
+          aria-label={t('exportPng')}
         >
-          Exportovat jako PNG
+          {t('exportPng')}
         </button>
         <button
           onClick={handleExportCSV}
           className="px-3 py-1 rounded bg-green-600 text-white font-semibold shadow hover:bg-green-700 transition text-sm"
-          aria-label="Exportovat data jako CSV"
+          aria-label={t('exportCsv')}
         >
-          Exportovat jako CSV
+          {t('exportCsv')}
         </button>
         <div className="flex flex-wrap gap-2 text-sm select-none">
           {legendItems.map(item => (
@@ -227,7 +230,7 @@ export default function BurndownChart({ roles, totalData, slip, calculatedDelive
                 fill="#e5e7eb"
                 fillOpacity={0.6}
                 ifOverflow="extendDomain"
-                label={{ value: blockingProjectName ? `Čeká na dokončení: ${blockingProjectName}` : 'Čekání na start', position: 'insideTopLeft', fill: '#888', fontSize: 12 }}
+                label={{ value: blockingProjectName ? t('waitingForCompletion').replace('{name}', blockingProjectName) : t('waitingForStart'), position: 'insideTopLeft', fill: '#888', fontSize: 12 }}
               />
             )}
             {/* Čáry podle hiddenLines */}
@@ -236,7 +239,7 @@ export default function BurndownChart({ roles, totalData, slip, calculatedDelive
                 type="monotone"
                 dataKey="total"
                 stroke="#111"
-                name="Celkem % hotovo"
+                name={t('totalPercentDone')}
                 dot
                 strokeWidth={2}
                 isAnimationActive={false}
@@ -248,7 +251,7 @@ export default function BurndownChart({ roles, totalData, slip, calculatedDelive
                 type="monotone"
                 dataKey={role.value}
                 stroke={role.color}
-                name={`${role.label} % hotovo`}
+                name={`${role.label} % ${t('done')}`}
                 dot
                 strokeWidth={2}
                 isAnimationActive={false}
@@ -259,7 +262,7 @@ export default function BurndownChart({ roles, totalData, slip, calculatedDelive
                 type="monotone"
                 dataKey="ideal"
                 stroke="#888"
-                name="Ideální průběh"
+                name={t('idealProgress')}
                 strokeDasharray="5 5"
                 dot={false}
                 strokeWidth={2}
@@ -273,7 +276,7 @@ export default function BurndownChart({ roles, totalData, slip, calculatedDelive
                 type="linear"
                 dataKey="afterDelivery"
                 stroke="#e11d48"
-                name="Skluz po termínu"
+                name={t('slipAfterDelivery')}
                 dot={false}
                 strokeWidth={3}
                 isAnimationActive={false}
@@ -285,7 +288,7 @@ export default function BurndownChart({ roles, totalData, slip, calculatedDelive
               <ReferenceLine
                 x={deliveryLineX}
                 stroke="#e11d48"
-                label={{ value: 'Plánovaný termín', position: 'top', fill: '#e11d48', fontWeight: 'bold', fontSize: 12 }}
+                label={{ value: t('plannedDelivery'), position: 'top', fill: '#e11d48', fontWeight: 'bold', fontSize: 12 }}
                 strokeDasharray="2 2"
               />
             )}
@@ -294,7 +297,7 @@ export default function BurndownChart({ roles, totalData, slip, calculatedDelive
               <ReferenceLine
                 x={refLineX}
                 stroke={refColor}
-                label={{ value: refLabel ? refLabel : 'Odhadovaný termín', position: 'top', fill: refColor, fontWeight: 'bold', fontSize: 12 }}
+                label={{ value: refLabel ? refLabel : t('estimatedDelivery'), position: 'top', fill: refColor, fontWeight: 'bold', fontSize: 12 }}
                 strokeDasharray="3 3"
               />
             )}
@@ -303,7 +306,7 @@ export default function BurndownChart({ roles, totalData, slip, calculatedDelive
       </div>
       {typeof slip === 'number' && (
         <div className={slip < 0 ? 'text-red-600 font-bold mt-2' : 'text-green-600 font-bold mt-2'}>
-          {slip < 0 ? `Ve skluzu (${Math.abs(slip)} dní)` : `Rezerva (+${slip} dní)`}
+          {slip < 0 ? t('slipLabel').replace('{days}', String(Math.abs(slip))) : t('reserveLabel').replace('{days}', String(slip))}
         </div>
       )}
     </div>

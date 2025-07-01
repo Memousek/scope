@@ -7,8 +7,10 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { ScopeList, ScopeListItem } from "@/app/components/scope/ScopeList";
+import { useTranslation } from "@/lib/translation";
 
 export default function Home() {
+  const { t } = useTranslation();
   const [user, setUser] = useState<{ email: string } | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [scopes, setScopes] = useState<ScopeListItem[]>([]);
@@ -109,7 +111,7 @@ export default function Home() {
   };
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Načítání...</div>;
+    return <div className="min-h-screen flex items-center justify-center">{t("loading")}</div>;
   }
 
   if (user) {
@@ -119,12 +121,17 @@ export default function Home() {
           <Header />
           <div className="flex-1 flex flex-col gap-20 max-w-5xl p-5 w-full">
             <div className="flex justify-between items-center">
-              <h1 className="text-2xl font-bold">Vaše scopy</h1>
+              <div className="flex flex-col gap-2">
+                <h1 className="text-2xl font-bold">{t("your_scopes")}</h1>
+                <p className="text-gray-600">
+                  {t("track_progress_and_manage_resources")}
+                </p>
+              </div>
               <button
                 className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
                 onClick={() => router.push('/scopes/new')}
               >
-                Vytvořit nový scope
+                {t("create_new_scope")}
               </button>
             </div>
             <ScopeList
@@ -151,7 +158,7 @@ export default function Home() {
             transition={{ duration: 0.5 }}
             className="text-4xl md:text-6xl font-bold mb-6"
           >
-            Scope Burndown
+            {t("scope_burndown")}
           </motion.h1>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
@@ -159,7 +166,7 @@ export default function Home() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-xl text-gray-600 mb-12 max-w-2xl mx-auto"
           >
-            Sledujte průběh vašich projektů a efektivně spravujte zdroje týmu
+            {t("track_progress_and_manage_resources")}
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -170,7 +177,7 @@ export default function Home() {
               href="/auth/login"
               className="bg-blue-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-blue-700 transition"
             >
-              Přihlásit se
+              {t("login")}
             </Link>
           </motion.div>
         </section>
@@ -185,9 +192,9 @@ export default function Home() {
                 viewport={{ once: true }}
                 className="bg-white p-6 rounded-lg shadow-lg"
               >
-                <h3 className="text-xl font-semibold mb-4">Sledování průběhu</h3>
+                <h3 className="text-xl font-semibold mb-4">{t("progress_tracking")}</h3>
                 <p className="text-gray-600">
-                  Vizuální přehled o průběhu projektů a využití zdrojů týmu
+                  {t("visual_overview_of_projects")}
                 </p>
               </motion.div>
 
@@ -198,9 +205,9 @@ export default function Home() {
                 viewport={{ once: true }}
                 className="bg-white p-6 rounded-lg shadow-lg"
               >
-                <h3 className="text-xl font-semibold mb-4">Sdílení s týmem</h3>
+                <h3 className="text-xl font-semibold mb-4">{t("team_sharing")}</h3>
                 <p className="text-gray-600">
-                  Spolupracujte s kolegy a sdílejte přehledy o projektech
+                  {t("collaborate_and_share")}
                 </p>
               </motion.div>
 
@@ -211,9 +218,9 @@ export default function Home() {
                 viewport={{ once: true }}
                 className="bg-white p-6 rounded-lg shadow-lg"
               >
-                <h3 className="text-xl font-semibold mb-4">Export dat</h3>
+                <h3 className="text-xl font-semibold mb-4">{t("data_export")}</h3>
                 <p className="text-gray-600">
-                  Exportujte data do CSV pro další analýzu a reporting
+                  {t("export_data_to_csv")}
                 </p>
               </motion.div>
             </div>
