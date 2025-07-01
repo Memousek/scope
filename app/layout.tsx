@@ -40,7 +40,7 @@ export default function RootLayout({
               {children}
             </div>
           </div>
-          <BugReportButton />
+           <BugReportButton />
         </ThemeProvider>
         <Analytics />
         <SpeedInsights />

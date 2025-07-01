@@ -175,7 +175,7 @@ export default function Home() {
           >
             <Link
               href="/auth/login"
-              className="bg-blue-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-blue-700 transition"
+              className="bg-blue-600 dark:bg-blue-700 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-blue-700 transition"
             >
               {t("login")}
             </Link>
@@ -190,7 +190,7 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
                 viewport={{ once: true }}
-                className="bg-white p-6 rounded-lg shadow-lg"
+                className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg"
               >
                 <h3 className="text-xl font-semibold mb-4">{t("progress_tracking")}</h3>
                 <p className="text-gray-600">
@@ -203,7 +203,7 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
                 viewport={{ once: true }}
-                className="bg-white p-6 rounded-lg shadow-lg"
+                className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg"
               >
                 <h3 className="text-xl font-semibold mb-4">{t("team_sharing")}</h3>
                 <p className="text-gray-600">
@@ -216,7 +216,7 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.4 }}
                 viewport={{ once: true }}
-                className="bg-white p-6 rounded-lg shadow-lg"
+                className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg"
               >
                 <h3 className="text-xl font-semibold mb-4">{t("data_export")}</h3>
                 <p className="text-gray-600">
