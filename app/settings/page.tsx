@@ -3,13 +3,13 @@
  * Stránka nastavení uživatele
  * Umožňuje přepínat dark mode a další nastavení do budoucna.
  */
-import {useEffect, useState} from "react";
-import {useRouter} from "next/navigation";
-import {Header} from "@/components/header";
-import {ThemeSwitcher} from "@/app/components/ui/ThemeSwitcher";
-import {ContainerService} from "@/lib/container.service";
-import {UserRepository} from "@/lib/domain/repositories/user.repository";
-import {User} from "@/lib/domain/models/user.model";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Header } from "@/components/header";
+import { ThemeSwitcher } from "@/app/components/ui/ThemeSwitcher";
+import { ContainerService } from "@/lib/container.service";
+import { UserRepository } from "@/lib/domain/repositories/user.repository";
+import { User } from "@/lib/domain/models/user.model";
 import { LanguageSwitcher } from "@/components/ui/languageSwitcher";
 import { useTranslation } from "@/lib/translation";
 
