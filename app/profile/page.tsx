@@ -36,7 +36,7 @@ export default function ProfilePage() {
   const handleRemoveAccount = async () => {
     if (!user?.id) return;
     const supabase = createClient();
-    const { data, error } = await supabase.auth.admin.deleteUser(user.id);
+    const { error } = await supabase.auth.admin.deleteUser(user.id);
     if (error) {
       console.error(error);
     } else {
