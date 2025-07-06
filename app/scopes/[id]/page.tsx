@@ -174,10 +174,10 @@ export default function ScopePage({ params }: { params: Promise<{ id: string }> 
   };
 
   if (loading || !user || fetching) {
-    return <div>{t('loading')}</div>;
+    return <div className="min-h-screen flex items-center justify-center min-w-screen">{t('loading')}</div>;
   }
   if (!scope) {
-    return <div>{t('notFound')}</div>;
+    return <div className="min-h-screen flex items-center justify-center min-w-screen">{t('notFound')}</div>;
   }
 
   return (

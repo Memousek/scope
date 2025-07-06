@@ -111,7 +111,7 @@ export default function Home() {
   };
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">{t("loading")}</div>;
+    return <div className="min-h-screen flex items-center justify-center min-w-screen">{t("loading")}</div>;
   }
 
   if (user) {

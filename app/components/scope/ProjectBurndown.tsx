@@ -137,7 +137,7 @@ export function ProjectBurndown({ project, deliveryInfo, priorityStartDate, prio
         <span className="text-gray-600">{t('priorityEnd')}: <b>{priorityEndDate.toLocaleDateString()}</b></span>
       </div>
       {loading ? (
-        <div className="text-gray-500 italic py-8 text-center">{t('loadingData')}</div>
+        <div className="text-gray-500 italic py-8 text-center min-w-screen w-full flex justify-center items-center">{t('loadingData')}</div>
       ) : (
         <BurndownChart
           roles={roles}
