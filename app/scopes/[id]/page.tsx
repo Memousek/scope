@@ -181,7 +181,7 @@ export default function ScopePage({ params }: { params: Promise<{ id: string }> 
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 bg-white dark:bg-gray-800">
+    <div className="container mx-auto px-4 py-8 bg-white dark:bg-gray-800 mt-10 mb-10 rounded-lg">
       <div className="flex justify-between items-center mb-8 flex-col gap-4 md:flex-row">
         <div className="flex items-center gap-3">
           {editingName ? (
