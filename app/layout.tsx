@@ -5,6 +5,7 @@ import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { BugReportButton } from "@/app/components/ui/BugReportButton";
+import ViewTransitionHandler from "./components/scope/ViewTransitionHandler";
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
   : "http://localhost:3000";
@@ -35,8 +36,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <ViewTransitionHandler />
           <div className="min-h-screen flex flex-col">
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1 flex flex-col" view-transition-name="main" id="main-content">
               {children}
             </div>
           </div>
