@@ -117,10 +117,10 @@ export default function Home() {
   if (user) {
     return (
       <main className="min-h-screen flex flex-col items-center">
-        <div className="flex-1 w-full flex flex-col gap-20 items-center">
+        <div className="flex-1 w-full flex flex-col items-center">
           <Header />
           <div className="flex-1 flex flex-col gap-20 max-w-5xl p-5 w-full">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center flex-col md:flex-row gap-5 align-center text-center md:text-left">
               <div className="flex flex-col gap-2">
                 <h1 className="text-2xl font-bold">{t("your_scopes")}</h1>
                 <p className="text-gray-600">
