@@ -187,7 +187,7 @@ export default function ScopePage({ params }: { params: Promise<{ id: string }> 
           {editingName ? (
             <>
               <input
-                className="text-2xl font-bold border rounded px-2 py-1 mr-2 min-w-[120px]"
+                className="text-2xl font-bold border rounded px-2 py-1 mr-2 min-w-[120px] bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                 value={name}
                 onChange={e => setName(e.target.value)}
                 disabled={savingName}

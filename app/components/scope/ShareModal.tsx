@@ -21,11 +21,17 @@ interface Editor {
 }
 
 export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId, isOwner }) => {
+  /**
+   * ShareModal umožňuje sdílení scope pomocí pozvánek a generovaných odkazů.
+   * Umožňuje výběr typu odkazu (editace / pouze pro čtení) a správu editorů.
+   */
   const { t } = useTranslation();
   const [editors, setEditors] = useState<Editor[]>([]);
   const [editorsLoading, setEditorsLoading] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteError, setInviteError] = useState('');
+  // Nový stav pro typ odkazu
+  const [selectedLinkType, setSelectedLinkType] = useState<'default' | 'edit' | 'view'>('default');
 
   useEffect(() => {
     if (isOpen && isOwner) {
@@ -111,6 +117,18 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
     return null;
   };
 
+  // Funkce pro získání odkazu podle typu
+  const getShareLink = () => {
+    if (selectedLinkType === 'edit') {
+      const token = getLastInviteToken();
+      return token
+        ? `${window.location.origin}/scopes/${scopeId}/accept?token=${token}`
+        : `${window.location.origin}/scopes/${scopeId}/accept`;
+    }
+    // view only
+    return `${window.location.origin}/scopes/${scopeId}`;
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -118,24 +136,44 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
       <div className="rounded-2xl bg-background shadow-2xl p-8 w-full max-w-lg relative overflow-y-auto max-h-[90vh]">
         <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-3xl font-bold" onClick={onClose} aria-label={t('close')}>×</button>
         <h3 className="text-2xl font-bold mb-4 text-center">{t('share_scope')}</h3>
-        {/* Magický link pro sdílení scope (vždy viditelný) */}
+        {/* Nový select box pro výběr typu odkazu */}
         <div className="flex flex-col gap-2 mb-4">
-          <div className="flex items-center gap-2 text-green-700 text-sm break-all">
-            <span>{t('share_link_edit')}:</span>
-            {(() => {
-              const token = getLastInviteToken();
-              const link = token ? `${window.location.origin}/scopes/${scopeId}/accept?token=${token}` : `${window.location.origin}/scopes/${scopeId}/accept`;
-              return <>
-                <a href={link} className="underline text-blue-700" target="_blank" rel="noopener noreferrer">{link}</a>
-                <button onClick={() => navigator.clipboard.writeText(link)} title={t('copy')} className="text-blue-600 hover:text-blue-800"><FiCopy /></button>
-              </>;
-            })()}
-          </div>
+          <label htmlFor="share-link-type" className="font-medium text-sm mb-1">{t('share_link_type')}</label>
+          <select
+            id="share-link-type"
+            value={selectedLinkType}
+            onChange={e => setSelectedLinkType(e.target.value as 'default' | 'edit' | 'view')}
+            className="border rounded px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-blue-400"
+            aria-label={t('share_link_type')}
+          >
+            <option value="default" disabled>{t('share_link_default')}</option>
+            <option value="edit">{t('share_link_edit')}</option>
+            <option value="view">{t('share_link_view_only')}</option>
+          </select>
+          {/* Zobrazení vybraného odkazu až po výběru */}
+          {selectedLinkType !== 'default' && (
+            <div className="flex flex-wrap items-center gap-2 mt-2 p-2 rounded bg-white dark:bg-gray-800 border text-green-700 text-sm break-all">
+              <span className="truncate max-w-[120px] font-medium">{selectedLinkType === 'edit' ? t('share_link_edit') : t('share_link_view_only')}:</span>
+              <span className="truncate max-w-[220px]">{getShareLink()}</span>
+              <a href={getShareLink()} className="underline text-blue-700" target="_blank" rel="noopener noreferrer">{t('open_link_in_new_tab')}</a>
+              <button
+                onClick={() => navigator.clipboard.writeText(getShareLink())}
+                title={t('copy')}
+                className="text-blue-600 hover:text-blue-800"
+                aria-label={t('copy')}
+              >
+                <FiCopy />
+              </button>
+            </div>
+          )}
+        </div>
+        <div className="flex flex-col gap-2">
+          <h4 className="font-semibold mb-2">{t('invite_user_using_email')}</h4>
         </div>
         <form className="flex gap-2 mb-4" onSubmit={handleInvite}>
           <input
             type="email"
-            className="border rounded px-3 py-2 min-w-[220px] focus:outline-blue-400"
+            className="w-full border rounded px-3 py-2 min-w-[220px] focus:outline-blue-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
             placeholder={t('user_email')}
             value={inviteEmail}
             onChange={e => setInviteEmail(e.target.value)}

@@ -16,7 +16,6 @@
   "estimate": "Estimate",
   "mandays": "manday",
   "deliveryDate": "Delivery date",
-  "calculatedDelivery": "Calculated delivery",
   "delay": "Delay",
   "status": "Status",
   "exportTeam": "Export team to CSV",
@@ -24,7 +23,6 @@
   "burndown": "Burndown & deadlines",
   "onTime": "On time",
   "delayed": "Delayed",
-  "reserve": "reserve",
   "days": "days",
   "description": "Scope description...",
   "save": "Save",
@@ -126,5 +124,10 @@
   "waitingForStart": "Waiting for start",
   "slipLabel": "Delayed ({days} days)",
   "reserveLabel": "Reserve (+{days} days)",
-  "back": "Back"
+  "back": "Back",
+  "open_link_in_new_tab": "Open link in new tab",
+  "share_link_type": "Link type",
+  "share_link_view_only": "View only",
+  "invite_user_using_email": "Invite user using email",
+  "share_link_default": "--Select link type--"
 } 
