@@ -69,7 +69,7 @@ export const ScopeList: React.FC<ScopeListProps> = ({
                 {scope.type === "owned" && onDelete ? (
                   <button
                     onClick={() => onDelete(scope.id)}
-                    className="text-red-600 hover:text-red-700 text-base px-4 py-2 rounded border border-red-600 hover:border-red-700 transition-colors"
+                    className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition-colors font-semibold"
                   >
                     {t("delete")}
                   </button>
@@ -77,7 +77,7 @@ export const ScopeList: React.FC<ScopeListProps> = ({
                 {scope.type === "shared" && onRemove ? (
                   <button
                     onClick={() => onRemove(scope.id)}
-                    className="text-gray-600 hover:text-gray-700 text-base px-4 py-2 rounded border border-gray-600 hover:border-gray-700 transition-colors"
+                    className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition-colors font-semibold"
                   >
                     {t("remove")}
                   </button>
