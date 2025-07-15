@@ -92,7 +92,6 @@ export function ProjectCard({
           
           const mandaysValue = project[mandays as keyof Project] as number;
           const doneValue = project[done as keyof Project] as number;
-          const percentage = mandaysValue ? Math.min((doneValue / mandaysValue) * 100, 100) : 0;
           
           return (
             <div key={key} className="flex items-center gap-2">
