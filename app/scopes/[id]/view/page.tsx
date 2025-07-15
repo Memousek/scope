@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/client";
 import { ProjectSectionRefactored } from "@/app/components/scope/ProjectSectionRefactored";
 import { TeamMember, Project } from "@/app/components/scope/types";
 import { useTranslation } from "@/lib/translation";
+import { downloadCSV } from "@/app/utils/csvUtils";
 
 export default function ScopeViewPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -79,27 +80,6 @@ export default function ScopeViewPage({ params }: { params: Promise<{ id: string
         });
     }
   }, [id]);
-
-  // --- Export do CSV ---
-  function downloadCSV(filename: string, rows: Record<string, unknown>[], columns: string[], headerMap?: Record<string, string>) {
-    const csv = [
-      columns.map(col => headerMap?.[col] || col).join(','),
-      ...rows.map(row => columns.map(col => '"' + (row[col] ?? '') + '"').join(',')),
-    ].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    // Typově správně pro IE fallback
-    const nav = window.navigator as Navigator & { msSaveOrOpenBlob?: (blob: Blob, fileName: string) => void };
-    if (typeof nav.msSaveOrOpenBlob === 'function') {
-      nav.msSaveOrOpenBlob(blob, filename);
-    } else {
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      a.click();
-      window.URL.revokeObjectURL(url);
-    }
-  }
 
   const handleExportTeam = () => {
     downloadCSV('tym.csv', team as unknown as Record<string, unknown>[], ['name', 'role', 'fte'], { name: t('name'), role: t('role'), fte: t('fte') });
