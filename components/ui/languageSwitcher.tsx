@@ -5,6 +5,7 @@
  */
 import React, { useEffect, useState } from 'react';
 import { getCurrentLanguage, setCurrentLanguage } from '../../lib/translation';
+import Image from 'next/image';
 
 const languages = [
   { code: 'cs', label: 'Čeština', flag: 'cz' },
@@ -36,7 +37,7 @@ export const LanguageSwitcher: React.FC = () => {
           aria-label={l.label}
           aria-pressed={lang === l.code}
         >
-          <img src={`https://flagcdn.com/w20/${l.flag}.png`} alt={l.label} width={20} height={10} aria-hidden={true} /> {l.label}
+          <Image src={`https://flagcdn.com/w20/${l.flag}.png`} alt={l.label} width={20} height={10} aria-hidden={true} /> {l.label}
         </button>
       ))}
     </div>

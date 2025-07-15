@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
   images: {
     domains: [
       "lh3.googleusercontent.com",
+      "flagcdn.com"
       // případně další domény
     ],
   },
