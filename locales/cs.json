@@ -129,5 +129,8 @@
   "share_link_type": "Typ odkazu",
   "share_link_view_only": "Pouze pro čtení",
   "invite_user_using_email": "Pozvat uživatele pomocí emailu",
-  "share_link_default": "--Vyberte typ odkazu--"
+  "share_link_default": "--Vyberte typ odkazu--",
+  "publicView": "Veřejný náhled",
+  "loadingProjects": "Načítání projektů…",
+  "errorLoadingProjects": "Chyba při načítání projektů"
 } 

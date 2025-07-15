@@ -13,6 +13,7 @@ import { ProjectList } from './projects/ProjectList';
 import { useProjects } from '@/app/hooks/useProjects';
 import { useTeam } from '@/app/hooks/useTeam';
 import { calculateProjectDeliveryInfo, calculatePriorityDates } from '@/app/utils/dateUtils';
+import { useTranslation } from '@/lib/translation';
 
 interface ProjectSectionProps {
   scopeId: string;
@@ -21,6 +22,8 @@ interface ProjectSectionProps {
   hasQA: boolean;
   hasPM: boolean;
   hasDPL: boolean;
+  readOnly?: boolean;
+  team?: import('./types').TeamMember[];
 }
 
 export function ProjectSectionRefactored({ 
@@ -29,8 +32,11 @@ export function ProjectSectionRefactored({
   hasBE, 
   hasQA, 
   hasPM, 
-  hasDPL 
+  hasDPL, 
+  readOnly = false,
+  team: teamProp
 }: ProjectSectionProps) {
+  const { t } = useTranslation();
   const { 
     projects, 
     loading: projectsLoading, 
@@ -42,9 +48,11 @@ export function ProjectSectionRefactored({
   } = useProjects(scopeId);
   
   const { 
-    team, 
+    team: teamHook, 
     loadTeam 
   } = useTeam(scopeId);
+
+  const team = teamProp || teamHook;
 
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editProject, setEditProject] = useState<Project | null>(null);
@@ -55,8 +63,8 @@ export function ProjectSectionRefactored({
   // Load data on component mount
   useEffect(() => {
     loadProjects();
-    loadTeam();
-  }, [loadProjects, loadTeam]);
+    if (!teamProp) loadTeam();
+  }, [loadProjects, loadTeam, teamProp]);
 
   const handleAddProject = async (project: Omit<Project, 'id' | 'scope_id' | 'created_at'>) => {
     try {
@@ -115,45 +123,49 @@ export function ProjectSectionRefactored({
 
   return (
     <>
-      <AddProjectModal
-        isOpen={addModalOpen}
-        onClose={() => setAddModalOpen(false)}
-        onAddProject={handleAddProject}
-        savingProject={projectsLoading}
-        hasFE={hasFE}
-        hasBE={hasBE}
-        hasQA={hasQA}
-        hasPM={hasPM}
-        hasDPL={hasDPL}
-      />
+      {!readOnly && (
+        <AddProjectModal
+          isOpen={addModalOpen}
+          onClose={() => setAddModalOpen(false)}
+          onAddProject={handleAddProject}
+          savingProject={projectsLoading}
+          hasFE={hasFE}
+          hasBE={hasBE}
+          hasQA={hasQA}
+          hasPM={hasPM}
+          hasDPL={hasDPL}
+        />
+      )}
 
       {/* Projekty */}
       <section>
         <div className="rounded-lg shadow p-4">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
             <h2 className="text-xl font-semibold mb-2 sm:mb-0">Projekty</h2>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setAddModalOpen(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Přidat projekt
-              </button>
-            </div>
+            {!readOnly && (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setAddModalOpen(true)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Přidat projekt
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Loading state */}
           {projectsLoading && (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-2 text-gray-600">Načítání projektů...</p>
+              <p className="mt-2 text-gray-600">{t("loadingProjects")}</p>
             </div>
           )}
 
           {/* Error state */}
           {projectsError && (
             <div className="text-center py-8 text-red-600">
-              <p>Chyba při načítání projektů: {projectsError}</p>
+              <p>{t("errorLoadingProjects")}: {projectsError}</p>
             </div>
           )}
 
@@ -170,6 +182,7 @@ export function ProjectSectionRefactored({
               hasQA={hasQA}
               hasPM={hasPM}
               hasDPL={hasDPL}
+              readOnly={readOnly}
             />
           )}
         </div>
@@ -199,7 +212,7 @@ export function ProjectSectionRefactored({
       )}
 
       {/* Modal pro editaci projektu */}
-      {editModalOpen && editProject && (
+      {!readOnly && editModalOpen && editProject && (
         <EditProjectModal
           isOpen={editModalOpen}
           onClose={handleCloseEditModal}
@@ -210,7 +223,7 @@ export function ProjectSectionRefactored({
       )}
 
       {/* Modal pro historii úprav */}
-      {historyModalProject && (
+      {!readOnly && historyModalProject && (
         <ProjectHistoryModal
           project={historyModalProject}
           onClose={handleCloseHistoryModal}

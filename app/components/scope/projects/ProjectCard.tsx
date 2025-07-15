@@ -19,6 +19,7 @@ interface ProjectCardProps {
   hasQA: boolean;
   hasPM: boolean;
   hasDPL: boolean;
+  readOnly?: boolean;
 }
 
 export function ProjectCard({
@@ -32,6 +33,7 @@ export function ProjectCard({
   hasQA,
   hasPM,
   hasDPL,
+  readOnly = false,
 }: ProjectCardProps) {
   const deliveryInfo = calculateProjectDeliveryInfo(project, team);
   
@@ -52,33 +54,35 @@ export function ProjectCard({
             Priorita: {project.priority}
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onViewHistory(project)}
-            title="Historie"
-          >
-            <History className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onEdit(project)}
-            title="Upravit"
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onDelete(project.id)}
-            title="Smazat"
-            className="text-red-600 hover:text-red-700"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
+        {!readOnly && (
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onViewHistory(project)}
+              title="Historie"
+            >
+              <History className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onEdit(project)}
+              title="Upravit"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onDelete(project.id)}
+              title="Smazat"
+              className="text-red-600 hover:text-red-700"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Progress bars for each role */}
@@ -88,7 +92,7 @@ export function ProjectCard({
           
           const mandaysValue = project[mandays as keyof Project] as number;
           const doneValue = project[done as keyof Project] as number;
-          const percentage = mandaysValue ? (doneValue / mandaysValue) * 100 : 0;
+          const percentage = mandaysValue ? Math.min((doneValue / mandaysValue) * 100, 100) : 0;
           
           return (
             <div key={key} className="flex items-center gap-2">
@@ -97,13 +101,13 @@ export function ProjectCard({
                 <div
                   className="h-2 rounded-full transition-all duration-300"
                   style={{
-                    width: `${Math.min(percentage, 100)}%`,
+                    width: `${Math.min(doneValue, 100)}%`,
                     backgroundColor: color,
                   }}
                 />
               </div>
-              <span className="text-sm text-gray-600 dark:text-gray-400 w-16 text-right">
-                {doneValue}/{mandaysValue || 0}
+              <span className="text-xs text-gray-600 dark:text-gray-400 w-24 text-right">
+                {mandaysValue ? `${Math.round(doneValue)} % z ${mandaysValue} MD's` : `0 MD's z 0 MD's`}
               </span>
             </div>
           );

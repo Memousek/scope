@@ -126,7 +126,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
         : `${window.location.origin}/scopes/${scopeId}/accept`;
     }
     // view only
-    return `${window.location.origin}/scopes/${scopeId}`;
+    return `${window.location.origin}/scopes/${scopeId}/view`;
   };
 
   if (!isOpen) return null;

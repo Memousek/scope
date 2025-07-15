@@ -18,6 +18,7 @@ interface ProjectListProps {
   hasQA: boolean;
   hasPM: boolean;
   hasDPL: boolean;
+  readOnly?: boolean;
 }
 
 export function ProjectList({
@@ -31,6 +32,7 @@ export function ProjectList({
   hasQA,
   hasPM,
   hasDPL,
+  readOnly = false,
 }: ProjectListProps) {
   const priorityDates = calculatePriorityDates(projects, team);
 
@@ -43,6 +45,9 @@ export function ProjectList({
     );
   }
 
+  // No-op funkce pro readOnly režim
+  const noop = () => {};
+
   return (
     <div className="space-y-4">
       {projects.map((project) => {
@@ -53,14 +58,15 @@ export function ProjectList({
             <ProjectCard
               project={project}
               team={team}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              onViewHistory={onViewHistory}
+              onEdit={readOnly ? noop : onEdit}
+              onDelete={readOnly ? noop : onDelete}
+              onViewHistory={readOnly ? noop : onViewHistory}
               hasFE={hasFE}
               hasBE={hasBE}
               hasQA={hasQA}
               hasPM={hasPM}
               hasDPL={hasDPL}
+              readOnly={readOnly}
             />
             
             {/* Priority timeline information */}
