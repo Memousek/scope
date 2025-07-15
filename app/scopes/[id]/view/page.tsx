@@ -87,10 +87,10 @@ export default function ScopeViewPage({ params }: { params: Promise<{ id: string
       ...rows.map(row => columns.map(col => '"' + (row[col] ?? '') + '"').join(',')),
     ].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
-    // @ts-ignore: msSaveOrOpenBlob je pouze pro IE
-    if (typeof window.navigator !== 'undefined' && typeof (window.navigator as any).msSaveOrOpenBlob === 'function') {
-      // @ts-ignore
-      (window.navigator as any).msSaveOrOpenBlob(blob, filename);
+    // Typově správně pro IE fallback
+    const nav = window.navigator as Navigator & { msSaveOrOpenBlob?: (blob: Blob, fileName: string) => void };
+    if (typeof nav.msSaveOrOpenBlob === 'function') {
+      nav.msSaveOrOpenBlob(blob, filename);
     } else {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
