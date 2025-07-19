@@ -1,13 +1,20 @@
+/**
+ * Modern Project Section Component
+ * - Glass-like design s animacemi
+ * - Dark mode podpora
+ * - Kompletní správa projektů
+ * - Moderní UI s gradient efekty
+ */
+
 import { useState, useEffect } from 'react';
-import { Project } from './types';
-import { EditProjectModal } from './EditProjectModal';
-import { ProjectBurndown } from './ProjectBurndown';
-import { AddProjectModal } from './AddProjectModal';
-import { ProjectHistoryModal } from './ProjectHistoryModal';
+import { useTranslation } from '@/lib/translation';
 import { useProjects } from '@/app/hooks/useProjects';
 import { useTeam } from '@/app/hooks/useTeam';
-import { calculateProjectDeliveryInfo, calculatePriorityDates } from '@/app/utils/dateUtils';
-import { useTranslation } from '@/lib/translation';
+import { Project } from './types';
+import { AddProjectModal } from './AddProjectModal';
+import { EditProjectModal } from './EditProjectModal';
+import { ProjectHistoryModal } from './ProjectHistoryModal';
+import { calculateProjectDeliveryInfo } from '@/app/utils/dateUtils';
 
 interface ProjectSectionProps {
   scopeId: string;
@@ -37,7 +44,6 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editProject, setEditProject] = useState<Project | null>(null);
   const [addModalOpen, setAddModalOpen] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
   const [historyModalProject, setHistoryModalProject] = useState<Project | null>(null);
 
   // Load data on component mount
@@ -49,17 +55,13 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
   const handleAddProject = async (project: Omit<Project, 'id' | 'scope_id' | 'created_at'>) => {
     try {
       await addProject(project);
-      setRefreshKey(k => k + 1);
     } catch (error) {
       console.error('Failed to add project:', error);
     }
   };
 
   const handleDeleteProject = async (projectId: string) => {
-    const success = await deleteProject(projectId);
-    if (success) {
-      setRefreshKey(k => k + 1);
-    }
+    await deleteProject(projectId);
   };
 
   const handleOpenEditModal = (project: Project) => {
@@ -75,14 +77,10 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
   const handleProjectChange = async (updatedProject: Project) => {
     try {
       await updateProject(updatedProject.id, updatedProject);
-      setRefreshKey(k => k + 1);
     } catch (error) {
       console.error('Failed to update project:', error);
     }
   };
-
-  // Calculate priority dates for all projects
-  const priorityDates = calculatePriorityDates(projects, team);
 
   // Define project roles for EditProjectModal
   const projectRoles = [
@@ -108,73 +106,150 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
       />
 
       {/* Projekty */}
-      <section>
-        <div className="rounded-lg shadow p-4">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
-            <h2 className="text-xl font-semibold mb-2 sm:mb-0">{t('projects')}</h2>
+      <section className="mb-8">
+        <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border border-white/20 dark:border-gray-700 rounded-xl p-6 shadow-xl">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              🚀 {t('projects')}
+            </h2>
             <button
-              className="bg-blue-600 text-white px-5 py-2 rounded font-semibold shadow hover:bg-blue-700 transition w-full sm:w-auto mt-2 sm:mt-0"
+              className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2 rounded-xl hover:from-blue-600 hover:to-purple-600 transition-all duration-200 hover:scale-105 shadow-lg font-medium"
               onClick={() => setAddModalOpen(true)}
             >
               {t('addProject')}
             </button>
           </div>
-          <div className="overflow-x-auto rounded-lg">
-            <table className="min-w-[700px] w-full text-sm rounded-lg shadow border border-gray-200">
+          
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
               <thead>
-                <tr className="text-gray-700 font-semibold">
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-left rounded-tl-lg">{t('projectName')}</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">{t('priority')}</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">{t('fe_mandays')}</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">% FE {t('done')}</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">{t('be_mandays')}</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">% BE {t('done')}</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">{t('qa_mandays')}</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">% QA {t('done')}</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">{t('pm_mandays')}</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">% PM {t('done')}</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">{t('dpl_mandays')}</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">% DPL {t('done')}</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-center">{t('deliveryDate')}</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-center">{t('calculatedDelivery')}</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-center">{t('delay')}</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-center rounded-tr-lg">{t('actions')}</th>
+                <tr className="text-gray-700 dark:text-gray-300 font-semibold border-b border-gray-200 dark:border-gray-700">
+                  <th className="px-3 py-3 text-left">{t('projectName')}</th>
+                  <th className="px-3 py-3 text-right">{t('priority')}</th>
+                  <th className="px-3 py-3 text-right">{t('fe_mandays')}</th>
+                  <th className="px-3 py-3 text-right">% FE {t('done')}</th>
+                  <th className="px-3 py-3 text-right">{t('be_mandays')}</th>
+                  <th className="px-3 py-3 text-right">% BE {t('done')}</th>
+                  <th className="px-3 py-3 text-right">{t('qa_mandays')}</th>
+                  <th className="px-3 py-3 text-right">% QA {t('done')}</th>
+                  <th className="px-3 py-3 text-right">{t('pm_mandays')}</th>
+                  <th className="px-3 py-3 text-right">% PM {t('done')}</th>
+                  <th className="px-3 py-3 text-right">{t('dpl_mandays')}</th>
+                  <th className="px-3 py-3 text-right">% DPL {t('done')}</th>
+                  <th className="px-3 py-3 text-center">{t('deliveryDate')}</th>
+                  <th className="px-3 py-3 text-center">{t('calculatedDelivery')}</th>
+                  <th className="px-3 py-3 text-center">{t('delay')}</th>
+                  <th className="px-3 py-3 text-center">{t('actions')}</th>
                 </tr>
               </thead>
               <tbody>
                 {projects.length === 0 ? (
-                  <tr><td colSpan={15} className="text-gray-400 text-center py-4">{t('noProjects')}</td></tr>
+                  <tr>
+                    <td colSpan={16} className="text-gray-400 dark:text-gray-500 text-center py-8">
+                      {t('noProjects')}
+                    </td>
+                  </tr>
                 ) : (
                   projects.map(project => {
                     const info = calculateProjectDeliveryInfo(project, team);
                     return (
-                      <tr key={project.id} className="hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-                        <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">{project.name}</td>
-                        <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle text-right">{project.priority}</td>
-                        {/* FE */}
-                        <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle text-right">{Number(project.fe_mandays) > 0 ? Number(project.fe_mandays) : '-'}</td>
-                        <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle text-right">{Number(project.fe_mandays) > 0 ? (Number(project.fe_done) || 0) + ' %' : '-'}</td>
-                        {/* BE */}
-                        <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle text-right">{Number(project.be_mandays) > 0 ? Number(project.be_mandays) : '-'}</td>
-                        <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle text-right">{Number(project.be_mandays) > 0 ? (Number(project.be_done) || 0) + ' %' : '-'}</td>
-                        {/* QA */}
-                        <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle text-right">{Number(project.qa_mandays) > 0 ? Number(project.qa_mandays) : '-'}</td>
-                        <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle text-right">{Number(project.qa_mandays) > 0 ? (Number(project.qa_done) || 0) + ' %' : '-'}</td>
-                        {/* PM */}
-                        <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle text-right">{Number(project.pm_mandays) > 0 ? Number(project.pm_mandays) : '-'}</td>
-                        <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle text-right">{Number(project.pm_mandays) > 0 ? (Number(project.pm_done) || 0) + ' %' : '-'}</td>
-                        {/* DPL */}
-                        <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle text-right">{Number(project.dpl_mandays) > 0 ? Number(project.dpl_mandays) : '-'}</td>
-                        <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle text-right">{Number(project.dpl_mandays) > 0 ? (Number(project.dpl_done) || 0) + ' %' : '-'}</td>
-                        <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle text-center">{project.delivery_date ? new Date(project.delivery_date).toLocaleDateString() : ''}</td>
-                        <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle text-center">{info.calculatedDeliveryDate.toLocaleDateString()}</td>
-                        <td className={`px-2 py-1 sm:px-3 sm:py-2 align-middle text-center font-semibold ${info.diffWorkdays === null ? '' : info.diffWorkdays >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {info.diffWorkdays === null ? '' : info.diffWorkdays >= 0 ? `+${info.diffWorkdays} ${t('days')}` : `${info.diffWorkdays} ${t('days')}`}
+                      <tr key={project.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                        <td className="px-3 py-3 align-middle font-medium text-gray-900 dark:text-gray-100">
+                          {project.name}
                         </td>
-                        <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle text-center whitespace-nowrap">
-                          <button className="text-blue-600 font-semibold hover:underline mr-2" onClick={() => handleOpenEditModal(project)}>{t('edit')}</button>
-                          <button className="text-blue-600 font-semibold hover:underline mr-2" onClick={() => setHistoryModalProject(project)}>{t('history')}</button>
-                          <button className="text-red-600 font-semibold hover:underline" onClick={() => handleDeleteProject(project.id)}>{t('delete')}</button>
+                        <td className="px-3 py-3 align-middle text-right">
+                          <span className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-2 py-1 rounded-full text-xs">
+                            {project.priority}
+                          </span>
+                        </td>
+                        {/* FE */}
+                        <td className="px-3 py-3 align-middle text-right text-gray-600 dark:text-gray-400">
+                          {Number(project.fe_mandays) > 0 ? Number(project.fe_mandays) : '-'}
+                        </td>
+                        <td className="px-3 py-3 align-middle text-right">
+                          {Number(project.fe_mandays) > 0 ? (
+                            <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 px-2 py-1 rounded text-xs">
+                              {(Number(project.fe_done) || 0)}%
+                            </span>
+                          ) : '-'}
+                        </td>
+                        {/* BE */}
+                        <td className="px-3 py-3 align-middle text-right text-gray-600 dark:text-gray-400">
+                          {Number(project.be_mandays) > 0 ? Number(project.be_mandays) : '-'}
+                        </td>
+                        <td className="px-3 py-3 align-middle text-right">
+                          {Number(project.be_mandays) > 0 ? (
+                            <span className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 px-2 py-1 rounded text-xs">
+                              {(Number(project.be_done) || 0)}%
+                            </span>
+                          ) : '-'}
+                        </td>
+                        {/* QA */}
+                        <td className="px-3 py-3 align-middle text-right text-gray-600 dark:text-gray-400">
+                          {Number(project.qa_mandays) > 0 ? Number(project.qa_mandays) : '-'}
+                        </td>
+                        <td className="px-3 py-3 align-middle text-right">
+                          {Number(project.qa_mandays) > 0 ? (
+                            <span className="bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 px-2 py-1 rounded text-xs">
+                              {(Number(project.qa_done) || 0)}%
+                            </span>
+                          ) : '-'}
+                        </td>
+                        {/* PM */}
+                        <td className="px-3 py-3 align-middle text-right text-gray-600 dark:text-gray-400">
+                          {Number(project.pm_mandays) > 0 ? Number(project.pm_mandays) : '-'}
+                        </td>
+                        <td className="px-3 py-3 align-middle text-right">
+                          {Number(project.pm_mandays) > 0 ? (
+                            <span className="bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 px-2 py-1 rounded text-xs">
+                              {(Number(project.pm_done) || 0)}%
+                            </span>
+                          ) : '-'}
+                        </td>
+                        {/* DPL */}
+                        <td className="px-3 py-3 align-middle text-right text-gray-600 dark:text-gray-400">
+                          {Number(project.dpl_mandays) > 0 ? Number(project.dpl_mandays) : '-'}
+                        </td>
+                        <td className="px-3 py-3 align-middle text-right">
+                          {Number(project.dpl_mandays) > 0 ? (
+                            <span className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 px-2 py-1 rounded text-xs">
+                              {(Number(project.dpl_done) || 0)}%
+                            </span>
+                          ) : '-'}
+                        </td>
+                        <td className="px-3 py-3 align-middle text-center text-gray-600 dark:text-gray-400">
+                          {project.delivery_date ? new Date(project.delivery_date).toISOString().slice(0, 10) : ''}
+                        </td>
+                        <td className="px-3 py-3 align-middle text-center text-gray-600 dark:text-gray-400">
+                          {info.calculatedDeliveryDate.toLocaleDateString()}
+                        </td>
+                        <td className={`px-3 py-3 align-middle text-center font-semibold ${
+                          info.diffWorkdays === null ? '' : 
+                          info.diffWorkdays >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                        }`}>
+                          {info.diffWorkdays === null ? '' : 
+                           info.diffWorkdays >= 0 ? `+${info.diffWorkdays} ${t('days')}` : 
+                           `${info.diffWorkdays} ${t('days')}`}
+                        </td>
+                        <td className="px-3 py-3 align-middle text-center whitespace-nowrap">
+                          <button 
+                            className="text-blue-600 dark:text-blue-400 font-semibold hover:text-blue-700 dark:hover:text-blue-300 hover:underline mr-2 transition-colors duration-200" 
+                            onClick={() => handleOpenEditModal(project)}
+                          >
+                            {t('edit')}
+                          </button>
+                          <button 
+                            className="text-blue-600 dark:text-blue-400 font-semibold hover:text-blue-700 dark:hover:text-blue-300 hover:underline mr-2 transition-colors duration-200" 
+                            onClick={() => setHistoryModalProject(project)}
+                          >
+                            {t('history')}
+                          </button>
+                          <button 
+                            className="text-red-600 dark:text-red-400 font-semibold hover:text-red-700 dark:hover:text-red-300 hover:underline transition-colors duration-200" 
+                            onClick={() => handleDeleteProject(project.id)}
+                          >
+                            {t('delete')}
+                          </button>
                         </td>
                       </tr>
                     );
@@ -185,25 +260,6 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
           </div>
         </div>
       </section>
-
-      {/* Výsledky a burndown grafy */}
-      <div className="my-8">
-        <h3 className="text-lg font-semibold mb-2">{t('burndown')}</h3>
-        {projects.map(project => {
-          const info = calculateProjectDeliveryInfo(project, team);
-          return (
-            <ProjectBurndown
-              key={project.id + '-' + refreshKey}
-              project={{ ...project, slip: info.diffWorkdays }}
-              deliveryInfo={info}
-              priorityStartDate={priorityDates[project.id].priorityStartDate}
-              priorityEndDate={priorityDates[project.id].priorityEndDate}
-              blockingProjectName={priorityDates[project.id].blockingProjectName}
-              showBlockingBg={!!priorityDates[project.id].blockingProjectName}
-            />
-          );
-        })}
-      </div>
 
       {/* Modal pro editaci projektu */}
       {editModalOpen && editProject && (

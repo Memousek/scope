@@ -1,5 +1,13 @@
 'use client';
 
+/**
+ * Hlavní stránka aplikace
+ * - Moderní glass-like design s gradient pozadím
+ * - Responzivní layout s animacemi
+ * - Přihlášený uživatel vidí své scopy
+ * - Nepřihlášený uživatel vidí landing page
+ */
+
 import { Header } from "@/components/header";
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
@@ -21,6 +29,7 @@ export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [scopes, setScopes] = useState<Scope[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingScope, setDeletingScope] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
@@ -37,11 +46,18 @@ export default function Home() {
         return;
     }
 
-    const scopes = await ContainerService.getInstance()
-        .get(GetAccessibleScopesService, { autobind: true })
-        .getAccessibleScopes(user);
+    try {
+      console.log('Načítám scopes pro uživatele:', user.id);
+      const scopes = await ContainerService.getInstance()
+          .get(GetAccessibleScopesService, { autobind: true })
+          .getAccessibleScopes(user);
 
-    setScopes(scopes);
+      console.log('Načteno scopes:', scopes.length);
+      setScopes(scopes);
+    } catch (err) {
+      console.error('Chyba při načítání scopes:', err);
+      setError('Chyba při načítání scopes: ' + handleErrorMessage(err));
+    }
   }, [user]);
 
   useEffect(() => {
@@ -54,16 +70,25 @@ export default function Home() {
     setError(null);
     if (!confirm('Opravdu chcete tento scope nenávratně smazat včetně všech dat?')) return;
 
+    setDeletingScope(scopeId);
+    
     try {
+      console.log('Mazání scope:', scopeId);
+      
       await ContainerService.getInstance()
         .get(DeleteScopeService, { autobind: true } )
         .deleteScope(scopeId);
 
+      console.log('Scope úspěšně smazán, aktualizuji seznam...');
       await fetchScopes();
+      
+      console.log('Seznam aktualizován');
     } catch (err: unknown) {
       const message = handleErrorMessage(err);
       setError('Chyba při mazání scope: ' + message);
       console.error('Mazání scope selhalo:', err);
+    } finally {
+      setDeletingScope(null);
     }
   };
 
@@ -84,123 +109,146 @@ export default function Home() {
   };
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center min-w-screen">{t("loading")}</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+        <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-xl p-8 shadow-xl">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="text-center mt-4 text-gray-600 dark:text-gray-400">{t("loading")}</p>
+        </div>
+      </div>
+    );
   }
 
   if (user) {
     return (
-      <main className="min-h-screen flex flex-col items-center">
-        <div className="flex-1 w-full flex flex-col items-center">
-          <Header />
-          <div className="flex-1 flex flex-col gap-20 max-w-5xl p-5 w-full mt-10 mb-10 rounded-lg">
-            <div className="flex justify-between items-center flex-col md:flex-row gap-5 align-center text-center md:text-left">
-              <div className="flex flex-col gap-2">
-                <h1 className="text-2xl font-bold">{t("your_scopes")}</h1>
-                <p className="text-gray-600">
-                  {t("track_progress_and_manage_resources")}
-                </p>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          {/* Header Section */}
+          <div className="mb-8">
+            <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border border-white/20 rounded-2xl p-6 shadow-xl">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                <div className="flex-1">
+                  <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                    {t("your_scopes")}
+                  </h1>
+                  <p className="text-gray-600 dark:text-gray-400 text-lg">
+                    {t("track_progress_and_manage_resources")}
+                  </p>
+                </div>
+                <button
+                  onClick={() => router.push('/scopes/new')}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 hover:scale-105 shadow-lg font-medium"
+                >
+                  {t("create_new_scope")}
+                </button>
               </div>
-              <button
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-                onClick={() => router.push('/scopes/new')}
-              >
-                {t("create_new_scope")}
-              </button>
             </div>
+          </div>
+
+          {/* Scopes List */}
+          <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border border-white/20 rounded-2xl p-6 shadow-xl">
             <ScopeList
               scopes={scopes}
               user={user}
               loading={loading}
+              deletingScope={deletingScope}
               error={error}
               onDelete={handleDeleteScope}
               onRemove={handleRemoveScope}
             />
           </div>
         </div>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="min-h-screen flex flex-col items-center">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <Header />
-      <div className="flex-1 w-full flex flex-col items-center">
-        <section className="w-full max-w-7xl px-4 py-20 text-center">
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-4xl md:text-6xl font-bold mb-6"
-          >
-            {t("scope_burndown")}
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-xl text-gray-600 mb-12 max-w-2xl mx-auto"
-          >
-            {t("track_progress_and_manage_resources")}
-          </motion.p>
+      <div className="container mx-auto px-4 py-8">
+        {/* Hero Section */}
+        <section className="text-center py-20">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
+            transition={{ duration: 0.5 }}
+            className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border border-white/20 rounded-2xl p-12 shadow-xl mb-12"
           >
-            <Link
-              href="/auth/login"
-              className="bg-blue-600 dark:bg-blue-700 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-blue-700 transition"
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              {t("scope_burndown")}
+            </h1>
+            <p className="text-xl text-gray-600 dark:text-gray-400 mb-8 max-w-2xl mx-auto">
+              {t("track_progress_and_manage_resources")}
+            </p>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
             >
-              {t("login")}
-            </Link>
+              <Link
+                href="/auth/login"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-200 hover:scale-105 shadow-lg inline-block"
+              >
+                {t("login")}
+              </Link>
+            </motion.div>
           </motion.div>
         </section>
 
-        <section className="w-full bg-gray-50 dark:bg-gray-900 py-20">
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                viewport={{ once: true }}
-                className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg"
-              >
-                <h3 className="text-xl font-semibold mb-4">{t("progress_tracking")}</h3>
-                <p className="text-gray-600">
-                  {t("visual_overview_of_projects")}
-                </p>
-              </motion.div>
+        {/* Features Section */}
+        <section className="py-20">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              viewport={{ once: true }}
+              className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border border-white/20 rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300"
+            >
+              <div className="text-4xl mb-4">📊</div>
+              <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                {t("progress_tracking")}
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                {t("visual_overview_of_projects")}
+              </p>
+            </motion.div>
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                viewport={{ once: true }}
-                className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg"
-              >
-                <h3 className="text-xl font-semibold mb-4">{t("team_sharing")}</h3>
-                <p className="text-gray-600">
-                  {t("collaborate_and_share")}
-                </p>
-              </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              viewport={{ once: true }}
+              className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border border-white/20 rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300"
+            >
+              <div className="text-4xl mb-4">👥</div>
+              <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                {t("team_sharing")}
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                {t("collaborate_and_share")}
+              </p>
+            </motion.div>
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-                viewport={{ once: true }}
-                className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg"
-              >
-                <h3 className="text-xl font-semibold mb-4">{t("data_export")}</h3>
-                <p className="text-gray-600">
-                  {t("export_data_to_csv")}
-                </p>
-              </motion.div>
-            </div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              viewport={{ once: true }}
+              className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border border-white/20 rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300"
+            >
+              <div className="text-4xl mb-4">📈</div>
+              <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                {t("data_export")}
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                {t("export_data_to_csv")}
+              </p>
+            </motion.div>
           </div>
         </section>
       </div>
-    </main>
+    </div>
   );
 }

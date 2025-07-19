@@ -1,3 +1,11 @@
+/**
+ * Modern Team Section Component
+ * - Glass-like design s animacemi
+ * - Dark mode podpora
+ * - Inline editace členů týmu
+ * - Moderní UI s gradient efekty
+ */
+
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { TeamMember, ROLES } from './types';
@@ -54,55 +62,81 @@ export function TeamSection({ scopeId, team, onTeamChange }: TeamSectionProps) {
       />
 
       {/* Členové týmu */}
-      <section className="mb-6">
-        <div className="rounded-lg shadow p-4">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
-              <h2 className="text-xl font-semibold mb-2 sm:mb-0">{t('teamMembers')}</h2>
-              <button
-                className="bg-blue-600 text-white px-5 py-2 rounded font-semibold shadow hover:bg-blue-700 transition w-full sm:w-auto mt-2 sm:mt-0"
-                onClick={() => setAddModalOpen(true)}
-              >
-                {t('addMember')}
-              </button>
+      <section className="mb-8">
+        <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border border-white/20 dark:border-gray-700 rounded-xl p-6 shadow-xl">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              👥 {t('teamMembers')}
+            </h2>
+            <button
+              className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2 rounded-xl hover:from-blue-600 hover:to-purple-600 transition-all duration-200 hover:scale-105 shadow-lg font-medium"
+              onClick={() => setAddModalOpen(true)}
+            >
+              {t('addMember')}
+            </button>
           </div>
-          <div className="rounded p-2 sm:p-3">
-            <div className="flex font-semibold mb-2 text-gray-700 text-xs sm:text-base">
-              <div className="flex-1">{t('name')}</div>
-              <div className="w-24 sm:w-32">{t('role')}</div>
-              <div className="w-24 sm:w-32">{t('fte')}</div>
-              <div className="w-16 sm:w-20">{t('actions')}</div>
-            </div>
-            {team.length === 0 ? (
-              <div className="text-gray-400">{t('noMembers')}</div>
-            ) : (
-              team.map(member => (
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center mb-2 gap-1 sm:gap-0" key={member.id}>
-                  <input
-                    className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 flex-1 border rounded px-2 py-1 mr-0 sm:mr-2 focus:outline-blue-400"
-                    value={member.name}
-                    onChange={e => handleEditMember(member.id, 'name', e.target.value)}
-                  />
-                  <select
-                    className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 w-24 sm:w-32 border rounded px-2 py-1 mr-0 sm:mr-2 focus:outline-blue-400"
-                    value={member.role}
-                    onChange={e => handleEditMember(member.id, 'role', e.target.value)}
-                  >
-                    {ROLES.map(role => (
-                      <option key={role.value} value={role.value}>{role.value}</option>
-                    ))}
-                  </select>
-                  <input
-                    className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 w-24 sm:w-32 border rounded px-2 py-1 mr-0 sm:mr-2 focus:outline-blue-400"
-                    type="number"
-                    min={0.1}
-                    step={0.01}
-                    value={member.fte}
-                    onChange={e => handleEditMember(member.id, 'fte', Number(e.target.value))}
-                  />
-                  <button className="text-red-600 font-semibold hover:underline ml-0 sm:ml-2 mt-1 sm:mt-0" onClick={() => handleDeleteMember(member.id)}>{t('delete')}</button>
-                </div>
-              ))
-            )}
+          
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="text-gray-700 dark:text-gray-300 font-semibold border-b border-gray-200 dark:border-gray-700">
+                  <th className="px-3 py-3 text-left">{t('name')}</th>
+                  <th className="px-3 py-3 text-center">{t('role')}</th>
+                  <th className="px-3 py-3 text-center">{t('fte')}</th>
+                  <th className="px-3 py-3 text-center">{t('actions')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {team.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="text-gray-400 dark:text-gray-500 text-center py-8">
+                      {t('noMembers')}
+                    </td>
+                  </tr>
+                ) : (
+                  team.map(member => (
+                    <tr key={member.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                      <td className="px-3 py-3 align-middle">
+                        <input
+                          className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
+                          value={member.name}
+                          onChange={e => handleEditMember(member.id, 'name', e.target.value)}
+                        />
+                      </td>
+                      <td className="px-3 py-3 align-middle text-center">
+                        <select
+                          className="bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
+                          value={member.role}
+                          onChange={e => handleEditMember(member.id, 'role', e.target.value)}
+                        >
+                          {ROLES.map(role => (
+                            <option key={role.value} value={role.value}>{role.value}</option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="px-3 py-3 align-middle text-center">
+                        <input
+                          className="w-20 bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
+                          type="number"
+                          min={0.1}
+                          step={0.01}
+                          value={member.fte}
+                          onChange={e => handleEditMember(member.id, 'fte', Number(e.target.value))}
+                        />
+                      </td>
+                      <td className="px-3 py-3 align-middle text-center">
+                        <button 
+                          className="text-red-600 dark:text-red-400 font-semibold hover:text-red-700 dark:hover:text-red-300 hover:underline transition-colors duration-200" 
+                          onClick={() => handleDeleteMember(member.id)}
+                        >
+                          {t('delete')}
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       </section>

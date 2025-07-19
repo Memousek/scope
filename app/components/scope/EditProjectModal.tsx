@@ -1,4 +1,12 @@
-import { useState, useRef } from 'react';
+/**
+ * Modern Edit Project Modal Component
+ * - Glass-like design s animacemi
+ * - Dark mode podpora
+ * - Moderní form styling
+ * - Smooth transitions a hover efekty
+ */
+
+import { useState, useRef, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Project, ProjectProgress } from './types';
 
@@ -67,63 +75,128 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
     }
   };
 
+  // ESC key handler
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [onClose]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-      <div className="rounded-2xl bg-background shadow-2xl p-8 w-full max-w-2xl relative overflow-y-auto max-h-[90vh]">
-        <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-3xl font-bold" onClick={onClose} aria-label="Zavřít">×</button>
-        <h3 className="text-2xl font-bold mb-6 text-center">Upravit projekt</h3>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" style={{ backdropFilter: 'blur(8px)' }}>
+      <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border border-white/20 dark:border-gray-700 rounded-2xl shadow-2xl p-8 w-full max-w-2xl relative overflow-y-auto max-h-[90vh] mx-4">
+        <button 
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 text-3xl font-bold transition-colors duration-200" 
+          onClick={onClose} 
+          aria-label="Zavřít"
+        >
+          ×
+        </button>
+        
+        <h3 className="text-2xl font-bold mb-6 text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          ✏️ Upravit projekt
+        </h3>
+        
         <form className="flex flex-col gap-6" onSubmit={e => { e.preventDefault(); handleSaveEditProject(); }}>
+          {/* Základní informace */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block mb-1 font-medium">Název projektu</label>
-              <input className="border rounded px-3 py-2 w-full" value={editProject.name} onChange={e => setEditProject(p => ({ ...p, name: e.target.value }))} required />
+              <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">Název projektu</label>
+              <input 
+                className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200" 
+                value={editProject.name} 
+                onChange={e => setEditProject(p => ({ ...p, name: e.target.value }))} 
+                required 
+              />
             </div>
             <div>
-              <label className="block mb-1 font-medium">Priorita</label>
-              <input className="border rounded px-3 py-2 w-full" type="number" min={1} value={editProject.priority} onChange={e => setEditProject(p => ({ ...p, priority: Number(e.target.value) }))} required />
+              <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">Priorita</label>
+              <input 
+                className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200" 
+                type="number" 
+                min={1} 
+                value={editProject.priority} 
+                onChange={e => setEditProject(p => ({ ...p, priority: Number(e.target.value) }))} 
+                required 
+              />
             </div>
             <div>
-              <label className="block mb-1 font-medium">Termín dodání</label>
-              <input className="border rounded px-3 py-2 w-full" type="date" value={editProject.delivery_date || ''} onChange={e => setEditProject(p => ({ ...p, delivery_date: e.target.value }))} />
+              <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">Termín dodání</label>
+              <input 
+                className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200" 
+                type="date" 
+                value={editProject.delivery_date || ''} 
+                onChange={e => setEditProject(p => ({ ...p, delivery_date: e.target.value }))} 
+              />
             </div>
           </div>
-          <div className="border-t pt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
-            {projectRoles.map(role =>
-              Number(editProject[role.mandays as keyof Project]) > 0 && (
-                <div className="flex flex-col gap-2" key={role.key}>
-                  <div className="flex gap-2">
-                    <div className="flex-1">
-                      <label className="block mb-1 font-medium">Odhad {role.label} (MD)</label>
-                      <input
-                        className="border rounded px-3 py-2 w-full"
-                        type="number"
-                        min={0.01}
-                        step={0.01}
-                        value={Number(editProject[role.mandays as keyof Project]) || ''}
-                        onChange={e => setEditProject(p => ({ ...p, [role.mandays]: Number(e.target.value) }))}
-                      />
+          
+          {/* Role a progress */}
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+            <h4 className="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200">Role a progress</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {projectRoles.map(role =>
+                Number(editProject[role.mandays as keyof Project]) > 0 && (
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 border border-gray-200 dark:border-gray-600" key={role.key}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <div 
+                        className="w-3 h-3 rounded-full" 
+                        style={{ backgroundColor: role.color }}
+                      ></div>
+                      <h5 className="font-medium text-gray-800 dark:text-gray-200">{role.label}</h5>
                     </div>
-                    <div className="flex-1">
-                      <label className="block mb-1 font-medium">% {role.label} hotovo</label>
-                      <input
-                        className="border rounded px-3 py-2 w-full"
-                        type="number"
-                        min={0}
-                        max={100}
-                        value={Number(editProject[role.done as keyof Project]) || ''}
-                        onChange={e => setEditProject(p => ({ ...p, [role.done]: Number(e.target.value) }))}
-                      />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block mb-1 text-sm font-medium text-gray-600 dark:text-gray-400">Odhad (MD)</label>
+                        <input
+                          className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
+                          type="number"
+                          min={0.01}
+                          step={0.01}
+                          value={Number(editProject[role.mandays as keyof Project]) || ''}
+                          onChange={e => setEditProject(p => ({ ...p, [role.mandays]: Number(e.target.value) }))}
+                        />
+                      </div>
+                      <div>
+                        <label className="block mb-1 text-sm font-medium text-gray-600 dark:text-gray-400">% hotovo</label>
+                        <input
+                          className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
+                          type="number"
+                          min={0}
+                          max={100}
+                          value={Number(editProject[role.done as keyof Project]) || ''}
+                          onChange={e => setEditProject(p => ({ ...p, [role.done]: Number(e.target.value) }))}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              )
-            )}
+                )
+              )}
+            </div>
           </div>
-          <div className="flex gap-2 justify-end mt-2">
-            <button type="button" className="px-5 py-2 rounded bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300" onClick={onClose}>Zrušit</button>
-            <button type="submit" className="px-5 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700 shadow">Uložit změny</button>
+          
+          {/* Tlačítka */}
+          <div className="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
+            <button 
+              type="button" 
+              className="px-6 py-3 rounded-xl bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-200" 
+              onClick={onClose}
+            >
+              Zrušit
+            </button>
+            <button 
+              type="submit" 
+              className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 text-white font-medium hover:from-blue-600 hover:to-purple-600 transition-all duration-200 shadow-lg"
+            >
+              Uložit změny
+            </button>
           </div>
         </form>
       </div>
