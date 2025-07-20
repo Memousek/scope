@@ -1,13 +1,21 @@
+/**
+ * Modern Project Section Component
+ * - Glass-like design s animacemi
+ * - Dark mode podpora
+ * - Kompletní správa projektů
+ * - Moderní UI s gradient efekty
+ */
+
 import { useState, useEffect } from 'react';
-import { Project } from './types';
-import { EditProjectModal } from './EditProjectModal';
-import { ProjectBurndown } from './ProjectBurndown';
-import { AddProjectModal } from './AddProjectModal';
-import { ProjectHistoryModal } from './ProjectHistoryModal';
+import { useTranslation } from '@/lib/translation';
 import { useProjects } from '@/app/hooks/useProjects';
 import { useTeam } from '@/app/hooks/useTeam';
+import { Project } from './types';
+import { AddProjectModal } from './AddProjectModal';
+import { EditProjectModal } from './EditProjectModal';
+import { ProjectHistoryModal } from './ProjectHistoryModal';
+import { ProjectProgressChart } from './ProjectProgressChart';
 import { calculateProjectDeliveryInfo, calculatePriorityDates } from '@/app/utils/dateUtils';
-import { useTranslation } from '@/lib/translation';
 
 interface ProjectSectionProps {
   scopeId: string;
@@ -37,8 +45,8 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editProject, setEditProject] = useState<Project | null>(null);
   const [addModalOpen, setAddModalOpen] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
   const [historyModalProject, setHistoryModalProject] = useState<Project | null>(null);
+  const [expandedProject, setExpandedProject] = useState<string | null>(null);
 
   // Load data on component mount
   useEffect(() => {
@@ -49,17 +57,13 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
   const handleAddProject = async (project: Omit<Project, 'id' | 'scope_id' | 'created_at'>) => {
     try {
       await addProject(project);
-      setRefreshKey(k => k + 1);
     } catch (error) {
       console.error('Failed to add project:', error);
     }
   };
 
   const handleDeleteProject = async (projectId: string) => {
-    const success = await deleteProject(projectId);
-    if (success) {
-      setRefreshKey(k => k + 1);
-    }
+    await deleteProject(projectId);
   };
 
   const handleOpenEditModal = (project: Project) => {
@@ -75,14 +79,10 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
   const handleProjectChange = async (updatedProject: Project) => {
     try {
       await updateProject(updatedProject.id, updatedProject);
-      setRefreshKey(k => k + 1);
     } catch (error) {
       console.error('Failed to update project:', error);
     }
   };
-
-  // Calculate priority dates for all projects
-  const priorityDates = calculatePriorityDates(projects, team);
 
   // Define project roles for EditProjectModal
   const projectRoles = [
@@ -92,6 +92,24 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
     { key: 'pm', label: 'PM', mandays: 'pm_mandays', done: 'pm_done', color: '#a21caf' },
     { key: 'dpl', label: 'DPL', mandays: 'dpl_mandays', done: 'dpl_done', color: '#e11d48' },
   ];
+
+  const getRoleProgress = (project: Project, role: string) => {
+    const mandays = project[`${role}_mandays` as keyof Project] as number;
+    const donePercent = project[`${role}_done` as keyof Project] as number;
+    
+    if (!mandays || mandays === 0) return null;
+    
+    // donePercent je procento (0-100), převedeme na mandays
+    const doneMandays = (donePercent / 100) * mandays;
+    
+    return {
+      mandays,
+      done: doneMandays,
+      percentage: Math.round(donePercent)
+    };
+  };
+
+
 
   return (
     <>
@@ -108,102 +126,212 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
       />
 
       {/* Projekty */}
-      <section>
-        <div className="rounded-lg shadow p-4">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
-            <h2 className="text-xl font-semibold mb-2 sm:mb-0">{t('projects')}</h2>
+      <section className="mb-8">
+        <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border border-white/20 dark:border-gray-700 rounded-xl p-6 shadow-xl">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              🚀 {t('projects')}
+            </h2>
             <button
-              className="bg-blue-600 text-white px-5 py-2 rounded font-semibold shadow hover:bg-blue-700 transition w-full sm:w-auto mt-2 sm:mt-0"
+              className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2 rounded-xl hover:from-blue-600 hover:to-purple-600 transition-all duration-200 hover:scale-105 shadow-lg font-medium"
               onClick={() => setAddModalOpen(true)}
             >
               {t('addProject')}
             </button>
           </div>
-          <div className="overflow-x-auto rounded-lg">
-            <table className="min-w-[700px] w-full text-sm rounded-lg shadow border border-gray-200">
-              <thead>
-                <tr className="text-gray-700 font-semibold">
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-left rounded-tl-lg">{t('projectName')}</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">{t('priority')}</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">{t('fe_mandays')}</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">% FE {t('done')}</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">{t('be_mandays')}</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">% BE {t('done')}</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">{t('qa_mandays')}</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">% QA {t('done')}</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">{t('pm_mandays')}</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">% PM {t('done')}</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">{t('dpl_mandays')}</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-right">% DPL {t('done')}</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-center">{t('deliveryDate')}</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-center">{t('calculatedDelivery')}</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-center">{t('delay')}</th>
-                  <th className="px-2 py-1 sm:px-3 sm:py-2 text-center rounded-tr-lg">{t('actions')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {projects.length === 0 ? (
-                  <tr><td colSpan={15} className="text-gray-400 text-center py-4">{t('noProjects')}</td></tr>
-                ) : (
-                  projects.map(project => {
-                    const info = calculateProjectDeliveryInfo(project, team);
-                    return (
-                      <tr key={project.id} className="hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-                        <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">{project.name}</td>
-                        <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle text-right">{project.priority}</td>
-                        {/* FE */}
-                        <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle text-right">{Number(project.fe_mandays) > 0 ? Number(project.fe_mandays) : '-'}</td>
-                        <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle text-right">{Number(project.fe_mandays) > 0 ? (Number(project.fe_done) || 0) + ' %' : '-'}</td>
-                        {/* BE */}
-                        <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle text-right">{Number(project.be_mandays) > 0 ? Number(project.be_mandays) : '-'}</td>
-                        <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle text-right">{Number(project.be_mandays) > 0 ? (Number(project.be_done) || 0) + ' %' : '-'}</td>
-                        {/* QA */}
-                        <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle text-right">{Number(project.qa_mandays) > 0 ? Number(project.qa_mandays) : '-'}</td>
-                        <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle text-right">{Number(project.qa_mandays) > 0 ? (Number(project.qa_done) || 0) + ' %' : '-'}</td>
-                        {/* PM */}
-                        <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle text-right">{Number(project.pm_mandays) > 0 ? Number(project.pm_mandays) : '-'}</td>
-                        <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle text-right">{Number(project.pm_mandays) > 0 ? (Number(project.pm_done) || 0) + ' %' : '-'}</td>
-                        {/* DPL */}
-                        <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle text-right">{Number(project.dpl_mandays) > 0 ? Number(project.dpl_mandays) : '-'}</td>
-                        <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle text-right">{Number(project.dpl_mandays) > 0 ? (Number(project.dpl_done) || 0) + ' %' : '-'}</td>
-                        <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle text-center">{project.delivery_date ? new Date(project.delivery_date).toLocaleDateString() : ''}</td>
-                        <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle text-center">{info.calculatedDeliveryDate.toLocaleDateString()}</td>
-                        <td className={`px-2 py-1 sm:px-3 sm:py-2 align-middle text-center font-semibold ${info.diffWorkdays === null ? '' : info.diffWorkdays >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {info.diffWorkdays === null ? '' : info.diffWorkdays >= 0 ? `+${info.diffWorkdays} ${t('days')}` : `${info.diffWorkdays} ${t('days')}`}
-                        </td>
-                        <td className="px-2 py-1 sm:px-3 sm:py-2 align-middle text-center whitespace-nowrap">
-                          <button className="text-blue-600 font-semibold hover:underline mr-2" onClick={() => handleOpenEditModal(project)}>{t('edit')}</button>
-                          <button className="text-blue-600 font-semibold hover:underline mr-2" onClick={() => setHistoryModalProject(project)}>{t('history')}</button>
-                          <button className="text-red-600 font-semibold hover:underline" onClick={() => handleDeleteProject(project.id)}>{t('delete')}</button>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
+          
+          <div className="space-y-4">
+            {projects.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="text-6xl mb-4">🚀</div>
+                <p className="text-gray-500 dark:text-gray-400 text-lg">{t('noProjects')}</p>
+                <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">Začněte přidáním prvního projektu</p>
+              </div>
+            ) : (
+              projects.map(project => {
+                const info = calculateProjectDeliveryInfo(project, team);
+                const priorityDates = calculatePriorityDates(projects, team)[project.id];
+                const isExpanded = expandedProject === project.id;
+                
+                return (
+                  <div key={project.id} className="bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm rounded-xl border border-white/20 dark:border-gray-600/20 overflow-hidden hover:shadow-lg transition-all duration-300">
+                    {/* Hlavní řádek */}
+                    <div className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                            {project.name}
+                          </h3>
+                          <span className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                            {t('priority')} {project.priority}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center gap-3">
+                                                     {/* Celkový progress */}
+                           <div className="text-right">
+                             <div className="text-sm text-gray-600 dark:text-gray-400">Celkový progress</div>
+                             <div className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                               {(() => {
+                                 const totalDone = projectRoles.reduce((total, role) => {
+                                   const progress = getRoleProgress(project, role.key);
+                                   return total + (progress ? progress.done : 0);
+                                 }, 0);
+                                 
+                                 const totalMandays = projectRoles.reduce((total, role) => {
+                                   const progress = getRoleProgress(project, role.key);
+                                   return total + (progress ? progress.mandays : 0);
+                                 }, 0);
+                                 
+                                 if (totalMandays === 0) return '0%';
+                                 
+                                 const percentage = Math.round((totalDone / totalMandays) * 100);
+                                 return `${percentage}%`;
+                               })()}
+                             </div>
+                           </div>
+                          
+                          {/* Termín a skluz */}
+                          <div className="text-right">
+                            <div className="text-sm text-gray-600 dark:text-gray-400">Termín</div>
+                            <div className={`text-sm font-semibold ${
+                              info.diffWorkdays && info.diffWorkdays >= 0 
+                                ? 'text-green-600 dark:text-green-400' 
+                                : 'text-red-600 dark:text-red-400'
+                            }`}>
+                              {info.diffWorkdays === null ? 'N/A' : 
+                               info.diffWorkdays >= 0 ? `+${info.diffWorkdays} dní` : 
+                               `${info.diffWorkdays} dní`}
+                            </div>
+                          </div>
+                          
+                          {/* Akce */}
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => setExpandedProject(isExpanded ? null : project.id)}
+                              className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                            >
+                              <svg className={`w-5 h-5 transform transition-transform ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </button>
+                            
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => handleOpenEditModal(project)}
+                                className="p-2 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                                title={t('edit')}
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                              </button>
+                              
+                              <button
+                                onClick={() => setHistoryModalProject(project)}
+                                className="p-2 text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition-colors rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                                title={t('history')}
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                              </button>
+                              
+                              <button
+                                onClick={() => handleDeleteProject(project.id)}
+                                className="p-2 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
+                                title={t('delete')}
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Rozbalené detaily */}
+                    {isExpanded && (
+                      <div className="animate-in slide-in-from-top-2 duration-300 border-t border-gray-200 dark:border-gray-600 bg-gray-50/50 dark:bg-gray-800/50">
+                        <div className="p-4 space-y-4">
+                          {/* Role progress */}
+                          <div>
+                            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Progress podle rolí</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                              {projectRoles.map(role => {
+                                const progress = getRoleProgress(project, role.key);
+                                if (!progress) return null;
+                                
+                                                                                                  return (
+                                  <div key={role.key} className="bg-white/80 dark:bg-gray-700/80 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{role.label}</span>
+                                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                                        {progress.done}/{progress.mandays} MD
+                                      </span>
+                                    </div>
+                                                                         <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                                       <div 
+                                         className="h-2 rounded-full"
+                                         style={{ 
+                                           width: `${progress.percentage}%`,
+                                           backgroundColor: role.color
+                                         }}
+                                       ></div>
+                                     </div>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                      {progress.percentage}% hotovo
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                          
+                          {/* Progress graf */}
+                          <ProjectProgressChart 
+                            project={project} 
+                            deliveryInfo={info}
+                            priorityDates={priorityDates}
+                            className="mb-4"
+                          />
+                          
+                          {/* Termíny */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div className="bg-white/80 dark:bg-gray-700/80 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+                              <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Plánovaný termín</div>
+                              <div className="text-gray-900 dark:text-gray-100">
+                                {project.delivery_date ? new Date(project.delivery_date).toLocaleDateString() : 'Není nastaven'}
+                              </div>
+                            </div>
+                            <div className="bg-white/80 dark:bg-gray-700/80 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+                              <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vypočítaný termín</div>
+                              <div className="text-gray-900 dark:text-gray-100">
+                                {info.calculatedDeliveryDate.toLocaleDateString()}
+                              </div>
+                            </div>
+                            {priorityDates && (
+                              <div className="bg-white/80 dark:bg-gray-700/80 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+                                <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Termín podle priority</div>
+                                <div className="text-blue-600 dark:text-blue-400 text-sm">
+                                  <div>Od: {priorityDates.priorityStartDate.toLocaleDateString()}</div>
+                                  <div>Do: {priorityDates.priorityEndDate.toLocaleDateString()}</div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       </section>
-
-      {/* Výsledky a burndown grafy */}
-      <div className="my-8">
-        <h3 className="text-lg font-semibold mb-2">{t('burndown')}</h3>
-        {projects.map(project => {
-          const info = calculateProjectDeliveryInfo(project, team);
-          return (
-            <ProjectBurndown
-              key={project.id + '-' + refreshKey}
-              project={{ ...project, slip: info.diffWorkdays }}
-              deliveryInfo={info}
-              priorityStartDate={priorityDates[project.id].priorityStartDate}
-              priorityEndDate={priorityDates[project.id].priorityEndDate}
-              blockingProjectName={priorityDates[project.id].blockingProjectName}
-              showBlockingBg={!!priorityDates[project.id].blockingProjectName}
-            />
-          );
-        })}
-      </div>
 
       {/* Modal pro editaci projektu */}
       {editModalOpen && editProject && (

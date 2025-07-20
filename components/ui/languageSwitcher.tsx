@@ -1,11 +1,20 @@
 "use client";
 /**
  * LanguageSwitcher component for switching between available languages.
- * Uses useTranslation hook to set language and reload UI.
+ * Uses dropdown format similar to ThemeSwitcher.
  */
 import React, { useEffect, useState } from 'react';
 import { getCurrentLanguage, setCurrentLanguage } from '../../lib/translation';
 import Image from 'next/image';
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Globe } from "lucide-react";
 
 const languages = [
   { code: 'cs', label: 'Čeština', flag: 'cz' },
@@ -24,23 +33,49 @@ export const LanguageSwitcher: React.FC = () => {
     setCurrentLanguage(code);
   };
 
-  if (!lang) return null; // or fallback
+  if (!lang) {
+    return (
+      <Button variant="ghost" size={"sm"}>
+        <Globe
+          size={16}
+          className={"text-muted-foreground"}
+        />
+      </Button>
+    );
+  }
+
+  const ICON_SIZE = 16;
 
   return (
-    <div className="flex gap-2" aria-label="Language switcher">
-      {languages.map((l) => (
-        <button
-          key={l.code}
-          onClick={() => setLang(l.code)}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors font-semibold ${lang === l.code ? "bg-blue-600 text-white border-blue-600" : "bg-gray-100 text-gray-700 border-gray-300 hover:bg-blue-50"}`}
-          aria-current={lang === l.code ? 'true' : undefined}
-          aria-label={l.label}
-          aria-pressed={lang === l.code}
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size={"sm"}>
+          <Globe
+            size={ICON_SIZE}
+            className={"text-muted-foreground"}
+          />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-content" align="start">
+        <DropdownMenuRadioGroup
+          value={lang}
+          onValueChange={(e) => setLang(e)}
         >
-          <Image src={`https://flagcdn.com/w20/${l.flag}.png`} alt={l.label} width={20} height={10} aria-hidden={true} /> {l.label}
-        </button>
-      ))}
-    </div>
+          {languages.map((l) => (
+            <DropdownMenuRadioItem key={l.code} className="flex gap-2" value={l.code}>
+              <Image 
+                src={`https://flagcdn.com/w20/${l.flag}.png`} 
+                alt={l.label} 
+                width={20} 
+                height={10} 
+                className="rounded-sm"
+              />
+              <span>{l.label}</span>
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
 

@@ -12,6 +12,10 @@ import { ProjectProgressRepository } from "@/lib/domain/repositories/project-pro
 import { SupabaseProjectProgressRepository } from "@/lib/data/repositories/supabase/project-progress.repository";
 import { ScopeEditorRepository } from "@/lib/domain/repositories/scope-editor.repository";
 import { SupabaseScopeEditorRepository } from "@/lib/data/repositories/supabase/scope-editor.repository";
+import { GetScopeStatsService } from "@/lib/domain/services/get-scope-stats.service";
+import { CalculateAverageSlipService } from "@/lib/domain/services/calculate-average-slip.service";
+import { AddTeamMemberService } from "@/lib/domain/services/add-team-member.service";
+import { AddProjectService } from "@/lib/domain/services/add-project.service";
 
 export class DataContainerModule implements ContainerModule {
   bind(container: Container): Promise<void> | void {
@@ -21,6 +25,10 @@ export class DataContainerModule implements ContainerModule {
     container.bind(ProjectRepository).to(SupabaseProjectRepository).inSingletonScope();
     container.bind(ProjectProgressRepository).to(SupabaseProjectProgressRepository).inSingletonScope();
     container.bind(ScopeEditorRepository).to(SupabaseScopeEditorRepository).inSingletonScope();
+    container.bind(GetScopeStatsService).toSelf().inSingletonScope();
+    container.bind(CalculateAverageSlipService).toSelf().inSingletonScope();
+    container.bind(AddTeamMemberService).toSelf().inSingletonScope();
+    container.bind(AddProjectService).toSelf().inSingletonScope();
   }
 
 }

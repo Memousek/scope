@@ -1,4 +1,12 @@
-import { useState } from 'react';
+/**
+ * Modern Add Member Modal Component
+ * - Glass-like design s animacemi
+ * - Dark mode podpora
+ * - Moderní form styling
+ * - Smooth transitions a hover efekty
+ */
+
+import { useState, useEffect } from 'react';
 import { ROLES } from './types';
 import { useTranslation } from '@/lib/translation';
 
@@ -11,7 +19,12 @@ interface AddMemberModalProps {
   savingMember: boolean;
 }
 
-export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, onClose, onAddMember, savingMember }) => {
+export const AddMemberModal: React.FC<AddMemberModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  onAddMember, 
+  savingMember 
+}) => {
   const { t } = useTranslation();
   const [newMember, setNewMember] = useState<{ name: string; role: Role; fte: number }>({ 
     name: '', 
@@ -27,18 +40,41 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, onClose,
     onClose();
   };
 
+  // ESC key handler
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [onClose]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm">
-      <div className="rounded-2xl bg-background shadow-2xl p-8 w-full max-w-lg relative overflow-y-auto max-h-[90vh]">
-        <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-3xl font-bold" onClick={onClose} aria-label={t('close')}>×</button>
-        <h3 className="text-2xl font-bold mb-6 text-center">{t('addNewMember')}</h3>
-        <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-          <div className="flex flex-col">
-            <label className="mb-1 font-medium text-gray-700">{t('memberName')}</label>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" style={{ backdropFilter: 'blur(8px)' }}>
+      <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border border-white/20 dark:border-gray-700 rounded-2xl shadow-2xl p-8 w-full max-w-lg relative overflow-y-auto max-h-[90vh] mx-4">
+        <button 
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 text-3xl font-bold transition-colors duration-200" 
+          onClick={onClose} 
+          aria-label={t('close')}
+        >
+          ×
+        </button>
+        
+        <h3 className="text-2xl font-bold mb-6 text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          👥 {t('addNewMember')}
+        </h3>
+        
+        <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
+          {/* Jméno člena */}
+          <div>
+            <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">{t('memberName')}</label>
             <input
-              className="border rounded px-3 py-2 min-w-[180px] focus:outline-blue-400"
+              className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
               placeholder={t('memberNamePlaceholder')}
               value={newMember.name}
               onChange={e => setNewMember(m => ({ ...m, name: e.target.value }))}
@@ -46,10 +82,12 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, onClose,
               required
             />
           </div>
-          <div className="flex flex-col">
-            <label className="mb-1 font-medium text-gray-700">{t('role')}</label>
+          
+          {/* Role */}
+          <div>
+            <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">{t('role')}</label>
             <select
-              className="border rounded px-3 py-2 min-w-[140px] focus:outline-blue-400"
+              className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
               value={newMember.role}
               onChange={e => setNewMember(m => ({ ...m, role: e.target.value as Role }))}
               disabled={savingMember}
@@ -59,10 +97,12 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, onClose,
               ))}
             </select>
           </div>
-          <div className="flex flex-col">
-            <label className="mb-1 font-medium text-gray-700">{t('fte')}</label>
+          
+          {/* FTE */}
+          <div>
+            <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">{t('fte')}</label>
             <input
-              className="border rounded px-3 py-2 w-20 focus:outline-blue-400"
+              className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
               placeholder={t('ftePlaceholder')}
               type="number"
               min={0.1}
@@ -73,10 +113,18 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, onClose,
               required
             />
           </div>
-          <div className="flex gap-2 justify-end mt-2">
-            <button type="button" className="px-5 py-2 rounded bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300" onClick={onClose}>Zrušit</button>
+          
+          {/* Tlačítka */}
+          <div className="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
+            <button 
+              type="button" 
+              className="px-6 py-3 rounded-xl bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-200" 
+              onClick={onClose}
+            >
+              Zrušit
+            </button>
             <button
-              className="bg-blue-600 text-white px-5 py-2 rounded font-semibold shadow hover:bg-blue-700 transition disabled:opacity-60"
+              className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 text-white font-medium hover:from-blue-600 hover:to-purple-600 transition-all duration-200 shadow-lg disabled:opacity-60"
               type="submit"
               disabled={savingMember || !newMember.name.trim()}
             >

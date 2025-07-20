@@ -61,8 +61,8 @@ export default function ProfilePage() {
           {user.fullName && (
             <div><b>{t("name")}:</b> {user.fullName}</div>
           )}
-          <div><b>{t("created")}:</b> {new Date(user.createdAt).toLocaleString()}</div>
-          <div><b>{t("updated")}:</b> {user.updatedAt ? new Date(user.updatedAt).toLocaleString() : 'N/A'}</div>
+          <div><b>{t("created")}:</b> {new Date(user.createdAt).toISOString().slice(0, 19).replace('T', ' ')}</div>
+          <div><b>{t("updated")}:</b> {user.updatedAt ? new Date(user.updatedAt).toISOString().slice(0, 19).replace('T', ' ') : 'N/A'}</div>
           <div><b>{t("id")}:</b> {user.id}</div>
         </div>
         <button

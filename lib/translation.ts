@@ -38,8 +38,16 @@ export function useTranslation() {
     loadTranslations(lang).then(setDict);
   }, [lang]);
 
-  function t(key: string): string {
-    return dict[key] || key;
+  function t(key: string, params?: Record<string, string | number>): string {
+    let text = dict[key] || key;
+    
+    if (params) {
+      Object.entries(params).forEach(([param, value]) => {
+        text = text.replace(new RegExp(`{${param}}`, 'g'), String(value));
+      });
+    }
+    
+    return text;
   }
 
   return { t, lang, setLang: setCurrentLanguage };

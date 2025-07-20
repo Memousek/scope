@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-
+import { useTranslation } from "@/lib/translation";
 export function UpdatePasswordForm({
   className,
   ...props
@@ -23,7 +23,7 @@ export function UpdatePasswordForm({
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-
+  const { t } = useTranslation();
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     const supabase = createClient();
@@ -46,20 +46,20 @@ export function UpdatePasswordForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">Resetování hesla</CardTitle>
+          <CardTitle className="text-2xl">{t('reset_password')}</CardTitle>
           <CardDescription>
-            Vložte své nové heslo níže.
+            {t('enter_new_password')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleForgotPassword}>
             <div className="flex flex-col gap-6">
               <div className="grid gap-2">
-                <Label htmlFor="password">Nové heslo</Label>
+                <Label htmlFor="password">{t('new_password')}</Label>
                 <Input
                   id="password"
                   type="password"
-                  placeholder="Nové heslo"
+                  placeholder={t('new_password')}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -67,7 +67,7 @@ export function UpdatePasswordForm({
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Ukládám..." : "Uložit nové heslo"}
+                {isLoading ? t('saving') : t('save_new_password')}
               </Button>
             </div>
           </form>
