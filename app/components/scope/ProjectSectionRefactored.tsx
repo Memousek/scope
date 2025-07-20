@@ -212,7 +212,7 @@ export function ProjectSectionRefactored({
                         <span>Termín: {project.delivery_date ? new Date(project.delivery_date).toLocaleDateString() : 'N/A'}</span>
                         {priorityDates && (
                           <span className="text-blue-600 dark:text-blue-400">
-                            Priority termín: {priorityDates.priorityStartDate.toLocaleDateString()} - {priorityDates.priorityEndDate.toLocaleDateString()}
+                            Priority termín: Od {priorityDates.priorityStartDate.toLocaleDateString()} Do {priorityDates.priorityEndDate.toLocaleDateString()}
                           </span>
                         )}
                       </div>

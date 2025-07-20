@@ -315,8 +315,9 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
                             {priorityDates && (
                               <div className="bg-white/80 dark:bg-gray-700/80 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
                                 <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Termín podle priority</div>
-                                <div className="text-blue-600 dark:text-blue-400">
-                                  {priorityDates.priorityStartDate.toLocaleDateString()} - {priorityDates.priorityEndDate.toLocaleDateString()}
+                                <div className="text-blue-600 dark:text-blue-400 text-sm">
+                                  <div>Od: {priorityDates.priorityStartDate.toLocaleDateString()}</div>
+                                  <div>Do: {priorityDates.priorityEndDate.toLocaleDateString()}</div>
                                 </div>
                               </div>
                             )}

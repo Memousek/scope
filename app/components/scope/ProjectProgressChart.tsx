@@ -281,10 +281,13 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
         
         {priorityDates && (
           <div className="text-center">
+            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Termín podle priority</div>
             <div className="text-lg font-semibold text-blue-600 dark:text-blue-400">
-              {priorityDates.priorityStartDate.toLocaleDateString()} - {priorityDates.priorityEndDate.toLocaleDateString()}
+              Od: {priorityDates.priorityStartDate.toLocaleDateString()}
             </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">Termín podle priority</div>
+            <div className="text-lg font-semibold text-blue-600 dark:text-blue-400">
+              Do: {priorityDates.priorityEndDate.toLocaleDateString()}
+            </div>
           </div>
         )}
         

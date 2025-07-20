@@ -51,8 +51,8 @@ export function Header() {
         </button>
         {/* Mobile drawer */}
         {mobileOpen && (
-          <div className="fixed inset-0 z-50 bg-black/40 flex">
-            <div className="dark:bg-gray-800 dark:text-gray-100 bg-white w-4/5 max-w-xs h-full shadow-xl flex flex-col p-6 animate-slide-in-left relative">
+          <div className="fixed inset-0 bg-black/40 flex z-50">
+            <div className="dark:bg-gray-800 dark:text-gray-100 bg-white w-4/5 max-w-xs h-full shadow-xl flex flex-col p-6 animate-slide-in-left relative z-50">
               <button
                 className="absolute top-4 right-4 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
                 onClick={() => setMobileOpen(false)}
