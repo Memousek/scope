@@ -21,6 +21,8 @@ import { downloadCSV } from "@/app/utils/csvUtils";
 import { ContainerService } from "@/lib/container.service";
 import { GetScopeStatsService } from "@/lib/domain/services/get-scope-stats.service";
 import { CalculateAverageSlipService } from "@/lib/domain/services/calculate-average-slip.service";
+import { AddTeamMemberService } from "@/lib/domain/services/add-team-member.service";
+import { AddProjectService } from "@/lib/domain/services/add-project.service";
 
 
 export default function ScopePage({
@@ -118,6 +120,64 @@ export default function ScopePage({
         delivery_date: t("deliveryDate"),
       }
     );
+  };
+
+  const handleAddMember = async (member: { name: string; role: string; fte: number }) => {
+    try {
+      const container = ContainerService.getInstance();
+      const addMemberService = container.get(AddTeamMemberService);
+      
+      await addMemberService.execute(id, member);
+      
+      // Refresh team data
+      const { data } = await createClient()
+        .from("team_members")
+        .select("*")
+        .eq("scope_id", id)
+        .order("role", { ascending: true });
+      
+      if (data) setTeam(data);
+    } catch (error) {
+      console.error("Chyba při přidávání člena:", error);
+    }
+  };
+
+  const handleAddProject = async (project: Omit<Project, 'id' | 'created_at'>) => {
+    try {
+      const container = ContainerService.getInstance();
+      const addProjectService = container.get(AddProjectService);
+      
+      // Převod z komponentního typu na domain typ
+      const domainProject = {
+        name: project.name,
+        priority: project.priority,
+        feMandays: project.fe_mandays || 0,
+        beMandays: project.be_mandays || 0,
+        qaMandays: project.qa_mandays || 0,
+        pmMandays: project.pm_mandays || 0,
+        dplMandays: project.dpl_mandays || 0,
+        feDone: project.fe_done,
+        beDone: project.be_done,
+        qaDone: project.qa_done,
+        pmDone: project.pm_done,
+        dplDone: project.dpl_done,
+        deliveryDate: project.delivery_date ? new Date(project.delivery_date) : undefined,
+        slip: project.slip || undefined
+      };
+      
+      await addProjectService.execute(id, domainProject);
+      
+      // Refresh projects data
+      const { data } = await createClient()
+        .from("projects")
+        .select("*")
+        .eq("scope_id", id)
+        .order("priority", { ascending: true });
+      
+      if (data) setProjects(data);
+    } catch (error) {
+      console.error("Chyba při přidávání projektu:", error);
+    }
   };
 
   // Načtení scope z Supabase podle id
@@ -429,6 +489,9 @@ export default function ScopePage({
             stats={stats}
             loadingStats={loadingStats}
             averageSlip={averageSlip}
+            onExportTeam={handleExportTeam}
+            onAddMember={handleAddMember}
+            onAddProject={handleAddProject}
           />
         </div>
 

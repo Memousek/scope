@@ -10,8 +10,10 @@ import { useState } from "react";
 import { TeamSection } from "./TeamSection";
 import { ProjectSection } from "./ProjectSection";
 import { BurndownChart } from "./BurndownChart";
+import { AddMemberModal } from "./AddMemberModal";
+import { AddProjectModal } from "./AddProjectModal";
+import { AiChatModal } from "./AiChatModal";
 import { TeamMember, Project } from "./types";
-
 
 interface ModernScopeLayoutProps {
   scopeId: string;
@@ -29,7 +31,6 @@ interface ModernScopeLayoutProps {
     lastActivity?: Date;
   };
   loadingStats?: boolean;
-
   averageSlip?: {
     averageSlip: number;
     totalProjects: number;
@@ -37,6 +38,10 @@ interface ModernScopeLayoutProps {
     onTimeProjects: number;
     aheadProjects: number;
   };
+  onExportTeam?: () => void;
+  onExportProjects?: () => void;
+  onAddMember?: (member: { name: string; role: string; fte: number }) => Promise<void>;
+  onAddProject?: (project: Omit<Project, 'id' | 'scope_id' | 'created_at'>) => Promise<void>;
 }
 
 type TabType = "overview" | "team" | "projects" | "burndown";
@@ -53,10 +58,19 @@ export function ModernScopeLayout({
   hasDPL,
   stats,
   loadingStats,
-
   averageSlip,
+  onExportTeam,
+  onAddMember,
+  onAddProject,
 }: ModernScopeLayoutProps) {
   const [activeTab, setActiveTab] = useState<TabType>("overview");
+  
+  // Modal states
+  const [addMemberModalOpen, setAddMemberModalOpen] = useState(false);
+  const [addProjectModalOpen, setAddProjectModalOpen] = useState(false);
+  const [aiChatModalOpen, setAiChatModalOpen] = useState(false);
+  const [savingMember, setSavingMember] = useState(false);
+  const [savingProject, setSavingProject] = useState(false);
 
   const tabs = [
     { id: "overview", label: "Přehled", icon: "📊" },
@@ -116,13 +130,10 @@ export function ModernScopeLayout({
                         ) : 'N/A'
                       )}
                     </p>
-
                   </div>
                 </div>
               </div>
             </div>
-
-
 
             {/* Quick Actions */}
             <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-xl p-6">
@@ -131,19 +142,24 @@ export function ModernScopeLayout({
                 Rychlé akce
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <button className="p-4 bg-gradient-to-br from-blue-500 to-purple-500 text-white rounded-lg hover:scale-105 transition-all duration-200 flex flex-col items-center gap-2">
+                <button 
+                  onClick={() => setAddMemberModalOpen(true)}
+                  className="p-4 bg-gradient-to-br from-blue-500 to-purple-500 text-white rounded-lg hover:scale-105 transition-all duration-200 flex flex-col items-center gap-2"
+                >
                   <span className="text-xl">👥</span>
                   <span className="text-sm font-medium">Přidat člena</span>
                 </button>
-                <button className="p-4 bg-gradient-to-br from-green-500 to-emerald-500 text-white rounded-lg hover:scale-105 transition-all duration-200 flex flex-col items-center gap-2">
+                <button 
+                  onClick={() => setAddProjectModalOpen(true)}
+                  className="p-4 bg-gradient-to-br from-green-500 to-emerald-500 text-white rounded-lg hover:scale-105 transition-all duration-200 flex flex-col items-center gap-2"
+                >
                   <span className="text-xl">🚀</span>
                   <span className="text-sm font-medium">Nový projekt</span>
                 </button>
-                <button className="p-4 bg-gradient-to-br from-orange-500 to-red-500 text-white rounded-lg hover:scale-105 transition-all duration-200 flex flex-col items-center gap-2">
-                  <span className="text-xl">📊</span>
-                  <span className="text-sm font-medium">Export</span>
-                </button>
-                <button className="p-4 bg-gradient-to-br from-purple-500 to-pink-500 text-white rounded-lg hover:scale-105 transition-all duration-200 flex flex-col items-center gap-2">
+                <button 
+                  onClick={() => setAiChatModalOpen(true)}
+                  className="p-4 bg-gradient-to-br from-purple-500 to-pink-500 text-white rounded-lg hover:scale-105 transition-all duration-200 flex flex-col items-center gap-2"
+                >
                   <span className="text-xl">🤖</span>
                   <span className="text-sm font-medium">AI Chat</span>
                 </button>
@@ -173,12 +189,12 @@ export function ModernScopeLayout({
           </div>
         );
 
-             case "burndown":
-         return (
-           <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-xl p-6">
-             <BurndownChart projects={projects} team={team} />
-           </div>
-         );
+      case "burndown":
+        return (
+          <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-xl p-6">
+            <BurndownChart projects={projects} team={team} />
+          </div>
+        );
 
       default:
         return null;
@@ -207,10 +223,58 @@ export function ModernScopeLayout({
         </div>
       </div>
 
-      {/* Tab Content */}
-      <div className="min-h-[600px]">
+      {/* Tab Content - automatická výška */}
+      <div>
         {renderTabContent()}
       </div>
+
+      {/* Modals */}
+      {addMemberModalOpen && onAddMember && (
+        <AddMemberModal
+          isOpen={addMemberModalOpen}
+          onClose={() => setAddMemberModalOpen(false)}
+          onAddMember={async (member) => {
+            setSavingMember(true);
+            try {
+              await onAddMember(member);
+              setAddMemberModalOpen(false);
+            } finally {
+              setSavingMember(false);
+            }
+          }}
+          savingMember={savingMember}
+        />
+      )}
+
+      {addProjectModalOpen && onAddProject && (
+        <AddProjectModal
+          isOpen={addProjectModalOpen}
+          onClose={() => setAddProjectModalOpen(false)}
+          onAddProject={async (project) => {
+            setSavingProject(true);
+            try {
+              await onAddProject(project);
+              setAddProjectModalOpen(false);
+            } finally {
+              setSavingProject(false);
+            }
+          }}
+          savingProject={savingProject}
+          hasFE={hasFE}
+          hasBE={hasBE}
+          hasQA={hasQA}
+          hasPM={hasPM}
+          hasDPL={hasDPL}
+        />
+      )}
+
+      {aiChatModalOpen && (
+        <AiChatModal
+          isOpen={aiChatModalOpen}
+          onClose={() => setAiChatModalOpen(false)}
+          scopeId={scopeId}
+        />
+      )}
     </div>
   );
 } 
