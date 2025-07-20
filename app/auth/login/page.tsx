@@ -1,5 +1,6 @@
 "use client";
 import { LoginForm } from "@/components/login-form";
+import { AuthHeader } from "@/components/auth-header";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -30,17 +31,10 @@ export default function Page() {
       {/* Main content */}
       <div className="relative z-10 w-full max-w-md">
         {/* Logo/Brand section */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl mb-4 shadow-lg">
-            <span className="text-white text-2xl font-bold">S</span>
-          </div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Scope
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
-            {t('project_management_system')}
-          </p>
-        </div>
+        <AuthHeader 
+          title="Scope"
+          subtitle={t('project_management_system')}
+        />
 
         {/* Login form */}
         <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl border border-white/30 dark:border-gray-700/30 rounded-2xl shadow-2xl p-8">

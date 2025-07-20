@@ -57,7 +57,7 @@
   "system_mode": "Systémový režim",
   "bug_report": "Nahlásit chybu nebo navrhnout novou funkci",
   "your_scopes": "Vaše scopy / projekty",
-  "track_progress_and_manage_resources": "Sledujte průběh vašich projektů a efektivně spravujte zdroje týmu.",
+  "track_progress_and_manage_resources": "Moderní nástroj pro sledování průběhu projektů a efektivní správu týmových zdrojů s vizuálními přehledy a real-time spoluprácí.",
   "create_new_scope": "Vytvořit nový scope",
   "scope_burndown": "Scope Burndown",
   "login": "Přihlásit se",
@@ -166,5 +166,11 @@
   "passwords_dont_match": "Hesla se neshodují",
   "registration_error": "Nastala chyba při registraci",
   "google_registration_error": "Nastala chyba při registraci přes Google",
-  "back_to_login": "Zpět na přihlášení"
+  "back_to_login": "Zpět na přihlášení",
+  "enter_new_password": "Vložte své nové heslo níže.",
+  "new_password": "Nové heslo",
+  "save_new_password": "Uložit nové heslo",
+  "accessibility": "Přístupnost",
+  "responsive_design": "Responzivní design pro desktop, tablet i mobilní telefony",
+  "cross_device_access": "Přístup z jakéhokoliv zařízení"
 } 

@@ -21,7 +21,7 @@ export default function Page() {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl mb-4 shadow-lg">
             <span className="text-white text-2xl font-bold">S</span>
           </div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white bg-clip-text text-transparent">
             Scope
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">

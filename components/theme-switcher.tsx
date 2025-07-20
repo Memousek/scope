@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 const ThemeSwitcher = () => {
   const [mounted, setMounted] = useState(false);
   const { theme, setTheme } = useTheme();
+  const ICON_SIZE = 16;
 
   // useEffect only runs on the client, so now we can safely show the UI
   useEffect(() => {
@@ -22,10 +23,15 @@ const ThemeSwitcher = () => {
   }, []);
 
   if (!mounted) {
-    return null;
+    return (
+      <Button variant="ghost" size={"sm"}>
+        <Laptop
+          size={ICON_SIZE}
+          className={"text-muted-foreground"}
+        />
+      </Button>
+    );
   }
-
-  const ICON_SIZE = 16;
 
   return (
     <DropdownMenu>

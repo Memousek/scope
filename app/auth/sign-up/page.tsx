@@ -1,5 +1,6 @@
 "use client";
 import { SignUpForm } from "@/components/sign-up-form";
+import { AuthHeader } from "@/components/auth-header";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -30,17 +31,10 @@ export default function Page() {
       {/* Main content */}
       <div className="relative z-10 w-full max-w-md">
         {/* Logo/Brand section */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-green-500 to-blue-500 rounded-2xl mb-4 shadow-lg">
-            <span className="text-white text-2xl font-bold">S</span>
-          </div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
-            Scope
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
-            {t('start_managing_projects')}
-          </p>
-        </div>
+        <AuthHeader 
+          title="Scope"
+          subtitle={t('start_managing_projects')}
+        />
 
         {/* Sign up form */}
         <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl border border-white/30 dark:border-gray-700/30 rounded-2xl shadow-2xl p-8">

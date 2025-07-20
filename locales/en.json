@@ -56,7 +56,7 @@
   "system_mode": "System mode",
   "bug_report": "Report bug or add feature request",
   "your_scopes": "Your scopes",
-  "track_progress_and_manage_resources": "Track the progress of your projects and efficiently manage team resources.",
+  "track_progress_and_manage_resources": "Modern tool for tracking project progress and efficient team resource management with visual overviews and real-time collaboration.",
   "create_new_scope": "Create new scope",
   "scope_burndown": "Scope Burndown",
   "login": "Login",
@@ -166,5 +166,11 @@
   "passwords_dont_match": "Passwords don't match",
   "registration_error": "An error occurred during registration",
   "google_registration_error": "An error occurred during Google registration",
-  "back_to_login": "Back to login"
+  "back_to_login": "Back to login",
+  "enter_new_password": "Enter your new password below.",
+  "new_password": "New password",
+  "save_new_password": "Save new password",
+  "accessibility": "Accessibility",
+  "responsive_design": "Responsive design for desktop, tablet and mobile phones",
+  "cross_device_access": "Access from any device"
 } 
