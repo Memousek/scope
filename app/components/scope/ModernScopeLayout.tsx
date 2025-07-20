@@ -12,6 +12,7 @@ import { ProjectSection } from "./ProjectSection";
 import { BurndownChart } from "./BurndownChart";
 import { TeamMember, Project } from "./types";
 
+
 interface ModernScopeLayoutProps {
   scopeId: string;
   team: TeamMember[];
@@ -22,6 +23,20 @@ interface ModernScopeLayoutProps {
   hasQA: boolean;
   hasPM: boolean;
   hasDPL: boolean;
+  stats?: {
+    projectCount: number;
+    teamMemberCount: number;
+    lastActivity?: Date;
+  };
+  loadingStats?: boolean;
+
+  averageSlip?: {
+    averageSlip: number;
+    totalProjects: number;
+    delayedProjects: number;
+    onTimeProjects: number;
+    aheadProjects: number;
+  };
 }
 
 type TabType = "overview" | "team" | "projects" | "burndown";
@@ -36,6 +51,10 @@ export function ModernScopeLayout({
   hasQA,
   hasPM,
   hasDPL,
+  stats,
+  loadingStats,
+
+  averageSlip,
 }: ModernScopeLayoutProps) {
   const [activeTab, setActiveTab] = useState<TabType>("overview");
 
@@ -60,7 +79,9 @@ export function ModernScopeLayout({
                   </div>
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">Členové týmu</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{team.length}</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {loadingStats ? "..." : (stats?.teamMemberCount ?? team.length)}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -72,7 +93,9 @@ export function ModernScopeLayout({
                   </div>
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">Aktivní projekty</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">3</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {loadingStats ? "..." : (stats?.projectCount ?? projects.length)}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -84,36 +107,22 @@ export function ModernScopeLayout({
                   </div>
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">Průměrný skluz</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">+5 dní</p>
+                    <p className="text-lg font-bold text-gray-900 dark:text-white">
+                      {loadingStats ? "..." : (
+                        averageSlip ? (
+                          averageSlip.averageSlip > 0 ? `+${averageSlip.averageSlip} dní` :
+                          averageSlip.averageSlip < 0 ? `${averageSlip.averageSlip} dní` :
+                          'Na čas'
+                        ) : 'N/A'
+                      )}
+                    </p>
+
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Recent Activity */}
-            <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-xl p-6">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <span className="text-blue-500">📋</span>
-                Poslední aktivita
-              </h3>
-              <div className="space-y-3">
-                 <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg">
-                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                   <span className="text-sm text-gray-600 dark:text-gray-400">Projekt &quot;Test&quot; dokončen na 20%</span>
-                   <span className="text-xs text-gray-500 ml-auto">2 hodiny zpět</span>
-                 </div>
-                 <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg">
-                   <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                   <span className="text-sm text-gray-600 dark:text-gray-400">Přidán nový člen týmu &quot;AAA&quot;</span>
-                   <span className="text-xs text-gray-500 ml-auto">1 den zpět</span>
-                 </div>
-                <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 rounded-lg">
-                  <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Aktualizován termín dodání projektu</span>
-                  <span className="text-xs text-gray-500 ml-auto">3 dny zpět</span>
-                </div>
-              </div>
-            </div>
+
 
             {/* Quick Actions */}
             <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-xl p-6">

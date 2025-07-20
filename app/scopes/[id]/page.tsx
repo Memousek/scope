@@ -18,6 +18,10 @@ import { AiChatButton } from "@/app/components/scope/AiChatButton";
 import { TeamMember, Project } from "@/app/components/scope/types";
 import { useAuth } from "@/lib/auth";
 import { downloadCSV } from "@/app/utils/csvUtils";
+import { ContainerService } from "@/lib/container.service";
+import { GetScopeStatsService } from "@/lib/domain/services/get-scope-stats.service";
+import { CalculateAverageSlipService } from "@/lib/domain/services/calculate-average-slip.service";
+
 
 export default function ScopePage({
   params,
@@ -42,6 +46,22 @@ export default function ScopePage({
 
   // --- Projekty ---
   const [projects, setProjects] = useState<Project[]>([]);
+
+  // --- Statistiky ---
+  const [stats, setStats] = useState<{
+    projectCount: number;
+    teamMemberCount: number;
+    lastActivity?: Date;
+  } | undefined>(undefined);
+  const [loadingStats, setLoadingStats] = useState(false);
+  const [averageSlip, setAverageSlip] = useState<{
+    averageSlip: number;
+    totalProjects: number;
+    delayedProjects: number;
+    onTimeProjects: number;
+    aheadProjects: number;
+  } | undefined>(undefined);
+
 
   // --- Sdílení ---
   const [shareModalOpen, setShareModalOpen] = useState(false);
@@ -149,6 +169,46 @@ export default function ScopePage({
         .order("priority", { ascending: true })
         .then(({ data, error }) => {
           if (!error && data) setProjects(data);
+        });
+    }
+  }, [loading, user, id]);
+
+  // Načtení statistik scope
+  useEffect(() => {
+    if (!loading && user && id) {
+      setLoadingStats(true);
+      const container = ContainerService.getInstance();
+      const statsService = container.get(GetScopeStatsService);
+      
+      statsService.execute(id)
+        .then((scopeStats) => {
+          setStats({
+            projectCount: scopeStats.projectCount,
+            teamMemberCount: scopeStats.teamMemberCount,
+            lastActivity: scopeStats.lastActivity
+          });
+        })
+        .catch((error) => {
+          console.error('Chyba při načítání statistik:', error);
+        })
+        .finally(() => {
+          setLoadingStats(false);
+        });
+    }
+  }, [loading, user, id]);
+
+  // Načtení průměrného skluzu
+  useEffect(() => {
+    if (!loading && user && id) {
+      const container = ContainerService.getInstance();
+      const slipService = container.get(CalculateAverageSlipService);
+      
+      slipService.execute(id)
+        .then((slipData) => {
+          setAverageSlip(slipData);
+        })
+        .catch((error) => {
+          console.error('Chyba při načítání průměrného skluzu:', error);
         });
     }
   }, [loading, user, id]);
@@ -327,6 +387,8 @@ export default function ScopePage({
                 </div>
               )}
 
+
+
               {/* Tlačítka akcí */}
               <div className="flex flex-wrap gap-3">
                 <button
@@ -364,6 +426,9 @@ export default function ScopePage({
             hasQA={hasQA}
             hasPM={hasPM}
             hasDPL={hasDPL}
+            stats={stats}
+            loadingStats={loadingStats}
+            averageSlip={averageSlip}
           />
         </div>
 

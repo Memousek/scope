@@ -172,5 +172,8 @@
   "save_new_password": "Uložit nové heslo",
   "accessibility": "Přístupnost",
   "responsive_design": "Responzivní design pro desktop, tablet i mobilní telefony",
-  "cross_device_access": "Přístup z jakéhokoliv zařízení"
+  "cross_device_access": "Přístup z jakéhokoliv zařízení",
+  "activeProjects": "Aktivní projekty",
+  "lastActivity": "Poslední aktivita",
+  "noActivity": "Žádná aktivita"
 } 

@@ -172,5 +172,8 @@
   "save_new_password": "Save new password",
   "accessibility": "Accessibility",
   "responsive_design": "Responsive design for desktop, tablet and mobile phones",
-  "cross_device_access": "Access from any device"
+  "cross_device_access": "Access from any device",
+  "activeProjects": "Active projects",
+  "lastActivity": "Last activity",
+  "noActivity": "No activity"
 } 
