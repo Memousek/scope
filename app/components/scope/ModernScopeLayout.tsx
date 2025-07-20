@@ -53,7 +53,7 @@ export function ModernScopeLayout({
           <div className="space-y-6">
             {/* Quick Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 backdrop-blur-sm border border-white/20 rounded-xl p-6 hover:scale-105 transition-transform duration-300">
+              <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 backdrop-blur-sm rounded-xl p-6 hover:scale-105 transition-transform duration-300">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
                     <span className="text-white text-xl">👥</span>
@@ -65,7 +65,7 @@ export function ModernScopeLayout({
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 backdrop-blur-sm border border-white/20 rounded-xl p-6 hover:scale-105 transition-transform duration-300">
+              <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 backdrop-blur-sm rounded-xl p-6 hover:scale-105 transition-transform duration-300">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
                     <span className="text-white text-xl">🚀</span>
@@ -77,7 +77,7 @@ export function ModernScopeLayout({
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-orange-500/10 to-red-500/10 backdrop-blur-sm border border-white/20 rounded-xl p-6 hover:scale-105 transition-transform duration-300">
+              <div className="bg-gradient-to-br from-orange-500/10 to-red-500/10 backdrop-blur-sm rounded-xl p-6 hover:scale-105 transition-transform duration-300">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
                     <span className="text-white text-xl">⏰</span>
@@ -91,7 +91,7 @@ export function ModernScopeLayout({
             </div>
 
             {/* Recent Activity */}
-            <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-white/20 rounded-xl p-6">
+            <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-xl p-6">
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <span className="text-blue-500">📋</span>
                 Poslední aktivita
@@ -116,7 +116,7 @@ export function ModernScopeLayout({
             </div>
 
             {/* Quick Actions */}
-            <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-white/20 rounded-xl p-6">
+            <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-xl p-6">
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <span className="text-purple-500">⚡</span>
                 Rychlé akce
@@ -145,14 +145,14 @@ export function ModernScopeLayout({
 
       case "team":
         return (
-          <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-white/20 rounded-xl p-6">
+          <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-xl p-6">
             <TeamSection scopeId={scopeId} team={team} onTeamChange={onTeamChange} />
           </div>
         );
 
       case "projects":
         return (
-          <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-white/20 rounded-xl p-6">
+          <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-xl p-6">
             <ProjectSection
               scopeId={scopeId}
               hasFE={hasFE}
@@ -166,7 +166,7 @@ export function ModernScopeLayout({
 
              case "burndown":
          return (
-           <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-white/20 rounded-xl p-6">
+           <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-xl p-6">
              <BurndownChart projects={projects} team={team} />
            </div>
          );
@@ -179,7 +179,7 @@ export function ModernScopeLayout({
   return (
     <div className="space-y-6">
       {/* Tab Navigation */}
-      <div className="bg-white/30 dark:bg-gray-800/30 backdrop-blur-sm border border-white/20 rounded-xl p-2">
+      <div className="bg-white/30 dark:bg-gray-800/30 backdrop-blur-sm rounded-xl p-2">
         <div className="flex space-x-1">
           {tabs.map((tab) => (
             <button

@@ -79,7 +79,7 @@ export function TeamSection({ scopeId, team, onTeamChange }: TeamSectionProps) {
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="text-gray-700 dark:text-gray-300 font-semibold border-b border-gray-200 dark:border-gray-700">
+                <tr className="text-gray-700 dark:text-gray-300 font-semibold border-b border-gray-200/50 dark:border-gray-600/50">
                   <th className="px-3 py-3 text-left">{t('name')}</th>
                   <th className="px-3 py-3 text-center">{t('role')}</th>
                   <th className="px-3 py-3 text-center">{t('fte')}</th>
@@ -95,17 +95,17 @@ export function TeamSection({ scopeId, team, onTeamChange }: TeamSectionProps) {
                   </tr>
                 ) : (
                   team.map(member => (
-                    <tr key={member.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                    <tr key={member.id} className="border-b border-gray-100/50 dark:border-gray-600/50 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                       <td className="px-3 py-3 align-middle">
                         <input
-                          className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
+                          className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
                           value={member.name}
                           onChange={e => handleEditMember(member.id, 'name', e.target.value)}
                         />
                       </td>
                       <td className="px-3 py-3 align-middle text-center">
                         <select
-                          className="bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
+                          className="bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
                           value={member.role}
                           onChange={e => handleEditMember(member.id, 'role', e.target.value)}
                         >
@@ -116,7 +116,7 @@ export function TeamSection({ scopeId, team, onTeamChange }: TeamSectionProps) {
                       </td>
                       <td className="px-3 py-3 align-middle text-center">
                         <input
-                          className="w-20 bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
+                          className="w-20 bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
                           type="number"
                           min={0.1}
                           step={0.01}

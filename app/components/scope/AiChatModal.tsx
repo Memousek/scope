@@ -15,20 +15,15 @@ interface AiChatModalProps {
 export function AiChatModal({ isOpen, onClose }: AiChatModalProps) {
   const [chatMessage, setChatMessage] = useState<string>("");
   const [isAiTyping, setIsAiTyping] = useState<boolean>(false);
-  const [messages, setMessages] = useState<Array<{text: string, isAi: boolean}>>([]);
 
   const handleSendMessage = async () => {
     if (!chatMessage.trim()) return;
     
-    setMessages(prev => [...prev, { text: chatMessage, isAi: false }]);
     setIsAiTyping(true);
+    setChatMessage("");
     
     setTimeout(() => {
-      setMessages(prev => [...prev, { text: "I'm thinking...", isAi: true }]);
       setIsAiTyping(false);
-      setChatMessage("");
-      // Add AI response
-      setMessages(prev => [...prev, { text: "I'm thinking...", isAi: true }]);
     }, 2000);
   };
 

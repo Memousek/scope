@@ -231,7 +231,7 @@ export default function ScopePage({
       <div className="container mx-auto px-4 py-8">
         {/* Header Section */}
         <div className="mb-8">
-          <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border border-white/20 rounded-2xl p-6 shadow-xl">
+          <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl p-6 shadow-xl">
             <div className="flex flex-col gap-6">
               {/* Název scope */}
               <div className="flex items-center gap-4">
