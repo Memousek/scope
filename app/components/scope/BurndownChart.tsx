@@ -1,13 +1,14 @@
 /**
- * Modern Burndown Chart Component
- * - Glass-like design s animacemi
- * - Interaktivní graf s tooltips
- * - Zobrazuje průběh projektů v čase
- * - Responsive design s smooth transitions
- * - Optimalizované pro dark mode
+ * Modern Burndown Chart Component using Recharts
+ * - Professional line charts with animations
+ * - Interactive tooltips and hover effects
+ * - Responsive design with dark mode support
+ * - Built-in legends and axes
+ * - Burndown chart showing remaining work over time
  */
 
 import { useState, useEffect } from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Project, TeamMember } from './types';
 import { calculatePriorityDates } from '@/app/utils/dateUtils';
 import { useTranslation } from '@/lib/translation';
@@ -18,20 +19,15 @@ interface BurndownChartProps {
 }
 
 interface ChartDataPoint {
-  date: Date;
+  date: string;
   totalProgress: number;
-  feProgress: number;
-  beProgress: number;
-  qaProgress: number;
-  pmProgress: number;
-  dplProgress: number;
   idealProgress: number;
+  [key: string]: number | string; // Pro dynamické projekty
 }
 
 export function BurndownChart({ projects, team }: BurndownChartProps) {
   const { t } = useTranslation();
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
-  const [hoveredPoint, setHoveredPoint] = useState<ChartDataPoint | null>(null);
 
   // Generate chart data based on projects and team
   useEffect(() => {
@@ -59,18 +55,20 @@ export function BurndownChart({ projects, team }: BurndownChartProps) {
 
     if (uniqueDates.length === 0) return;
 
+    // Omezit na maximálně 20 bodů pro kompaktnější graf
+    const maxPoints = 20;
+    const step = Math.max(1, Math.floor(uniqueDates.length / maxPoints));
+    const filteredDates = uniqueDates.filter((_, index) => index % step === 0);
+
     // Generate data points for each date
-    uniqueDates.forEach((date, index) => {
-      const totalDays = uniqueDates.length;
-      // Ideální průběh: od 100% na začátku do 0% na konci
+    filteredDates.forEach((date, index) => {
+      const totalDays = filteredDates.length;
+      // Ideální průběh: od 100% na začátku do 0% na konci (burndown)
       const idealProgress = ((totalDays - index) / totalDays) * 100;
 
-      // Calculate actual progress for each role based on active projects
-      let feProgress = 0;
-      let beProgress = 0;
-      let qaProgress = 0;
-      let pmProgress = 0;
-      let dplProgress = 0;
+      // Calculate progress for each project
+      const projectProgress: { [key: string]: number } = {};
+      let totalProgress = 0;
       let activeProjects = 0;
 
       projects.forEach(project => {
@@ -85,7 +83,7 @@ export function BurndownChart({ projects, team }: BurndownChartProps) {
           const daysElapsed = Math.ceil((date.getTime() - projectStart.getTime()) / (1000 * 60 * 60 * 24));
           const timeProgress = Math.min(daysElapsed / projectDuration, 1);
           
-          // Combine time-based progress with actual completion
+          // Calculate total project progress from all roles
           const feActual = Number(project.fe_done) || 0;
           const beActual = Number(project.be_done) || 0;
           const qaActual = Number(project.qa_done) || 0;
@@ -93,41 +91,51 @@ export function BurndownChart({ projects, team }: BurndownChartProps) {
           const dplActual = Number(project.dpl_done) || 0;
           
           // Weighted progress: 70% actual completion + 30% time-based progress
-          feProgress += (feActual * 0.7) + (timeProgress * 100 * 0.3);
-          beProgress += (beActual * 0.7) + (timeProgress * 100 * 0.3);
-          qaProgress += (qaActual * 0.7) + (timeProgress * 100 * 0.3);
-          pmProgress += (pmActual * 0.7) + (timeProgress * 100 * 0.3);
-          dplProgress += (dplActual * 0.7) + (timeProgress * 100 * 0.3);
+          const actualProgress = (feActual + beActual + qaActual + pmActual + dplActual) / 5;
+          const projectProgressValue = (actualProgress * 0.7) + (timeProgress * 100 * 0.3);
+          
+          projectProgress[`project_${project.id}`] = projectProgressValue;
+          totalProgress += projectProgressValue;
         }
       });
 
       // Average progress across active projects only
       if (activeProjects > 0) {
-        feProgress /= activeProjects;
-        beProgress /= activeProjects;
-        qaProgress /= activeProjects;
-        pmProgress /= activeProjects;
-        dplProgress /= activeProjects;
+        totalProgress /= activeProjects;
       }
 
-      // Calculate weighted total progress based on actual work done
-      const totalWorkDone = feProgress + beProgress + qaProgress + pmProgress + dplProgress;
-      const totalProgress = totalWorkDone / 5; // Average of all roles
-
-      data.push({
-        date,
+      const dataPoint: ChartDataPoint = {
+        date: date.toLocaleDateString('cs-CZ', { day: '2-digit', month: '2-digit' }),
         totalProgress,
-        feProgress,
-        beProgress,
-        qaProgress,
-        pmProgress,
-        dplProgress,
         idealProgress,
-      });
+        ...projectProgress
+      };
+
+      data.push(dataPoint);
     });
 
     setChartData(data);
   }, [projects, team]);
+
+  const CustomTooltip = ({ active, payload, label }: {
+    active?: boolean;
+    payload?: Array<{ color: string; name: string; value: number }>;
+    label?: string;
+  }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-3 shadow-lg">
+          <p className="font-semibold mb-2">{label}</p>
+          {payload.map((entry, index: number) => (
+            <p key={index} style={{ color: entry.color }} className="text-sm">
+              {entry.name}: {entry.value}%
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
 
   if (chartData.length === 0) {
     return (
@@ -140,42 +148,20 @@ export function BurndownChart({ projects, team }: BurndownChartProps) {
     );
   }
 
-  const maxValue = 100;
-  const chartHeight = 300;
-  const chartWidth = Math.max(600, chartData.length * 30);
-
-  const getY = (value: number) => chartHeight - (value / maxValue) * chartHeight;
-  const getX = (index: number) => (index / (chartData.length - 1)) * chartWidth;
-
-  const generatePath = (data: number[], color: string) => {
-    if (data.length < 2) return null;
-
-    const points = data.map((value, index) => {
-      const x = getX(index);
-      const y = getY(value);
-      return `${index === 0 ? 'M' : 'L'} ${x} ${y}`;
-    }).join(' ');
-
-    return (
-      <path
-        d={points}
-        stroke={color}
-        strokeWidth="3"
-        fill="none"
-        className="transition-all duration-300 hover:stroke-width-4"
-      />
-    );
-  };
-
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('cs-CZ', {
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
   // Get project names for title
   const projectNames = projects.map(p => p.name).join(', ');
+
+  // Definice projektů a jejich barev
+  const projectColors = [
+    '#2563eb', '#059669', '#f59e42', '#a21caf', '#e11d48', 
+    '#7c3aed', '#dc2626', '#ea580c', '#16a34a', '#0891b2'
+  ];
+  
+  const projectLines = projects.map((project, index) => ({
+    key: `project_${project.id}`,
+    label: project.name,
+    color: projectColors[index % projectColors.length]
+  }));
 
   return (
     <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-white/20 dark:border-gray-700 rounded-xl p-6">
@@ -202,121 +188,60 @@ export function BurndownChart({ projects, team }: BurndownChartProps) {
       </div>
 
       {/* Chart Container */}
-      <div className="relative overflow-x-auto">
-        <svg
-          width={chartWidth}
-          height={chartHeight + 60}
-          className="w-full"
-          viewBox={`0 0 ${chartWidth} ${chartHeight + 60}`}
-        >
-          {/* Grid Lines */}
-          {[0, 25, 50, 75, 100].map((value) => (
-            <g key={value}>
-              <line
-                x1="0"
-                y1={getY(value)}
-                x2={chartWidth}
-                y2={getY(value)}
-                stroke="#e5e7eb"
-                strokeWidth="1"
-                strokeDasharray="5,5"
-                className="dark:stroke-gray-600"
+      <div className="h-64">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+            <XAxis 
+              dataKey="date" 
+              stroke="#6b7280"
+              fontSize={12}
+            />
+            <YAxis 
+              stroke="#6b7280"
+              fontSize={12}
+              domain={[0, 100]}
+              tickFormatter={(value) => `${value}%`}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Legend />
+            
+            {/* Ideální průběh (burndown) */}
+            <Line
+              type="monotone"
+              dataKey="idealProgress"
+              stroke="#9ca3af"
+              strokeWidth={2}
+              strokeDasharray="5 5"
+              name="Ideální průběh"
+              dot={false}
+            />
+            
+            {/* Project progress */}
+            {projectLines.map(project => (
+              <Line
+                key={project.key}
+                type="monotone"
+                dataKey={project.key}
+                stroke={project.color}
+                strokeWidth={2}
+                name={project.label}
+                dot={false}
               />
-              <text
-                x="-10"
-                y={getY(value) + 4}
-                className="text-xs text-gray-500 dark:text-gray-400"
-                textAnchor="end"
-              >
-                {value}%
-              </text>
-            </g>
-          ))}
-
-          {/* Data Lines */}
-          {generatePath(chartData.map(d => d.totalProgress), '#3b82f6')}
-          {generatePath(chartData.map(d => d.feProgress), '#2563eb')}
-          {generatePath(chartData.map(d => d.qaProgress), '#f59e0b')}
-          {generatePath(chartData.map(d => d.pmProgress), '#a855f7')}
-          {generatePath(chartData.map(d => d.idealProgress), '#9ca3af')}
-
-          {/* Data Points */}
-          {chartData.map((point, index) => (
-            <g key={index}>
-              <circle
-                cx={getX(index)}
-                cy={getY(point.totalProgress)}
-                r="4"
-                fill="#3b82f6"
-                stroke="#ffffff"
-                strokeWidth="1"
-                className="cursor-pointer hover:r-6 transition-all duration-200 dark:stroke-gray-800"
-                onMouseEnter={() => setHoveredPoint(point)}
-                onMouseLeave={() => setHoveredPoint(null)}
-              />
-            </g>
-          ))}
-
-          {/* X-axis labels */}
-          {chartData.filter((_, index) => index % Math.max(1, Math.floor(chartData.length / 8)) === 0).map((point, index) => {
-            const originalIndex = index * Math.max(1, Math.floor(chartData.length / 8));
-            return (
-              <text
-                key={originalIndex}
-                x={getX(originalIndex)}
-                y={chartHeight + 20}
-                className="text-xs text-gray-500 dark:text-gray-400"
-                textAnchor="middle"
-              >
-                {formatDate(point.date)}
-              </text>
-            );
-          })}
-        </svg>
+            ))}
+            
+            {/* Celkový progress */}
+            <Line
+              type="monotone"
+              dataKey="totalProgress"
+              stroke="#3b82f6"
+              strokeWidth={4}
+              name="Celkem % hotovo"
+              dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
       </div>
-
-      {/* Legend  */}
-      <div className="mt-6">
-        <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Legenda:</div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-blue-500 rounded shadow-sm"></div>
-            <span className="text-xs text-gray-600 dark:text-gray-400">Celkem % hotovo</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-blue-600 rounded shadow-sm"></div>
-            <span className="text-xs text-gray-600 dark:text-gray-400">FE % hotovo</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-orange-500 rounded shadow-sm"></div>
-            <span className="text-xs text-gray-600 dark:text-gray-400">QA % hotovo</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-purple-500 rounded shadow-sm"></div>
-            <span className="text-xs text-gray-600 dark:text-gray-400">PM % hotovo</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-gray-400 dark:bg-gray-500 rounded shadow-sm"></div>
-            <span className="text-xs text-gray-600 dark:text-gray-400">Ideální průběh</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Tooltip */}
-      {hoveredPoint && (
-        <div className="absolute bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-lg p-3 shadow-xl z-10">
-          <div className="text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
-            {formatDate(hoveredPoint.date)}
-          </div>
-          <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
-            <div>Celkem: {hoveredPoint.totalProgress.toFixed(1)}%</div>
-            <div>FE: {hoveredPoint.feProgress.toFixed(1)}%</div>
-            <div>QA: {hoveredPoint.qaProgress.toFixed(1)}%</div>
-            <div>PM: {hoveredPoint.pmProgress.toFixed(1)}%</div>
-            <div>Ideální: {hoveredPoint.idealProgress.toFixed(1)}%</div>
-          </div>
-        </div>
-      )}
     </div>
   );
 } 

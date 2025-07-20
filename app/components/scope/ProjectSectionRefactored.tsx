@@ -9,8 +9,9 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from '@/lib/translation';
 import { Project, TeamMember } from './types';
-import { calculateProjectDeliveryInfo } from '@/app/utils/dateUtils';
+import { calculateProjectDeliveryInfo, calculatePriorityDates } from '@/app/utils/dateUtils';
 import { BurndownChart } from './BurndownChart';
+import { ProjectProgressChart } from './ProjectProgressChart';
 
 interface ProjectSectionRefactoredProps {
   scopeId: string;
@@ -178,6 +179,57 @@ export function ProjectSectionRefactored({
       {projects.length > 0 && (
         <section className="mb-8">
           <BurndownChart projects={projects} team={team} />
+        </section>
+      )}
+
+      {/* Individual Project Progress Charts */}
+      {projects.length > 0 && (
+        <section className="mb-8">
+          <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border border-white/20 rounded-xl p-6 shadow-xl">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                📊 {t('projectProgressCharts') || 'Progress grafy projektů'}
+              </h2>
+              {readOnly && (
+                <span className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-full text-xs font-medium">
+                  {t('readOnly') || 'Pouze pro čtení'}
+                </span>
+              )}
+            </div>
+            
+            <div className="space-y-6">
+              {projects.map(project => {
+                const deliveryInfo = calculateProjectDeliveryInfo(project, team);
+                const priorityDates = calculatePriorityDates(projects, team)[project.id];
+                return (
+                  <div key={project.id} className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-white/20 dark:border-gray-700 rounded-xl p-4">
+                    <div className="mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                        {project.name}
+                      </h3>
+                      <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                        <span>Priorita: {project.priority}</span>
+                        <span>Termín: {project.delivery_date ? new Date(project.delivery_date).toLocaleDateString() : 'N/A'}</span>
+                        {priorityDates && (
+                          <span className="text-blue-600 dark:text-blue-400">
+                            Priority termín: {priorityDates.priorityStartDate.toLocaleDateString()} - {priorityDates.priorityEndDate.toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="max-w-4xl mx-auto">
+                      <ProjectProgressChart 
+                        project={project} 
+                        deliveryInfo={deliveryInfo}
+                        priorityDates={priorityDates}
+                        className="h-48"
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </section>
       )}
     </>

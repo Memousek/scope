@@ -14,6 +14,10 @@ interface ProjectProgressChartProps {
   project: Project;
   deliveryInfo: ProjectDeliveryInfo;
   className?: string;
+  priorityDates?: {
+    priorityStartDate: Date;
+    priorityEndDate: Date;
+  };
 }
 
 interface ProgressData {
@@ -31,7 +35,8 @@ interface ProgressData {
 export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({ 
   project, 
   deliveryInfo, 
-  className = '' 
+  className = '',
+  priorityDates
 }) => {
   const [progressData, setProgressData] = useState<ProgressData[]>([]);
 
@@ -39,14 +44,15 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
   useEffect(() => {
     if (!project.delivery_date) return;
 
-    const startDate = new Date(project.created_at);
-    const endDate = new Date(project.delivery_date);
+    // Použít priority dates pokud jsou dostupné, jinak created_at a delivery_date
+    const startDate = priorityDates ? new Date(priorityDates.priorityStartDate) : new Date(project.created_at);
+    const endDate = priorityDates ? new Date(priorityDates.priorityEndDate) : new Date(project.delivery_date);
     
     // Vypočítat aktuální progress
     const currentProgress = getCurrentProgress(project);
     
-    // Omezit na maximálně 15 bodů pro kompaktnější graf
-    const maxPoints = 15;
+    // Omezit na maximálně 10 bodů pro kompaktnější graf
+    const maxPoints = 10;
     const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
     const step = Math.max(1, Math.floor(days / maxPoints));
     const data: ProgressData[] = [];
@@ -200,20 +206,22 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
       </div>
 
       {/* Graf */}
-      <div className="h-64 mb-4">
+      <div className="h-48 mb-4">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={progressData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
             <XAxis 
               dataKey="date" 
               stroke="#6b7280"
-              fontSize={12}
+              fontSize={10}
+              interval="preserveStartEnd"
             />
             <YAxis 
               stroke="#6b7280"
-              fontSize={12}
+              fontSize={10}
               domain={[0, 100]}
               tickFormatter={(value) => `${value}%`}
+              interval={0}
             />
             <Tooltip content={<CustomTooltip />} />
             <Legend />
@@ -256,7 +264,7 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
       </div>
 
       {/* Detailní metriky */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
         <div className="text-center">
           <div className="text-lg font-semibold text-gray-800 dark:text-gray-200">
             {deliveryInfo.deliveryDate ? deliveryInfo.deliveryDate.toLocaleDateString() : 'N/A'}
@@ -270,6 +278,15 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-400">Vypočítaný termín</div>
         </div>
+        
+        {priorityDates && (
+          <div className="text-center">
+            <div className="text-lg font-semibold text-blue-600 dark:text-blue-400">
+              {priorityDates.priorityStartDate.toLocaleDateString()} - {priorityDates.priorityEndDate.toLocaleDateString()}
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">Termín podle priority</div>
+          </div>
+        )}
         
         <div className="text-center">
           <div className="text-lg font-semibold text-gray-800 dark:text-gray-200">

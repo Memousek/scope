@@ -175,5 +175,6 @@
   "cross_device_access": "Access from any device",
   "activeProjects": "Active projects",
   "lastActivity": "Last activity",
-  "noActivity": "No activity"
+  "noActivity": "No activity",
+  "projectProgressCharts": "Project progress charts"
 } 

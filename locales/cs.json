@@ -175,5 +175,6 @@
   "cross_device_access": "Přístup z jakéhokoliv zařízení",
   "activeProjects": "Aktivní projekty",
   "lastActivity": "Poslední aktivita",
-  "noActivity": "Žádná aktivita"
+  "noActivity": "Žádná aktivita",
+  "projectProgressCharts": "Progress grafy projektů"
 } 

@@ -15,7 +15,7 @@ import { AddProjectModal } from './AddProjectModal';
 import { EditProjectModal } from './EditProjectModal';
 import { ProjectHistoryModal } from './ProjectHistoryModal';
 import { ProjectProgressChart } from './ProjectProgressChart';
-import { calculateProjectDeliveryInfo } from '@/app/utils/dateUtils';
+import { calculateProjectDeliveryInfo, calculatePriorityDates } from '@/app/utils/dateUtils';
 
 interface ProjectSectionProps {
   scopeId: string;
@@ -150,6 +150,7 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
             ) : (
               projects.map(project => {
                 const info = calculateProjectDeliveryInfo(project, team);
+                const priorityDates = calculatePriorityDates(projects, team)[project.id];
                 const isExpanded = expandedProject === project.id;
                 
                 return (
@@ -293,11 +294,12 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
                           <ProjectProgressChart 
                             project={project} 
                             deliveryInfo={info}
+                            priorityDates={priorityDates}
                             className="mb-4"
                           />
                           
                           {/* Termíny */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             <div className="bg-white/80 dark:bg-gray-700/80 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
                               <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Plánovaný termín</div>
                               <div className="text-gray-900 dark:text-gray-100">
@@ -310,6 +312,14 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
                                 {info.calculatedDeliveryDate.toLocaleDateString()}
                               </div>
                             </div>
+                            {priorityDates && (
+                              <div className="bg-white/80 dark:bg-gray-700/80 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+                                <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Termín podle priority</div>
+                                <div className="text-blue-600 dark:text-blue-400">
+                                  {priorityDates.priorityStartDate.toLocaleDateString()} - {priorityDates.priorityEndDate.toLocaleDateString()}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
