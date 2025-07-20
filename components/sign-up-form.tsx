@@ -3,18 +3,12 @@
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useTranslation } from "@/lib/translation";
 
 // Inline Google SVG icon
 const GoogleIcon = () => (
@@ -37,6 +31,7 @@ export function SignUpForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
@@ -51,7 +46,7 @@ export function SignUpForm({
     setError(null);
 
     if (password !== repeatPassword) {
-      setError("Hesla se neshodují");
+      setError(t('passwords_dont_match'));
       setIsLoading(false);
       return;
     }
@@ -67,7 +62,7 @@ export function SignUpForm({
       if (error) throw error;
       router.push("/auth/sign-up-success");
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred");
+      setError(error instanceof Error ? error.message : t('registration_error'));
     } finally {
       setIsLoading(false);
     }
@@ -80,96 +75,124 @@ export function SignUpForm({
     try {
       const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
       if (error) throw error;
-      // Redirect will happen automatically
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred");
+      setError(error instanceof Error ? error.message : t('google_registration_error'));
       setIsLoading(false);
     }
   };
 
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">Registrace</CardTitle>
-          <CardDescription>Vytvořte nový účet</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button
-            type="button"
-            className="w-full flex items-center justify-center gap-2 border border-gray-300 bg-white text-gray-800 hover:bg-gray-50 mb-2"
-            onClick={handleGoogleSignUp}
-            disabled={isLoading}
-            aria-label="Sign up with Google"
-          >
-            <GoogleIcon />
-            {isLoading ? "Registruji..." : "Přihlásit se přes Google"}
-          </Button>
-        </CardContent>
-        <CardContent>
-          <div className="relative my-2">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-gray-200" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-gray-400">nebo</span>
-            </div>
+    <div className={cn("space-y-6", className)} {...props}>
+      {/* Header */}
+      <div className="text-center">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          {t('create_account_title')}
+        </h2>
+        <p className="text-gray-600 dark:text-gray-400">
+          {t('start_managing_projects')}
+        </p>
+      </div>
+
+      {/* Google Sign Up Button */}
+      <Button
+        type="button"
+        className="w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 hover:bg-white dark:hover:bg-gray-700 hover:scale-105 transition-all duration-200 shadow-lg"
+        onClick={handleGoogleSignUp}
+        disabled={isLoading}
+        aria-label={t('sign_up_with_google')}
+      >
+        <GoogleIcon />
+        <span className="ml-2">
+          {isLoading ? t('registering') : t('sign_up_with_google')}
+        </span>
+      </Button>
+
+      {/* Divider */}
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t border-gray-200 dark:border-gray-700" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-white/70 dark:bg-gray-800/70 px-2 text-gray-500 dark:text-gray-400">
+            {t('or')}
+          </span>
+        </div>
+      </div>
+
+      {/* Sign Up Form */}
+      <form onSubmit={handleSignUp} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="email" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            {t('email_address')}
+          </Label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="jiri.babica@example.com"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200 dark:border-gray-700 focus:border-green-500 dark:focus:border-green-400 focus:ring-2 focus:ring-green-500/20 transition-all duration-200"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="password" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            {t('password')}
+          </Label>
+          <Input
+            id="password"
+            type="password"
+            placeholder="********"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200 dark:border-gray-700 focus:border-green-500 dark:focus:border-green-400 focus:ring-2 focus:ring-green-500/20 transition-all duration-200"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="repeat-password" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            {t('password_again')}
+          </Label>
+          <Input
+            id="repeat-password"
+            type="password"
+            placeholder="********"
+            required
+            value={repeatPassword}
+            onChange={(e) => setRepeatPassword(e.target.value)}
+            className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200 dark:border-gray-700 focus:border-green-500 dark:focus:border-green-400 focus:ring-2 focus:ring-green-500/20 transition-all duration-200"
+          />
+        </div>
+
+        {error && (
+          <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
           </div>
-        </CardContent>
-        <CardContent>
-          <form onSubmit={handleSignUp}>
-            <div className="flex flex-col gap-6">
-              <div className="grid gap-2">
-                <Label htmlFor="email">Emailová adresa</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="jiri.babica@example.com"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label htmlFor="password">Heslo</Label>
-                </div>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="********"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label htmlFor="repeat-password">Heslo znovu</Label>
-                </div>
-                <Input
-                  id="repeat-password"
-                  type="password"
-                  placeholder="********"
-                  required
-                  value={repeatPassword}
-                  onChange={(e) => setRepeatPassword(e.target.value)}
-                />
-              </div>
-              {error && <p className="text-sm text-red-500">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Vytvářím účet..." : "Registrovat se"}
-              </Button>
-            </div>
-            <div className="mt-4 text-center text-sm">
-              Máte již účet?{" "}
-              <Link href="/auth/login" className="underline underline-offset-4">
-                Přihlásit se
-              </Link>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+        )}
+
+        <Button 
+          type="submit" 
+          className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium py-3 rounded-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200" 
+          disabled={isLoading}
+        >
+          {isLoading ? t('creating_account') : t('create_account_button')}
+        </Button>
+      </form>
+
+      {/* Login link */}
+      <div className="text-center">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          {t('already_have_account')}{" "}
+          <Link 
+            href="/auth/login" 
+            className="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 font-medium transition-colors duration-200"
+          >
+            {t('sign_in')}
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }

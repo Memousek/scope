@@ -3,18 +3,12 @@
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useTranslation } from "@/lib/translation";
 
 // Inline Google SVG icon
 const GoogleIcon = () => (
@@ -37,6 +31,7 @@ export function LoginForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -55,10 +50,9 @@ export function LoginForm({
         password,
       });
       if (error) throw error;
-      // Update this route to redirect to an authenticated route. The user already has an active session.
       router.push("/protected");
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "Nastala chyba při přihlášení");
+      setError(error instanceof Error ? error.message : t('login_error'));
     } finally {
       setIsLoading(false);
     }
@@ -71,93 +65,117 @@ export function LoginForm({
     try {
       const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
       if (error) throw error;
-      // Redirect will happen automatically
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "Nastala chyba při přihlášení přes Google");
+      setError(error instanceof Error ? error.message : t('google_login_error'));
       setIsLoading(false);
     }
   };
 
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">Přihlášení</CardTitle>
-          <CardDescription>
-            Vložte svůj email a heslo pro přihlášení
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col gap-4">
-            <Button
-              type="button"
-              className="w-full flex items-center justify-center gap-2 border border-gray-300 bg-white text-gray-800 hover:bg-gray-50 mb-2"
-              onClick={handleGoogleLogin}
-              disabled={isLoading}
-              aria-label="Přihlásit se přes Google"
-            >
-              <GoogleIcon />
-              {isLoading ? "Přihlašuji se..." : "Přihlásit se přes Google"}
+    <div className={cn("space-y-6", className)} {...props}>
+      {/* Header */}
+      <div className="text-center">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          {t('welcome_back')}
+        </h2>
+        <p className="text-gray-600 dark:text-gray-400">
+          {t('sign_in_to_account')}
+        </p>
+      </div>
 
-            </Button>
-            <div className="relative my-2">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-gray-200" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-gray-400">nebo</span>
-              </div>
-            </div>
-            <form onSubmit={handleLogin}>
-              <div className="flex flex-col gap-6">
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Emailová adresa</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="jiri.babica@example.com"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <div className="flex items-center">
-                    <Label htmlFor="password">Heslo</Label>
-                    <Link
-                      href="/auth/forgot-password"
-                      className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
-                    >
-                      Zapomněli jste heslo?
-                    </Link>
-                  </div>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="********"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                </div>
-                {error && <p className="text-sm text-red-500">{error}</p>}
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Přihlašuji se..." : "Přihlásit se"}
-                </Button>
-              </div>
-              <div className="mt-4 text-center text-sm">
-                Nemáte účet?{" "}
-                <Link
-                  href="/auth/sign-up"
-                  className="underline underline-offset-4"
-                >
-                  Registrovat se
-                </Link>
-              </div>
-            </form>
+      {/* Google Login Button */}
+      <Button
+        type="button"
+        className="w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 hover:bg-white dark:hover:bg-gray-700 hover:scale-105 transition-all duration-200 shadow-lg"
+        onClick={handleGoogleLogin}
+        disabled={isLoading}
+        aria-label={t('sign_in_with_google')}
+      >
+        <GoogleIcon />
+        <span className="ml-2">
+          {isLoading ? t('signing_in') : t('sign_in_with_google')}
+        </span>
+      </Button>
+
+      {/* Divider */}
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t border-gray-200 dark:border-gray-700" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-white/70 dark:bg-gray-800/70 px-2 text-gray-500 dark:text-gray-400">
+            {t('or')}
+          </span>
+        </div>
+      </div>
+
+      {/* Login Form */}
+      <form onSubmit={handleLogin} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="email" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            {t('email_address')}
+          </Label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="jiri.babica@example.com"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="password" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {t('password')}
+            </Label>
+            <Link
+              href="/auth/forgot-password"
+              className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200"
+            >
+              {t('forgot_password')}
+            </Link>
           </div>
-        </CardContent>
-      </Card>
+          <Input
+            id="password"
+            type="password"
+            placeholder="********"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
+          />
+        </div>
+
+        {error && (
+          <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+          </div>
+        )}
+
+        <Button 
+          type="submit" 
+          className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-medium py-3 rounded-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200" 
+          disabled={isLoading}
+        >
+          {isLoading ? t('signing_in') : t('sign_in')}
+        </Button>
+      </form>
+
+      {/* Sign up link */}
+      <div className="text-center">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          {t('dont_have_account')}{" "}
+          <Link
+            href="/auth/sign-up"
+            className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors duration-200"
+          >
+            {t('create_account')}
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }
