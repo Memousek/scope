@@ -4,6 +4,7 @@
  * - Dark mode podpora
  * - ESC key support
  * - Backdrop blur pro lepší UX
+ * - Card-based layout místo široké tabulky
  */
 
 import { useState, useEffect } from 'react';
@@ -24,13 +25,13 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ projec
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Definice rolí a polí
+  // Definice rolí a barev
   const roles = [
-    { done: 'fe_done', mandays: 'fe_mandays', label: 'FE' },
-    { done: 'be_done', mandays: 'be_mandays', label: 'BE' },
-    { done: 'qa_done', mandays: 'qa_mandays', label: 'QA' },
-    { done: 'pm_done', mandays: 'pm_mandays', label: 'PM' },
-    { done: 'dpl_done', mandays: 'dpl_mandays', label: 'DPL' },
+    { done: 'fe_done', mandays: 'fe_mandays', label: 'FE', color: 'blue' },
+    { done: 'be_done', mandays: 'be_mandays', label: 'BE', color: 'green' },
+    { done: 'qa_done', mandays: 'qa_mandays', label: 'QA', color: 'orange' },
+    { done: 'pm_done', mandays: 'pm_mandays', label: 'PM', color: 'purple' },
+    { done: 'dpl_done', mandays: 'dpl_mandays', label: 'DPL', color: 'red' },
   ];
 
   // ESC key handler
@@ -65,6 +66,8 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ projec
   }, [project.id]);
 
   const handleDeleteProgress = async (progressId: string) => {
+    if (!confirm('Opravdu chcete smazat tento záznam?')) return;
+    
     const supabase = createClient();
     await supabase.from('project_progress').delete().eq('id', progressId);
     onProjectUpdate();
@@ -81,6 +84,7 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ projec
   const handleSave = async (id?: string) => {
     setError(null);
     if (!id) return;
+    
     // Validace: % hotovo 0-100, mandays >= 0
     for (const role of roles) {
       const doneVal = editValues[role.done as keyof ProjectProgress];
@@ -94,12 +98,14 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ projec
         return;
       }
     }
+    
     setSaving(true);
     const supabase = createClient();
     await supabase.from('project_progress').update(editValues).eq('id', id);
     setEditingId(null);
     setEditValues({});
     setSaving(false);
+    
     // Refresh history
     const { data } = await supabase
       .from('project_progress')
@@ -116,12 +122,60 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ projec
     const year = date.getFullYear().toString().slice(-2);
     const hours = date.getHours().toString().padStart(2, '0');
     const minutes = date.getMinutes().toString().padStart(2, '0');
-    return `${day}. ${month}. ${year} ${hours}:${minutes}`;
+    return `${day}.${month}.${year} ${hours}:${minutes}`;
+  };
+
+  const getRoleColor = (color: string) => {
+    const colors = {
+      blue: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300',
+      green: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300',
+      orange: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300',
+      purple: 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300',
+      red: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300',
+    };
+    return colors[color as keyof typeof colors] || colors.blue;
+  };
+
+  const getChangedRoles = (progress: ProjectProgress) => {
+    return roles.filter(role => {
+      const doneValue = progress[role.done as keyof ProjectProgress];
+      const mandaysValue = progress[role.mandays as keyof ProjectProgress];
+      return doneValue !== null || mandaysValue !== null;
+    });
+  };
+
+  const groupHistoryByDate = (history: ProjectProgress[]) => {
+    const grouped: { [key: string]: ProjectProgress[] } = {};
+    
+    history.forEach(progress => {
+      const date = new Date(progress.date);
+      const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD
+      
+      if (!grouped[dateKey]) {
+        grouped[dateKey] = [];
+      }
+      grouped[dateKey].push(progress);
+    });
+    
+    // Seřadit změny v rámci dne podle času (nejnovější první)
+    Object.keys(grouped).forEach(dateKey => {
+      grouped[dateKey].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    });
+    
+    return grouped;
+  };
+
+  const formatDateOnly = (dateString: string) => {
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear().toString().slice(-2);
+    return `${day}.${month}.${year}`;
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" style={{ backdropFilter: 'blur(8px)' }}>
-      <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border border-white/20 dark:border-gray-700 rounded-2xl shadow-2xl p-8 w-full max-w-4xl relative overflow-y-auto max-h-[90vh] mx-4">
+      <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border border-white/20 dark:border-gray-700 rounded-2xl shadow-2xl p-6 w-full max-w-4xl relative overflow-y-auto max-h-[90vh] mx-4">
         <button 
           className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 text-3xl font-bold transition-colors duration-200" 
           onClick={onClose} 
@@ -136,7 +190,10 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ projec
         <p className="text-center text-gray-600 dark:text-gray-400 mb-6">{project.name}</p>
         
         {error && (
-          <div className="text-red-500 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-lg mb-4">
+          <div className="text-red-500 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-lg mb-4 flex items-center gap-2">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
             {error}
           </div>
         )}
@@ -146,183 +203,153 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ projec
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 dark:border-blue-400"></div>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="text-gray-700 dark:text-gray-300 font-semibold border-b border-gray-200 dark:border-gray-700">
-                  <th className="px-3 py-3 text-left">Datum</th>
-                  <th className="px-3 py-3 text-center">% FE</th>
-                  <th className="px-3 py-3 text-center">% BE</th>
-                  <th className="px-3 py-3 text-center">% QA</th>
-                  <th className="px-3 py-3 text-center">% PM</th>
-                  <th className="px-3 py-3 text-center">% DPL</th>
-                  <th className="px-3 py-3 text-center">Odhad FE (MD)</th>
-                  <th className="px-3 py-3 text-center">Odhad BE (MD)</th>
-                  <th className="px-3 py-3 text-center">Odhad QA (MD)</th>
-                  <th className="px-3 py-3 text-center">Odhad PM (MD)</th>
-                  <th className="px-3 py-3 text-center">Odhad DPL (MD)</th>
-                  <th className="px-3 py-3 text-center">Akce</th>
-                </tr>
-              </thead>
-              <tbody>
-                {history.length === 0 ? (
-                  <tr>
-                    <td colSpan={12} className="text-gray-400 dark:text-gray-500 text-center py-8">
-                      Žádná historie změn
-                    </td>
-                  </tr>
-                ) : (
-                  history.map((progress) => (
-                    <tr key={progress.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                      <td className="px-3 py-3 align-middle text-gray-600 dark:text-gray-400">
-                        {formatDate(progress.date)}
-                      </td>
-                      <td className="px-3 py-3 align-middle text-center">
-                        {editingId === progress.id ? (
-                          <input
-                            type="number"
-                            className="border rounded px-2 py-1 w-16 text-center bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                            value={editValues.fe_done !== undefined ? String(editValues.fe_done) : (progress.fe_done !== null ? String(progress.fe_done) : '')}
-                            min={0}
-                            max={100}
-                            onChange={e => setEditValues(v => ({ ...v, fe_done: e.target.value === '' ? undefined : Number(e.target.value) }))}
-                          />
-                        ) : (
-                          progress.fe_done !== null ? (
-                            <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 px-2 py-1 rounded text-xs">
-                              {progress.fe_done}%
-                            </span>
-                          ) : '-'
-                        )}
-                      </td>
-                      <td className="px-3 py-3 align-middle text-center">
-                        {editingId === progress.id ? (
-                          <input
-                            type="number"
-                            className="border rounded px-2 py-1 w-16 text-center bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                            value={editValues.be_done !== undefined ? String(editValues.be_done) : (progress.be_done !== null ? String(progress.be_done) : '')}
-                            min={0}
-                            max={100}
-                            onChange={e => setEditValues(v => ({ ...v, be_done: e.target.value === '' ? undefined : Number(e.target.value) }))}
-                          />
-                        ) : (
-                          progress.be_done !== null ? (
-                            <span className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 px-2 py-1 rounded text-xs">
-                              {progress.be_done}%
-                            </span>
-                          ) : '-'
-                        )}
-                      </td>
-                      <td className="px-3 py-3 align-middle text-center">
-                        {editingId === progress.id ? (
-                          <input
-                            type="number"
-                            className="border rounded px-2 py-1 w-16 text-center bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                            value={editValues.qa_done !== undefined ? String(editValues.qa_done) : (progress.qa_done !== null ? String(progress.qa_done) : '')}
-                            min={0}
-                            max={100}
-                            onChange={e => setEditValues(v => ({ ...v, qa_done: e.target.value === '' ? undefined : Number(e.target.value) }))}
-                          />
-                        ) : (
-                          progress.qa_done !== null ? (
-                            <span className="bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 px-2 py-1 rounded text-xs">
-                              {progress.qa_done}%
-                            </span>
-                          ) : '-'
-                        )}
-                      </td>
-                      <td className="px-3 py-3 align-middle text-center">
-                        {editingId === progress.id ? (
-                          <input
-                            type="number"
-                            className="border rounded px-2 py-1 w-16 text-center bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                            value={editValues.pm_done !== undefined ? String(editValues.pm_done) : (progress.pm_done !== null ? String(progress.pm_done) : '')}
-                            min={0}
-                            max={100}
-                            onChange={e => setEditValues(v => ({ ...v, pm_done: e.target.value === '' ? undefined : Number(e.target.value) }))}
-                          />
-                        ) : (
-                          progress.pm_done !== null ? (
-                            <span className="bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 px-2 py-1 rounded text-xs">
-                              {progress.pm_done}%
-                            </span>
-                          ) : '-'
-                        )}
-                      </td>
-                      <td className="px-3 py-3 align-middle text-center">
-                        {editingId === progress.id ? (
-                          <input
-                            type="number"
-                            className="border rounded px-2 py-1 w-16 text-center bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                            value={editValues.dpl_done !== undefined ? String(editValues.dpl_done) : (progress.dpl_done !== null ? String(progress.dpl_done) : '')}
-                            min={0}
-                            max={100}
-                            onChange={e => setEditValues(v => ({ ...v, dpl_done: e.target.value === '' ? undefined : Number(e.target.value) }))}
-                          />
-                        ) : (
-                          progress.dpl_done !== null ? (
-                            <span className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 px-2 py-1 rounded text-xs">
-                              {progress.dpl_done}%
-                            </span>
-                          ) : '-'
-                        )}
-                      </td>
-                      <td className="px-3 py-3 align-middle text-center text-gray-600 dark:text-gray-400">
-                        {progress.fe_mandays || '-'}
-                      </td>
-                      <td className="px-3 py-3 align-middle text-center text-gray-600 dark:text-gray-400">
-                        {progress.be_mandays || '-'}
-                      </td>
-                      <td className="px-3 py-3 align-middle text-center text-gray-600 dark:text-gray-400">
-                        {progress.qa_mandays || '-'}
-                      </td>
-                      <td className="px-3 py-3 align-middle text-center text-gray-600 dark:text-gray-400">
-                        {progress.pm_mandays || '-'}
-                      </td>
-                      <td className="px-3 py-3 align-middle text-center text-gray-600 dark:text-gray-400">
-                        {progress.dpl_mandays || '-'}
-                      </td>
-                      <td className="px-3 py-3 align-middle text-center whitespace-nowrap">
-                        {editingId === progress.id ? (
-                          <>
-                            <button 
-                              className="text-green-600 dark:text-green-400 font-semibold hover:text-green-700 dark:hover:text-green-300 hover:underline transition-colors duration-200 mr-2" 
-                              disabled={saving} 
-                              onClick={() => progress.id && handleSave(progress.id)}
-                            >
-                              {saving ? 'Ukládám...' : 'Uložit'}
-                            </button>
-                            <button 
-                              className="text-gray-600 dark:text-gray-400 font-semibold hover:text-gray-700 dark:hover:text-gray-300 hover:underline transition-colors duration-200" 
-                              disabled={saving} 
-                              onClick={() => { setEditingId(null); setEditValues({}); setError(null); }}
-                            >
-                              Zrušit
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <button 
-                              className="text-blue-600 dark:text-blue-400 font-semibold hover:text-blue-700 dark:hover:text-blue-300 hover:underline transition-colors duration-200 mr-2" 
-                              disabled={saving} 
-                              onClick={() => { setEditingId(progress.id || ''); setEditValues({}); setError(null); }}
-                            >
-                              Upravit
-                            </button>
-                            <button 
-                              className="text-red-600 dark:text-red-400 font-semibold hover:text-red-700 dark:hover:text-red-300 hover:underline transition-colors duration-200" 
-                              onClick={() => progress.id && handleDeleteProgress(progress.id)}
-                            >
-                              Smazat
-                            </button>
-                          </>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+          <div className="space-y-4">
+            {history.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="text-6xl mb-4">📊</div>
+                <p className="text-gray-500 dark:text-gray-400 text-lg">Žádná historie změn</p>
+                <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">Změny se zobrazí po úpravě projektu</p>
+              </div>
+            ) : (
+              (() => {
+                const groupedHistory = groupHistoryByDate(history);
+                const sortedDates = Object.keys(groupedHistory).sort((a, b) => b.localeCompare(a)); // Nejnovější datum první
+                
+                return sortedDates.map(dateKey => {
+                  const dayProgresses = groupedHistory[dateKey];
+                  const totalChanges = dayProgresses.reduce((total, progress) => total + getChangedRoles(progress).length, 0);
+                  
+                  return (
+                    <div key={dateKey} className="bg-white/80 dark:bg-gray-700/80 rounded-xl border border-gray-200 dark:border-gray-600 p-4 hover:shadow-lg transition-all duration-300">
+                      {/* Hlavička dne */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                            {formatDateOnly(dayProgresses[0].date)}
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-600 px-2 py-1 rounded-full">
+                            {dayProgresses.length} změn • {totalChanges} úprav
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Změny v rámci dne */}
+                      <div className="space-y-3">
+                        {dayProgresses.map((progress) => {
+                          const changedRoles = getChangedRoles(progress);
+                          const isEditing = editingId === progress.id;
+                          
+                          return (
+                            <div key={progress.id} className="bg-gray-50 dark:bg-gray-600/50 rounded-lg p-3 border border-gray-200 dark:border-gray-500">
+                              {/* Čas změny */}
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="text-sm text-gray-600 dark:text-gray-400">
+                                  {formatDate(progress.date)}
+                                </div>
+                                
+                                <div className="flex items-center gap-2">
+                                  {isEditing ? (
+                                    <>
+                                      <button 
+                                        className="text-green-600 dark:text-green-400 font-semibold hover:text-green-700 dark:hover:text-green-300 hover:underline transition-colors duration-200 text-xs" 
+                                        disabled={saving} 
+                                        onClick={() => progress.id && handleSave(progress.id)}
+                                      >
+                                        {saving ? 'Ukládám...' : 'Uložit'}
+                                      </button>
+                                      <button 
+                                        className="text-gray-600 dark:text-gray-400 font-semibold hover:text-gray-700 dark:hover:text-gray-300 hover:underline transition-colors duration-200 text-xs" 
+                                        disabled={saving} 
+                                        onClick={() => { setEditingId(null); setEditValues({}); setError(null); }}
+                                      >
+                                        Zrušit
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <button 
+                                        className="text-blue-600 dark:text-blue-400 font-semibold hover:text-blue-700 dark:hover:text-blue-300 hover:underline transition-colors duration-200 text-xs" 
+                                        disabled={saving} 
+                                        onClick={() => { setEditingId(progress.id || ''); setEditValues({}); setError(null); }}
+                                      >
+                                        Upravit
+                                      </button>
+                                      <button 
+                                        className="text-red-600 dark:text-red-400 font-semibold hover:text-red-700 dark:hover:text-red-300 hover:underline transition-colors duration-200 text-xs" 
+                                        onClick={() => progress.id && handleDeleteProgress(progress.id)}
+                                      >
+                                        Smazat
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              {/* Změněné role */}
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                                {changedRoles.map(role => {
+                                  const doneValue = progress[role.done as keyof ProjectProgress];
+                                  const mandaysValue = progress[role.mandays as keyof ProjectProgress];
+                                  
+                                  return (
+                                    <div key={role.label} className="bg-white/80 dark:bg-gray-700/80 rounded p-2 border border-gray-200 dark:border-gray-500">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <div className={`w-2 h-2 rounded-full bg-${role.color}-500`}></div>
+                                        <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{role.label}</span>
+                                      </div>
+                                      
+                                      {doneValue !== null && (
+                                        <div className="mb-1">
+                                          <div className="text-xs text-gray-500 dark:text-gray-400 text-xs">% hotovo</div>
+                                          {isEditing ? (
+                                            <input
+                                              type="number"
+                                              className="w-full border rounded px-1 py-1 text-xs bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                              value={editValues[role.done as keyof ProjectProgress] !== undefined ? String(editValues[role.done as keyof ProjectProgress]) : String(doneValue)}
+                                              min={0}
+                                              max={100}
+                                              onChange={e => setEditValues(v => ({ ...v, [role.done]: e.target.value === '' ? undefined : Number(e.target.value) }))}
+                                            />
+                                          ) : (
+                                            <span className={`px-1 py-0.5 rounded text-xs ${getRoleColor(role.color)}`}>
+                                              {doneValue}%
+                                            </span>
+                                          )}
+                                        </div>
+                                      )}
+                                      
+                                      {mandaysValue !== null && (
+                                        <div>
+                                          <div className="text-xs text-gray-500 dark:text-gray-400 text-xs">Odhad (MD)</div>
+                                          {isEditing ? (
+                                            <input
+                                              type="number"
+                                              className="w-full border rounded px-1 py-1 text-xs bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                              value={editValues[role.mandays as keyof ProjectProgress] !== undefined ? String(editValues[role.mandays as keyof ProjectProgress]) : String(mandaysValue)}
+                                              min={0}
+                                              step={0.1}
+                                              onChange={e => setEditValues(v => ({ ...v, [role.mandays]: e.target.value === '' ? undefined : Number(e.target.value) }))}
+                                            />
+                                          ) : (
+                                            <span className="text-xs text-gray-600 dark:text-gray-400">
+                                              {mandaysValue} MD
+                                            </span>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                });
+              })()
+            )}
           </div>
         )}
         
