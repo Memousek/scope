@@ -29,4 +29,30 @@ export class SupabaseUserRepository extends UserRepository {
     };
   }
 
+  async updateUserProfile(userId: string, updates: { fullName?: string; avatarUrl?: string }): Promise<User | null> {
+    const supabase = createClient();
+    
+    const { data, error } = await supabase.auth.updateUser({
+      data: {
+        full_name: updates.fullName,
+        avatar_url: updates.avatarUrl
+      }
+    });
+
+    if (error || !data?.user) {
+      return null;
+    }
+
+    return this.mapToModel(data.user);
+  }
+
+  async updateUserPassword(userId: string, newPassword: string): Promise<boolean> {
+    const supabase = createClient();
+    
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword
+    });
+
+    return !error;
+  }
 }
