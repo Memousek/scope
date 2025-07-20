@@ -552,7 +552,6 @@ export default function ScopePage({
             stats={stats}
             loadingStats={loadingStats}
             averageSlip={averageSlip}
-            onExportTeam={handleExportTeam}
             onAddMember={handleAddMember}
             onAddProject={handleAddProject}
           />

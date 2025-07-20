@@ -38,7 +38,6 @@ interface ModernScopeLayoutProps {
     onTimeProjects: number;
     aheadProjects: number;
   };
-  onExportTeam?: () => void;
   onExportProjects?: () => void;
   onAddMember?: (member: { name: string; role: string; fte: number }) => Promise<void>;
   onAddProject?: (project: Omit<Project, 'id' | 'scope_id' | 'created_at'>) => Promise<void>;
@@ -59,7 +58,6 @@ export function ModernScopeLayout({
   stats,
   loadingStats,
   averageSlip,
-  onExportTeam,
   onAddMember,
   onAddProject,
 }: ModernScopeLayoutProps) {
