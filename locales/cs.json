@@ -176,5 +176,6 @@
   "activeProjects": "Aktivní projekty",
   "lastActivity": "Poslední aktivita",
   "noActivity": "Žádná aktivita",
-  "projectProgressCharts": "Progress grafy projektů"
+  "projectProgressCharts": "Progress grafy projektů",
+  "noDataForChart": "Žádná data pro graf"
 } 

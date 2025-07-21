@@ -176,5 +176,6 @@
   "activeProjects": "Active projects",
   "lastActivity": "Last activity",
   "noActivity": "No activity",
-  "projectProgressCharts": "Project progress charts"
+  "projectProgressCharts": "Project progress charts",
+  "noDataForChart": "No data for chart"
 } 
