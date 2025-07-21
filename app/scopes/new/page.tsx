@@ -210,10 +210,10 @@ export default function NewScopePage() {
               transition={{ duration: 0.3, delay: 0.4 }}
               className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl"
             >
-              <h3 className="font-semibold text-blue-800 dark:text-blue-300 mb-2 flex items-center gap-2">
+              <h4 className="font-semibold text-blue-800 dark:text-blue-300 mb-2 flex items-center gap-2">
                 <Sparkles className="w-4 h-4" />
                 Tipy pro vytvoření scope
-              </h3>
+              </h4>
               <ul className="text-sm text-blue-700 dark:text-blue-400 space-y-1">
                 <li>• Zvolte jasný a popisný název</li>
                 <li>• Přidejte detailní popis pro lepší orientaci týmu</li>

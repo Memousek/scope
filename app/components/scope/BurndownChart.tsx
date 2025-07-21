@@ -168,9 +168,9 @@ export function BurndownChart({ projects, team }: BurndownChartProps) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
         <div className="flex-1">
-          <h3 className="text-xl font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <h4 className="text-xl font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             📈 Burndown Chart
-          </h3>
+          </h4>
           {projectNames && (
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               Projekty: {projectNames}

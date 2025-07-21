@@ -100,9 +100,9 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
           ×
         </button>
         
-        <h3 className="text-2xl font-bold mb-6 text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+        <h4 className="text-2xl font-bold mb-6 text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
           ✏️ Upravit projekt
-        </h3>
+        </h4>
         
         <form className="flex flex-col gap-6" onSubmit={e => { e.preventDefault(); handleSaveEditProject(); }}>
           {/* Základní informace */}

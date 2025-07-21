@@ -17,6 +17,7 @@ export function AiChatButton({ onClick }: AiChatButtonProps) {
       aria-label="Ask AI"
       disabled={true}
     >
+      <span className="sr-only">Ask AI</span>
       <svg
         className="w-6 h-6 group-hover:rotate-12 transition-transform duration-200"
         fill="none"

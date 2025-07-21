@@ -204,7 +204,7 @@ export function ModernScopeLayout({
     <div className="space-y-6">
       {/* Tab Navigation */}
       <div className="bg-white/30 dark:bg-gray-800/30 backdrop-blur-sm rounded-xl p-2">
-        <div className="flex space-x-1">
+        <div className="flex space-x-1" role="tablist" aria-label="Scope tabs">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -214,6 +214,10 @@ export function ModernScopeLayout({
                   ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg scale-105"
                   : "text-gray-600 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-700/50 hover:scale-102"
               }`}
+              aria-label={tab.label}
+              role="tab"
+              aria-selected={activeTab === tab.id}
+              id={`tab-${tab.id}`}
             >
               <span className="text-lg">{tab.icon}</span>
               <span className="hidden sm:inline">{tab.label}</span>

@@ -159,9 +159,9 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
                     <div className="p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                          <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                             {project.name}
-                          </h3>
+                          </h4>
                           <span className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-2 py-1 rounded-full text-xs font-medium">
                             {t('priority')} {project.priority}
                           </span>

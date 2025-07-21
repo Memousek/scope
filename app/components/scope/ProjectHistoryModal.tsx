@@ -184,9 +184,9 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ projec
           ×
         </button>
         
-        <h3 className="text-2xl font-bold mb-2 text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+        <h4 className="text-2xl font-bold mb-2 text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
           📊 Historie změn projektu
-        </h3>
+        </h4>
         <p className="text-center text-gray-600 dark:text-gray-400 mb-6">{project.name}</p>
         
         {error && (

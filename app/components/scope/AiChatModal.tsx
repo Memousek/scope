@@ -48,7 +48,7 @@ export function AiChatModal({ isOpen, onClose }: AiChatModalProps) {
               </svg>
             </div>
             <div>
-              <h3 className="text-lg font-semibold">Your personal AI project manager</h3>
+              <h4 className="text-lg font-semibold">Your personal AI project manager</h4>
               <p className="text-sm text-gray-500">Ask me anything about your project</p>
             </div>
           </div>

@@ -8,6 +8,6 @@ export default function ScopesLayout({
   children: React.ReactNode;
 }) {
   return (
-    <main className="bg-gray-50 dark:bg-gray-900 min-h-screen">{children}</main>
+    <div className="bg-gray-50 dark:bg-gray-900">{children}</div>
   );
 } 

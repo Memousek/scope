@@ -204,9 +204,9 @@ export function ProjectSectionRefactored({
                 return (
                   <div key={project.id} className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-white/20 dark:border-gray-700 rounded-xl p-4">
                     <div className="mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                        {project.name}
-                      </h3>
+                                                <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                            {project.name}
+                          </h4>
                       <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
                         <span>Priorita: {project.priority}</span>
                         <span>Termín: {project.delivery_date ? new Date(project.delivery_date).toLocaleDateString() : 'N/A'}</span>

@@ -179,9 +179,9 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
       {/* Hlavička grafu */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+          <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
             📊 Progress grafy
-          </h3>
+          </h4>
           <p className="text-sm text-gray-600 dark:text-gray-400">
             {project.name}
           </p>

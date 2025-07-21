@@ -41,11 +41,12 @@ export function Header({ user, loading }: HeaderProps) {
             <div className="w-30 h-8 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse" style={{ width: '110px', height: '35px' }} />
           ) : user ? (
             <>
-              <Link href="/profile" className="flex items-center px-2 hover:text-accent-foreground">
+              <Link href="/profile" className="flex items-center px-2 hover:text-accent-foreground" aria-label={t('profile')}>
                 <UserIcon
                   size={18}
                   className={"text-muted-foreground"}
                 />
+                <span className="sr-only">{t('profile')}</span>
               </Link>
               <LogoutButton />
             </>
@@ -60,6 +61,7 @@ export function Header({ user, loading }: HeaderProps) {
           aria-label={t('open_menu')}
         >
           <Menu className="w-6 h-6" />
+          <span className="sr-only">{t('open_menu')}</span>
         </button>
         {/* Mobile drawer */}
         {mobileOpen && (
@@ -71,6 +73,7 @@ export function Header({ user, loading }: HeaderProps) {
                 aria-label={t('close_menu')}
               >
                 <X className="w-6 h-6" />
+                <span className="sr-only">{t('close_menu')}</span>
               </button>
               <Link href={"/"} className="text-xl font-bold mb-8 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent" onClick={() => setMobileOpen(false)}>
                 {t('appName')}
