@@ -1,4 +1,4 @@
-import { inject, injectable } from 'inversify';
+import { injectable } from 'inversify';
 import { createClient } from '@/lib/supabase/client';
 
 export interface ScopeEditorWithUser {

@@ -3,7 +3,7 @@
  * Zobrazuje avatar uživatele s fallback na iniciály
  */
 
-import { User } from 'lucide-react';
+
 
 interface UserAvatarProps {
   user?: {
@@ -64,10 +64,11 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
     <div className="flex items-center gap-3">
       <div className={`relative ${getSizeClasses()}`}>
         {user?.avatarUrl ? (
-          <img
-            src={user.avatarUrl}
-            alt={displayName}
-            className="w-full h-full rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
+          <div
+            className="w-full h-full rounded-full object-cover border-2 border-gray-200 dark:border-gray-600 bg-cover bg-center"
+            style={{ backgroundImage: `url(${user.avatarUrl})` }}
+            role="img"
+            aria-label={displayName}
           />
         ) : (
           <div className="w-full h-full rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold border-2 border-gray-200 dark:border-gray-600">

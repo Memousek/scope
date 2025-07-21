@@ -8,7 +8,7 @@
  * - Příprava na napojení na Supabase
  */
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState, use, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useTranslation } from "@/lib/translation";
 import { ModernScopeLayout } from "@/app/components/scope/ModernScopeLayout";
@@ -85,23 +85,7 @@ export default function ScopePage({
   const hasPM = teamRoles.includes("PM");
   const hasDPL = teamRoles.includes("DPL");
 
-  const handleExportTeam = () => {
-    downloadCSV(
-      "tym.csv",
-      team as unknown as Record<string, unknown>[],
-      ["name", "role", "fte"],
-      { name: t("name"), role: t("role"), fte: t("fte") }
-    );
-  };
 
-  const handleExportProjects = () => {
-    downloadCSV(
-      "projekty.csv",
-      projects as unknown as Record<string, unknown>[],
-      ["name", "priority", "delivery_date"],
-      { name: t("name"), priority: t("priority"), delivery_date: t("delivery_date") }
-    );
-  };
 
   const handleAddMember = async (member: { name: string; role: string; fte: number }) => {
     if (!userId) return;
@@ -153,7 +137,7 @@ export default function ScopePage({
   };
 
   // Načítání dat
-  const fetchScope = async () => {
+  const fetchScope = useCallback(async () => {
     if (!userId) return;
     
     setFetching(true);
@@ -178,9 +162,9 @@ export default function ScopePage({
     } finally {
       setFetching(false);
     }
-  };
+  }, [userId, id]);
 
-  const fetchTeam = async () => {
+  const fetchTeam = useCallback(async () => {
     if (!userId) return;
     
     try {
@@ -200,9 +184,9 @@ export default function ScopePage({
     } catch (error) {
       console.error('Chyba při načítání týmu:', error);
     }
-  };
+  }, [userId, id]);
 
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     if (!userId) return;
     
     try {
@@ -222,9 +206,9 @@ export default function ScopePage({
     } catch (error) {
       console.error('Chyba při načítání projektů:', error);
     }
-  };
+  }, [userId, id]);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     if (!userId) return;
     
     setLoadingStats(true);
@@ -241,9 +225,9 @@ export default function ScopePage({
     } finally {
       setLoadingStats(false);
     }
-  };
+  }, [userId, id]);
 
-  const fetchAverageSlip = async () => {
+  const fetchAverageSlip = useCallback(async () => {
     if (!userId) return;
     
     try {
@@ -253,9 +237,9 @@ export default function ScopePage({
     } catch (error) {
       console.error('Chyba při načítání průměrného skluzu:', error);
     }
-  };
+  }, [userId, id]);
 
-  const checkOwnership = async () => {
+  const checkOwnership = useCallback(async () => {
     if (!userId) return;
     
     try {
@@ -265,7 +249,7 @@ export default function ScopePage({
     } catch (error) {
       console.error('Chyba při kontrole vlastnictví:', error);
     }
-  };
+  }, [userId, id]);
 
   // Načítání dat při mount
   useEffect(() => {
@@ -277,7 +261,7 @@ export default function ScopePage({
       fetchAverageSlip();
       checkOwnership();
     }
-  }, [loading, user, id]);
+  }, [loading, user, id, fetchScope, fetchTeam, fetchProjects, fetchStats, fetchAverageSlip, checkOwnership]);
 
   // Redirect pokud není přihlášen
   useEffect(() => {

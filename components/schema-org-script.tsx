@@ -6,7 +6,7 @@
 import Script from 'next/script';
 
 interface SchemaOrgScriptProps {
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   id?: string;
 }
 
