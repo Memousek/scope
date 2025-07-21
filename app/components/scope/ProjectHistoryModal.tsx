@@ -10,6 +10,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Project, ProjectProgress } from './types';
+import { PROJECT_ROLES } from '@/lib/utils/projectRoles';
 
 interface ProjectHistoryModalProps {
   project: Project;
@@ -25,14 +26,16 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ projec
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Definice rolí a barev
-  const roles = [
-    { done: 'fe_done', mandays: 'fe_mandays', label: 'FE', color: 'blue' },
-    { done: 'be_done', mandays: 'be_mandays', label: 'BE', color: 'green' },
-    { done: 'qa_done', mandays: 'qa_mandays', label: 'QA', color: 'orange' },
-    { done: 'pm_done', mandays: 'pm_mandays', label: 'PM', color: 'purple' },
-    { done: 'dpl_done', mandays: 'dpl_mandays', label: 'DPL', color: 'red' },
-  ];
+  // Používáme centralizované role z utility
+  const roles = PROJECT_ROLES.map(role => ({
+    done: role.doneKey,
+    mandays: role.mandaysKey,
+    label: role.label,
+    color: role.key === 'fe' ? 'blue' : 
+           role.key === 'be' ? 'green' : 
+           role.key === 'qa' ? 'orange' : 
+           role.key === 'pm' ? 'purple' : 'red'
+  }));
 
   // ESC key handler
   useEffect(() => {

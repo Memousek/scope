@@ -4,6 +4,7 @@
  */
 
 import { Project, TeamMember, ProjectDeliveryInfo } from '@/app/components/scope/types';
+import { PROJECT_ROLES } from '@/lib/utils/projectRoles';
 
 /**
  * Add specified number of workdays to a date (excluding weekends)

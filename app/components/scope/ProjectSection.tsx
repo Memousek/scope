@@ -16,6 +16,7 @@ import { EditProjectModal } from './EditProjectModal';
 import { ProjectHistoryModal } from './ProjectHistoryModal';
 import { ProjectProgressChart } from './ProjectProgressChart';
 import { calculateProjectDeliveryInfo, calculatePriorityDates } from '@/app/utils/dateUtils';
+import { PROJECT_ROLES, calculateRoleProgress, calculateTotalProgress } from '@/lib/utils/projectRoles';
 
 interface ProjectSectionProps {
   scopeId: string;
@@ -84,29 +85,17 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
     }
   };
 
-  // Define project roles for EditProjectModal
-  const projectRoles = [
-    { key: 'fe', label: 'FE', mandays: 'fe_mandays', done: 'fe_done', color: '#2563eb' },
-    { key: 'be', label: 'BE', mandays: 'be_mandays', done: 'be_done', color: '#059669' },
-    { key: 'qa', label: 'QA', mandays: 'qa_mandays', done: 'qa_done', color: '#f59e42' },
-    { key: 'pm', label: 'PM', mandays: 'pm_mandays', done: 'pm_done', color: '#a21caf' },
-    { key: 'dpl', label: 'DPL', mandays: 'dpl_mandays', done: 'dpl_done', color: '#e11d48' },
-  ];
+  // Používáme centralizované role z utility
+  const projectRoles = PROJECT_ROLES.map(role => ({
+    key: role.key,
+    label: role.label,
+    mandays: role.mandaysKey,
+    done: role.doneKey,
+    color: role.color
+  }));
 
-  const getRoleProgress = (project: Project, role: string) => {
-    const mandays = project[`${role}_mandays` as keyof Project] as number;
-    const donePercent = project[`${role}_done` as keyof Project] as number;
-    
-    if (!mandays || mandays === 0) return null;
-    
-    // donePercent je procento (0-100), převedeme na mandays
-    const doneMandays = (donePercent / 100) * mandays;
-    
-    return {
-      mandays,
-      done: doneMandays,
-      percentage: Math.round(donePercent)
-    };
+  const getRoleProgress = (project: Project, roleKey: string) => {
+    return calculateRoleProgress(project, roleKey);
   };
 
 
@@ -172,22 +161,7 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
                            <div className="text-right">
                              <div className="text-sm text-gray-600 dark:text-gray-400">Celkový progress</div>
                              <div className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                               {(() => {
-                                 const totalDone = projectRoles.reduce((total, role) => {
-                                   const progress = getRoleProgress(project, role.key);
-                                   return total + (progress ? progress.done : 0);
-                                 }, 0);
-                                 
-                                 const totalMandays = projectRoles.reduce((total, role) => {
-                                   const progress = getRoleProgress(project, role.key);
-                                   return total + (progress ? progress.mandays : 0);
-                                 }, 0);
-                                 
-                                 if (totalMandays === 0) return '0%';
-                                 
-                                 const percentage = Math.round((totalDone / totalMandays) * 100);
-                                 return `${percentage}%`;
-                               })()}
+                               {calculateTotalProgress(project)}%
                              </div>
                            </div>
                           

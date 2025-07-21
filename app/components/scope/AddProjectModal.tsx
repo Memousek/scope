@@ -9,6 +9,7 @@
 import { useState, useEffect } from 'react';
 import { Project } from './types';
 import { useTranslation } from '@/lib/translation';
+import { getDefaultProjectValues } from '@/lib/utils/projectRoles';
 
 interface AddProjectModalProps {
   isOpen: boolean;
@@ -37,12 +38,12 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
   const [newProject, setNewProject] = useState<Omit<Project, 'id' | 'scope_id' | 'created_at'>>({
     name: '',
     priority: 1,
-    fe_mandays: 0,
-    be_mandays: 0,
-    qa_mandays: 0,
-    pm_mandays: 0,
-    dpl_mandays: 0,
     delivery_date: null,
+    fe_mandays: null,
+    be_mandays: null,
+    qa_mandays: null,
+    pm_mandays: null,
+    dpl_mandays: null,
     fe_done: 0,
     be_done: 0,
     qa_done: 0,
@@ -69,12 +70,12 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
     setNewProject({
       name: '',
       priority: 1,
-      fe_mandays: 0,
-      be_mandays: 0,
-      qa_mandays: 0,
-      pm_mandays: 0,
-      dpl_mandays: 0,
       delivery_date: null,
+      fe_mandays: null,
+      be_mandays: null,
+      qa_mandays: null,
+      pm_mandays: null,
+      dpl_mandays: null,
       fe_done: 0,
       be_done: 0,
       qa_done: 0,

@@ -9,6 +9,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Project, ProjectProgress } from './types';
+import { PROJECT_ROLES } from '@/lib/utils/projectRoles';
 
 interface EditProjectModalProps {
   isOpen: boolean;
@@ -36,13 +37,10 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
 
   const handleSaveEditProject = async () => {
     // Validace: pouze role, které už v projektu mají mandays > 0, musí mít nenulový odhad
-    const projectMandays = [
-      { key: 'fe_mandays', label: 'FE' },
-      { key: 'be_mandays', label: 'BE' },
-      { key: 'qa_mandays', label: 'QA' },
-      { key: 'pm_mandays', label: 'PM' },
-      { key: 'dpl_mandays', label: 'DPL' },
-    ];
+    const projectMandays = PROJECT_ROLES.map(role => ({
+      key: role.mandaysKey,
+      label: role.label
+    }));
     const missing = projectMandays.filter(r => Number(editProject[r.key as keyof Project]) > 0 && Number(editProject[r.key as keyof Project]) === 0);
     if (missing.length > 0) {
       alert('Odhad mandays nesmí být 0 pro existující role v projektu.');

@@ -4,6 +4,7 @@
  */
 
 import { Project, TeamMember } from '@/app/components/scope/types';
+import { getRolesForValidation } from '@/lib/utils/projectRoles';
 
 export interface ValidationError {
   field: string;
@@ -30,14 +31,8 @@ export function validateProject(project: Partial<Project>): ValidationResult {
     errors.push({ field: 'priority', message: 'Priorita musí být alespoň 1' });
   }
 
-  // Validate mandays and done percentages
-  const roles = [
-    { key: 'fe', label: 'FE' },
-    { key: 'be', label: 'BE' },
-    { key: 'qa', label: 'QA' },
-    { key: 'pm', label: 'PM' },
-    { key: 'dpl', label: 'DPL' },
-  ];
+  // Validate mandays and done percentages using centralized roles
+  const roles = getRolesForValidation();
 
   roles.forEach(({ key, label }) => {
     const mandaysKey = `${key}_mandays` as keyof Project;

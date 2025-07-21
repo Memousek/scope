@@ -9,6 +9,7 @@
 import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Project, ProjectDeliveryInfo } from './types';
+import { PROJECT_ROLES, calculateRoleProgress } from '@/lib/utils/projectRoles';
 
 interface ProjectProgressChartProps {
   project: Project;
@@ -111,22 +112,14 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
   }, [project, priorityDates]);
 
   const getCurrentProgress = (project: Project) => {
-    const roles = [
-      { done: project.fe_done, mandays: project.fe_mandays },
-      { done: project.be_done, mandays: project.be_mandays },
-      { done: project.qa_done, mandays: project.qa_mandays },
-      { done: project.pm_done, mandays: project.pm_mandays },
-      { done: project.dpl_done, mandays: project.dpl_mandays }
-    ];
-
     let totalDone = 0;
     let totalMandays = 0;
 
-    roles.forEach(role => {
-      if (role.mandays && role.done) {
-        const doneMandays = (role.done / 100) * role.mandays;
-        totalDone += doneMandays;
-        totalMandays += role.mandays;
+    PROJECT_ROLES.forEach(role => {
+      const progress = calculateRoleProgress(project, role.key);
+      if (progress) {
+        totalDone += progress.done;
+        totalMandays += progress.mandays;
       }
     });
 
@@ -145,14 +138,16 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
     return '🔴';
   };
 
-  // Definice rolí a jejich barev
-  const roles = [
-    { key: 'fe', label: 'FE', color: '#2563eb', done: project.fe_done || 0, mandays: project.fe_mandays || 0 },
-    { key: 'be', label: 'BE', color: '#059669', done: project.be_done || 0, mandays: project.be_mandays || 0 },
-    { key: 'qa', label: 'QA', color: '#f59e42', done: project.qa_done || 0, mandays: project.qa_mandays || 0 },
-    { key: 'pm', label: 'PM', color: '#a21caf', done: project.pm_done || 0, mandays: project.pm_mandays || 0 },
-    { key: 'dpl', label: 'DPL', color: '#e11d48', done: project.dpl_done || 0, mandays: project.dpl_mandays || 0 },
-  ].filter(role => role.mandays > 0);
+  // Používáme centralizované role z utility
+  const roles = PROJECT_ROLES
+    .map(role => ({
+      key: role.key,
+      label: role.label,
+      color: role.color,
+      done: project[role.doneKey as keyof Project] || 0,
+      mandays: project[role.mandaysKey as keyof Project] || 0
+    }))
+    .filter(role => Number(role.mandays) > 0);
 
   const CustomTooltip = ({ active, payload, label }: {
     active?: boolean;
