@@ -391,7 +391,7 @@ export default function ScopePage({
                       <button
                         onClick={handleSaveName}
                         disabled={savingName}
-                        className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 disabled:opacity-50 transition-all duration-200 flex items-center gap-2 font-medium"
+                        className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-green-700 text-white rounded-lg hover:from-emerald-700 hover:to-green-800 disabled:opacity-50 transition-all duration-200 flex items-center gap-2 font-medium"
                       >
                         {savingName ? (
                           <>
@@ -474,7 +474,7 @@ export default function ScopePage({
                       <button
                         onClick={handleSaveDescription}
                         disabled={savingDescription}
-                        className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 disabled:opacity-50 transition-all duration-200 flex items-center gap-2 font-medium"
+                        className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-green-700 text-white rounded-lg hover:from-emerald-700 hover:to-green-800 disabled:opacity-50 transition-all duration-200 flex items-center gap-2 font-medium"
                       >
                         {savingDescription ? (
                           <>
@@ -516,13 +516,13 @@ export default function ScopePage({
               <div className="flex flex-wrap gap-3">
                 <button
                   onClick={handleExportTeam}
-                  className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-3 rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all duration-200 hover:scale-105 shadow-lg"
+                  className="bg-gradient-to-r from-emerald-600 to-green-700 text-white px-6 py-3 rounded-xl hover:from-emerald-700 hover:to-green-800 transition-all duration-200 hover:scale-105 shadow-lg font-medium"
                 >
                   {t("exportTeam")}
                 </button>
                 <button
                   onClick={handleExportProjects}
-                  className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-3 rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all duration-200 hover:scale-105 shadow-lg"
+                  className="bg-gradient-to-r from-emerald-600 to-green-700 text-white px-6 py-3 rounded-xl hover:from-emerald-700 hover:to-green-800 transition-all duration-200 hover:scale-105 shadow-lg font-medium"
                 >
                   {t("exportProjects")}
                 </button>

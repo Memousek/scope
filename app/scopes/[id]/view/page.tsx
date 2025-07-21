@@ -119,20 +119,20 @@ export default function ScopeViewPage({ params }: { params: Promise<{ id: string
                   <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                     {scope.name}
                   </h1>
-                  <span className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-3 py-1 rounded-full text-xs font-medium">
+                  <span className="bg-gradient-to-r from-emerald-600 to-green-700 text-white px-3 py-1 rounded-full text-xs font-medium">
                     {t("publicView")}
                   </span>
                 </div>
                 <div className="flex gap-3">
                   <button
                     onClick={handleExportTeam}
-                    className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-2 rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all duration-200 hover:scale-105 shadow-lg text-sm"
+                    className="bg-gradient-to-r from-emerald-600 to-green-700 text-white px-4 py-2 rounded-xl hover:from-emerald-700 hover:to-green-800 transition-all duration-200 hover:scale-105 shadow-lg text-sm font-medium"
                   >
                     {t('exportTeam')}
                   </button>
                   <button
                     onClick={handleExportProjects}
-                    className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-2 rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all duration-200 hover:scale-105 shadow-lg text-sm"
+                    className="bg-gradient-to-r from-emerald-600 to-green-700 text-white px-4 py-2 rounded-xl hover:from-emerald-700 hover:to-green-800 transition-all duration-200 hover:scale-105 shadow-lg text-sm font-medium"
                   >
                     {t('exportProjects')}
                   </button>

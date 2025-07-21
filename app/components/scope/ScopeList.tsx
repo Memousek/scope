@@ -160,7 +160,7 @@ export const ScopeList: React.FC<ScopeListProps> = ({
                   {/* Quick stats */}
                   <div className="flex flex-col items-end gap-1">
                     <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                      <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                      <span className="w-2 h-2 bg-emerald-600 rounded-full"></span>
                       <span>
                         {loadingStats[scopeItem.scope.id] ? (
                           <span className="animate-pulse">...</span>

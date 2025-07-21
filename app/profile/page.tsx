@@ -153,7 +153,7 @@ export default function ProfilePage() {
             {/* Account Security */}
             <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl p-6 border border-white/20 dark:border-gray-700/50 shadow-xl hover:shadow-2xl transition-all duration-300">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-teal-500 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-gradient-to-br from-emerald-600 to-green-700 rounded-lg flex items-center justify-center">
                   <Shield className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -194,7 +194,7 @@ export default function ProfilePage() {
                 </div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Dní v aplikaci</div>
               </div>
-              <div className="text-center p-4 bg-gradient-to-br from-green-500/10 to-teal-500/10 rounded-xl">
+              <div className="text-center p-4 bg-gradient-to-br from-emerald-600/10 to-green-700/10 rounded-xl">
                 <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
                   {user.updatedAt ? 'Aktivní' : 'Nový'}
                 </div>

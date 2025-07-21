@@ -153,7 +153,7 @@ export default function SettingsPage() {
             {/* Language Settings */}
             <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl p-6 border border-white/20 dark:border-gray-700/50 shadow-xl hover:shadow-2xl transition-all duration-300">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-teal-500 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-gradient-to-br from-emerald-600 to-green-700 rounded-lg flex items-center justify-center">
                   <Globe className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -172,7 +172,7 @@ export default function SettingsPage() {
                     onClick={() => handleLanguageChange(lang.code)}
                     className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ${
                       currentLang === lang.code
-                        ? 'bg-gradient-to-r from-green-500 to-teal-500 text-white shadow-lg'
+                        ? 'bg-gradient-to-r from-emerald-600 to-green-700 text-white shadow-lg'
                         : 'bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600/50'
                     }`}
                   >

@@ -84,9 +84,9 @@ export function ModernScopeLayout({
           <div className="space-y-6">
             {/* Quick Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 backdrop-blur-sm rounded-xl p-6 hover:scale-105 transition-transform duration-300">
+              <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 backdrop-blur-sm rounded-xl p-6 transition-transform duration-300 group hover:scale-105">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                     <span className="text-white text-xl">👥</span>
                   </div>
                   <div>
@@ -98,9 +98,9 @@ export function ModernScopeLayout({
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 backdrop-blur-sm rounded-xl p-6 hover:scale-105 transition-transform duration-300">
+              <div className="bg-gradient-to-br from-emerald-600/10 to-green-700/10 backdrop-blur-sm rounded-xl p-6 transition-transform duration-300 group hover:scale-105">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
+                  <div className="w-12 h-12 bg-gradient-to-br from-emerald-600 to-green-700 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                     <span className="text-white text-xl">🚀</span>
                   </div>
                   <div>
@@ -112,9 +112,9 @@ export function ModernScopeLayout({
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-orange-500/10 to-red-500/10 backdrop-blur-sm rounded-xl p-6 hover:scale-105 transition-transform duration-300">
+              <div className="bg-gradient-to-br from-orange-500/10 to-red-500/10 backdrop-blur-sm rounded-xl p-6 transition-transform duration-300 group hover:scale-105">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
+                  <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                     <span className="text-white text-xl">⏰</span>
                   </div>
                   <div>
@@ -149,7 +149,7 @@ export function ModernScopeLayout({
                 </button>
                 <button 
                   onClick={() => setAddProjectModalOpen(true)}
-                  className="p-4 bg-gradient-to-br from-green-500 to-emerald-500 text-white rounded-lg hover:scale-105 transition-all duration-200 flex flex-col items-center gap-2"
+                  className="p-4 bg-gradient-to-br from-emerald-600 to-green-700 text-white rounded-lg hover:scale-105 transition-all duration-200 flex flex-col items-center gap-2 font-medium"
                 >
                   <span className="text-xl">🚀</span>
                   <span className="text-sm font-medium">Nový projekt</span>
