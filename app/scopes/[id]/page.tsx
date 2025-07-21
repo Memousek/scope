@@ -10,14 +10,14 @@
 
 import { useEffect, useState, use, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useTranslation } from "@/lib/translation";
+
 import { ModernScopeLayout } from "@/app/components/scope/ModernScopeLayout";
 import { ShareModal } from "@/app/components/scope/ShareModal";
 import { AiChatModal } from "@/app/components/scope/AiChatModal";
 import { AiChatButton } from "@/app/components/scope/AiChatButton";
 import { TeamMember, Project } from "@/app/components/scope/types";
 import { useAuth } from "@/lib/auth";
-import { downloadCSV } from "@/app/utils/csvUtils";
+
 import { ContainerService } from "@/lib/container.service";
 import { GetScopeStatsService } from "@/lib/domain/services/get-scope-stats.service";
 import { CalculateAverageSlipService } from "@/lib/domain/services/calculate-average-slip.service";
@@ -41,7 +41,7 @@ export default function ScopePage({
   const [description, setDescription] = useState("");
   const [editingDescription, setEditingDescription] = useState(false);
   const [savingDescription, setSavingDescription] = useState(false);
-  const { t } = useTranslation();
+
 
   // --- Tým ---
   const [team, setTeam] = useState<TeamMember[]>([]);
