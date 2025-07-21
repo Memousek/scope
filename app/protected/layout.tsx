@@ -1,4 +1,4 @@
-import { ClientConditionalHeader } from "../../components/client-conditional-header";
+import { ConditionalHeader } from "../../components/conditional-header";
 
 /**
  * Layout for protected pages that require authentication
@@ -11,7 +11,7 @@ export default function ProtectedLayout({
 }) {
   return (
     <>
-      <ClientConditionalHeader />
+      <ConditionalHeader />
       {children}
     </>
   );
