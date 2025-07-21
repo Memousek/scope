@@ -23,7 +23,7 @@ import { GetScopeStatsService } from "@/lib/domain/services/get-scope-stats.serv
 import { CalculateAverageSlipService } from "@/lib/domain/services/calculate-average-slip.service";
 import { AddTeamMemberService } from "@/lib/domain/services/add-team-member.service";
 import { AddProjectService } from "@/lib/domain/services/add-project.service";
-
+import { CheckScopeOwnershipService } from "@/lib/domain/services/check-scope-ownership.service";
 
 export default function ScopePage({
   params,
@@ -64,7 +64,6 @@ export default function ScopePage({
     aheadProjects: number;
   } | undefined>(undefined);
 
-
   // --- Sdílení ---
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
@@ -99,483 +98,442 @@ export default function ScopePage({
     downloadCSV(
       "projekty.csv",
       projects as unknown as Record<string, unknown>[],
-      [
-        "name",
-        "priority",
-        "fe_mandays",
-        "be_mandays",
-        "qa_mandays",
-        "pm_mandays",
-        "dpl_mandays",
-        "delivery_date",
-      ],
-      {
-        name: t("projectName"),
-        priority: t("priority"),
-        fe_mandays: t("fe_mandays"),
-        be_mandays: t("be_mandays"),
-        qa_mandays: t("qa_mandays"),
-        pm_mandays: t("pm_mandays"),
-        dpl_mandays: t("dpl_mandays"),
-        delivery_date: t("deliveryDate"),
-      }
+      ["name", "priority", "delivery_date"],
+      { name: t("name"), priority: t("priority"), delivery_date: t("delivery_date") }
     );
   };
 
   const handleAddMember = async (member: { name: string; role: string; fte: number }) => {
+    if (!userId) return;
+    
+    const addTeamMemberService = ContainerService.getInstance().get(AddTeamMemberService, { autobind: true });
+    
     try {
-      const container = ContainerService.getInstance();
-      const addMemberService = container.get(AddTeamMemberService);
-      
-      await addMemberService.execute(id, member);
+      await addTeamMemberService.execute(id, {
+        name: member.name,
+        role: member.role,
+        fte: member.fte,
+      });
       
       // Refresh team data
-      const { data } = await createClient()
-        .from("team_members")
-        .select("*")
-        .eq("scope_id", id)
-        .order("role", { ascending: true });
-      
-      if (data) setTeam(data);
+      await fetchTeam();
     } catch (error) {
-      console.error("Chyba při přidávání člena:", error);
+      console.error('Chyba při přidávání člena týmu:', error);
     }
   };
 
   const handleAddProject = async (project: Omit<Project, 'id' | 'created_at'>) => {
+    if (!userId) return;
+    
+    const addProjectService = ContainerService.getInstance().get(AddProjectService, { autobind: true });
+    
     try {
-      const container = ContainerService.getInstance();
-      const addProjectService = container.get(AddProjectService);
-      
-      // Převod z komponentního typu na domain typ
-      const domainProject = {
+      await addProjectService.execute(id, {
         name: project.name,
         priority: project.priority,
+        deliveryDate: project.delivery_date ? new Date(project.delivery_date) : undefined,
         feMandays: project.fe_mandays || 0,
         beMandays: project.be_mandays || 0,
         qaMandays: project.qa_mandays || 0,
         pmMandays: project.pm_mandays || 0,
         dplMandays: project.dpl_mandays || 0,
-        feDone: project.fe_done,
-        beDone: project.be_done,
-        qaDone: project.qa_done,
-        pmDone: project.pm_done,
-        dplDone: project.dpl_done,
-        deliveryDate: project.delivery_date ? new Date(project.delivery_date) : undefined,
-        slip: project.slip || undefined
-      };
+        feDone: project.fe_done || 0,
+        beDone: project.be_done || 0,
+        qaDone: project.qa_done || 0,
+        pmDone: project.pm_done || 0,
+        dplDone: project.dpl_done || 0,
+        slip: 0, // Default value
+      });
       
-      await addProjectService.execute(id, domainProject);
-      
-      // Refresh projects data
-      const { data } = await createClient()
-        .from("projects")
-        .select("*")
-        .eq("scope_id", id)
-        .order("priority", { ascending: true });
-      
-      if (data) setProjects(data);
+      // Refresh project data
+      await fetchProjects();
     } catch (error) {
-      console.error("Chyba při přidávání projektu:", error);
+      console.error('Chyba při přidávání projektu:', error);
     }
   };
 
-  // Načtení scope z Supabase podle id
-  useEffect(() => {
-    if (!loading && user && id) {
-      setFetching(true);
+  // Načítání dat
+  const fetchScope = async () => {
+    if (!userId) return;
+    
+    setFetching(true);
+    try {
       const supabase = createClient();
-      supabase
-        .from("scopes")
-        .select("id, name, description")
-        .eq("id", id)
-        .single()
-        .then(({ data, error }) => {
-          if (!error && data) {
-            setScope(
-              data as { id: string; name: string; description?: string }
-            );
-            setDescription(data.description || "");
-            setName(data.name || "");
-          }
-          setFetching(false);
-        });
-    }
-  }, [loading, user, id]);
+      const { data, error } = await supabase
+        .from('scopes')
+        .select('*')
+        .eq('id', id)
+        .single();
 
-  // Načtení členů týmu
-  useEffect(() => {
-    if (!loading && user && id) {
+      if (error) {
+        console.error('Chyba při načítání scope:', error);
+        return;
+      }
+
+      setScope(data);
+      setDescription(data.description || '');
+      setName(data.name || '');
+    } catch (error) {
+      console.error('Chyba při načítání scope:', error);
+    } finally {
+      setFetching(false);
+    }
+  };
+
+  const fetchTeam = async () => {
+    if (!userId) return;
+    
+    try {
       const supabase = createClient();
-      supabase
-        .from("team_members")
-        .select("*")
-        .eq("scope_id", id)
-        .order("role", { ascending: true })
-        .then(({ data, error }) => {
-          if (!error && data) setTeam(data);
-        });
-    }
-  }, [loading, user, id]);
+      const { data, error } = await supabase
+        .from('team_members')
+        .select('*')
+        .eq('scope_id', id)
+        .order('created_at', { ascending: true });
 
-  // Načtení projektů
-  useEffect(() => {
-    if (!loading && user && id) {
+      if (error) {
+        console.error('Chyba při načítání týmu:', error);
+        return;
+      }
+
+      setTeam(data || []);
+    } catch (error) {
+      console.error('Chyba při načítání týmu:', error);
+    }
+  };
+
+  const fetchProjects = async () => {
+    if (!userId) return;
+    
+    try {
       const supabase = createClient();
-      supabase
-        .from("projects")
-        .select("*")
-        .eq("scope_id", id)
-        .order("priority", { ascending: true })
-        .then(({ data, error }) => {
-          if (!error && data) setProjects(data);
-        });
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('scope_id', id)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Chyba při načítání projektů:', error);
+        return;
+      }
+
+      setProjects(data || []);
+    } catch (error) {
+      console.error('Chyba při načítání projektů:', error);
+    }
+  };
+
+  const fetchStats = async () => {
+    if (!userId) return;
+    
+    setLoadingStats(true);
+    try {
+      const getScopeStatsService = ContainerService.getInstance().get(GetScopeStatsService, { autobind: true });
+      const stats = await getScopeStatsService.execute(id);
+      setStats({
+        projectCount: stats.projectCount,
+        teamMemberCount: stats.teamMemberCount,
+        lastActivity: stats.lastActivity,
+      });
+    } catch (error) {
+      console.error('Chyba při načítání statistik:', error);
+    } finally {
+      setLoadingStats(false);
+    }
+  };
+
+  const fetchAverageSlip = async () => {
+    if (!userId) return;
+    
+    try {
+      const calculateAverageSlipService = ContainerService.getInstance().get(CalculateAverageSlipService, { autobind: true });
+      const averageSlip = await calculateAverageSlipService.execute(id);
+      setAverageSlip(averageSlip);
+    } catch (error) {
+      console.error('Chyba při načítání průměrného skluzu:', error);
+    }
+  };
+
+  const checkOwnership = async () => {
+    if (!userId) return;
+    
+    try {
+      const checkScopeOwnershipService = ContainerService.getInstance().get(CheckScopeOwnershipService, { autobind: true });
+      const isOwnerResult = await checkScopeOwnershipService.execute(id, userId);
+      setIsOwner(isOwnerResult);
+    } catch (error) {
+      console.error('Chyba při kontrole vlastnictví:', error);
+    }
+  };
+
+  // Načítání dat při mount
+  useEffect(() => {
+    if (!loading && user) {
+      fetchScope();
+      fetchTeam();
+      fetchProjects();
+      fetchStats();
+      fetchAverageSlip();
+      checkOwnership();
     }
   }, [loading, user, id]);
 
-  // Načtení statistik scope
+  // Redirect pokud není přihlášen
   useEffect(() => {
-    if (!loading && user && id) {
-      setLoadingStats(true);
-      const container = ContainerService.getInstance();
-      const statsService = container.get(GetScopeStatsService);
-      
-      statsService.execute(id)
-        .then((scopeStats) => {
-          setStats({
-            projectCount: scopeStats.projectCount,
-            teamMemberCount: scopeStats.teamMemberCount,
-            lastActivity: scopeStats.lastActivity
-          });
-        })
-        .catch((error) => {
-          console.error('Chyba při načítání statistik:', error);
-        })
-        .finally(() => {
-          setLoadingStats(false);
-        });
+    if (!loading && !user) {
+      window.location.href = '/auth/login';
     }
-  }, [loading, user, id]);
+  }, [loading, user]);
 
-  // Načtení průměrného skluzu
-  useEffect(() => {
-    if (!loading && user && id) {
-      const container = ContainerService.getInstance();
-      const slipService = container.get(CalculateAverageSlipService);
-      
-      slipService.execute(id)
-        .then((slipData) => {
-          setAverageSlip(slipData);
-        })
-        .catch((error) => {
-          console.error('Chyba při načítání průměrného skluzu:', error);
-        });
-    }
-  }, [loading, user, id]);
-
-  // Zjisti, jestli je uživatel ownerem scope
-  useEffect(() => {
-    if (scope && userId) {
-      const supabase = createClient();
-      supabase
-        .from("scopes")
-        .select("owner_id")
-        .eq("id", scope.id)
-        .single()
-        .then(({ data }) => {
-          if (data && userId && data.owner_id === userId) setIsOwner(true);
-          else setIsOwner(false);
-        });
-    }
-  }, [scope, userId]);
-
-  // Funkce pro uložení popisu
   const handleSaveDescription = async () => {
-    if (!scope) return;
+    if (!userId) return;
+    
     setSavingDescription(true);
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("scopes")
-      .update({ description })
-      .eq("id", scope.id);
-    setSavingDescription(false);
-    if (!error) {
-      setScope((s) => (s ? { ...s, description } : s));
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('scopes')
+        .update({ description })
+        .eq('id', id);
+
+      if (error) {
+        console.error('Chyba při ukládání popisu:', error);
+        return;
+      }
+
       setEditingDescription(false);
+    } catch (error) {
+      console.error('Chyba při ukládání popisu:', error);
+    } finally {
+      setSavingDescription(false);
     }
   };
 
-  // Function for saving the scope name
   const handleSaveName = async () => {
-    if (!scope) return;
+    if (!userId || !name.trim()) return;
+    
     setSavingName(true);
     setErrorName(null);
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("scopes")
-      .update({ name })
-      .eq("id", scope.id);
-    setSavingName(false);
-    if (!error) {
-      setScope((s) => (s ? { ...s, name } : s));
+    
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('scopes')
+        .update({ name: name.trim() })
+        .eq('id', id);
+
+      if (error) {
+        console.error('Chyba při ukládání názvu:', error);
+        setErrorName('Chyba při ukládání názvu');
+        return;
+      }
+
       setEditingName(false);
-    } else {
-      setErrorName(error.message || "Chyba při ukládání názvu.");
-      console.error("Chyba při ukládání názvu scopu:", error);
+      setScope(prev => prev ? { ...prev, name: name.trim() } : null);
+    } catch (error) {
+      console.error('Chyba při ukládání názvu:', error);
+      setErrorName('Chyba při ukládání názvu');
+    } finally {
+      setSavingName(false);
     }
   };
 
-  if (loading || !user || fetching) {
+  if (loading || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center min-w-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
-        <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-xl p-8 shadow-xl">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="text-center mt-4 text-gray-600 dark:text-gray-400">{t("loading")}</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
       </div>
     );
   }
+
+  if (fetching) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
   if (!scope) {
     return (
-      <div className="min-h-screen flex items-center justify-center min-w-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
-        <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-xl p-8 shadow-xl">
-          <span className="text-4xl mb-4 block text-center">😕</span>
-          <p className="text-center text-gray-600 dark:text-gray-400">{t("notFound")}</p>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            Scope nenalezen
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Požadovaný scope nebyl nalezen nebo nemáte oprávnění k jeho zobrazení.
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <div className="container mx-auto px-4 py-8">
-        {/* Header Section */}
+        {/* Header */}
         <div className="mb-8">
-          <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl p-6 shadow-xl">
-            <div className="flex flex-col gap-6">
-              {/* Název scope */}
-              <div className="group relative">
-                <div className="flex items-center gap-3">
-                  <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                    {scope.name}
-                  </h1>
-                  <button
-                    onClick={() => setEditingName(true)}
-                    className="opacity-0 group-hover:opacity-100 transition-all duration-300 ease-in-out bg-gradient-to-r from-blue-500/10 to-purple-500/10 hover:from-blue-500/20 hover:to-purple-500/20 backdrop-blur-sm border border-blue-200/20 dark:border-blue-700/20 rounded-lg px-3 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:scale-105 transform"
-                  >
-                    <span className="flex items-center gap-1.5">
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                      {t("edit")}
-                    </span>
-                  </button>
-                </div>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-lg">
+                <span className="text-white text-2xl font-bold">
+                  {scope.name.charAt(0).toUpperCase()}
+                </span>
               </div>
-
-              {/* Editace názvu */}
-              {editingName && (
-                <div className="animate-in slide-in-from-top-2 duration-300 bg-gradient-to-r from-blue-50/80 to-purple-50/80 dark:from-blue-900/30 dark:to-purple-900/30 backdrop-blur-sm rounded-xl border border-blue-200/30 dark:border-blue-700/30 p-4 shadow-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1">
-                      <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300/50 dark:border-gray-600/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 bg-white/90 dark:bg-gray-800/90 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 transition-all duration-200"
-                        placeholder={t("scopeName")}
-                        autoFocus
-                      />
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={handleSaveName}
-                        disabled={savingName}
-                        className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-green-700 text-white rounded-lg hover:from-emerald-700 hover:to-green-800 disabled:opacity-50 transition-all duration-200 flex items-center gap-2 font-medium"
-                      >
-                        {savingName ? (
-                          <>
-                            <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            {t("saving")}
-                          </>
-                        ) : (
-                          <>
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                            {t("save")}
-                          </>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => {
-                          setEditingName(false);
-                          setName(scope.name);
-                          setErrorName(null);
-                        }}
-                        className="px-4 py-2 bg-gray-500/80 hover:bg-gray-600/80 text-white rounded-lg transition-all duration-200 flex items-center gap-2 font-medium"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                        {t("cancel")}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {errorName && (
-                <div className="animate-in slide-in-from-top-2 duration-300 bg-red-50/80 dark:bg-red-900/20 border border-red-200/50 dark:border-red-700/50 rounded-lg p-3 flex items-center gap-2">
-                  <svg className="w-4 h-4 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span className="text-red-700 dark:text-red-300 text-sm font-medium">{errorName}</span>
-                </div>
-              )}
-
-              {/* Popis scope */}
-              <div className="group relative">
-                <div className="flex items-start gap-3">
-                  <div className="flex-1">
-                    <p className="text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
-                      {description || t("no_description")}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setEditingDescription(true)}
-                    className="opacity-0 group-hover:opacity-100 transition-all duration-300 ease-in-out bg-gradient-to-r from-blue-500/10 to-purple-500/10 hover:from-blue-500/20 hover:to-purple-500/20 backdrop-blur-sm border border-blue-200/20 dark:border-blue-700/20 rounded-lg px-3 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:scale-105 transform flex-shrink-0"
-                  >
-                    <span className="flex items-center gap-1.5">
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                      {t("editDescription")}
-                    </span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Editace popisu */}
-              {editingDescription && (
-                <div className="animate-in slide-in-from-top-2 duration-300 bg-gradient-to-r from-blue-50/80 to-purple-50/80 dark:from-blue-900/30 dark:to-purple-900/30 backdrop-blur-sm rounded-xl border border-blue-200/30 dark:border-blue-700/30 p-4 shadow-lg">
-                  <div className="space-y-4">
-                    <textarea
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300/50 dark:border-gray-600/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 bg-white/90 dark:bg-gray-800/90 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 min-h-[120px] resize-none transition-all duration-200"
-                      placeholder={t("scopeDescription")}
+              <div>
+                {editingName ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="text-3xl font-bold bg-transparent border-b-2 border-blue-500 focus:outline-none text-gray-900 dark:text-white"
                       autoFocus
                     />
-                    <div className="flex gap-2 justify-end">
-                      <button
-                        onClick={handleSaveDescription}
-                        disabled={savingDescription}
-                        className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-green-700 text-white rounded-lg hover:from-emerald-700 hover:to-green-800 disabled:opacity-50 transition-all duration-200 flex items-center gap-2 font-medium"
-                      >
-                        {savingDescription ? (
-                          <>
-                            <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            {t("saving")}
-                          </>
-                        ) : (
-                          <>
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                            {t("save")}
-                          </>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => {
-                          setEditingDescription(false);
-                          setDescription(scope.description || "");
-                        }}
-                        className="px-4 py-2 bg-gray-500/80 hover:bg-gray-600/80 text-white rounded-lg transition-all duration-200 flex items-center gap-2 font-medium"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                        {t("cancel")}
-                      </button>
-                    </div>
+                    <button
+                      onClick={handleSaveName}
+                      disabled={savingName}
+                      className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
+                    >
+                      {savingName ? 'Ukládám...' : '✓'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditingName(false);
+                        setName(scope.name);
+                        setErrorName(null);
+                      }}
+                      className="text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                    >
+                      ✕
+                    </button>
                   </div>
-                </div>
-              )}
-
-
-
-              {/* Tlačítka akcí */}
-              <div className="flex flex-wrap gap-3">
-                <button
-                  onClick={handleExportTeam}
-                  className="bg-gradient-to-r from-emerald-600 to-green-700 text-white px-6 py-3 rounded-xl hover:from-emerald-700 hover:to-green-800 transition-all duration-200 hover:scale-105 shadow-lg font-medium"
-                >
-                  {t("exportTeam")}
-                </button>
-                <button
-                  onClick={handleExportProjects}
-                  className="bg-gradient-to-r from-emerald-600 to-green-700 text-white px-6 py-3 rounded-xl hover:from-emerald-700 hover:to-green-800 transition-all duration-200 hover:scale-105 shadow-lg font-medium"
-                >
-                  {t("exportProjects")}
-                </button>
-                <button
-                  onClick={() => setShareModalOpen(true)}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 hover:scale-105 shadow-lg"
-                >
-                  {t("share")}
-                </button>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                      {scope.name}
+                    </h1>
+                    {isOwner && (
+                      <button
+                        onClick={() => setEditingName(true)}
+                        className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                      >
+                        ✏️
+                      </button>
+                    )}
+                  </div>
+                )}
+                {errorName && (
+                  <p className="text-red-600 dark:text-red-400 text-sm mt-1">{errorName}</p>
+                )}
+                <p className="text-gray-600 dark:text-gray-400">
+                  Scope ID: {scope.id}
+                </p>
               </div>
             </div>
+            
+            <div className="flex items-center gap-3">
+              {isOwner && (
+                <button
+                  onClick={() => setShareModalOpen(true)}
+                  className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all duration-200 shadow-lg"
+                >
+                  📤 Sdílet
+                </button>
+              )}
+              <button
+                onClick={() => setAiChatOpen(true)}
+                className="bg-gradient-to-r from-gray-500 to-gray-600 text-white px-4 py-2 rounded-lg hover:from-gray-600 hover:to-gray-700 transition-all duration-200 shadow-lg opacity-50 cursor-not-allowed"
+                disabled={true}
+              >
+                🤖 AI Chat
+              </button>
+            </div>
+          </div>
+
+          {/* Description */}
+          <div className="mb-6">
+            {editingDescription ? (
+              <div className="flex items-start gap-2">
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  rows={3}
+                  placeholder="Přidejte popis scope..."
+                  autoFocus
+                />
+                <button
+                  onClick={handleSaveDescription}
+                  disabled={savingDescription}
+                  className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 px-3 py-1"
+                >
+                  {savingDescription ? 'Ukládám...' : '✓'}
+                </button>
+                <button
+                  onClick={() => {
+                    setEditingDescription(false);
+                    setDescription(scope.description || '');
+                  }}
+                  className="text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 px-3 py-1"
+                >
+                  ✕
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-start gap-2">
+                <p className="flex-1 text-gray-600 dark:text-gray-400">
+                  {description || 'Žádný popis'}
+                </p>
+                {isOwner && (
+                  <button
+                    onClick={() => setEditingDescription(true)}
+                    className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                  >
+                    ✏️
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border border-white/20 rounded-2xl p-6 shadow-xl">
-          <ModernScopeLayout
-            scopeId={id}
-            team={team}
-            projects={projects}
-            onTeamChange={setTeam}
-            hasFE={hasFE}
-            hasBE={hasBE}
-            hasQA={hasQA}
-            hasPM={hasPM}
-            hasDPL={hasDPL}
-            stats={stats}
-            loadingStats={loadingStats}
-            averageSlip={averageSlip}
-            onAddMember={handleAddMember}
-            onAddProject={handleAddProject}
-          />
-        </div>
-
-        {/* Modals */}
-        {shareModalOpen && (
-          <ShareModal
-            isOpen={shareModalOpen}
-            onClose={() => setShareModalOpen(false)}
-            scopeId={id}
-            isOwner={isOwner}
-          />
-        )}
-
-        {/* AI Chat Components */}
-        <AiChatButton onClick={() => setAiChatOpen(true)} />
-        
-        <AiChatModal
-          isOpen={aiChatOpen}
-          onClose={() => setAiChatOpen(false)}
+        <ModernScopeLayout
           scopeId={id}
+          team={team}
+          projects={projects}
+          onTeamChange={setTeam}
+          hasFE={hasFE}
+          hasBE={hasBE}
+          hasQA={hasQA}
+          hasPM={hasPM}
+          hasDPL={hasDPL}
+          stats={stats}
+          loadingStats={loadingStats}
+          averageSlip={averageSlip}
+          onAddMember={handleAddMember}
+          onAddProject={handleAddProject}
         />
       </div>
+
+      {/* Modals */}
+      <ShareModal
+        isOpen={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        scopeId={id}
+        isOwner={isOwner}
+      />
+
+      <AiChatModal
+        isOpen={aiChatOpen}
+        onClose={() => setAiChatOpen(false)}
+        scopeId={id}
+      />
+
+      <AiChatButton onClick={() => setAiChatOpen(true)} />
     </div>
   );
-}
+} 

@@ -13,8 +13,40 @@ const defaultUrl = process.env.VERCEL_URL
 
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "Scope burndown",
-  description: "Scope burndown",
+  title: "Scope Burndown - Moderní nástroj pro projektový management",
+  description: "Moderní nástroj pro sledování průběhu projektů a efektivní správu týmových zdrojů s vizuálními přehledy a real-time spoluprácí.",
+  authors: [{ name: "Scope Burndown Team" }],
+  keywords: ["projektový management", "burndown chart", "týmová spolupráce", "sledování průběhu", "agile", "scrum"],
+  creator: "Scope Burndown Team",
+  publisher: "Scope Burndown",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  openGraph: {
+    title: "Scope Burndown - Moderní nástroj pro projektový management",
+    description: "Moderní nástroj pro sledování průběhu projektů a efektivní správu týmových zdrojů s vizuálními přehledy a real-time spoluprácí.",
+    url: '/',
+    siteName: 'Scope Burndown',
+    locale: 'cs_CZ',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "Scope Burndown - Moderní nástroj pro projektový management",
+    description: "Moderní nástroj pro sledování průběhu projektů a efektivní správu týmových zdrojů s vizuálními přehledy a real-time spoluprácí.",
+    creator: '@scope_burndown',
+  },
+  verification: {
+    google: 'your-google-verification-code',
+  },
 };
 
 const geistSans = Geist({

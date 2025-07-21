@@ -154,14 +154,6 @@ export function ModernScopeLayout({
                   <span className="text-xl">🚀</span>
                   <span className="text-sm font-medium">Nový projekt</span>
                 </button>
-                <button 
-                  onClick={() => setAiChatModalOpen(true)}
-                  className="p-4 bg-gradient-to-br from-gray-500 to-gray-500 text-white rounded-lg hover:scale-105 transition-all duration-200 flex flex-col items-center gap-2 opacity-50 cursor-not-allowed"
-                  disabled={true}
-                >
-                  <span className="text-xl">🤖</span>
-                  <span className="text-sm font-medium">AI Chat</span>
-                </button>
               </div>
             </div>
           </div>

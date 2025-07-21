@@ -9,7 +9,6 @@
  */
 
 import { useEffect, useState, useCallback } from "react";
-import Link from "next/link";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { ScopeList } from "@/app/components/scope/ScopeList";
@@ -23,6 +22,7 @@ import {handleErrorMessage} from "@/lib/utils";
 import {DeleteScopeService} from "@/lib/domain/services/delete-scope.service";
 import { useTranslation } from "@/lib/translation";
 import { ArrowRight, Users, BarChart3, FileText, Zap, Shield, Globe } from "lucide-react";
+import Link from "next/link";
 
 export default function Home() {
   const { t } = useTranslation();
