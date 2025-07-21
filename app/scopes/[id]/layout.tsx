@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { ContainerService } from "@/lib/container.service";
 import { GetScopeWithAuthorService } from "@/lib/domain/services/get-scope-with-author.service";
+import { SchemaOrgScript } from "../../../components/schema-org-script";
+import { generateProjectSchema, generateBreadcrumbSchema } from "@/lib/utils/schemaOrg";
 
 /**
  * Generuje dynamické metadata pro scope stránku
@@ -51,10 +53,50 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   }
 }
 
-export default function ScopeLayout({
+export default async function ScopeLayout({
   children,
+  params,
 }: {
   children: React.ReactNode;
+  params: Promise<{ id: string }>;
 }) {
-  return children;
+  const { id } = await params;
+  
+  try {
+    const getScopeWithAuthorService = ContainerService.getInstance().get(GetScopeWithAuthorService, { autobind: true });
+    const scopeData = await getScopeWithAuthorService.execute(id);
+    
+    // Generate breadcrumb schema
+    const breadcrumbSchema = generateBreadcrumbSchema([
+      { name: "Home", url: "/" },
+      { name: "Scopes", url: "/scopes" },
+      { name: scopeData?.name || "Scope", url: `/scopes/${id}` },
+    ]);
+
+    // Generate project schema if scope data is available
+    const projectSchema = scopeData ? generateProjectSchema({
+      name: scopeData.name,
+      description: scopeData.description,
+      url: `/scopes/${id}`,
+      startDate: scopeData.createdAt.toISOString(),
+      status: 'Active' as const,
+      participant: [], // Will be populated with team members
+      manager: scopeData.authorEmail ? {
+        name: scopeData.authorEmail,
+        email: scopeData.authorEmail,
+        jobTitle: "Project Manager",
+      } : undefined,
+    }) : null;
+
+    return (
+      <>
+        <SchemaOrgScript data={breadcrumbSchema} id="breadcrumb-schema" />
+        {projectSchema && <SchemaOrgScript data={projectSchema} id="project-schema" />}
+        {children}
+      </>
+    );
+  } catch (error) {
+    console.error('Chyba při generování Schema.org dat:', error);
+    return children;
+  }
 } 

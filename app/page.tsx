@@ -23,8 +23,30 @@ import {DeleteScopeService} from "@/lib/domain/services/delete-scope.service";
 import { useTranslation } from "@/lib/translation";
 import { ArrowRight, Users, BarChart3, FileText, Zap, Shield, Globe } from "lucide-react";
 import Link from "next/link";
+import { SchemaOrgScript } from "../components/schema-org-script";
+import { generateFAQSchema } from "@/lib/utils/schemaOrg";
 
 export default function Home() {
+  // Generate FAQ schema for better SEO
+  const faqSchema = generateFAQSchema([
+    {
+      question: "Co je Scope Burndown?",
+      answer: "Scope Burndown je moderní nástroj pro projektový management a sledování průběhu projektů s vizuálními přehledy a real-time spoluprácí.",
+    },
+    {
+      question: "Jak mohu vytvořit nový scope?",
+      answer: "Po přihlášení klikněte na 'Vytvořit nový scope' a definujte tým, projekty a začněte sledovat průběh práce.",
+    },
+    {
+      question: "Mohu sdílet scope s týmem?",
+      answer: "Ano, Scope Burndown umožňuje sdílet scopes s týmem a spolupracovat na projektech v reálném čase.",
+    },
+    {
+      question: "Jaké jsou hlavní funkce aplikace?",
+      answer: "Hlavní funkce zahrnují sledování průběhu projektů, vizuální přehledy, týmovou spolupráci, export dat do CSV a pokročilé analytické nástroje.",
+    },
+  ]);
+
   const { t } = useTranslation();
   const [user, setUser] = useState<User | null>(null);
   const [scopes, setScopes] = useState<Scope[]>([]);
@@ -169,7 +191,9 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 overflow-hidden">
+    <>
+      <SchemaOrgScript data={faqSchema} id="faq-schema" />
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 overflow-hidden">
       
       {/* Background decorative elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -461,5 +485,6 @@ export default function Home() {
         </section>
       </div>
     </div>
+    </>
   );
 }

@@ -6,6 +6,8 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { BugReportButton } from "@/app/components/ui/BugReportButton";
 import { ConditionalHeader } from "../components/conditional-header";
+import { SchemaOrgScript } from "../components/schema-org-script";
+import { generateOrganizationSchema, generateWebApplicationSchema } from "@/lib/utils/schemaOrg";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -60,8 +62,31 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Generate Schema.org structured data
+  const organizationSchema = generateOrganizationSchema({
+    name: "Scope Burndown Team",
+    url: defaultUrl,
+    description: "Moderní nástroj pro projektový management a sledování průběhu projektů",
+  });
+
+  const webApplicationSchema = generateWebApplicationSchema({
+    name: "Scope Burndown",
+    description: "Moderní nástroj pro sledování průběhu projektů a efektivní správu týmových zdrojů s vizuálními přehledy a real-time spoluprácí.",
+    url: defaultUrl,
+    browserRequirements: "Requires JavaScript. Requires HTML5.",
+    applicationCategory: "BusinessApplication",
+    author: {
+      name: "Scope Burndown Team",
+      url: defaultUrl,
+    },
+  });
+
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <SchemaOrgScript data={organizationSchema} id="organization-schema" />
+        <SchemaOrgScript data={webApplicationSchema} id="webapp-schema" />
+      </head>
       <body className={`${geistSans.className} antialiased`} suppressHydrationWarning>
         <ThemeProvider
           attribute="class"

@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { SchemaOrgScript } from "../../components/schema-org-script";
+import { generateBreadcrumbSchema } from "@/lib/utils/schemaOrg";
 
 /**
  * Metadata pro scopes stránky
@@ -26,5 +28,15 @@ export default function ScopesLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return children;
+  const breadcrumbSchema = generateBreadcrumbSchema([
+    { name: "Home", url: "/" },
+    { name: "Scopes", url: "/scopes" },
+  ]);
+
+  return (
+    <>
+      <SchemaOrgScript data={breadcrumbSchema} id="breadcrumb-schema" />
+      {children}
+    </>
+  );
 } 
