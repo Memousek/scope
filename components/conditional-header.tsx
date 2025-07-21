@@ -8,16 +8,12 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Header } from "./header";
 import { createClient } from "@/lib/supabase/client";
+import { User } from "@supabase/supabase-js";
 
 export function ConditionalHeader() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     const supabase = createClient();
@@ -31,12 +27,6 @@ export function ConditionalHeader() {
     });
     return () => subscription.unsubscribe();
   }, []);
-
-  // Debug: log pathname changes
-  useEffect(() => {
-    console.log('Current pathname:', pathname);
-    console.log('Is auth page:', pathname?.startsWith('/auth/'));
-  }, [pathname]);
 
   // Nezobrazovat header na auth stránkách
   const isAuthPage = pathname?.startsWith('/auth/');

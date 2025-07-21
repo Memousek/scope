@@ -9,14 +9,15 @@ import Link from "next/link";
 import { AuthButton } from "./auth-button";
 import { useTranslation } from "../lib/translation";
 import { useState } from "react";
-import { Menu, X, User, Settings as SettingsIcon, Globe } from "lucide-react";
+import { Menu, X, User as UserIcon, Settings as SettingsIcon } from "lucide-react";
 import { LogoutButton } from "./logout-button";
 import Image from "next/image";
 import { ThemeSwitcher } from "./theme-switcher";
 import { LanguageSwitcher } from "./ui/languageSwitcher";
+import { User } from "@supabase/supabase-js";
 
 interface HeaderProps {
-  user?: any;
+  user?: User | null;
   loading?: boolean;
 }
 
@@ -41,7 +42,7 @@ export function Header({ user, loading }: HeaderProps) {
           ) : user ? (
             <>
               <Link href="/profile" className="flex items-center px-2 hover:text-accent-foreground">
-                <User
+                <UserIcon
                   size={18}
                   className={"text-muted-foreground"}
                 />
@@ -93,10 +94,10 @@ export function Header({ user, loading }: HeaderProps) {
                     {user.user_metadata?.avatar_url ? (
                       <Image src={user.user_metadata.avatar_url} alt={t('user_avatar')} width={40} height={40} className="w-10 h-10 rounded-full mb-2" />
                     ) : (
-                      <User className="w-10 h-10 mb-2" />
+                      <UserIcon className="w-10 h-10 mb-2" />
                     )}
                     <Link href="/profile" className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 transition" onClick={() => setMobileOpen(false)}>
-                      <User className="w-5 h-5" /> {t('profile')}
+                      <UserIcon className="w-5 h-5" /> {t('profile')}
                     </Link>
                     <Link href="/settings" className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 transition" onClick={() => setMobileOpen(false)}>
                       <SettingsIcon className="w-5 h-5" /> {t('settings')}

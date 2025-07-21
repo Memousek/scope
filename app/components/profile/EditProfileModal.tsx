@@ -4,6 +4,7 @@
  */
 import { useState, useRef } from "react";
 import { X, Camera, Eye, EyeOff, Loader2 } from "lucide-react";
+import Image from "next/image";
 import { User } from "@/lib/domain/models/user.model";
 import { ContainerService } from "@/lib/container.service";
 import { UserRepository } from "@/lib/domain/repositories/user.repository";
@@ -176,9 +177,11 @@ export function EditProfileModal({ user, isOpen, onClose, onUpdate }: EditProfil
                 {loading ? (
                   <Loader2 className="w-10 h-10 text-white animate-spin" />
                 ) : formData.avatarUrl ? (
-                  <img 
+                  <Image 
                     src={formData.avatarUrl} 
                     alt="Avatar" 
+                    width={80}
+                    height={80}
                     className="w-20 h-20 rounded-full object-cover" 
                   />
                 ) : (

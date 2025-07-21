@@ -108,7 +108,7 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
     }
     
     setProgressData(data);
-  }, [project]);
+  }, [project, priorityDates]);
 
   const getCurrentProgress = (project: Project) => {
     const roles = [
