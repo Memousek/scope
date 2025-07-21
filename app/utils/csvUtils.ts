@@ -4,14 +4,14 @@
  * - columns: pole klíčů, které se mají exportovat (v pořadí)
  * - headerMap: volitelně mapování klíčů na popisky v hlavičce
  */
-export function downloadCSV<T extends Record<string, unknown>>(
+export function downloadCSV<T>(
   filename: string,
   rows: T[],
-  columns: string[],
+  columns: (keyof T)[],
   headerMap?: Record<string, string>
 ) {
   const csv = [
-    columns.map(col => headerMap?.[col] || col).join(','),
+    columns.map(col => headerMap?.[String(col)] || String(col)).join(','),
     ...rows.map(row => columns.map(col => '"' + (row[col] ?? '') + '"').join(',')),
   ].join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });

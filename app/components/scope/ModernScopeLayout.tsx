@@ -14,6 +14,7 @@ import { AddMemberModal } from "./AddMemberModal";
 import { AddProjectModal } from "./AddProjectModal";
 import { AiChatModal } from "./AiChatModal";
 import { TeamMember, Project } from "./types";
+import { downloadCSV } from "../../utils/csvUtils";
 
 interface ModernScopeLayoutProps {
   scopeId: string;
@@ -39,6 +40,7 @@ interface ModernScopeLayoutProps {
     aheadProjects: number;
   };
   onExportProjects?: () => void;
+  onExportTeam?: () => void;
   onAddMember?: (member: { name: string; role: string; fte: number }) => Promise<void>;
   onAddProject?: (project: Omit<Project, 'id' | 'scope_id' | 'created_at'>) => Promise<void>;
 }
@@ -60,8 +62,46 @@ export function ModernScopeLayout({
   averageSlip,
   onAddMember,
   onAddProject,
-}: ModernScopeLayoutProps) {
+  onExportProjects,
+  onExportTeam,
+  }: ModernScopeLayoutProps) {
   const [activeTab, setActiveTab] = useState<TabType>("overview");
+  
+  // Export functions
+  const handleExportTeam = () => {
+    const teamColumns: (keyof TeamMember)[] = ['name', 'role', 'fte'];
+    const teamHeaderMap = {
+      name: 'Jméno',
+      role: 'Role',
+      fte: 'FTE'
+    };
+    downloadCSV(`team-export-${scopeId}.csv`, team, teamColumns, teamHeaderMap);
+  };
+
+  const handleExportProjects = () => {
+    const projectColumns: (keyof Project)[] = [
+      'name', 'priority', 'fe_mandays', 'be_mandays', 'qa_mandays', 
+      'pm_mandays', 'dpl_mandays', 'fe_done', 'be_done', 'qa_done', 
+      'pm_done', 'dpl_done', 'delivery_date', 'slip'
+    ];
+    const projectHeaderMap = {
+      name: 'Název projektu',
+      priority: 'Priorita',
+      fe_mandays: 'FE mandays',
+      be_mandays: 'BE mandays',
+      qa_mandays: 'QA mandays',
+      pm_mandays: 'PM mandays',
+      dpl_mandays: 'DPL mandays',
+      fe_done: 'FE hotovo',
+      be_done: 'BE hotovo',
+      qa_done: 'QA hotovo',
+      pm_done: 'PM hotovo',
+      dpl_done: 'DPL hotovo',
+      delivery_date: 'Datum dodání',
+      slip: 'Skluz (dny)'
+    };
+    downloadCSV(`projects-export-${scopeId}.csv`, projects, projectColumns, projectHeaderMap);
+  };
   
   // Modal states
   const [addMemberModalOpen, setAddMemberModalOpen] = useState(false);
@@ -153,6 +193,38 @@ export function ModernScopeLayout({
                 >
                   <span className="text-xl">🚀</span>
                   <span className="text-sm font-medium">Nový projekt</span>
+                </button>
+                <button 
+                  onClick={handleExportTeam}
+                  className="p-4 bg-gradient-to-br from-amber-500 to-orange-500 text-white rounded-lg hover:scale-105 transition-all duration-200 flex flex-col items-center gap-2"
+                >
+                  <span className="text-xl">📊</span>
+                  <span className="text-sm font-medium">Export týmu</span>
+                </button>
+                <button 
+                  onClick={handleExportProjects}
+                  className="p-4 bg-gradient-to-br from-teal-500 to-cyan-500 text-white rounded-lg hover:scale-105 transition-all duration-200 flex flex-col items-center gap-2"
+                >
+                  <span className="text-xl">📈</span>
+                  <span className="text-sm font-medium">Export projektů</span>
+                </button>
+                <button
+                  onClick={() => {}}
+                  className="relative cursor-not-allowed opacity-50 p-4 bg-gradient-to-br from-teal-500 to-purple-500 text-white rounded-lg hover:scale-105 transition-all duration-200 flex flex-col items-center gap-2"
+                  disabled={true}
+                >
+                  <span className="text-gray-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded-sm dark:bg-gray-700 dark:text-gray-300 absolute -top-2 -left-2">Soon</span>
+                  <span className="text-xl">📥</span>
+                  <span className="text-sm font-medium">Import týmu</span>
+                </button>
+                <button
+                  onClick={() => {}}
+                  className="relative cursor-not-allowed opacity-50 p-4 bg-gradient-to-br from-red-500 to-red-600 text-white rounded-lg hover:scale-105 transition-all duration-200 flex flex-col items-center gap-2"
+                  disabled={true}
+                >
+                  <span className="text-gray-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded-sm dark:bg-gray-700 dark:text-gray-300 absolute -top-2 -left-2">Soon</span>
+                  <span className="text-xl">📥</span>
+                  <span className="text-sm font-medium">Import projektů</span>
                 </button>
               </div>
             </div>
