@@ -95,7 +95,7 @@ export function getDoneKeys(): string[] {
 /**
  * Vypočítá progress pro konkrétní roli v projektu
  */
-export function calculateRoleProgress(project: any, roleKey: string): ProjectRoleProgress | null {
+export function calculateRoleProgress(project: Record<string, unknown> | { [key: string]: unknown }, roleKey: string): ProjectRoleProgress | null {
   const role = getRoleByKey(roleKey);
   if (!role) return null;
 
@@ -117,7 +117,7 @@ export function calculateRoleProgress(project: any, roleKey: string): ProjectRol
 /**
  * Vypočítá celkový progress projektu ze všech rolí
  */
-export function calculateTotalProgress(project: any): number {
+export function calculateTotalProgress(project: Record<string, unknown> | { [key: string]: unknown }): number {
   let totalDone = 0;
   let totalMandays = 0;
 
@@ -135,7 +135,7 @@ export function calculateTotalProgress(project: any): number {
 /**
  * Získá pouze aktivní role (ty, které mají mandays > 0)
  */
-export function getActiveRoles(project: any): ProjectRole[] {
+export function getActiveRoles(project: Record<string, unknown> | { [key: string]: unknown }): ProjectRole[] {
   return PROJECT_ROLES.filter(role => {
     const mandays = project[role.mandaysKey] as number;
     return mandays && mandays > 0;
@@ -159,7 +159,7 @@ export function getDefaultProjectValues(): Record<string, number | null> {
 /**
  * Validuje, zda má projekt alespoň jednu roli s mandays > 0
  */
-export function hasActiveRoles(project: any): boolean {
+export function hasActiveRoles(project: Record<string, unknown> | { [key: string]: unknown }): boolean {
   return getActiveRoles(project).length > 0;
 }
 

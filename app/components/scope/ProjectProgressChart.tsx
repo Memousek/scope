@@ -115,13 +115,13 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
     let totalDone = 0;
     let totalMandays = 0;
 
-    PROJECT_ROLES.forEach(role => {
-      const progress = calculateRoleProgress(project, role.key);
-      if (progress) {
-        totalDone += progress.done;
-        totalMandays += progress.mandays;
-      }
-    });
+          PROJECT_ROLES.forEach(role => {
+        const progress = calculateRoleProgress(project as unknown as Record<string, unknown>, role.key);
+        if (progress) {
+          totalDone += progress.done;
+          totalMandays += progress.mandays;
+        }
+      });
 
     return totalMandays > 0 ? Math.round((totalDone / totalMandays) * 100) : 0;
   };

@@ -95,7 +95,7 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
   }));
 
   const getRoleProgress = (project: Project, roleKey: string) => {
-    return calculateRoleProgress(project, roleKey);
+    return calculateRoleProgress(project as unknown as Record<string, unknown>, roleKey);
   };
 
 
@@ -161,7 +161,7 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
                            <div className="text-right">
                              <div className="text-sm text-gray-600 dark:text-gray-400">Celkový progress</div>
                              <div className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                               {calculateTotalProgress(project)}%
+                               {calculateTotalProgress(project as unknown as Record<string, unknown>)}%
                              </div>
                            </div>
                           

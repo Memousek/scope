@@ -9,7 +9,7 @@
 import { useState, useEffect } from 'react';
 import { Project } from './types';
 import { useTranslation } from '@/lib/translation';
-import { getDefaultProjectValues } from '@/lib/utils/projectRoles';
+
 
 interface AddProjectModalProps {
   isOpen: boolean;
