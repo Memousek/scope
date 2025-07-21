@@ -39,8 +39,6 @@ interface ModernScopeLayoutProps {
     onTimeProjects: number;
     aheadProjects: number;
   };
-  onExportProjects?: () => void;
-  onExportTeam?: () => void;
   onAddMember?: (member: { name: string; role: string; fte: number }) => Promise<void>;
   onAddProject?: (project: Omit<Project, 'id' | 'scope_id' | 'created_at'>) => Promise<void>;
 }
@@ -62,8 +60,6 @@ export function ModernScopeLayout({
   averageSlip,
   onAddMember,
   onAddProject,
-  onExportProjects,
-  onExportTeam,
   }: ModernScopeLayoutProps) {
   const [activeTab, setActiveTab] = useState<TabType>("overview");
   
