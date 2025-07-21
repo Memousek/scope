@@ -18,6 +18,7 @@ import { AddTeamMemberService } from "@/lib/domain/services/add-team-member.serv
 import { AddProjectService } from "@/lib/domain/services/add-project.service";
 import { CheckScopeOwnershipService } from "@/lib/domain/services/check-scope-ownership.service";
 import { GetScopeWithAuthorService } from "@/lib/domain/services/get-scope-with-author.service";
+import { GetScopeEditorsWithUsersService } from "@/lib/domain/services/get-scope-editors-with-users.service";
 
 export class DataContainerModule implements ContainerModule {
   bind(container: Container): Promise<void> | void {
@@ -33,6 +34,7 @@ export class DataContainerModule implements ContainerModule {
     container.bind(AddProjectService).toSelf().inSingletonScope();
     container.bind(CheckScopeOwnershipService).toSelf().inSingletonScope();
     container.bind(GetScopeWithAuthorService).toSelf().inSingletonScope();
+    container.bind(GetScopeEditorsWithUsersService).toSelf().inSingletonScope();
   }
 
 }

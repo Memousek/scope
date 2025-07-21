@@ -39,8 +39,8 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className={`${geistSans.className} flex items-center justify-center p-4`}>
-      <div className="w-full max-w-md">
+    <div className={`${geistSans.className} flex items-center justify-center`}>
+      <div className="w-full">
         {children}
       </div>
     </div>
