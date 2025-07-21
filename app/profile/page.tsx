@@ -7,7 +7,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import { Header } from "@/components/header";
+
 import { UserIcon, Mail, Calendar, Shield, LogOut, Trash2, Edit  } from "lucide-react";
 import Image from "next/image";
 import { ContainerService } from "@/lib/container.service";
@@ -53,7 +53,6 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-        <Header />
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
@@ -68,7 +67,6 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      <Header />
       
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">

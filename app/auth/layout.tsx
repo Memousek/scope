@@ -1,5 +1,4 @@
 import { Geist } from "next/font/google";
-import { ThemeProvider } from "next-themes";
 import "../globals.css";
 
 const geistSans = Geist({
@@ -8,23 +7,20 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
+/**
+ * Auth layout wrapper for authentication pages.
+ * Provides consistent styling for login, signup, and other auth pages.
+ */
 export default function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.className} antialiased`} suppressHydrationWarning>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-        </ThemeProvider>
-      </body>
-    </html>
+    <div className={`${geistSans.className} flex items-center justify-center`}>
+      <div className="w-full">
+        {children}
+      </div>
+    </div>
   );
 } 

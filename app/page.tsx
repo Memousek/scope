@@ -8,7 +8,6 @@
  * - Nepřihlášený uživatel vidí landing page s informacemi
  */
 
-import { Header } from "@/components/header";
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { motion, useScroll, useTransform } from "framer-motion";
@@ -129,7 +128,6 @@ export default function Home() {
   if (user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-        <Header />
         <div className="container mx-auto px-4 py-8">
           {/* Header Section */}
           <div className="mb-8">
@@ -172,7 +170,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 overflow-hidden">
-      <Header />
       
       {/* Background decorative elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">

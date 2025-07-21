@@ -22,6 +22,16 @@ const ThemeSwitcher = () => {
     setMounted(true);
   }, []);
 
+  // Reset theme when component mounts
+  useEffect(() => {
+    if (mounted) {
+      const savedTheme = localStorage.getItem('scope-theme');
+      if (savedTheme && savedTheme !== theme) {
+        setTheme(savedTheme);
+      }
+    }
+  }, [mounted, theme, setTheme]);
+
   if (!mounted) {
     return (
       <Button variant="ghost" size={"sm"}>

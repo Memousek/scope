@@ -5,6 +5,7 @@ import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { BugReportButton } from "@/app/components/ui/BugReportButton";
+import { ConditionalHeader } from "../components/conditional-header";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -35,11 +36,15 @@ export default function RootLayout({
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
+          storageKey="scope-theme"
+          enableColorScheme
+          key="theme-provider"
         >
           <div className="min-h-screen flex flex-col">
-            <div className="flex-1 flex flex-col" view-transition-name="main" id="main-content">
+            <ConditionalHeader />
+            <main className="flex-1 flex flex-col" view-transition-name="main" id="main-content">
               {children}
-            </div>
+            </main>
           </div>
            <BugReportButton />
         </ThemeProvider>

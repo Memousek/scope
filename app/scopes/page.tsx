@@ -17,6 +17,7 @@ import { UserRepository } from "@/lib/domain/repositories/user.repository";
 import { ScopeEditorRepository } from "@/lib/domain/repositories/scope-editor.repository";
 import { Scope } from "@/lib/domain/models/scope.model";
 import { handleErrorMessage } from "@/lib/utils";
+import { ConditionalHeader } from "@/components/conditional-header";
 
 const useAuth = () => {
   const [loading, setLoading] = useState(true);
@@ -95,7 +96,12 @@ export default function ScopesListPage() {
   };
 
   if (loading || !user) {
-    return <div className="min-h-screen flex items-center justify-center">Načítání…</div>;
+    return (
+      <>
+        <ConditionalHeader />
+        <div className="min-h-screen flex items-center justify-center">Načítání…</div>
+      </>
+    );
   }
 
   return (

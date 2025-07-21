@@ -2,33 +2,30 @@
 
 /**
  * Header component for Scope Burndown app.
- * Contains navigation, app name, auth button, theme switcher, and language switcher.
+ * Zobrazuje navigaci, login/profil, theme a language switcher.
+ * Zobrazuje skeleton při načítání.
  */
 import Link from "next/link";
 import { AuthButton } from "./auth-button";
 import { useTranslation } from "../lib/translation";
-import { useState, useEffect } from "react";
-import { Menu, X, User, Settings as SettingsIcon } from "lucide-react";
+import { useState } from "react";
+import { Menu, X, User, Settings as SettingsIcon, Globe } from "lucide-react";
 import { LogoutButton } from "./logout-button";
-import { createClient } from "@/lib/supabase/client";
 import Image from "next/image";
 import { ThemeSwitcher } from "./theme-switcher";
 import { LanguageSwitcher } from "./ui/languageSwitcher";
 
-export function Header() {
+interface HeaderProps {
+  user?: any;
+  loading?: boolean;
+}
+
+export function Header({ user, loading }: HeaderProps) {
   const { t } = useTranslation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [user, setUser] = useState<{ email: string, avatar_url: string, name: string } | null>(null);
-
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user && data.user.email ? { email: data.user.email, avatar_url: data.user.user_metadata.avatar_url || null, name: data.user.user_metadata.name || data.user.email } : null);
-    });
-  }, []);
 
   return (
-    <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
+    <nav className="z-50 w-full flex justify-center border-b border-b-foreground/10 h-16 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
       <div className="mx-auto container flex justify-between items-center p-3 px-5 text-sm">
         <div className="flex gap-5 items-center font-semibold">
           <Link href={"/"} className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:scale-105 transition-transform duration-200">
@@ -36,10 +33,24 @@ export function Header() {
           </Link>
         </div>
         {/* Desktop nav */}
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden md:flex items-center gap-4 min-w-[120px] justify-end">
           <LanguageSwitcher />
           <ThemeSwitcher />
-          <AuthButton />
+          {loading ? (
+            <div className="w-30 h-8 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse" style={{ width: '110px', height: '35px' }} />
+          ) : user ? (
+            <>
+              <Link href="/profile" className="flex items-center px-2 hover:text-accent-foreground">
+                <User
+                  size={18}
+                  className={"text-muted-foreground"}
+                />
+              </Link>
+              <LogoutButton />
+            </>
+          ) : (
+            <AuthButton />
+          )}
         </div>
         {/* Hamburger for mobile */}
         <button
@@ -75,12 +86,12 @@ export function Header() {
                     <ThemeSwitcher />
                   </div>
                 </div>
-                
-                {user && (
+                {loading ? (
+                  <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"  />
+                ) : user ? (
                   <>
-                    {/* Avatar jako dekorace */}
-                    {user.avatar_url ? (
-                      <Image src={user.avatar_url} alt={t('user_avatar')} width={40} height={40} className="w-10 h-10 rounded-full mb-2" />
+                    {user.user_metadata?.avatar_url ? (
+                      <Image src={user.user_metadata.avatar_url} alt={t('user_avatar')} width={40} height={40} className="w-10 h-10 rounded-full mb-2" />
                     ) : (
                       <User className="w-10 h-10 mb-2" />
                     )}
@@ -92,8 +103,7 @@ export function Header() {
                     </Link>
                     <LogoutButton />
                   </>
-                )}
-                {!user && (
+                ) : (
                   <Link href="/auth/login" className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 transition" onClick={() => setMobileOpen(false)}>
                     {t('login')}
                   </Link>
