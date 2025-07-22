@@ -11,7 +11,6 @@ import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Project, TeamMember } from './types';
 import { calculatePriorityDates } from '@/app/utils/dateUtils';
-import { useTranslation } from '@/lib/translation';
 
 interface BurndownChartProps {
   projects: Project[];
@@ -26,7 +25,6 @@ interface ChartDataPoint {
 }
 
 export function BurndownChart({ projects, team }: BurndownChartProps) {
-  const { t } = useTranslation();
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
 
   // Generate chart data based on projects and team
@@ -139,14 +137,37 @@ export function BurndownChart({ projects, team }: BurndownChartProps) {
 
   if (chartData.length === 0) {
     return (
-      <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-white/20 dark:border-gray-700 rounded-xl p-8 text-center">
-        <div className="text-4xl mb-4">📊</div>
-        <p className="text-gray-600 dark:text-gray-400">
-          {t('noDataForChart') || 'Žádná data pro graf'}
-        </p>
+      <div className="relative bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 rounded-2xl p-8 shadow-2xl">
+        {/* Decorative background elements */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 rounded-2xl"></div>
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-br from-purple-400/10 to-pink-400/10 rounded-full blur-2xl"></div>
+        
+        <div className="relative z-10">
+          <div className="text-6xl mb-6">📊</div>
+          <h3 className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+            Žádná data pro graf
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">
+            Přidejte projekty a členy týmu pro zobrazení burndown chartu
+          </p>
+        </div>
       </div>
     );
   }
+
+  // Calculate statistics
+  const totalProjects = projects.length;
+
+  const avgProgress = chartData.length > 0 
+    ? Math.round(chartData[chartData.length - 1]?.totalProgress || 0)
+    : 0;
+
+  const idealProgress = chartData.length > 0 
+    ? Math.round(chartData[chartData.length - 1]?.idealProgress || 0)
+    : 0;
+
+  const progressDiff = avgProgress - idealProgress;
 
   // Get project names for title
   const projectNames = projects.map(p => p.name).join(', ');
@@ -164,83 +185,155 @@ export function BurndownChart({ projects, team }: BurndownChartProps) {
   }));
 
   return (
-    <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-white/20 dark:border-gray-700 rounded-xl p-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
-        <div className="flex-1">
-          <h4 className="text-xl font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            📈 Burndown Chart
-          </h4>
-          {projectNames && (
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              Projekty: {projectNames}
-            </p>
-          )}
+    <div className="relative bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 rounded-2xl p-8 shadow-2xl">
+      {/* Decorative background elements */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 rounded-2xl"></div>
+      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-br from-purple-400/10 to-pink-400/10 rounded-full blur-2xl"></div>
+      
+      <div className="relative">
+        {/* Header */}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6 gap-4">
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                  📈 Burndown Chart
+                </h3>
+                {projectNames && (
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Projekty: {projectNames}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          {/* Stats Cards */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-gradient-to-br from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm rounded-xl p-3 border border-gray-200/50 dark:border-gray-600/50 shadow-lg">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Projekty</span>
+              </div>
+              <div className="text-lg font-bold text-gray-900 dark:text-white">{totalProjects}</div>
+            </div>
+            <div className="bg-gradient-to-br from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm rounded-xl p-3 border border-gray-200/50 dark:border-gray-600/50 shadow-lg">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Progress</span>
+              </div>
+              <div className="text-lg font-bold text-gray-900 dark:text-white">{avgProgress}%</div>
+            </div>
+          </div>
         </div>
-        <div className="flex gap-2 flex-shrink-0">
-          <button className="px-3 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:scale-105 transition-all duration-200 text-xs">
-            Export PNG
-          </button>
-          <button className="px-3 py-2 bg-gradient-to-r from-emerald-600 to-green-700 text-white rounded-lg hover:scale-105 transition-all duration-200 text-xs font-medium">
-            Export CSV
-          </button>
-        </div>
-      </div>
 
-      {/* Chart Container */}
-      <div className="h-64">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-            <XAxis 
-              dataKey="date" 
-              stroke="#6b7280"
-              fontSize={12}
-            />
-            <YAxis 
-              stroke="#6b7280"
-              fontSize={12}
-              domain={[0, 100]}
-              tickFormatter={(value) => `${value}%`}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Legend />
-            
-            {/* Ideální průběh (burndown) */}
-            <Line
-              type="monotone"
-              dataKey="idealProgress"
-              stroke="#9ca3af"
-              strokeWidth={2}
-              strokeDasharray="5 5"
-              name="Ideální průběh"
-              dot={false}
-            />
-            
-            {/* Project progress */}
-            {projectLines.map(project => (
-              <Line
-                key={project.key}
-                type="monotone"
-                dataKey={project.key}
-                stroke={project.color}
-                strokeWidth={2}
-                name={project.label}
-                dot={false}
+        {/* Chart Container */}
+        <div className="h-80 mb-6">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+              <XAxis 
+                dataKey="date" 
+                stroke="#6b7280"
+                fontSize={12}
+                tick={{ fill: '#6b7280' }}
               />
-            ))}
-            
-            {/* Celkový progress */}
-            <Line
-              type="monotone"
-              dataKey="totalProgress"
-              stroke="#3b82f6"
-              strokeWidth={4}
-              name="Celkem % hotovo"
-              dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+              <YAxis 
+                stroke="#6b7280"
+                fontSize={12}
+                domain={[0, 100]}
+                tickFormatter={(value) => `${value}%`}
+                tick={{ fill: '#6b7280' }}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend 
+                wrapperStyle={{ paddingTop: '20px' }}
+                iconType="line"
+                iconSize={12}
+              />
+              
+              {/* Ideální průběh (burndown) */}
+              <Line
+                type="monotone"
+                dataKey="idealProgress"
+                stroke="#9ca3af"
+                strokeWidth={2}
+                strokeDasharray="5 5"
+                name="Ideální průběh"
+                dot={false}
+                opacity={0.7}
+              />
+              
+              {/* Project progress */}
+              {projectLines.map(project => (
+                <Line
+                  key={project.key}
+                  type="monotone"
+                  dataKey={project.key}
+                  stroke={project.color}
+                  strokeWidth={2}
+                  name={project.label}
+                  dot={{ fill: project.color, strokeWidth: 2, r: 3 }}
+                  opacity={0.8}
+                />
+              ))}
+              
+              {/* Celkový progress */}
+              <Line
+                type="monotone"
+                dataKey="totalProgress"
+                stroke="#3b82f6"
+                strokeWidth={4}
+                name="Celkem % hotovo"
+                dot={{ fill: '#3b82f6', strokeWidth: 2, r: 5 }}
+                opacity={1}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Footer with actions */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-4 border-t border-gray-200/50 dark:border-gray-600/50">
+          <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+              <span>Celkem: {avgProgress}%</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+              <span>Ideál: {idealProgress}%</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className={`w-3 h-3 rounded-full ${progressDiff >= 0 ? 'bg-green-500' : 'bg-red-500'}`}></div>
+              <span className={progressDiff >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
+                {progressDiff >= 0 ? '+' : ''}{progressDiff}%
+              </span>
+            </div>
+          </div>
+          
+          <div className="flex gap-2">
+            <button className="relative group/btn bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 text-white px-4 py-2 rounded-xl hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/25 active:scale-95 shadow-lg text-sm font-semibold flex items-center gap-2">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300"></div>
+              <svg className="relative z-10 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              <span className="relative z-10">Export PNG</span>
+            </button>
+            <button className="relative group/btn bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 text-white px-4 py-2 rounded-xl hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-green-500/25 active:scale-95 shadow-lg text-sm font-semibold flex items-center gap-2">
+              <div className="absolute inset-0 bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 rounded-xl opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300"></div>
+              <svg className="relative z-10 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span className="relative z-10">Export CSV</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
