@@ -421,8 +421,9 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
                               )}
                               
                               {/* Hlavní řádek */}
-                              <div className="p-6 relative">
-                                <div className="flex items-center justify-between">
+                              <div className="p-4 sm:p-6 relative">
+                                {/* Desktop layout */}
+                                <div className="hidden md:flex items-center justify-between">
                                   <div className="flex items-center gap-4">
                                     {/* Drag handle */}
                                     <div 
@@ -524,43 +525,141 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
                                     </div>
                                   </div>
                                 </div>
+                                
+                                {/* Mobile layout */}
+                                <div className="md:hidden space-y-4">
+                                  {/* Header s názvem a akcemi */}
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                      {/* Drag handle */}
+                                      <div 
+                                        className="flex items-center justify-center w-6 h-6 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg"
+                                        title="Přetáhněte pro změnu priority"
+                                      >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+                                        </svg>
+                                      </div>
+                                      
+                                      <div className="flex items-center gap-2">
+                                        <h4 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                                          {project.name}
+                                        </h4>
+                                        <span className={`bg-gradient-to-r ${getPriorityColor(priority)} text-white px-2 py-1 rounded-full text-xs font-semibold shadow-lg`}>
+                                          {t('priority')} {project.priority}
+                                        </span>
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Akce */}
+                                    <div className="flex items-center gap-1">
+                                      <button
+                                        onClick={() => setExpandedProject(isExpanded ? null : project.id)}
+                                        className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg"
+                                      >
+                                        <svg className={`w-4 h-4 transform transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                      </button>
+                                      
+                                      <button
+                                        onClick={() => handleOpenEditModal(project)}
+                                        className="p-2 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-all duration-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
+                                        title={t('edit')}
+                                      >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                      </button>
+                                      
+                                      <button
+                                        onClick={() => handleDeleteProject(project.id)}
+                                        className="p-2 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-all duration-200 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+                                        title={t('delete')}
+                                      >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                      </button>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Progress a termín */}
+                                  <div className="grid grid-cols-2 gap-4">
+                                    {/* Progress circle */}
+                                    <div className="flex items-center justify-center">
+                                      <div className="relative">
+                                        <svg className="w-12 h-12 transform -rotate-90" viewBox="0 0 36 36">
+                                          <path
+                                            className="text-gray-200 dark:text-gray-600"
+                                            fill="currentColor"
+                                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                          />
+                                          <path
+                                            className="text-blue-500"
+                                            fill="currentColor"
+                                            strokeDasharray={`${totalProgress}, 100`}
+                                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                          />
+                                        </svg>
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                          <span className="text-xs font-bold text-gray-900 dark:text-gray-100">{totalProgress}%</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Termín */}
+                                    <div className="text-center">
+                                      <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Termín</div>
+                                      <div className={`text-sm font-bold ${
+                                        info.diffWorkdays && info.diffWorkdays >= 0 
+                                          ? 'text-green-600 dark:text-green-400' 
+                                          : 'text-red-600 dark:text-red-400'
+                                      }`}>
+                                        {info.diffWorkdays === null ? 'N/A' : 
+                                         info.diffWorkdays >= 0 ? `+${info.diffWorkdays} dní` : 
+                                         `${info.diffWorkdays} dní`}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
                               
                               {/* Rozbalené detaily */}
                               {isExpanded && (
                                 <div className="animate-in slide-in-from-top-4 duration-500 border-t border-gray-200/50 dark:border-gray-600/50 bg-gradient-to-br from-gray-50/50 via-white/30 to-gray-50/50 dark:from-gray-800/50 dark:via-gray-700/30 dark:to-gray-800/50">
-                                  <div className="p-6 space-y-6">
+                                  <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
                                     {/* Role progress */}
                                     <div>
-                                      <h4 className="text-lg font-bold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
-                                        <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <h4 className="text-base sm:text-lg font-bold text-gray-800 dark:text-gray-200 mb-3 sm:mb-4 flex items-center gap-2">
+                                        <svg className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                                         </svg>
                                         Progress podle rolí
                                       </h4>
-                                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                                         {projectRoles.map(role => {
                                           const progress = getRoleProgress(project, role.key);
                                           if (!progress) return null;
                                           
                                           return (
-                                            <div key={role.key} className="bg-gradient-to-br from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm rounded-xl p-4 border border-gray-200/50 dark:border-gray-600/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                                              <div className="flex items-center justify-between mb-3">
-                                                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{role.label}</span>
-                                                <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                                            <div key={role.key} className="bg-gradient-to-br from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-gray-200/50 dark:border-gray-600/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                                              <div className="flex items-center justify-between mb-2 sm:mb-3">
+                                                <span className="text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200">{role.label}</span>
+                                                <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-medium">
                                                   {progress.done}/{progress.mandays} MD
                                                 </span>
                                               </div>
-                                              <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-3 overflow-hidden">
+                                              <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2 sm:h-3 overflow-hidden">
                                                 <div 
-                                                  className="h-3 rounded-full transition-all duration-500 ease-out"
+                                                  className="h-2 sm:h-3 rounded-full transition-all duration-500 ease-out"
                                                   style={{ 
                                                     width: `${progress.percentage}%`,
                                                     background: `linear-gradient(90deg, ${role.color}, ${role.color}dd)`
                                                   }}
                                                 ></div>
                                               </div>
-                                              <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 font-medium">
+                                              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 sm:mt-2 font-medium">
                                                 {progress.percentage}% hotovo
                                               </div>
                                             </div>
@@ -569,47 +668,49 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
                                       </div>
                                     </div>
                                     
-                                    {/* Progress graf */}
-                                    <ProjectProgressChart 
-                                      project={project} 
-                                      deliveryInfo={info}
-                                      priorityDates={priorityDates}
-                                      className="mb-6"
-                                    />
+                                    {/* Progress graf - skrytý na mobilu */}
+                                    <div className="hidden sm:block">
+                                      <ProjectProgressChart 
+                                        project={project} 
+                                        deliveryInfo={info}
+                                        priorityDates={priorityDates}
+                                        className="mb-6"
+                                      />
+                                    </div>
                                     
                                     {/* Termíny */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                      <div className="bg-gradient-to-br from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm rounded-xl p-4 border border-gray-200/50 dark:border-gray-600/50 shadow-lg">
-                                        <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                                          <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                                      <div className="bg-gradient-to-br from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-gray-200/50 dark:border-gray-600/50 shadow-lg">
+                                        <div className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                                          <svg className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                           </svg>
                                           Plánovaný termín
                                         </div>
-                                        <div className="text-gray-900 dark:text-gray-100 font-medium">
+                                        <div className="text-gray-900 dark:text-gray-100 font-medium text-sm">
                                           {project.delivery_date ? new Date(project.delivery_date).toLocaleDateString() : 'Není nastaven'}
                                         </div>
                                       </div>
-                                      <div className="bg-gradient-to-br from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm rounded-xl p-4 border border-gray-200/50 dark:border-gray-600/50 shadow-lg">
-                                        <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                                          <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <div className="bg-gradient-to-br from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-gray-200/50 dark:border-gray-600/50 shadow-lg">
+                                        <div className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                                          <svg className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                           </svg>
                                           Vypočítaný termín
                                         </div>
-                                        <div className="text-gray-900 dark:text-gray-100 font-medium">
+                                        <div className="text-gray-900 dark:text-gray-100 font-medium text-sm">
                                           {info.calculatedDeliveryDate.toLocaleDateString()}
                                         </div>
                                       </div>
                                       {priorityDates && (
-                                        <div className="bg-gradient-to-br from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm rounded-xl p-4 border border-gray-200/50 dark:border-gray-600/50 shadow-lg">
-                                          <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                                            <svg className="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <div className="bg-gradient-to-br from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-gray-200/50 dark:border-gray-600/50 shadow-lg">
+                                          <div className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                                            <svg className="w-3 h-3 sm:w-4 sm:h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                                             </svg>
                                             Termín podle priority
                                           </div>
-                                          <div className="text-blue-600 dark:text-blue-400 text-sm font-medium">
+                                          <div className="text-blue-600 dark:text-blue-400 text-xs sm:text-sm font-medium">
                                             <div>Od: {priorityDates.priorityStartDate.toLocaleDateString()}</div>
                                             <div>Do: {priorityDates.priorityEndDate.toLocaleDateString()}</div>
                                           </div>
