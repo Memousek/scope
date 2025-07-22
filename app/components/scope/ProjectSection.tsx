@@ -167,22 +167,67 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
     try {
       setIsUpdatingPriority(true);
       
-      // Calculate new priority - always place before target
-      const sortedProjects = [...projects].sort((a, b) => a.priority - b.priority);
-      const draggedIndex = sortedProjects.findIndex(p => p.id === draggedProject.id);
-      const targetIndex = sortedProjects.findIndex(p => p.id === targetProject.id);
+      // Get current priority groups
+      const currentGroups = projects.reduce((groups, project) => {
+        const priority = project.priority;
+        if (!groups[priority]) {
+          groups[priority] = [];
+        }
+        groups[priority].push(project);
+        return groups;
+      }, {} as Record<number, Project[]>);
       
-      // Create new priority order - insert before target
-      const newPriorityOrder = [...sortedProjects];
-      const [draggedItem] = newPriorityOrder.splice(draggedIndex, 1);
-      newPriorityOrder.splice(targetIndex, 0, draggedItem);
+      // Find which group the dragged project should move to
+      const targetPriority = targetProject.priority;
+      const draggedPriority = draggedProject.priority;
       
-      // Update all projects with new sequential priorities
-      const updatePromises = newPriorityOrder.map((project, index) => 
-        updateProject(project.id, { priority: index + 1 })
-      );
-      
-      await Promise.all(updatePromises);
+      // If moving to same priority group, just reorder within the group
+      if (draggedPriority === targetPriority) {
+        const groupProjects = currentGroups[targetPriority];
+        const draggedIndex = groupProjects.findIndex(p => p.id === draggedProject.id);
+        const targetIndex = groupProjects.findIndex(p => p.id === targetProject.id);
+        
+        // Reorder within the group
+        const reorderedGroup = [...groupProjects];
+        const [draggedItem] = reorderedGroup.splice(draggedIndex, 1);
+        reorderedGroup.splice(targetIndex, 0, draggedItem);
+        
+                 // Update all projects in this group with their new order
+         const updatePromises = reorderedGroup.map((project) => 
+           updateProject(project.id, { priority: targetPriority })
+         );
+        
+        await Promise.all(updatePromises);
+      } else {
+        // Moving to different priority group
+        // Remove from old group and add to new group
+        const oldGroup = currentGroups[draggedPriority] || [];
+        const newGroup = currentGroups[targetPriority] || [];
+        
+        // Remove dragged project from old group
+        const updatedOldGroup = oldGroup.filter(p => p.id !== draggedProject.id);
+        
+        // Add to new group at the position of target project
+        const targetIndex = newGroup.findIndex(p => p.id === targetProject.id);
+        const updatedNewGroup = [...newGroup];
+        updatedNewGroup.splice(targetIndex, 0, draggedProject);
+        
+        // Update all projects
+        const updatePromises = [
+          // Update dragged project with new priority
+          updateProject(draggedProject.id, { priority: targetPriority }),
+          // Update other projects in old group (if any)
+          ...updatedOldGroup.map(project => 
+            updateProject(project.id, { priority: draggedPriority })
+          ),
+          // Update other projects in new group
+          ...updatedNewGroup.filter(p => p.id !== draggedProject.id).map(project => 
+            updateProject(project.id, { priority: targetPriority })
+          )
+        ];
+        
+        await Promise.all(updatePromises);
+      }
       
       // Reload projects to get updated order
       await loadProjects();
