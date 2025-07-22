@@ -350,24 +350,32 @@ export function ModernScopeLayout({
   return (
     <div className="space-y-6">
       {/* Tab Navigation */}
-      <div className="bg-white/30 dark:bg-gray-800/30 backdrop-blur-sm rounded-xl p-2">
-        <div className="flex space-x-1" role="tablist" aria-label="Scope tabs">
+      <div className="relative bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 rounded-2xl p-2 shadow-2xl">
+        {/* Decorative background elements */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 rounded-2xl"></div>
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-br from-purple-400/10 to-pink-400/10 rounded-full blur-2xl"></div>
+        
+        <div className="relative z-10 flex space-x-1" role="tablist" aria-label="Scope tabs">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as TabType)}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all duration-300 ${
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold transition-all duration-500 ${
                 activeTab === tab.id
-                  ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg scale-105"
-                  : "text-gray-600 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-700/50 hover:scale-102"
+                  ? "relative bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 text-white shadow-2xl shadow-blue-500/25 scale-105"
+                  : "text-gray-600 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-700/50 hover:scale-105 hover:shadow-lg"
               }`}
               aria-label={tab.label}
               role="tab"
               aria-selected={activeTab === tab.id}
               id={`tab-${tab.id}`}
             >
-              <span className="text-lg">{tab.icon}</span>
-              <span className="hidden sm:inline">{tab.label}</span>
+              {activeTab === tab.id && (
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              )}
+              <span className="relative z-10 text-lg">{tab.icon}</span>
+              <span className="relative z-10 hidden sm:inline font-medium">{tab.label}</span>
             </button>
           ))}
         </div>
