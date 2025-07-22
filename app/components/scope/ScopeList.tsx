@@ -94,9 +94,16 @@ export const ScopeList: React.FC<ScopeListProps> = ({
       <AnimatePresence>
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-xl p-8 shadow-xl">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
-              <p className="text-center mt-4 text-gray-600 dark:text-gray-400">{t("loading_scopes")}</p>
+            <div className="relative bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 rounded-2xl p-8 shadow-2xl">
+              {/* Decorative background elements */}
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 rounded-2xl"></div>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full blur-3xl"></div>
+              <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-br from-purple-400/10 to-pink-400/10 rounded-full blur-2xl"></div>
+              
+              <div className="relative z-10 text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+                <p className="text-center mt-4 text-gray-600 dark:text-gray-400 font-medium">{t("loading_scopes")}</p>
+              </div>
             </div>
           </div>
         ) : scopes.length === 0 ? (
@@ -106,131 +113,164 @@ export const ScopeList: React.FC<ScopeListProps> = ({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
           >
-            <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-xl p-8 shadow-xl text-center">
-              <div className="text-4xl mb-4">📋</div>
-              <p className="text-gray-500 dark:text-gray-400 text-lg">
-                {t("no_scopes")}
-              </p>
-              <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
-                Vytvořte svůj první scope pro začátek práce
-              </p>
+            <div className="relative bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 rounded-2xl p-8 shadow-2xl text-center">
+              {/* Decorative background elements */}
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 rounded-2xl"></div>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full blur-3xl"></div>
+              <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-br from-purple-400/10 to-pink-400/10 rounded-full blur-2xl"></div>
+              
+              <div className="relative z-10">
+                <div className="text-6xl mb-6">📋</div>
+                <h3 className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+                  {t("no_scopes")}
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">
+                  Vytvořte svůj první scope pro začátek práce
+                </p>
+              </div>
             </div>
           </motion.div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {scopeItems.map((scopeItem, idx) => (
               <motion.div
                 key={scopeItem.scope.id}
-                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                transition={{ duration: 0.3, delay: idx * 0.1 }}
-                className="flex flex-col justify-between group relative bg-gradient-to-br from-white/80 to-white/60 dark:from-gray-800/80 dark:to-gray-700/60 backdrop-blur-sm rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 overflow-hidden"
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ duration: 0.5, delay: idx * 0.1 }}
+                className="relative group bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-700/90 dark:via-gray-700/70 dark:to-gray-700/50 backdrop-blur-lg rounded-2xl border border-white/40 dark:border-gray-600/40 overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/10"
               >
-                {/* Decorative gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                {/* Priority indicator */}
+                <div className={`absolute top-0 left-0 w-1 h-full bg-gradient-to-b ${scopeItem.type === ScopeType.OWNED ? 'from-blue-500 to-purple-500' : 'from-green-500 to-emerald-500'}`}></div>
                 
-                {/* Header with icon and badge */}
-                <div className="relative flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                      <span className="text-white text-lg font-bold">
-                        {scopeItem.scope.name.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="flex-1">
-                      <h2 className="text-xl font-bold mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                        {scopeItem.scope.name}
-                      </h2>
-                      <div className="flex items-center gap-2">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          scopeItem.type === ScopeType.OWNED 
-                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
-                            : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-                        }`}>
-                          {scopeItem.type === ScopeType.OWNED ? "Vlastní scope" : "Sdílený scope"}
-                        </span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                          ID: {scopeItem.scope.id.slice(0, 8)}...
-                        </span>
+                {/* Hover effect overlay */}
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-blue-500/5 group-hover:via-purple-500/5 group-hover:to-pink-500/5 transition-all duration-500 rounded-2xl"></div>
+                
+                <div className="p-4 sm:p-6 relative">
+                  {/* Header with icon and badge */}
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 sm:mb-6 gap-4">
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <div className="relative flex-shrink-0">
+                        <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                          <span className="text-white text-lg sm:text-2xl font-bold">
+                            {scopeItem.scope.name.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        <div className="absolute -bottom-1 -right-1 w-4 h-4 sm:w-6 sm:h-6 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full border-2 border-white dark:border-gray-800"></div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h2 className="text-lg sm:text-xl font-bold mb-2 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent truncate">
+                          {scopeItem.scope.name}
+                        </h2>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                          <span className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-semibold shadow-lg ${
+                            scopeItem.type === ScopeType.OWNED 
+                              ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white'
+                              : 'bg-gradient-to-r from-green-500 to-emerald-500 text-white'
+                          }`}>
+                            {scopeItem.type === ScopeType.OWNED ? "Vlastní scope" : "Sdílený scope"}
+                          </span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400 font-medium truncate">
+                            ID: {scopeItem.scope.id.slice(0, 8)}...
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
                   
                   {/* Quick stats */}
-                  <div className="flex flex-col items-end gap-1">
-                    <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                      <span className="w-2 h-2 bg-emerald-600 rounded-full"></span>
-                      <span>
+                  <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                    <div className="bg-gradient-to-br from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-gray-200/50 dark:border-gray-600/50 shadow-lg">
+                      <div className="flex items-center gap-1 sm:gap-2 mb-1">
+                        <span className="w-2 h-2 sm:w-3 sm:h-3 bg-emerald-600 rounded-full"></span>
+                        <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Členové</span>
+                      </div>
+                      <div className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
                         {loadingStats[scopeItem.scope.id] ? (
-                          <span className="animate-pulse">...</span>
+                          <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-5 sm:h-6 w-8 sm:w-12 rounded"></div>
                         ) : (
-                          `${scopeStats[scopeItem.scope.id]?.teamCount || 0} členů`
+                          scopeStats[scopeItem.scope.id]?.teamCount || 0
                         )}
-                      </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                      <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                      <span>
+                    <div className="bg-gradient-to-br from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-gray-200/50 dark:border-gray-600/50 shadow-lg">
+                      <div className="flex items-center gap-1 sm:gap-2 mb-1">
+                        <span className="w-2 h-2 sm:w-3 sm:h-3 bg-blue-500 rounded-full"></span>
+                        <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Projekty</span>
+                      </div>
+                      <div className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
                         {loadingStats[scopeItem.scope.id] ? (
-                          <span className="animate-pulse">...</span>
+                          <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-5 sm:h-6 w-8 sm:w-12 rounded"></div>
                         ) : (
-                          `${scopeStats[scopeItem.scope.id]?.projectCount || 0} projektů`
+                          scopeStats[scopeItem.scope.id]?.projectCount || 0
                         )}
-                      </span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Description */}
-                {scopeItem.scope.description && (
-                  <div className="relative mb-4">
-                    <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2 leading-relaxed">
-                      {scopeItem.scope.description}
-                    </p>
-                  </div>
-                )}
+                  {/* Description */}
+                  {scopeItem.scope.description && (
+                    <div className="mb-4 sm:mb-6">
+                      <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed line-clamp-2">
+                        {scopeItem.scope.description}
+                      </p>
+                    </div>
+                  )}
 
-                {/* Footer with actions */}
-                <div className="relative flex items-center justify-between pt-4 border-t border-gray-200/50 dark:border-gray-600/50">
-                  <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                    <span>Vytvořeno: {new Date(scopeItem.scope.createdAt).toLocaleDateString('cs-CZ')}</span>
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <a
-                      href={`/scopes/${scopeItem.scope.id}`}
-                      className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-3 py-1.5 rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all duration-200 hover:scale-105 shadow-lg text-xs font-medium flex items-center gap-1"
-                    >
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
-                      Otevřít
-                    </a>
-                    {scopeItem.type === ScopeType.OWNED && onDelete ? (
-                      <button
-                        onClick={() => {
-                          console.log('Kliknuto na smazat scope:', scopeItem.scope.id);
-                          onDelete(scopeItem.scope.id);
-                        }}
-                        disabled={deletingScope === scopeItem.scope.id}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 shadow-lg ${
-                          deletingScope === scopeItem.scope.id
-                            ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                            : 'bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 hover:scale-105'
-                        }`}
+                  {/* Footer with actions */}
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 pt-4 border-t border-gray-200/50 dark:border-gray-600/50">
+                    <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                      <span>Vytvořeno: {new Date(scopeItem.scope.createdAt).toLocaleDateString('cs-CZ')}</span>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <a
+                        href={`/scopes/${scopeItem.scope.id}`}
+                        className="relative group/btn bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 text-white px-3 sm:px-4 py-2 rounded-lg sm:rounded-xl hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/25 active:scale-95 shadow-lg text-xs sm:text-sm font-semibold flex items-center gap-1 sm:gap-2"
                       >
-                        {deletingScope === scopeItem.scope.id ? 'Mažu...' : t("delete")}
-                      </button>
-                    ) : null}
-                    {scopeItem.type === ScopeType.SHARED && onRemove ? (
-                      <button
-                        onClick={() => onRemove(scopeItem.scope.id)}
-                        className="bg-gradient-to-r from-gray-500 to-gray-600 text-white px-3 py-1.5 rounded-lg hover:from-gray-600 hover:to-gray-700 transition-all duration-200 hover:scale-105 shadow-lg text-xs font-medium"
-                      >
-                        {t("remove")}
-                      </button>
-                    ) : null}
+                        <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-lg sm:rounded-xl opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300"></div>
+                        <svg className="relative z-10 w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                        <span className="relative z-10">Otevřít</span>
+                      </a>
+                      {scopeItem.type === ScopeType.OWNED && onDelete ? (
+                        <button
+                          onClick={() => {
+                            console.log('Kliknuto na smazat scope:', scopeItem.scope.id);
+                            onDelete(scopeItem.scope.id);
+                          }}
+                          disabled={deletingScope === scopeItem.scope.id}
+                          className={`relative group/btn px-3 sm:px-4 py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-lg ${
+                            deletingScope === scopeItem.scope.id
+                              ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                              : 'bg-gradient-to-br from-red-500 via-pink-500 to-red-600 text-white hover:scale-105 hover:shadow-2xl hover:shadow-red-500/25 active:scale-95'
+                          }`}
+                        >
+                          {deletingScope === scopeItem.scope.id ? (
+                            <>
+                              <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-white mx-auto"></div>
+                              <span>Mažu...</span>
+                            </>
+                          ) : (
+                            <>
+                              <div className="absolute inset-0 bg-gradient-to-r from-red-600 via-pink-600 to-red-700 rounded-lg sm:rounded-xl opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300"></div>
+                              <span className="relative z-10">{t("delete")}</span>
+                            </>
+                          )}
+                        </button>
+                      ) : null}
+                      {scopeItem.type === ScopeType.SHARED && onRemove ? (
+                        <button
+                          onClick={() => onRemove(scopeItem.scope.id)}
+                          className="relative group/btn bg-gradient-to-br from-gray-500 via-gray-600 to-gray-700 text-white px-3 sm:px-4 py-2 rounded-lg sm:rounded-xl hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-gray-500/25 active:scale-95 shadow-lg text-xs sm:text-sm font-semibold"
+                        >
+                          <div className="absolute inset-0 bg-gradient-to-r from-gray-600 via-gray-700 to-gray-800 rounded-lg sm:rounded-xl opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300"></div>
+                          <span className="relative z-10">{t("remove")}</span>
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -243,9 +283,23 @@ export const ScopeList: React.FC<ScopeListProps> = ({
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4"
+          className="mt-6 relative bg-gradient-to-br from-red-50/80 via-red-50/60 to-red-50/40 dark:from-red-900/20 dark:via-red-900/15 dark:to-red-900/10 backdrop-blur-xl border border-red-200/50 dark:border-red-800/50 rounded-2xl p-6 shadow-xl"
         >
-          <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
+          {/* Decorative background elements */}
+          <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 via-pink-500/5 to-red-500/5 rounded-2xl"></div>
+          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-red-400/10 to-pink-400/10 rounded-full blur-2xl"></div>
+          
+          <div className="relative z-10 flex items-center gap-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-pink-500 rounded-full flex items-center justify-center">
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <div>
+              <h4 className="font-semibold text-red-800 dark:text-red-300">Chyba při načítání</h4>
+              <p className="text-red-600 dark:text-red-400 text-sm mt-1">{error}</p>
+            </div>
+          </div>
         </motion.div>
       )}
     </div>
