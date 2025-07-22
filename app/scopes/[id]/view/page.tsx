@@ -86,7 +86,7 @@ export default function ScopeViewPage({ params }: { params: Promise<{ id: string
 
   if (fetching) {
     return (
-      <div className="min-h-screen flex items-center justify-center min-w-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
+      <div className="flex items-center justify-center min-h-screen">
         <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-xl p-8 shadow-xl">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
           <p className="text-center mt-4 text-gray-600 dark:text-gray-400">{t("loading")}</p>
@@ -97,7 +97,7 @@ export default function ScopeViewPage({ params }: { params: Promise<{ id: string
   
   if (!scope) {
     return (
-      <div className="min-h-screen flex items-center justify-center min-w-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
+      <div className="flex items-center justify-center min-h-screen">
         <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-xl p-8 shadow-xl">
           <span className="text-4xl mb-4 block text-center">😕</span>
           <p className="text-center text-gray-600 dark:text-gray-400">{t("notFound")}</p>
@@ -107,7 +107,7 @@ export default function ScopeViewPage({ params }: { params: Promise<{ id: string
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div>
       <div className="container mx-auto px-4 py-8">
         {/* Header Section */}
         <div className="mb-8">

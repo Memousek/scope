@@ -20,7 +20,7 @@ export default function Page() {
   }, [router]);
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center p-6">
+    <div className="w-full flex items-center justify-center p-6 min-h-screen">
       {/* Subtle background decorative elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-emerald-400/10 to-teal-400/10 rounded-full blur-3xl"></div>
