@@ -468,7 +468,7 @@ export default function ScopePage({
               </div>
             ) : (
               <div className="flex items-start gap-2">
-                <p className="flex-1 text-gray-600 dark:text-gray-400">
+                <p className="text-gray-600 dark:text-gray-400">
                   {description || 'Žádný popis'}
                 </p>
                 {isOwner && (
