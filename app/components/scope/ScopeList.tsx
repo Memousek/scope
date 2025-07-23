@@ -157,7 +157,6 @@ export const ScopeList: React.FC<ScopeListProps> = ({
                             {scopeItem.scope.name.charAt(0).toUpperCase()}
                           </span>
                         </div>
-                        <div className="absolute -bottom-1 -right-1 w-4 h-4 sm:w-6 sm:h-6 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full border-2 border-white dark:border-gray-800"></div>
                       </div>
                       <div className="flex-1 min-w-0">
                         <h2 className="text-lg sm:text-xl font-bold mb-2 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent truncate">
