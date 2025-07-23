@@ -129,7 +129,7 @@ export function TeamSection({ scopeId, team, onTeamChange }: TeamSectionProps) {
                   <p className="text-gray-500 dark:text-gray-400 text-sm">Začněte přidáním prvního člena týmu</p>
                 </div>
               ) : (
-                team.map((member, index) => (
+                team.map((member) => (
                 <div 
                     key={member.id}
                     className="relative group bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-700/90 dark:via-gray-700/70 dark:to-gray-700/50 backdrop-blur-lg rounded-2xl border border-white/40 dark:border-gray-600/40 overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/10 animate-in slide-in-from-bottom-8 fade-in duration-700"
