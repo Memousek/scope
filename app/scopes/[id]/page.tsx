@@ -42,7 +42,6 @@ export default function ScopePage({
   const [editingDescription, setEditingDescription] = useState(false);
   const [savingDescription, setSavingDescription] = useState(false);
 
-
   // --- Tým ---
   const [team, setTeam] = useState<TeamMember[]>([]);
 
@@ -50,19 +49,25 @@ export default function ScopePage({
   const [projects, setProjects] = useState<Project[]>([]);
 
   // --- Statistiky ---
-  const [stats, setStats] = useState<{
-    projectCount: number;
-    teamMemberCount: number;
-    lastActivity?: Date;
-  } | undefined>(undefined);
+  const [stats, setStats] = useState<
+    | {
+        projectCount: number;
+        teamMemberCount: number;
+        lastActivity?: Date;
+      }
+    | undefined
+  >(undefined);
   const [loadingStats, setLoadingStats] = useState(false);
-  const [averageSlip, setAverageSlip] = useState<{
-    averageSlip: number;
-    totalProjects: number;
-    delayedProjects: number;
-    onTimeProjects: number;
-    aheadProjects: number;
-  } | undefined>(undefined);
+  const [averageSlip, setAverageSlip] = useState<
+    | {
+        averageSlip: number;
+        totalProjects: number;
+        delayedProjects: number;
+        onTimeProjects: number;
+        aheadProjects: number;
+      }
+    | undefined
+  >(undefined);
 
   // --- Sdílení ---
   const [shareModalOpen, setShareModalOpen] = useState(false);
@@ -85,37 +90,49 @@ export default function ScopePage({
   const hasPM = teamRoles.includes("PM");
   const hasDPL = teamRoles.includes("DPL");
 
-
-
-  const handleAddMember = async (member: { name: string; role: string; fte: number }) => {
+  const handleAddMember = async (member: {
+    name: string;
+    role: string;
+    fte: number;
+  }) => {
     if (!userId) return;
-    
-    const addTeamMemberService = ContainerService.getInstance().get(AddTeamMemberService, { autobind: true });
-    
+
+    const addTeamMemberService = ContainerService.getInstance().get(
+      AddTeamMemberService,
+      { autobind: true }
+    );
+
     try {
       await addTeamMemberService.execute(id, {
         name: member.name,
         role: member.role,
         fte: member.fte,
       });
-      
+
       // Refresh team data
       await fetchTeam();
     } catch (error) {
-      console.error('Chyba při přidávání člena týmu:', error);
+      console.error("Chyba při přidávání člena týmu:", error);
     }
   };
 
-  const handleAddProject = async (project: Omit<Project, 'id' | 'created_at'>) => {
+  const handleAddProject = async (
+    project: Omit<Project, "id" | "created_at">
+  ) => {
     if (!userId) return;
-    
-    const addProjectService = ContainerService.getInstance().get(AddProjectService, { autobind: true });
-    
+
+    const addProjectService = ContainerService.getInstance().get(
+      AddProjectService,
+      { autobind: true }
+    );
+
     try {
       await addProjectService.execute(id, {
         name: project.name,
         priority: project.priority,
-        deliveryDate: project.delivery_date ? new Date(project.delivery_date) : undefined,
+        deliveryDate: project.delivery_date
+          ? new Date(project.delivery_date)
+          : undefined,
         feMandays: project.fe_mandays || 0,
         beMandays: project.be_mandays || 0,
         qaMandays: project.qa_mandays || 0,
@@ -128,37 +145,37 @@ export default function ScopePage({
         dplDone: project.dpl_done || 0,
         slip: 0, // Default value
       });
-      
+
       // Refresh project data
       await fetchProjects();
     } catch (error) {
-      console.error('Chyba při přidávání projektu:', error);
+      console.error("Chyba při přidávání projektu:", error);
     }
   };
 
   // Načítání dat
   const fetchScope = useCallback(async () => {
     if (!userId) return;
-    
+
     setFetching(true);
     try {
       const supabase = createClient();
       const { data, error } = await supabase
-        .from('scopes')
-        .select('*')
-        .eq('id', id)
+        .from("scopes")
+        .select("*")
+        .eq("id", id)
         .single();
 
       if (error) {
-        console.error('Chyba při načítání scope:', error);
+        console.error("Chyba při načítání scope:", error);
         return;
       }
 
       setScope(data);
-      setDescription(data.description || '');
-      setName(data.name || '');
+      setDescription(data.description || "");
+      setName(data.name || "");
     } catch (error) {
-      console.error('Chyba při načítání scope:', error);
+      console.error("Chyba při načítání scope:", error);
     } finally {
       setFetching(false);
     }
@@ -166,54 +183,57 @@ export default function ScopePage({
 
   const fetchTeam = useCallback(async () => {
     if (!userId) return;
-    
+
     try {
       const supabase = createClient();
       const { data, error } = await supabase
-        .from('team_members')
-        .select('*')
-        .eq('scope_id', id)
-        .order('created_at', { ascending: true });
+        .from("team_members")
+        .select("*")
+        .eq("scope_id", id)
+        .order("created_at", { ascending: true });
 
       if (error) {
-        console.error('Chyba při načítání týmu:', error);
+        console.error("Chyba při načítání týmu:", error);
         return;
       }
 
       setTeam(data || []);
     } catch (error) {
-      console.error('Chyba při načítání týmu:', error);
+      console.error("Chyba při načítání týmu:", error);
     }
   }, [userId, id]);
 
   const fetchProjects = useCallback(async () => {
     if (!userId) return;
-    
+
     try {
       const supabase = createClient();
       const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('scope_id', id)
-        .order('created_at', { ascending: true });
+        .from("projects")
+        .select("*")
+        .eq("scope_id", id)
+        .order("created_at", { ascending: true });
 
       if (error) {
-        console.error('Chyba při načítání projektů:', error);
+        console.error("Chyba při načítání projektů:", error);
         return;
       }
 
       setProjects(data || []);
     } catch (error) {
-      console.error('Chyba při načítání projektů:', error);
+      console.error("Chyba při načítání projektů:", error);
     }
   }, [userId, id]);
 
   const fetchStats = useCallback(async () => {
     if (!userId) return;
-    
+
     setLoadingStats(true);
     try {
-      const getScopeStatsService = ContainerService.getInstance().get(GetScopeStatsService, { autobind: true });
+      const getScopeStatsService = ContainerService.getInstance().get(
+        GetScopeStatsService,
+        { autobind: true }
+      );
       const stats = await getScopeStatsService.execute(id);
       setStats({
         projectCount: stats.projectCount,
@@ -221,7 +241,7 @@ export default function ScopePage({
         lastActivity: stats.lastActivity,
       });
     } catch (error) {
-      console.error('Chyba při načítání statistik:', error);
+      console.error("Chyba při načítání statistik:", error);
     } finally {
       setLoadingStats(false);
     }
@@ -229,25 +249,34 @@ export default function ScopePage({
 
   const fetchAverageSlip = useCallback(async () => {
     if (!userId) return;
-    
+
     try {
-      const calculateAverageSlipService = ContainerService.getInstance().get(CalculateAverageSlipService, { autobind: true });
+      const calculateAverageSlipService = ContainerService.getInstance().get(
+        CalculateAverageSlipService,
+        { autobind: true }
+      );
       const averageSlip = await calculateAverageSlipService.execute(id);
       setAverageSlip(averageSlip);
     } catch (error) {
-      console.error('Chyba při načítání průměrného skluzu:', error);
+      console.error("Chyba při načítání průměrného skluzu:", error);
     }
   }, [userId, id]);
 
   const checkOwnership = useCallback(async () => {
     if (!userId) return;
-    
+
     try {
-      const checkScopeOwnershipService = ContainerService.getInstance().get(CheckScopeOwnershipService, { autobind: true });
-      const isOwnerResult = await checkScopeOwnershipService.execute(id, userId);
+      const checkScopeOwnershipService = ContainerService.getInstance().get(
+        CheckScopeOwnershipService,
+        { autobind: true }
+      );
+      const isOwnerResult = await checkScopeOwnershipService.execute(
+        id,
+        userId
+      );
       setIsOwner(isOwnerResult);
     } catch (error) {
-      console.error('Chyba při kontrole vlastnictví:', error);
+      console.error("Chyba při kontrole vlastnictví:", error);
     }
   }, [userId, id]);
 
@@ -261,34 +290,44 @@ export default function ScopePage({
       fetchAverageSlip();
       checkOwnership();
     }
-  }, [loading, user, id, fetchScope, fetchTeam, fetchProjects, fetchStats, fetchAverageSlip, checkOwnership]);
+  }, [
+    loading,
+    user,
+    id,
+    fetchScope,
+    fetchTeam,
+    fetchProjects,
+    fetchStats,
+    fetchAverageSlip,
+    checkOwnership,
+  ]);
 
   // Redirect pokud není přihlášen
   useEffect(() => {
     if (!loading && !user) {
-      window.location.href = '/auth/login';
+      window.location.href = "/auth/login";
     }
   }, [loading, user]);
 
   const handleSaveDescription = async () => {
     if (!userId) return;
-    
+
     setSavingDescription(true);
     try {
       const supabase = createClient();
       const { error } = await supabase
-        .from('scopes')
+        .from("scopes")
         .update({ description })
-        .eq('id', id);
+        .eq("id", id);
 
       if (error) {
-        console.error('Chyba při ukládání popisu:', error);
+        console.error("Chyba při ukládání popisu:", error);
         return;
       }
 
       setEditingDescription(false);
     } catch (error) {
-      console.error('Chyba při ukládání popisu:', error);
+      console.error("Chyba při ukládání popisu:", error);
     } finally {
       setSavingDescription(false);
     }
@@ -296,28 +335,28 @@ export default function ScopePage({
 
   const handleSaveName = async () => {
     if (!userId || !name.trim()) return;
-    
+
     setSavingName(true);
     setErrorName(null);
-    
+
     try {
       const supabase = createClient();
       const { error } = await supabase
-        .from('scopes')
+        .from("scopes")
         .update({ name: name.trim() })
-        .eq('id', id);
+        .eq("id", id);
 
       if (error) {
-        console.error('Chyba při ukládání názvu:', error);
-        setErrorName('Chyba při ukládání názvu');
+        console.error("Chyba při ukládání názvu:", error);
+        setErrorName("Chyba při ukládání názvu");
         return;
       }
 
       setEditingName(false);
-      setScope(prev => prev ? { ...prev, name: name.trim() } : null);
+      setScope((prev) => (prev ? { ...prev, name: name.trim() } : null));
     } catch (error) {
-      console.error('Chyba při ukládání názvu:', error);
-      setErrorName('Chyba při ukládání názvu');
+      console.error("Chyba při ukládání názvu:", error);
+      setErrorName("Chyba při ukládání názvu");
     } finally {
       setSavingName(false);
     }
@@ -347,7 +386,8 @@ export default function ScopePage({
             Scope nenalezen
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Požadovaný scope nebyl nalezen nebo nemáte oprávnění k jeho zobrazení.
+            Požadovaný scope nebyl nalezen nebo nemáte oprávnění k jeho
+            zobrazení.
           </p>
         </div>
       </div>
@@ -381,7 +421,7 @@ export default function ScopePage({
                       disabled={savingName}
                       className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
                     >
-                      {savingName ? 'Ukládám...' : '✓'}
+                      {savingName ? "Ukládám..." : "✓"}
                     </button>
                     <button
                       onClick={() => {
@@ -396,13 +436,13 @@ export default function ScopePage({
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    <h1 className="text-3xl font-bold text-whte dark:text-gray-100">
                       {scope.name}
                     </h1>
                     {isOwner && (
                       <button
                         onClick={() => setEditingName(true)}
-                        className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-transform hover:rotate-45 transform"
+                        className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-transform"
                       >
                         ✏️
                       </button>
@@ -410,14 +450,16 @@ export default function ScopePage({
                   </div>
                 )}
                 {errorName && (
-                  <p className="text-red-600 dark:text-red-400 text-sm mt-1">{errorName}</p>
+                  <p className="text-red-600 dark:text-red-400 text-sm mt-1">
+                    {errorName}
+                  </p>
                 )}
                 <p className="text-gray-600 dark:text-gray-400">
                   Scope ID: {scope.id}
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-3">
               {isOwner && (
                 <button
@@ -454,12 +496,12 @@ export default function ScopePage({
                   disabled={savingDescription}
                   className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 px-3 py-1"
                 >
-                  {savingDescription ? 'Ukládám...' : '✓'}
+                  {savingDescription ? "Ukládám..." : "✓"}
                 </button>
                 <button
                   onClick={() => {
                     setEditingDescription(false);
-                    setDescription(scope.description || '');
+                    setDescription(scope.description || "");
                   }}
                   className="text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 px-3 py-1"
                 >
@@ -469,12 +511,12 @@ export default function ScopePage({
             ) : (
               <div className="flex items-start gap-2">
                 <p className="text-gray-600 dark:text-gray-400">
-                  {description || 'Žádný popis'}
+                  {description || "Žádný popis"}
                 </p>
                 {isOwner && (
                   <button
                     onClick={() => setEditingDescription(true)}
-                    className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-transform hover:rotate-45 transform"
+                    className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                   >
                     ✏️
                   </button>
@@ -520,4 +562,4 @@ export default function ScopePage({
       <AiChatButton onClick={() => setAiChatOpen(true)} />
     </div>
   );
-} 
+}

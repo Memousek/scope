@@ -7,11 +7,11 @@
  * - Drag and drop pro změnu pořadí
  */
 
-import { useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import { TeamMember, ROLES } from './types';
-import { AddMemberModal } from './AddMemberModal';
-import { useTranslation } from '@/lib/translation';
+import { useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { TeamMember, ROLES } from "./types";
+import { AddMemberModal } from "./AddMemberModal";
+import { useTranslation } from "@/lib/translation";
 
 interface TeamSectionProps {
   scopeId: string;
@@ -24,54 +24,80 @@ export function TeamSection({ scopeId, team, onTeamChange }: TeamSectionProps) {
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [savingMember, setSavingMember] = useState(false);
 
-  const handleAddMember = async (member: { name: string; role: string; fte: number }) => {
+  const handleAddMember = async (member: {
+    name: string;
+    role: string;
+    fte: number;
+  }) => {
     setSavingMember(true);
     const supabase = createClient();
-    const { error, data } = await supabase.from('team_members').insert([
-      { ...member, scope_id: scopeId }
-    ]).select();
+    const { error, data } = await supabase
+      .from("team_members")
+      .insert([{ ...member, scope_id: scopeId }])
+      .select();
     setSavingMember(false);
     if (!error && data && data[0]) {
       onTeamChange([...team, data[0]]);
     }
   };
 
-  const handleEditMember = async (memberId: string, field: keyof TeamMember, value: string | number) => {
+  const handleEditMember = async (
+    memberId: string,
+    field: keyof TeamMember,
+    value: string | number
+  ) => {
     setSavingMember(true);
     const supabase = createClient();
-    const { error } = await supabase.from('team_members').update({ [field]: value }).eq('id', memberId);
+    const { error } = await supabase
+      .from("team_members")
+      .update({ [field]: value })
+      .eq("id", memberId);
     setSavingMember(false);
     if (!error) {
-      const updated = team.map(m => m.id === memberId ? { ...m, [field]: value } : m);
+      const updated = team.map((m) =>
+        m.id === memberId ? { ...m, [field]: value } : m
+      );
       onTeamChange(updated);
     }
   };
 
   const handleDeleteMember = async (memberId: string) => {
-    onTeamChange(team.filter(m => m.id !== memberId));
+    onTeamChange(team.filter((m) => m.id !== memberId));
     const supabase = createClient();
-    await supabase.from('team_members').delete().eq('id', memberId);
+    await supabase.from("team_members").delete().eq("id", memberId);
   };
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case 'PM': return 'from-purple-500 to-pink-500';
-      case 'FE': return 'from-blue-500 to-cyan-500';
-      case 'BE': return 'from-green-500 to-emerald-500';
-      case 'QA': return 'from-orange-500 to-red-500';
-      case 'DPL': return 'from-indigo-500 to-purple-500';
-      default: return 'from-gray-500 to-gray-600';
+      case "PM":
+        return "from-purple-500 to-pink-500";
+      case "FE":
+        return "from-blue-500 to-cyan-500";
+      case "BE":
+        return "from-green-500 to-emerald-500";
+      case "QA":
+        return "from-orange-500 to-red-500";
+      case "DPL":
+        return "from-indigo-500 to-purple-500";
+      default:
+        return "from-gray-500 to-gray-600";
     }
   };
 
   const getRoleIcon = (role: string) => {
     switch (role) {
-      case 'PM': return '👨‍💼';
-      case 'FE': return '🎨';
-      case 'BE': return '⚙️';
-      case 'QA': return '🔍';
-      case 'DPL': return '🚀';
-      default: return '👤';
+      case "PM":
+        return "👨‍💼";
+      case "FE":
+        return "🎨";
+      case "BE":
+        return "⚙️";
+      case "QA":
+        return "🔍";
+      case "DPL":
+        return "🚀";
+      default:
+        return "👤";
     }
   };
 
@@ -91,13 +117,13 @@ export function TeamSection({ scopeId, team, onTeamChange }: TeamSectionProps) {
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 rounded-2xl"></div>
           <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full blur-3xl"></div>
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-br from-purple-400/10 to-pink-400/10 rounded-full blur-2xl"></div>
-          
+
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-4">
                 <div className="relative">
-                  <h2 className="relative text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                    👥 {t('teamMembers')}
+                  <h2 className="relative text-2xl font-bold dark:text-white text-gray-900">
+                    👥 {t("teamMembers")}
                   </h2>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 bg-white/50 dark:bg-gray-700/50 px-3 py-1 rounded-full backdrop-blur-sm">
@@ -110,14 +136,24 @@ export function TeamSection({ scopeId, team, onTeamChange }: TeamSectionProps) {
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 <span className="relative z-10 flex items-center gap-2">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                    />
                   </svg>
-                  {t('addMember')}
+                  {t("addMember")}
                 </span>
               </button>
             </div>
-            
+
             <div className="space-y-4">
               {team.length === 0 ? (
                 <div className="text-center py-16">
@@ -125,228 +161,380 @@ export function TeamSection({ scopeId, team, onTeamChange }: TeamSectionProps) {
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur-xl opacity-20"></div>
                     <div className="relative text-8xl">👥</div>
                   </div>
-                  <p className="text-gray-600 dark:text-gray-300 text-xl font-medium mb-2">{t('noMembers')}</p>
-                  <p className="text-gray-500 dark:text-gray-400 text-sm">Začněte přidáním prvního člena týmu</p>
+                  <p className="text-gray-600 dark:text-gray-300 text-xl font-medium mb-2">
+                    {t("noMembers")}
+                  </p>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">
+                    Začněte přidáním prvního člena týmu
+                  </p>
                 </div>
               ) : (
                 team.map((member) => (
-                <div 
+                  <div
                     key={member.id}
                     className="relative group bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-700/90 dark:via-gray-700/70 dark:to-gray-700/50 backdrop-blur-lg rounded-2xl border border-white/40 dark:border-gray-600/40 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/10 animate-in slide-in-from-bottom-8 fade-in duration-700"
                     draggable
                   >
                     {/* Hover effect overlay */}
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-blue-500/5 group-hover:via-purple-500/5 group-hover:to-pink-500/5 transition-all duration-300 rounded-2xl"></div>
-                    
+
                     {/* Loading overlay during save */}
                     {savingMember && (
                       <div className="absolute inset-0 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm flex items-center justify-center rounded-2xl z-30">
                         <div className="flex items-center gap-3 text-blue-600 dark:text-blue-400">
                           <div className="animate-spin rounded-full h-6 w-6 border-2 border-current border-t-transparent"></div>
-                          <span className="text-sm font-semibold">Ukládám...</span>
+                          <span className="text-sm font-semibold">
+                            Ukládám...
+                          </span>
                         </div>
                       </div>
                     )}
-                    
-                                         <div className="p-4 sm:p-6 relative">
-                       {/* Desktop layout */}
-                       <div className="hidden md:flex items-center justify-between">
-                         <div className="flex items-center gap-6 flex-1">
-                           {/* Avatar a jméno */}
-                           <div className="flex items-center gap-4">
-                             <div className="relative">
-                               <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                                 {member.name.charAt(0).toUpperCase()}
-                               </div>
-                             </div>
-                             
-                             <div className="flex-1">
-                               <input
-                                 className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 font-semibold text-lg"
-                                 value={member.name}
-                                 onChange={e => handleEditMember(member.id, 'name', e.target.value)}
-                                 placeholder="Jméno člena"
-                               />
-                             </div>
-                           </div>
-                           
-                           {/* Role */}
-                           <div className="flex items-center gap-3">
-                             <span className="text-2xl">{getRoleIcon(member.role)}</span>
-                             <select
-                               className="bg-gradient-to-r from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 font-medium min-w-[120px]"
-                               value={member.role}
-                               onChange={e => handleEditMember(member.id, 'role', e.target.value)}
-                             >
-                               {ROLES.map(role => (
-                                 <option key={role.value} value={role.value}>{role.value}</option>
-                               ))}
-                             </select>
-                           </div>
-                           
-                           {/* FTE */}
-                           <div className="flex items-center gap-3">
-                             <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">Úvazek:</span>
-                             <div className="relative">
-                               <input
-                                 className="w-20 bg-gradient-to-r from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 text-center font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                 type="number"
-                                 min={0.1}
-                                 step={0.01}
-                                 value={member.fte}
-                                 onChange={e => handleEditMember(member.id, 'fte', Number(e.target.value))}
-                               />
-                               <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-gray-500 dark:text-gray-400">FTE</span>
-                               
-                               {/* Custom spinner buttons */}
-                               <div className="absolute left-1 top-1/2 transform -translate-y-1/2 flex flex-col gap-0.5">
-                                 <button
-                                   type="button"
-                                   className="w-3 h-3 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                                   onClick={() => handleEditMember(member.id, 'fte', Math.min(member.fte + 0.1, 2))}
-                                 >
-                                   <svg className="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 15l7-7 7 7" />
-                                   </svg>
-                                 </button>
-                                 <button
-                                   type="button"
-                                   className="w-3 h-3 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                                   onClick={() => handleEditMember(member.id, 'fte', Math.max(member.fte - 0.1, 0.1))}
-                                 >
-                                   <svg className="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
-                                   </svg>
-                                 </button>
-                               </div>
-                             </div>
-                           </div>
-                         </div>
-                         
-                         {/* Akce */}
-                         <div className="flex items-center gap-2">
-                           <button
-                             onClick={() => handleDeleteMember(member.id)}
-                             className="p-3 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-all duration-200 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl group"
-                             title={t('delete')}
-                           >
-                             <svg className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                             </svg>
-                           </button>
-                         </div>
-                       </div>
-                       
-                       {/* Mobile layout */}
-                       <div className="md:hidden space-y-4">
-                         {/* Header s avatarem a jménem */}
-                         <div className="flex items-center justify-between">
-                           <div className="flex items-center gap-3">
-                             <div className="relative">
-                               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-base shadow-lg">
-                                 {member.name.charAt(0).toUpperCase()}
-                               </div>
-                             </div>
-                             
-                             <div className="flex-1">
-                               <input
-                                 className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 font-semibold text-base"
-                                 value={member.name}
-                                 onChange={e => handleEditMember(member.id, 'name', e.target.value)}
-                                 placeholder="Jméno člena"
-                               />
-                             </div>
-                           </div>
-                           
-                           {/* Delete button */}
-                           <button
-                             onClick={() => handleDeleteMember(member.id)}
-                             className="p-2 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-all duration-200 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
-                             title={t('delete')}
-                           >
-                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                             </svg>
-                           </button>
-                         </div>
-                         
-                         {/* Role a FTE */}
-                         <div className="grid grid-cols-2 gap-3">
-                           {/* Role */}
-                           <div className="flex items-center gap-2">
-                             <span className="text-xl">{getRoleIcon(member.role)}</span>
-                             <select
-                               className="flex-1 bg-gradient-to-r from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 font-medium text-sm"
-                               value={member.role}
-                               onChange={e => handleEditMember(member.id, 'role', e.target.value)}
-                             >
-                               {ROLES.map(role => (
-                                 <option key={role.value} value={role.value}>{role.value}</option>
-                               ))}
-                             </select>
-                           </div>
-                           
-                           {/* FTE */}
-                           <div className="flex items-center gap-2">
-                             <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">FTE:</span>
-                             <div className="relative flex-1">
-                               <input
-                                 className="w-full bg-gradient-to-r from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 text-center font-semibold text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                 type="number"
-                                 min={0.1}
-                                 step={0.01}
-                                 value={member.fte}
-                                 onChange={e => handleEditMember(member.id, 'fte', Number(e.target.value))}
-                               />
-                               
-                               {/* Custom spinner buttons */}
-                               <div className="absolute right-1 top-1/2 transform -translate-y-1/2 flex gap-1">
-                                 <button
-                                   type="button"
-                                   className="w-4 h-4 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                                   onClick={() => handleEditMember(member.id, 'fte', Math.min(member.fte + 0.1, 2))}
-                                 >
-                                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 15l7-7 7 7" />
-                                   </svg>
-                                 </button>
-                                 <button
-                                   type="button"
-                                   className="w-4 h-4 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                                   onClick={() => handleEditMember(member.id, 'fte', Math.max(member.fte - 0.1, 0.1))}
-                                 >
-                                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
-                                   </svg>
-                                 </button>
-                               </div>
-                             </div>
-                           </div>
-                         </div>
-                       </div>
-                       
-                       {/* Role badge - visible on both layouts */}
-                       <div className="mt-4 flex items-center gap-2">
-                         <span className={`bg-gradient-to-r ${getRoleColor(member.role)} text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg`}>
-                           {member.role}
-                         </span>
-                         <span className="text-sm text-gray-500 dark:text-gray-400">
-                           {member.fte} FTE
-                         </span>
-                       </div>
-                     </div>
+
+                    <div className="p-4 sm:p-6 relative">
+                      {/* Desktop layout */}
+                      <div className="hidden md:flex items-center justify-between">
+                        <div className="flex items-center gap-6 flex-1">
+                          {/* Avatar a jméno */}
+                          <div className="flex items-center gap-4">
+                            <div className="relative">
+                              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                                {member.name.charAt(0).toUpperCase()}
+                              </div>
+                            </div>
+
+                            <div className="flex-1">
+                              <input
+                                className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 font-semibold text-lg"
+                                value={member.name}
+                                onChange={(e) =>
+                                  handleEditMember(
+                                    member.id,
+                                    "name",
+                                    e.target.value
+                                  )
+                                }
+                                placeholder="Jméno člena"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Role */}
+                          <div className="flex items-center gap-3">
+                            <span className="text-2xl">
+                              {getRoleIcon(member.role)}
+                            </span>
+                            <select
+                              className="bg-gradient-to-r from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 font-medium min-w-[120px]"
+                              value={member.role}
+                              onChange={(e) =>
+                                handleEditMember(
+                                  member.id,
+                                  "role",
+                                  e.target.value
+                                )
+                              }
+                            >
+                              {ROLES.map((role) => (
+                                <option key={role.value} value={role.value}>
+                                  {role.value}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {/* FTE */}
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                              Úvazek:
+                            </span>
+                            <div className="relative">
+                              <input
+                                className="w-20 bg-gradient-to-r from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 text-center font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                type="number"
+                                min={0.1}
+                                step={0.01}
+                                value={member.fte}
+                                onChange={(e) =>
+                                  handleEditMember(
+                                    member.id,
+                                    "fte",
+                                    Number(e.target.value)
+                                  )
+                                }
+                              />
+                              <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-gray-500 dark:text-gray-400">
+                                FTE
+                              </span>
+
+                              {/* Custom spinner buttons */}
+                              <div className="absolute left-1 top-1/2 transform -translate-y-1/2 flex flex-col gap-0.5">
+                                <button
+                                  type="button"
+                                  className="w-3 h-3 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                                  onClick={() =>
+                                    handleEditMember(
+                                      member.id,
+                                      "fte",
+                                      Math.min(member.fte + 0.1, 2)
+                                    )
+                                  }
+                                >
+                                  <svg
+                                    className="w-2 h-2"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={3}
+                                      d="M5 15l7-7 7 7"
+                                    />
+                                  </svg>
+                                </button>
+                                <button
+                                  type="button"
+                                  className="w-3 h-3 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                                  onClick={() =>
+                                    handleEditMember(
+                                      member.id,
+                                      "fte",
+                                      Math.max(member.fte - 0.1, 0.1)
+                                    )
+                                  }
+                                >
+                                  <svg
+                                    className="w-2 h-2"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={3}
+                                      d="M19 9l-7 7-7-7"
+                                    />
+                                  </svg>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Akce */}
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleDeleteMember(member.id)}
+                            className="p-3 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-all duration-200 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl group"
+                            title={t("delete")}
+                          >
+                            <svg
+                              className="w-5 h-5 group-hover:scale-110 transition-transform duration-200"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Mobile layout */}
+                      <div className="md:hidden space-y-4">
+                        {/* Header s avatarem a jménem */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="relative">
+                              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-base shadow-lg">
+                                {member.name.charAt(0).toUpperCase()}
+                              </div>
+                            </div>
+
+                            <div className="flex-1">
+                              <input
+                                className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 font-semibold text-base"
+                                value={member.name}
+                                onChange={(e) =>
+                                  handleEditMember(
+                                    member.id,
+                                    "name",
+                                    e.target.value
+                                  )
+                                }
+                                placeholder="Jméno člena"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Delete button */}
+                          <button
+                            onClick={() => handleDeleteMember(member.id)}
+                            className="p-2 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-all duration-200 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+                            title={t("delete")}
+                          >
+                            <svg
+                              className="w-5 h-5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+
+                        {/* Role a FTE */}
+                        <div className="grid grid-cols-2 gap-3">
+                          {/* Role */}
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl">
+                              {getRoleIcon(member.role)}
+                            </span>
+                            <select
+                              className="flex-1 bg-gradient-to-r from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 font-medium text-sm"
+                              value={member.role}
+                              onChange={(e) =>
+                                handleEditMember(
+                                  member.id,
+                                  "role",
+                                  e.target.value
+                                )
+                              }
+                            >
+                              {ROLES.map((role) => (
+                                <option key={role.value} value={role.value}>
+                                  {role.value}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {/* FTE */}
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
+                              FTE:
+                            </span>
+                            <div className="relative flex-1">
+                              <input
+                                className="w-full bg-gradient-to-r from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 text-center font-semibold text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                type="number"
+                                min={0.1}
+                                step={0.01}
+                                value={member.fte}
+                                onChange={(e) =>
+                                  handleEditMember(
+                                    member.id,
+                                    "fte",
+                                    Number(e.target.value)
+                                  )
+                                }
+                              />
+
+                              {/* Custom spinner buttons */}
+                              <div className="absolute right-1 top-1/2 transform -translate-y-1/2 flex gap-1">
+                                <button
+                                  type="button"
+                                  className="w-4 h-4 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                                  onClick={() =>
+                                    handleEditMember(
+                                      member.id,
+                                      "fte",
+                                      Math.min(member.fte + 0.1, 2)
+                                    )
+                                  }
+                                >
+                                  <svg
+                                    className="w-3 h-3"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={3}
+                                      d="M5 15l7-7 7 7"
+                                    />
+                                  </svg>
+                                </button>
+                                <button
+                                  type="button"
+                                  className="w-4 h-4 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                                  onClick={() =>
+                                    handleEditMember(
+                                      member.id,
+                                      "fte",
+                                      Math.max(member.fte - 0.1, 0.1)
+                                    )
+                                  }
+                                >
+                                  <svg
+                                    className="w-3 h-3"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={3}
+                                      d="M19 9l-7 7-7-7"
+                                    />
+                                  </svg>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Role badge - visible on both layouts */}
+                      <div className="mt-4 flex items-center gap-2">
+                        <span
+                          className={`bg-gradient-to-r ${getRoleColor(member.role)} text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg`}
+                        >
+                          {member.role}
+                        </span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                          {member.fte} FTE
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 ))
               )}
             </div>
-            
+
             {/* Team stats */}
             {team.length > 0 && (
               <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-gradient-to-br from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm rounded-xl p-4 border border-gray-200/50 dark:border-gray-600/50 shadow-lg">
                   <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                    <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    <svg
+                      className="w-4 h-4 text-blue-500"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                      />
                     </svg>
                     Celkem členů
                   </div>
@@ -354,28 +542,51 @@ export function TeamSection({ scopeId, team, onTeamChange }: TeamSectionProps) {
                     {team.length}
                   </div>
                 </div>
-                
+
                 <div className="bg-gradient-to-br from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm rounded-xl p-4 border border-gray-200/50 dark:border-gray-600/50 shadow-lg">
                   <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                    <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <svg
+                      className="w-4 h-4 text-green-500"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
                     </svg>
                     Celkový úvazek
                   </div>
                   <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                    {team.reduce((sum, member) => sum + member.fte, 0).toFixed(1)} FTE
+                    {team
+                      .reduce((sum, member) => sum + member.fte, 0)
+                      .toFixed(1)}{" "}
+                    FTE
                   </div>
                 </div>
-                
+
                 <div className="bg-gradient-to-br from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm rounded-xl p-4 border border-gray-200/50 dark:border-gray-600/50 shadow-lg">
                   <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                    <svg className="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    <svg
+                      className="w-4 h-4 text-purple-500"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                      />
                     </svg>
                     Unikátní role
                   </div>
                   <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                    {new Set(team.map(m => m.role)).size}
+                    {new Set(team.map((m) => m.role)).size}
                   </div>
                 </div>
               </div>
@@ -385,4 +596,4 @@ export function TeamSection({ scopeId, team, onTeamChange }: TeamSectionProps) {
       </section>
     </>
   );
-} 
+}

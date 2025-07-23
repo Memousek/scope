@@ -312,7 +312,7 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-4">
                 <div className="relative">
-                  <h2 className="relative text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                  <h2 className="relative text-2xl font-bold dark:text-white text-gray-900">
                     🚀 {t('projects')}
                   </h2>
                 </div>
