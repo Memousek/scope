@@ -104,11 +104,11 @@ export function BurndownChart({ projects, team }: BurndownChartProps) {
           const pmActual = Number(project.pm_done) || 0;
           const dplActual = Number(project.dpl_done) || 0;
 
-          const feMd = Number(project.fe_md) || 0;
-          const beMd = Number(project.be_md) || 0;
-          const qaMd = Number(project.qa_md) || 0;
-          const pmMd = Number(project.pm_md) || 0;
-          const dplMd = Number(project.dpl_md) || 0;
+          const feMd = Number(project.fe_mandays) || 0;
+          const beMd = Number(project.be_mandays) || 0;
+          const qaMd = Number(project.qa_mandays) || 0;
+          const pmMd = Number(project.pm_mandays) || 0;
+          const dplMd = Number(project.dpl_mandays) || 0;
 
           const weight = feMd + beMd + qaMd + pmMd + dplMd || 1;
           const actualProgress =
@@ -222,7 +222,7 @@ export function BurndownChart({ projects, team }: BurndownChartProps) {
     label: project.name,
     color: projectColors[index % projectColors.length],
   }));
-  
+
   return (
     <div className="relative bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 rounded-2xl p-8 shadow-2xl">
       {/* Decorative background elements */}
