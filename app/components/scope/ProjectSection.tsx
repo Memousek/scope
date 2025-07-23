@@ -386,9 +386,9 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
                               onDragLeave={handleDragLeave}
                               onDrop={(e) => handleDrop(e, project)}
                               className={`
-                                relative group bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-700/90 dark:via-gray-700/70 dark:to-gray-700/50 backdrop-blur-lg rounded-2xl border border-white/40 dark:border-gray-600/40 overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/10
+                                relative group bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-700/90 dark:via-gray-700/70 dark:to-gray-700/50 backdrop-blur-lg rounded-2xl border border-white/40 dark:border-gray-600/40 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/10
                                 ${isDragOver ? 'border-blue-500 border-2 bg-blue-50/50 dark:bg-blue-900/20 scale-105' : ''}
-                                ${isBeingDragged ? 'opacity-50 scale-95 rotate-2' : ''}
+                                ${isBeingDragged ? 'opacity-50 scale-95 ' : ''}
                                 ${isDragging && !isBeingDragged ? 'cursor-grabbing' : 'cursor-grab'}
                                 ${isUpdatingPriority ? 'pointer-events-none opacity-75' : ''}
                                 animate-in slide-in-from-bottom-8 fade-in duration-700
@@ -398,7 +398,7 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
                               <div className={`absolute top-0 left-0 w-1 h-full bg-gradient-to-b ${getPriorityColor(priority)}`}></div>
                               
                               {/* Hover effect overlay */}
-                              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-blue-500/5 group-hover:via-purple-500/5 group-hover:to-pink-500/5 transition-all duration-500 rounded-2xl"></div>
+                              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-blue-500/5 group-hover:via-purple-500/5 group-hover:to-pink-500/5 transition-all duration-300 rounded-2xl"></div>
                               
                               {/* Drop zone indicators */}
                               {isDragOver && draggedProject?.id !== project.id && (
@@ -626,7 +626,7 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
                               
                               {/* Rozbalené detaily */}
                               {isExpanded && (
-                                <div className="animate-in slide-in-from-top-4 duration-500 border-t border-gray-200/50 dark:border-gray-600/50 bg-gradient-to-br from-gray-50/50 via-white/30 to-gray-50/50 dark:from-gray-800/50 dark:via-gray-700/30 dark:to-gray-800/50">
+                                <div className="animate-in slide-in-from-top-4 duration-300 border-t border-gray-200/50 dark:border-gray-600/50 bg-gradient-to-br from-gray-50/50 via-white/30 to-gray-50/50 dark:from-gray-800/50 dark:via-gray-700/30 dark:to-gray-800/50">
                                   <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
                                     {/* Role progress */}
                                     <div>
@@ -651,7 +651,7 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
                                               </div>
                                               <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2 sm:h-3 overflow-hidden">
                                                 <div 
-                                                  className="h-2 sm:h-3 rounded-full transition-all duration-500 ease-out"
+                                                  className="h-2 sm:h-3 rounded-full transition-all duration-300 ease-out"
                                                   style={{ 
                                                     width: `${progress.percentage}%`,
                                                     background: `linear-gradient(90deg, ${role.color}, ${role.color}dd)`
