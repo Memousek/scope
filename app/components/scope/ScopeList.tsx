@@ -170,7 +170,7 @@ export const ScopeList: React.FC<ScopeListProps> = ({
                           }`}>
                             {scopeItem.type === ScopeType.OWNED ? "Vlastní scope" : "Sdílený scope"}
                           </span>
-                          <span className="text-xs text-gray-500 dark:text-gray-400 font-medium truncate">
+                          <span className="text-xs text-gray-500 dark:text-gray-400 font-medium truncate" title={`${scopeItem.scope.id}`}>
                             ID: {scopeItem.scope.id.slice(0, 8)}...
                           </span>
                         </div>
