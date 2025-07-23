@@ -252,7 +252,7 @@ export function BurndownChart({ projects, team }: BurndownChartProps) {
               </div>
               <div>
                 <h3 className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                  📈 Burndown Chart
+                  Burndown Chart
                 </h3>
                 {projectNames && (
                   <p className="text-sm text-gray-600 dark:text-gray-400">
