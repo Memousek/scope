@@ -129,7 +129,7 @@ export function ModernScopeLayout({
                                  <div className="flex items-center gap-4 mb-6">
                    <div className="relative">
                      <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                       📊 Přehled scopey
+                       🔍 Přehled scopů
                      </h2>
                    </div>
                   <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 bg-white/50 dark:bg-gray-700/50 px-3 py-1 rounded-full backdrop-blur-sm">

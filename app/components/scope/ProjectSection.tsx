@@ -345,7 +345,7 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
                   <p className="text-gray-500 dark:text-gray-400 text-sm">Začněte přidáním prvního projektu</p>
                 </div>
               ) : (
-                sortedPriorities.map((priority, priorityIndex) => {
+                sortedPriorities.map((priority) => {
                   const projectsInGroup = groupedProjects[priority];
                   
                   return (
@@ -366,7 +366,7 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
                       
                       {/* Projects in this priority group */}
                       <div className="space-y-4">
-                        {projectsInGroup.map((project, projectIndex) => {
+                        {projectsInGroup.map((project) => {
                           const info = calculateProjectDeliveryInfo(project, team);
                           const priorityDates = calculatePriorityDates(projects, team)[project.id];
                           const isExpanded = expandedProject === project.id;
@@ -391,9 +391,8 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
                                 ${isBeingDragged ? 'opacity-50 scale-95 rotate-2' : ''}
                                 ${isDragging && !isBeingDragged ? 'cursor-grabbing' : 'cursor-grab'}
                                 ${isUpdatingPriority ? 'pointer-events-none opacity-75' : ''}
-                                animate-in slide-in-from-bottom-4 duration-500
+                                animate-in slide-in-from-bottom-8 fade-in duration-700
                               `}
-                              style={{ animationDelay: `${(priorityIndex * 200) + (projectIndex * 100)}ms` }}
                             >
                               {/* Priority indicator */}
                               <div className={`absolute top-0 left-0 w-1 h-full bg-gradient-to-b ${getPriorityColor(priority)}`}></div>
