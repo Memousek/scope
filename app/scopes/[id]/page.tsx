@@ -402,7 +402,7 @@ export default function ScopePage({
                     {isOwner && (
                       <button
                         onClick={() => setEditingName(true)}
-                        className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                        className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-transform hover:rotate-45 transform"
                       >
                         ✏️
                       </button>
@@ -474,7 +474,7 @@ export default function ScopePage({
                 {isOwner && (
                   <button
                     onClick={() => setEditingDescription(true)}
-                    className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                    className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-transform hover:rotate-45 transform"
                   >
                     ✏️
                   </button>
