@@ -10,6 +10,7 @@ import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Project, ProjectDeliveryInfo } from './types';
 import { PROJECT_ROLES, calculateRoleProgress } from '@/lib/utils/projectRoles';
+import { Payload } from 'recharts';
 
 interface ProjectProgressChartProps {
   project: Project;
@@ -170,14 +171,8 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
     return null;
   };
 
-  const handleLegendMouseEnter = (
-    data: any,
-    index: number,
-    event: React.MouseEvent<Element, MouseEvent>
-  ) => {
-    if (data && typeof data.dataKey === 'string') {
-      setActiveLegend(data.dataKey);
-    }
+  const handleLegendMouseEnter = (payload: Payload) => {
+    setActiveLegend(payload.dataKey as string);
   };
   const handleLegendMouseLeave = () => {
     setActiveLegend(null);
