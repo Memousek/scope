@@ -36,18 +36,18 @@ export class SupabaseProjectRepository implements ProjectRepository {
         scope_id: project.scopeId,
         name: project.name,
         priority: project.priority,
-        fe_mandays: project.feMandays,
-        be_mandays: project.beMandays,
-        qa_mandays: project.qaMandays,
-        pm_mandays: project.pmMandays,
-        dpl_mandays: project.dplMandays,
-        fe_done: project.feDone,
-        be_done: project.beDone,
-        qa_done: project.qaDone,
-        pm_done: project.pmDone,
-        dpl_done: project.dplDone,
+        fe_mandays: project.feMandays ?? 0,
+        be_mandays: project.beMandays ?? 0,
+        qa_mandays: project.qaMandays ?? 0,
+        pm_mandays: project.pmMandays ?? 0,
+        dpl_mandays: project.dplMandays ?? 0,
+        fe_done: project.feDone ?? 0,
+        be_done: project.beDone ?? 0,
+        qa_done: project.qaDone ?? 0,
+        pm_done: project.pmDone ?? 0,
+        dpl_done: project.dplDone ?? 0,
         delivery_date: project.deliveryDate?.toISOString(),
-        slip: project.slip
+        slip: project.slip ?? 0
       })
       .select()
       .single();
@@ -66,18 +66,18 @@ export class SupabaseProjectRepository implements ProjectRepository {
     if (project.scopeId !== undefined) updateData.scope_id = project.scopeId;
     if (project.name !== undefined) updateData.name = project.name;
     if (project.priority !== undefined) updateData.priority = project.priority;
-    if (project.feMandays !== undefined) updateData.fe_mandays = project.feMandays;
-    if (project.beMandays !== undefined) updateData.be_mandays = project.beMandays;
-    if (project.qaMandays !== undefined) updateData.qa_mandays = project.qaMandays;
-    if (project.pmMandays !== undefined) updateData.pm_mandays = project.pmMandays;
-    if (project.dplMandays !== undefined) updateData.dpl_mandays = project.dplMandays;
-    if (project.feDone !== undefined) updateData.fe_done = project.feDone;
-    if (project.beDone !== undefined) updateData.be_done = project.beDone;
-    if (project.qaDone !== undefined) updateData.qa_done = project.qaDone;
-    if (project.pmDone !== undefined) updateData.pm_done = project.pmDone;
-    if (project.dplDone !== undefined) updateData.dpl_done = project.dplDone;
+    if (project.feMandays !== undefined) updateData.fe_mandays = project.feMandays ?? 0;
+    if (project.beMandays !== undefined) updateData.be_mandays = project.beMandays ?? 0;
+    if (project.qaMandays !== undefined) updateData.qa_mandays = project.qaMandays ?? 0;
+    if (project.pmMandays !== undefined) updateData.pm_mandays = project.pmMandays ?? 0;
+    if (project.dplMandays !== undefined) updateData.dpl_mandays = project.dplMandays ?? 0;
+    if (project.feDone !== undefined) updateData.fe_done = project.feDone ?? 0;
+    if (project.beDone !== undefined) updateData.be_done = project.beDone ?? 0;
+    if (project.qaDone !== undefined) updateData.qa_done = project.qaDone ?? 0;
+    if (project.pmDone !== undefined) updateData.pm_done = project.pmDone ?? 0;
+    if (project.dplDone !== undefined) updateData.dpl_done = project.dplDone ?? 0;
     if (project.deliveryDate !== undefined) updateData.delivery_date = project.deliveryDate?.toISOString();
-    if (project.slip !== undefined) updateData.slip = project.slip;
+    if (project.slip !== undefined) updateData.slip = project.slip ?? 0;
 
     const { data, error } = await supabase
       .from('projects')

@@ -40,11 +40,11 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
     name: '',
     priority: 1,
     delivery_date: null,
-    fe_mandays: null,
-    be_mandays: null,
-    qa_mandays: null,
-    pm_mandays: null,
-    dpl_mandays: null,
+    fe_mandays: 0,
+    be_mandays: 0,
+    qa_mandays: 0,
+    pm_mandays: 0,
+    dpl_mandays: 0,
     fe_done: 0,
     be_done: 0,
     qa_done: 0,
@@ -72,11 +72,11 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
       name: '',
       priority: 1,
       delivery_date: null,
-      fe_mandays: null,
-      be_mandays: null,
-      qa_mandays: null,
-      pm_mandays: null,
-      dpl_mandays: null,
+      fe_mandays: 0,
+      be_mandays: 0,
+      qa_mandays: 0,
+      pm_mandays: 0,
+      dpl_mandays: 0,
       fe_done: 0,
       be_done: 0,
       qa_done: 0,
@@ -185,8 +185,8 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
                         type="number"
                         min={0.01}
                         step={0.01}
-                        value={newProject[`${config.key}_mandays` as keyof typeof newProject] ?? ''}
-                        onChange={e => setNewProject(p => ({ ...p, [`${config.key}_mandays`]: Number(e.target.value) }))}
+                        value={newProject[`${config.key}_mandays` as keyof typeof newProject] || ''}
+                        onChange={e => setNewProject(p => ({ ...p, [`${config.key}_mandays`]: e.target.value ? Number(e.target.value) : 0 }))}
                         disabled={savingProject}
                         required
                       />

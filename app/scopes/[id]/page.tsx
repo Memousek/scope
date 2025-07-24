@@ -136,16 +136,16 @@ export default function ScopePage({
         deliveryDate: project.delivery_date
           ? new Date(project.delivery_date)
           : undefined,
-        feMandays: project.fe_mandays || 0,
-        beMandays: project.be_mandays || 0,
-        qaMandays: project.qa_mandays || 0,
-        pmMandays: project.pm_mandays || 0,
-        dplMandays: project.dpl_mandays || 0,
-        feDone: project.fe_done || 0,
-        beDone: project.be_done || 0,
-        qaDone: project.qa_done || 0,
-        pmDone: project.pm_done || 0,
-        dplDone: project.dpl_done || 0,
+        feMandays: project.fe_mandays ?? 0,
+        beMandays: project.be_mandays ?? 0,
+        qaMandays: project.qa_mandays ?? 0,
+        pmMandays: project.pm_mandays ?? 0,
+        dplMandays: project.dpl_mandays ?? 0,
+        feDone: project.fe_done ?? 0,
+        beDone: project.be_done ?? 0,
+        qaDone: project.qa_done ?? 0,
+        pmDone: project.pm_done ?? 0,
+        dplDone: project.dpl_done ?? 0,
         slip: 0, // Default value
       });
 
