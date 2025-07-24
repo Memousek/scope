@@ -110,6 +110,12 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
   const getShareLink = () => {
     const baseUrl = window.location.origin;
     const token = getLastInviteToken() || uuidv4();
+    if (selectedLinkType === 'edit') {
+      return `${baseUrl}/scopes/${scopeId}/accept?token=${token}`;
+    } else if (selectedLinkType === 'view') {
+      return `${baseUrl}/scopes/${scopeId}/view`;
+    }
+    // Default link type
     return `${baseUrl}/scopes/${scopeId}/accept?token=${token}&type=${selectedLinkType}`;
   };
 
