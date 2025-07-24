@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { createClient } from '@/lib/supabase/client';
 import { FiCopy, FiX, FiMail, FiUsers, FiLink, FiEdit, FiEye, FiPlus, FiTrash2 } from 'react-icons/fi';
 import { v4 as uuidv4 } from 'uuid';
@@ -141,11 +142,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+  const modalContent = (
+    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ zIndex: 9999 }}>
       {/* Backdrop s animací */}
       <div 
-        className="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity duration-300"
+        className="absolute inset-0 bg-black/70 backdrop-blur-md transition-opacity duration-300"
         onClick={onClose}
       />
       
@@ -366,4 +367,6 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }; 

@@ -7,6 +7,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { ROLES } from './types';
 import { useTranslation } from '@/lib/translation';
 
@@ -54,8 +55,8 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" style={{ backdropFilter: 'blur(8px)' }}>
+  const modalContent = (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md" style={{ backdropFilter: 'blur(12px)', zIndex: 9999 }}>
       <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border border-white/20 dark:border-gray-700 rounded-2xl shadow-2xl p-8 w-full max-w-lg relative overflow-y-auto max-h-[90vh] mx-4">
         <button 
           className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 text-3xl font-bold transition-colors duration-200" 
@@ -135,4 +136,6 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }; 
