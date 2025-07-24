@@ -207,7 +207,9 @@ export function BurndownChart({ projects, team }: BurndownChartProps) {
 
   // Definice projektů a jejich barev
   const projectColors = [
-    "#2563eb",
+    "#3b82f6",
+    "#9333ea",
+    "#f43f5e",  
     "#059669",
     "#f59e42",
     "#a21caf",
@@ -365,10 +367,10 @@ export function BurndownChart({ projects, team }: BurndownChartProps) {
               <Line
                 type="monotone"
                 dataKey="totalProgress"
-                stroke="#3b82f6"
+                stroke="#4ade80"
                 strokeWidth={4}
                 name="Celkem % hotovo"
-                dot={{ fill: "#3b82f6", strokeWidth: 2, r: 5 }}
+                dot={{ fill: "#4ade80", strokeWidth: 2, r: 5 }}
                 opacity={
                   !activeLegend || activeLegend === "totalProgress" ? 1 : 0.2
                 }
