@@ -170,9 +170,14 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
     return null;
   };
 
-  // Legend handlers
-  const handleLegendMouseEnter = (o: any) => {
-    setActiveLegend(o.dataKey);
+  const handleLegendMouseEnter = (
+    data: any,
+    index: number,
+    event: React.MouseEvent<Element, MouseEvent>
+  ) => {
+    if (data && typeof data.dataKey === 'string') {
+      setActiveLegend(data.dataKey);
+    }
   };
   const handleLegendMouseLeave = () => {
     setActiveLegend(null);

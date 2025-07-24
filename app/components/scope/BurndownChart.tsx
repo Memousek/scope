@@ -20,6 +20,7 @@ import {
 } from "recharts";
 import { Project, TeamMember } from "./types";
 import { calculatePriorityDates } from "@/app/utils/dateUtils";
+import { Payload } from "recharts/types/component/DefaultLegendContent";
 
 interface BurndownChartProps {
   projects: Project[];
@@ -225,8 +226,8 @@ export function BurndownChart({ projects, team }: BurndownChartProps) {
   }));
 
   // Legend handlers
-  const handleLegendMouseEnter = (o: any) => {
-    setActiveLegend(o.dataKey);
+  const handleLegendMouseEnter = (o: Payload) => {
+    setActiveLegend(o.dataKey as string);
   };
   const handleLegendMouseLeave = () => {
     setActiveLegend(null);
