@@ -442,7 +442,8 @@ export default function ScopePage({
                     {isOwner && (
                       <button
                         onClick={() => setEditingName(true)}
-                        className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-transform"
+                        className="transition-transform hover:scale-110 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                        title="Upravit název scopu"
                       >
                         ✏️
                       </button>
@@ -516,7 +517,8 @@ export default function ScopePage({
                 {isOwner && (
                   <button
                     onClick={() => setEditingDescription(true)}
-                    className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                    className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-transform hover:scale-110"
+                    title="Upravit popis scopu"
                   >
                     ✏️
                   </button>
