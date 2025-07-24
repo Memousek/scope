@@ -21,6 +21,7 @@ import {
 import { Project, TeamMember } from "./types";
 import { calculatePriorityDates } from "@/app/utils/dateUtils";
 import { Payload } from "recharts/types/component/DefaultLegendContent";
+import { useTranslation } from "@/lib/translation";
 
 interface BurndownChartProps {
   projects: Project[];
@@ -35,6 +36,7 @@ interface ChartDataPoint {
 }
 
 export function BurndownChart({ projects, team }: BurndownChartProps) {
+  const { t } = useTranslation();
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [activeLegend, setActiveLegend] = useState<string | null>(null); // Přidáno
 
@@ -177,10 +179,10 @@ export function BurndownChart({ projects, team }: BurndownChartProps) {
         <div className="relative z-10">
           <div className="text-6xl mb-6">📊</div>
           <h3 className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
-            Žádná data pro graf
+            {t("noDataForChart")}
           </h3>
           <p className="text-gray-500 dark:text-gray-400 text-sm">
-            Přidejte projekty a členy týmu pro zobrazení burndown chartu
+            {t("noDataForChartDescription")}
           </p>
         </div>
       </div>
@@ -268,7 +270,7 @@ export function BurndownChart({ projects, team }: BurndownChartProps) {
                 </h3>
                 {projectNames && (
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Projekty: {projectNames}
+                    {t("projects")}: {projectNames}
                   </p>
                 )}
               </div>
@@ -281,7 +283,7 @@ export function BurndownChart({ projects, team }: BurndownChartProps) {
               <div className="flex items-center gap-2 mb-1">
                 <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
                 <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                  Projekty
+                  {t("projects")}: {totalProjects}
                 </span>
               </div>
               <div className="text-lg font-bold text-gray-900 dark:text-white">
@@ -292,7 +294,7 @@ export function BurndownChart({ projects, team }: BurndownChartProps) {
               <div className="flex items-center gap-2 mb-1">
                 <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
                 <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                  Progress
+                  {t("progress")}
                 </span>
               </div>
               <div className="text-lg font-bold text-gray-900 dark:text-white">
@@ -340,7 +342,7 @@ export function BurndownChart({ projects, team }: BurndownChartProps) {
                 stroke="#9ca3af"
                 strokeWidth={2}
                 strokeDasharray="5 5"
-                name="Ideální průběh"
+                name={t("idealProgress")}
                 dot={false}
                 opacity={
                   !activeLegend || activeLegend === "idealProgress" ? 0.7 : 0.2
@@ -369,7 +371,7 @@ export function BurndownChart({ projects, team }: BurndownChartProps) {
                 dataKey="totalProgress"
                 stroke="#4ade80"
                 strokeWidth={4}
-                name="Celkem % hotovo"
+                name={t("totalPercentDone")}
                 dot={{ fill: "#4ade80", strokeWidth: 2, r: 5 }}
                 opacity={
                   !activeLegend || activeLegend === "totalProgress" ? 1 : 0.2
@@ -384,7 +386,7 @@ export function BurndownChart({ projects, team }: BurndownChartProps) {
           <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-              <span>Celkem: {avgProgress}%</span>
+              <span>{t("total")}: {avgProgress}%</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-gray-400 rounded-full"></div>

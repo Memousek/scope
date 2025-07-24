@@ -16,6 +16,7 @@ import { AiChatModal } from "@/app/components/scope/AiChatModal";
 import { AiChatButton } from "@/app/components/scope/AiChatButton";
 import { TeamMember, Project } from "@/app/components/scope/types";
 import { useAuth } from "@/lib/auth";
+import { useTranslation } from "@/lib/translation";
 
 import { ContainerService } from "@/lib/container.service";
 import { GetScopeStatsService } from "@/lib/domain/services/get-scope-stats.service";
@@ -35,6 +36,7 @@ export default function ScopePage({
 }) {
   const { id } = use(params);
   const { loading, user, userId } = useAuth();
+  const { t } = useTranslation();
   const [scope, setScope] = useState<{
     id: string;
     name: string;
@@ -334,11 +336,10 @@ export default function ScopePage({
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            Scope nenalezen
+            {t("scopeNotFound")}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Požadovaný scope nebyl nalezen nebo nemáte oprávnění k jeho
-            zobrazení.
+            {t("scopeNotFoundDescription")}
           </p>
         </div>
       </div>
@@ -372,7 +373,7 @@ export default function ScopePage({
                       disabled={savingName}
                       className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
                     >
-                      {savingName ? "Ukládám..." : "✓"}
+                      {savingName ? t('saving') : "✓"}
                     </button>
                     <button
                       onClick={() => {
@@ -394,7 +395,7 @@ export default function ScopePage({
                       <button
                         onClick={() => setEditingName(true)}
                         className="transition-transform hover:scale-110 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-                        title="Upravit název scopu"
+                        title={t('editScopeName')}
                       >
                         ✏️
                       </button>
@@ -418,7 +419,7 @@ export default function ScopePage({
                   onClick={() => setShareModalOpen(true)}
                   className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all duration-200 shadow-lg"
                 >
-                  📤 Sdílet
+                  📤 {t('share')}
                 </button>
               )}
               <button
@@ -440,7 +441,7 @@ export default function ScopePage({
                   onChange={(e) => setDescription(e.target.value)}
                   className="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                   rows={3}
-                  placeholder="Přidejte popis scope..."
+                  placeholder={t('addScopeDescription')}
                   autoFocus
                 />
                 <button
@@ -448,7 +449,7 @@ export default function ScopePage({
                   disabled={savingDescription}
                   className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 px-3 py-1"
                 >
-                  {savingDescription ? "Ukládám..." : "✓"}
+                  {savingDescription ? t('saving') : "✓"}
                 </button>
                 <button
                   onClick={() => {
@@ -463,13 +464,13 @@ export default function ScopePage({
             ) : (
               <div className="flex items-start gap-2">
                 <p className="text-gray-600 dark:text-gray-400">
-                  {description || "Žádný popis"}
+                  {description || t('noDescription')}
                 </p>
                 {isOwner && (
                   <button
                     onClick={() => setEditingDescription(true)}
                     className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-transform hover:scale-110"
-                    title="Upravit popis scopu"
+                    title={t('editScopeDescription')}
                   >
                     ✏️
                   </button>

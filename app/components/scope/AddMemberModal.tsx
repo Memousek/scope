@@ -122,14 +122,14 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
               className="px-6 py-3 rounded-xl bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-200" 
               onClick={onClose}
             >
-              Zrušit
+              {t('cancel')}
             </button>
             <button
               className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 text-white font-medium hover:from-blue-600 hover:to-purple-600 transition-all duration-200 shadow-lg disabled:opacity-60"
               type="submit"
               disabled={savingMember || !newMember.name.trim()}
             >
-              Přidat člena
+              {t('addMember')}
             </button>
           </div>
         </form>

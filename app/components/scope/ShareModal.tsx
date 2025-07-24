@@ -162,7 +162,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
             </div>
             <div>
               <h2 className="text-2xl font-bold text-white">{t('share_scope')}</h2>
-              <p className="text-white/80 text-sm">Sdílejte scope s týmem</p>
+              <p className="text-white/80 text-sm">{t('shareScopeDescription')}</p>
             </div>
           </div>
         </div>
@@ -193,7 +193,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
                   </div>
                   <div className="text-left">
                     <div className="font-medium">{t('share_link_edit')}</div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">Úplný přístup</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">{t('fullAccess')}</div>
                   </div>
                 </div>
               </button>
@@ -214,7 +214,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
                   </div>
                   <div className="text-left">
                     <div className="font-medium">{t('share_link_view_only')}</div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">Pouze pro čtení</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">{t('readOnly')}</div>
                   </div>
                 </div>
               </button>
@@ -301,7 +301,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
                 <h3 className="font-semibold text-gray-900 dark:text-white">{t('invited_and_editors')}</h3>
               </div>
               <div className="text-sm text-gray-500 dark:text-gray-400">
-                {editors.length} {editors.length === 1 ? 'uživatel' : editors.length < 5 ? 'uživatelé' : 'uživatelů'}
+                {editors.length} {editors.length === 1 ? t('user') : editors.length < 5 ? t('users') : t('users')}
               </div>
             </div>
 

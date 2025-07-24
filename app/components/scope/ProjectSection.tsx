@@ -320,7 +320,7 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
                   </h2>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 bg-white/50 dark:bg-gray-700/50 px-3 py-1 rounded-full backdrop-blur-sm">
-                  <span>Přehled projektů v rámci scopey</span>
+                  <span>{t('projectsOverviewInScope')}</span>
                 </div>
               </div>
               {!readOnlyMode && (
@@ -360,12 +360,12 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
                         <div className="flex items-center gap-2">
                           <span className="text-2xl">{getPriorityIcon(priority)}</span>
                           <h3 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                            Priorita {priority}
+                            {t('priority')} {priority}
                           </h3>
                         </div>
                         <div className="flex-1 h-px bg-gradient-to-r from-gray-300 to-transparent dark:from-gray-600"></div>
                         <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">
-                          {projectsInGroup.length} {projectsInGroup.length === 1 ? 'projekt' : projectsInGroup.length < 5 ? 'projekty' : 'projektů'}
+                          {projectsInGroup.length} {projectsInGroup.length === 1 ? t('project') : projectsInGroup.length < 5 ? t('projects') : t('projectsGenitive')}
                         </span>
                       </div>
                       
@@ -433,7 +433,7 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
                                     {!readOnlyMode && (
                                       <div
                                         className="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg"
-                                        title="Přetáhněte pro změnu priority"
+                                        title={t('dragToChangePriority')}
                                       >
                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
@@ -474,17 +474,17 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
                                       </div>
                                     </div>
                                     
-                                    {/* Termín a skluz */}
+                                    {/* Deadline and Slip */}
                                     <div className="text-right">
-                                      <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Termín</div>
+                                      <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('deadline')}</div>
                                       <div className={`text-lg font-bold ${
                                         info.diffWorkdays && info.diffWorkdays >= 0 
                                           ? 'text-green-600 dark:text-green-400' 
                                           : 'text-red-600 dark:text-red-400'
                                       }`}>
-                                        {info.diffWorkdays === null ? 'N/A' : 
-                                         info.diffWorkdays >= 0 ? `+${info.diffWorkdays} dní` : 
-                                         `${info.diffWorkdays} dní`}
+                                        {info.diffWorkdays === null ? t('notAvailable') : 
+                                         info.diffWorkdays >= 0 ? `+${info.diffWorkdays} ${t('days')}` : 
+                                         `${info.diffWorkdays} ${t('days')}`}
                                       </div>
                                     </div>
                                     
@@ -549,7 +549,7 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
                                       {!readOnlyMode && (
                                         <div
                                           className="flex items-center justify-center w-6 h-6 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg"
-                                          title="Přetáhněte pro změnu priority"
+                                          title={t('dragToChangePriority')}
                                         >
                                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
@@ -628,17 +628,17 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
                                       </div>
                                     </div>
                                     
-                                    {/* Termín */}
+                                    {/* Deadline */}
                                     <div className="text-center">
-                                      <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Termín</div>
+                                      <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">{t('deadline')}</div>
                                       <div className={`text-sm font-bold ${
                                         info.diffWorkdays && info.diffWorkdays >= 0 
                                           ? 'text-green-600 dark:text-green-400' 
                                           : 'text-red-600 dark:text-red-400'
                                       }`}>
-                                        {info.diffWorkdays === null ? 'N/A' : 
-                                         info.diffWorkdays >= 0 ? `+${info.diffWorkdays} dní` : 
-                                         `${info.diffWorkdays} dní`}
+                                        {info.diffWorkdays === null ? t('notAvailable') : 
+                                         info.diffWorkdays >= 0 ? `+${info.diffWorkdays} ${t('days')}` : 
+                                         `${info.diffWorkdays} ${t('days')}`}
                                       </div>
                                     </div>
                                   </div>
@@ -680,7 +680,7 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
                                                 ></div>
                                               </div>
                                               <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 sm:mt-2 font-medium">
-                                                {progress.percentage}% hotovo
+                                                {progress.percentage}% {t('done')}
                                               </div>
                                             </div>
                                           );
@@ -698,17 +698,17 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
                                       />
                                     </div>
                                     
-                                    {/* Termíny */}
+                                    {/* Deadlines */}
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                                       <div className="bg-gradient-to-br from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-gray-200/50 dark:border-gray-600/50 shadow-lg">
                                         <div className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
                                           <svg className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                           </svg>
-                                          Plánovaný termín
+                                          {t('plannedDeadline')}
                                         </div>
                                         <div className="text-gray-900 dark:text-gray-100 font-medium text-sm">
-                                          {project.delivery_date ? new Date(project.delivery_date).toLocaleDateString() : 'Není nastaven'}
+                                          {project.delivery_date ? new Date(project.delivery_date).toLocaleDateString() : t('notSet')}
                                         </div>
                                       </div>
                                       <div className="bg-gradient-to-br from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-gray-200/50 dark:border-gray-600/50 shadow-lg">
@@ -716,7 +716,7 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
                                           <svg className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                           </svg>
-                                          Vypočítaný termín
+                                          {t('calculatedDeadline')}
                                         </div>
                                         <div className="text-gray-900 dark:text-gray-100 font-medium text-sm">
                                           {info.calculatedDeliveryDate.toLocaleDateString()}
@@ -728,11 +728,11 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
                                             <svg className="w-3 h-3 sm:w-4 sm:h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                                             </svg>
-                                            Termín podle priority
+                                            {t('deadlineByPriority')}
                                           </div>
                                           <div className="text-blue-600 dark:text-blue-400 text-xs sm:text-sm font-medium">
-                                            <div>Od: {priorityDates.priorityStartDate.toLocaleDateString()}</div>
-                                            <div>Do: {priorityDates.priorityEndDate.toLocaleDateString()}</div>
+                                            <div>{t('from')}: {priorityDates.priorityStartDate.toLocaleDateString()}</div>
+                                            <div>{t('to')}: {priorityDates.priorityEndDate.toLocaleDateString()}</div>
                                           </div>
                                         </div>
                                       )}

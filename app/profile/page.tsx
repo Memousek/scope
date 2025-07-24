@@ -56,7 +56,7 @@ export default function ProfilePage() {
         <div className="flex items-center justify-center h-full">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">Načítání profilu...</p>
+            <p className="text-gray-600 dark:text-gray-400">{t('loadingProfile')}</p>
           </div>
         </div>
       </div>
@@ -88,7 +88,7 @@ export default function ProfilePage() {
               </div>
             </div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              {user.fullName || 'Uživatel'}
+              {user.fullName || t('noName')}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mb-4">
               {user.email}
@@ -99,7 +99,7 @@ export default function ProfilePage() {
                 className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg text-sm font-medium hover:from-blue-600 hover:to-purple-600 transition-all duration-200 flex items-center gap-2"
               >
                 <Edit className="w-4 h-4" />
-                Upravit profil
+                {t('editProfile')}
               </button>
             </div>
           </div>

@@ -11,6 +11,7 @@ import { createPortal } from 'react-dom';
 import { Project, ProjectProgress } from './types';
 import { PROJECT_ROLES } from '@/lib/utils/projectRoles';
 import { ProjectService } from '@/app/services/projectService';
+import { useTranslation } from '@/lib/translation';
 
 interface EditProjectModalProps {
   isOpen: boolean;
@@ -33,6 +34,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
   onProjectChange,
   projectRoles,
 }) => {
+  const { t } = useTranslation();
   const [editProject, setEditProject] = useState<Project>({ ...project });
   const initialEditState = useRef<Project>({ ...project });
 
@@ -44,7 +46,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
     }));
     const missing = projectMandays.filter(r => Number(editProject[r.key as keyof Project]) > 0 && Number(editProject[r.key as keyof Project]) === 0);
     if (missing.length > 0) {
-      alert('Odhad mandays nesmí být 0 pro existující role v projektu.');
+      alert(t('estimateRequired'));
       return;
     }
     
@@ -97,14 +99,14 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
         </button>
         
         <h4 className="text-2xl font-bold mb-6 text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          ✏️ Upravit projekt
+          ✏️ {t("editProject")}
         </h4>
         
         <form className="flex flex-col gap-6" onSubmit={e => { e.preventDefault(); handleSaveEditProject(); }}>
           {/* Základní informace */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">Název projektu</label>
+              <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">{t("projectName")}</label>
               <input 
                 className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200" 
                 value={editProject.name} 
@@ -113,7 +115,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
               />
             </div>
             <div>
-              <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">Priorita</label>
+              <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">{t("priority")}</label>
               <input 
                 className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200" 
                 type="number" 
@@ -124,7 +126,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
               />
             </div>
             <div>
-              <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">Termín dodání</label>
+              <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">{t('deliveryDate')}</label>
               <input 
                 className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200" 
                 type="date" 
@@ -162,7 +164,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
                       </div>
                       <div>
                         <label className="block mb-1 text-sm font-medium text-gray-600 dark:text-gray-400">
-                          % hotovo
+                          % {t('done')}
                           {(() => {
                             const mandays = Number(editProject[role.mandays as keyof Project]) || 0;
                             const donePercent = Number(editProject[role.done as keyof Project]) || 0;
@@ -194,13 +196,13 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
               className="px-6 py-3 rounded-xl bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-200" 
               onClick={onClose}
             >
-              Zrušit
+              {t("cancel")}
             </button>
             <button 
               type="submit" 
               className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 text-white font-medium hover:from-blue-600 hover:to-purple-600 transition-all duration-200 shadow-lg"
             >
-              Uložit změny
+              {t("saveChanges")}
             </button>
           </div>
         </form>

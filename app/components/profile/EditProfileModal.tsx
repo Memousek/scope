@@ -10,6 +10,7 @@ import { User } from "@/lib/domain/models/user.model";
 import { ContainerService } from "@/lib/container.service";
 import { UserRepository } from "@/lib/domain/repositories/user.repository";
 import { FileUploadService } from "@/lib/services/fileUploadService";
+import { useTranslation } from "@/lib/translation";
 
 interface EditProfileModalProps {
   user: User;
@@ -19,6 +20,7 @@ interface EditProfileModalProps {
 }
 
 export function EditProfileModal({ user, isOpen, onClose, onUpdate }: EditProfileModalProps) {
+  const { t } = useTranslation();
   const [isPasswordChanging, setIsPasswordChanging] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -78,7 +80,7 @@ export function EditProfileModal({ user, isOpen, onClose, onUpdate }: EditProfil
 
   const handleProfileUpdate = async () => {
     if (!formData.fullName.trim()) {
-      setError("Jméno je povinné");
+      setError(t("nameRequired"));
       return;
     }
 
@@ -100,12 +102,12 @@ export function EditProfileModal({ user, isOpen, onClose, onUpdate }: EditProfil
 
       if (updatedUser) {
         onUpdate(updatedUser);
-        setSuccess("Profil byl úspěšně aktualizován");
+        setSuccess(t("profileUpdatedSuccessfully"));
       } else {
-        setError("Nepodařilo se aktualizovat profil");
+        setError(t("failedToUpdateProfile"));
       }
     } catch {
-      setError("Došlo k chybě při aktualizaci profilu");
+      setError(t("errorUpdatingProfile"));
     } finally {
       setLoading(false);
     }
@@ -113,17 +115,17 @@ export function EditProfileModal({ user, isOpen, onClose, onUpdate }: EditProfil
 
   const handlePasswordChange = async () => {
     if (!formData.currentPassword || !formData.newPassword || !formData.confirmPassword) {
-      setError("Všechna pole jsou povinná");
+      setError(t("allFieldsRequired"));
       return;
     }
 
     if (formData.newPassword !== formData.confirmPassword) {
-      setError("Nová hesla se neshodují");
+      setError(t("passwordsDoNotMatch"));
       return;
     }
 
     if (formData.newPassword.length < 6) {
-      setError("Heslo musí mít alespoň 6 znaků");
+      setError(t("passwordMinLength"));
       return;
     }
 
@@ -136,7 +138,7 @@ export function EditProfileModal({ user, isOpen, onClose, onUpdate }: EditProfil
       const success = await userRepository.updateUserPassword(user.id, formData.newPassword);
 
       if (success) {
-        setSuccess("Heslo bylo úspěšně změněno");
+        setSuccess(t("passwordChangedSuccessfully"));
         setFormData(prev => ({
           ...prev,
           currentPassword: "",
@@ -145,10 +147,10 @@ export function EditProfileModal({ user, isOpen, onClose, onUpdate }: EditProfil
         }));
         setIsPasswordChanging(false);
       } else {
-        setError("Nepodařilo se změnit heslo");
+        setError(t("failedToChangePassword"));
       }
     } catch {
-      setError("Došlo k chybě při změně hesla");
+      setError(t("errorChangingPassword"));
     } finally {
       setLoading(false);
     }
@@ -219,7 +221,7 @@ export function EditProfileModal({ user, isOpen, onClose, onUpdate }: EditProfil
                 value={formData.fullName}
                 onChange={(e) => setFormData(prev => ({ ...prev, fullName: e.target.value }))}
                 className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Zadejte své jméno"
+                placeholder={t("enterYourName")}
               />
             </div>
 
@@ -249,7 +251,7 @@ export function EditProfileModal({ user, isOpen, onClose, onUpdate }: EditProfil
                 onClick={() => setIsPasswordChanging(!isPasswordChanging)}
                 className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
               >
-                {isPasswordChanging ? "Zrušit" : "Změnit heslo"}
+                {isPasswordChanging ? t("cancel") : t("changePassword")}
               </button>
             </div>
 
@@ -265,7 +267,7 @@ export function EditProfileModal({ user, isOpen, onClose, onUpdate }: EditProfil
                       value={formData.newPassword}
                       onChange={(e) => setFormData(prev => ({ ...prev, newPassword: e.target.value }))}
                       className="w-full px-4 py-3 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Zadejte nové heslo"
+                      placeholder={t("enterNewPassword")}
                     />
                     <button
                       type="button"
@@ -340,10 +342,10 @@ export function EditProfileModal({ user, isOpen, onClose, onUpdate }: EditProfil
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Měním heslo...
+                  {t("changingPassword")}...
                 </>
               ) : (
-                "Změnit heslo"
+                t("changePassword")
               )}
             </button>
           )}

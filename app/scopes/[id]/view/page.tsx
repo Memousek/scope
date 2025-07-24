@@ -22,6 +22,7 @@ import { AddProjectService } from "@/lib/domain/services/add-project.service";
 import { TeamService } from "@/app/services/teamService";
 import { ProjectService } from "@/app/services/projectService";
 import { ScopeService } from "@/app/services/scopeService";
+import { useTranslation } from "@/lib/translation";
 
 export default function ScopePage({
   params,
@@ -64,6 +65,7 @@ export default function ScopePage({
       }
     | undefined
   >(undefined);
+  const { t } = useTranslation();
 
 
   // Zjistím, které role jsou v týmu
@@ -254,11 +256,10 @@ export default function ScopePage({
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            Scope nenalezen
+            {t("scopeNotFound")}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Požadovaný scope nebyl nalezen nebo nemáte oprávnění k jeho
-            zobrazení.
+            {t("scopeNotFoundDescription")}
           </p>
         </div>
       </div>
@@ -278,7 +279,7 @@ export default function ScopePage({
                 </span>
               </div>
               <div className="absolute top-5 right-5 bg-gradient-to-r from-gray-600 to-gray-700 text-white text-xs font-bold px-2 py-1 rounded-full">
-                Náhledová verze
+                {t("previewVersion")}
               </div>
               <div>
                 <div className="flex items-center gap-2">

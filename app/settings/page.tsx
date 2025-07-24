@@ -20,12 +20,6 @@ const languages = [
   { code: 'en', label: 'English', flag: 'gb' },
 ];
 
-const themes = [
-  { code: 'light', label: 'Světlý režim', icon: Sun },
-  { code: 'dark', label: 'Tmavý režim', icon: Moon },
-  { code: 'system', label: 'Systémový režim', icon: Monitor },
-];
-
 export default function SettingsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -33,6 +27,12 @@ export default function SettingsPage() {
   const [currentTheme, setCurrentTheme] = useState<string>('dark');
   const router = useRouter();
   const { t } = useTranslation();
+
+  const themes = [
+    { code: 'light', labelKey: 'lightMode', icon: Sun },
+    { code: 'dark', labelKey: 'darkMode', icon: Moon },
+    { code: 'system', labelKey: 'systemMode', icon: Monitor },
+  ];
 
   useEffect(() => {
     ContainerService.getInstance().get(UserRepository).getLoggedInUser().then((user) => {
@@ -80,7 +80,7 @@ export default function SettingsPage() {
         <div className="flex items-center justify-center h-full">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">Načítání nastavení...</p>
+            <p className="text-gray-600 dark:text-gray-400">{t('loadingSettings')}</p>
           </div>
         </div>
       </div>
@@ -103,7 +103,7 @@ export default function SettingsPage() {
               {t("settings")}
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
-              Globální nastavení aplikace
+              {t('globalAppSettings')}
             </p>
           </div>
 
@@ -120,7 +120,7 @@ export default function SettingsPage() {
                     {t("theme")}
                   </h2>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Přepněte mezi světlým a tmavým režimem
+                    {t('switchBetweenThemes')}
                   </p>
                 </div>
               </div>
@@ -138,7 +138,7 @@ export default function SettingsPage() {
                       }`}
                     >
                       <IconComponent className="w-5 h-5" />
-                      <span className="font-medium">{theme.label}</span>
+                      <span className="font-medium">{t(theme.labelKey)}</span>
                       {currentTheme === theme.code && (
                         <div className="ml-auto">
                           <div className="w-2 h-2 bg-white rounded-full"></div>
@@ -161,7 +161,7 @@ export default function SettingsPage() {
                     {t("language")}
                   </h2>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Vyberte jazyk aplikace
+                    {t('selectAppLanguage')}
                   </p>
                 </div>
               </div>

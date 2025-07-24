@@ -220,7 +220,7 @@ export const ScopeList: React.FC<ScopeListProps> = ({
                   {/* Footer with actions */}
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 pt-4 border-t border-gray-200/50 dark:border-gray-600/50">
                     <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                      <span>Vytvořeno: {new Date(scopeItem.scope.createdAt).toLocaleDateString('cs-CZ')}</span>
+                      <span>{t("created")}: {new Date(scopeItem.scope.createdAt).toLocaleDateString()}</span>
                     </div>
                     
                     <div className="flex gap-2">
@@ -232,7 +232,7 @@ export const ScopeList: React.FC<ScopeListProps> = ({
                         <svg className="relative z-10 w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                         </svg>
-                        <span className="relative z-10">Otevřít</span>
+                        <span className="relative z-10">{t("open")}</span>
                       </a>
                       {scopeItem.type === ScopeType.OWNED && onDelete ? (
                         <button

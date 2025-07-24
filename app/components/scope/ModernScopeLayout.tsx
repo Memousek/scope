@@ -1,9 +1,9 @@
 /**
  * Modern Scope Layout Component
- * - Glass-like design s animacemi
- * - Tab-based layout pro lepší organizaci
- * - Moderní UI s gradient efekty
- * - Responsive design s smooth transitions
+ * - Glass-like design with animations
+ * - Tab-based layout for better organization
+ * - Modern UI with gradient effects
+ * - Responsive design with smooth transitions
  */
 
 import { useState } from "react";
@@ -15,6 +15,7 @@ import { AddProjectModal } from "./AddProjectModal";
 import { AiChatModal } from "./AiChatModal";
 import { TeamMember, Project } from "./types";
 import { downloadCSV } from "../../utils/csvUtils";
+import { useTranslation } from "@/lib/translation";
 
 interface ModernScopeLayoutProps {
   scopeId: string;
@@ -69,15 +70,16 @@ export function ModernScopeLayout({
   onAddProject,
   readOnlyMode = false,
 }: ModernScopeLayoutProps) {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabType>("overview");
 
   // Export functions
   const handleExportTeam = () => {
     const teamColumns: (keyof TeamMember)[] = ["name", "role", "fte"];
     const teamHeaderMap = {
-      name: "Jméno",
-      role: "Role",
-      fte: "FTE",
+      name: t("name"),
+      role: t("role"),
+      fte: t("fte"),
     };
     downloadCSV(`team-export-${scopeId}.csv`, team, teamColumns, teamHeaderMap);
   };
@@ -100,20 +102,20 @@ export function ModernScopeLayout({
       "slip",
     ];
     const projectHeaderMap = {
-      name: "Název projektu",
-      priority: "Priorita",
-      fe_mandays: "FE mandays",
-      be_mandays: "BE mandays",
-      qa_mandays: "QA mandays",
-      pm_mandays: "PM mandays",
-      dpl_mandays: "DPL mandays",
-      fe_done: "FE hotovo",
-      be_done: "BE hotovo",
-      qa_done: "QA hotovo",
-      pm_done: "PM hotovo",
-      dpl_done: "DPL hotovo",
-      delivery_date: "Datum dodání",
-      slip: "Skluz (dny)",
+      name: t("projectName"),
+      priority: t("priority"),
+      fe_mandays: t("fe_mandays"),
+      be_mandays: t("be_mandays"),
+      qa_mandays: t("qa_mandays"),
+      pm_mandays: t("pm_mandays"),
+      dpl_mandays: t("dpl_mandays"),
+      fe_done: t("fe_done"),
+      be_done: t("be_done"),
+      qa_done: t("qa_done"),
+      pm_done: t("pm_done"),
+      dpl_done: t("dpl_done"),
+      delivery_date: t("deliveryDate"),
+      slip: t("slip"),
     };
     downloadCSV(
       `projects-export-${scopeId}.csv`,
@@ -131,10 +133,10 @@ export function ModernScopeLayout({
   const [savingProject, setSavingProject] = useState(false);
 
   const tabs = [
-    { id: "overview", label: "Přehled", icon: "📊" },
-    { id: "team", label: "Tým", icon: "👥" },
-    { id: "projects", label: "Projekty", icon: "🚀" },
-    { id: "burndown", label: "Burndown", icon: "📈" },
+    { id: "overview", label: t("overview"), icon: "📊" },
+    { id: "team", label: t("team"), icon: "👥" },
+    { id: "projects", label: t("projects"), icon: "🚀" },
+    { id: "burndown", label: t("burndown"), icon: "📈" },
   ];
 
   const renderTabContent = () => {
@@ -153,16 +155,16 @@ export function ModernScopeLayout({
                 <div className="flex items-center gap-4 mb-6">
                   <div className="relative">
                     <h2 className="text-2xl font-bold dark:text-white text-gray-900">
-                      🔍 <span className="">Přehled scopů</span>
+                      🔍 <span className="">{t("scopeOverview")}</span>
                     </h2>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 bg-white/50 dark:bg-gray-700/50 px-3 py-1 rounded-full backdrop-blur-sm">
-                    <span>Statistiky a rychlé akce</span>
+                    <span>{t("statsAndQuickActions")}</span>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Členové týmu */}
+                  {/* Team Members */}
                   <div className="relative group bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-700/90 dark:via-gray-700/70 dark:to-gray-700/50 backdrop-blur-lg rounded-2xl border border-white/40 dark:border-gray-600/40 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/10 animate-in slide-in-from-bottom-4 duration-300 motion-reduce:scale-100 motion-reduce:transition-none">
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-blue-500/5 group-hover:via-purple-500/5 group-hover:to-pink-500/5 transition-all duration-300 rounded-2xl"></div>
                     <div className="p-6 relative">
@@ -174,7 +176,7 @@ export function ModernScopeLayout({
                         </div>
                         <div>
                           <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
-                            Členové týmu
+                            {t("teamMembers")}
                           </p>
                           <div className="text-3xl font-bold text-gray-900 dark:text-white">
                             {loadingStats ? (
@@ -188,7 +190,7 @@ export function ModernScopeLayout({
                     </div>
                   </div>
 
-                  {/* Aktivní projekty */}
+                  {/* Active Projects */}
                   <div
                     className="relative group bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-700/90 dark:via-gray-700/70 dark:to-gray-700/50 backdrop-blur-lg rounded-2xl border border-white/40 dark:border-gray-600/40 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-green-500/10 animate-in slide-in-from-bottom-4 duration-300 motion-reduce:scale-100 motion-reduce:transition-none"
                     style={{ animationDelay: "100ms" }}
@@ -203,7 +205,7 @@ export function ModernScopeLayout({
                         </div>
                         <div>
                           <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
-                            Aktivní projekty
+                            {t("activeProjects")}
                           </p>
                           <div className="text-3xl font-bold text-gray-900 dark:text-white">
                             {loadingStats ? (
@@ -217,7 +219,7 @@ export function ModernScopeLayout({
                     </div>
                   </div>
 
-                  {/* Průměrný skluz */}
+                  {/* Average Slip */}
                   <div
                     className="relative group bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-700/90 dark:via-gray-700/70 dark:to-gray-700/50 backdrop-blur-lg rounded-2xl border border-white/40 dark:border-gray-600/40 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-orange-500/10 animate-in slide-in-from-bottom-4 duration-300 motion-reduce:scale-100 motion-reduce:transition-none"
                     style={{ animationDelay: "200ms" }}
@@ -232,7 +234,7 @@ export function ModernScopeLayout({
                         </div>
                         <div>
                           <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
-                            Průměrný skluz
+                            {t("averageSlip")}
                           </p>
                           <div className="text-2xl font-bold text-gray-900 dark:text-white">
                             {loadingStats ? (
@@ -248,13 +250,13 @@ export function ModernScopeLayout({
                                 }
                               >
                                 {averageSlip.averageSlip > 0
-                                  ? `+${averageSlip.averageSlip} dní`
+                                  ? `+${averageSlip.averageSlip} ${t("days")}`
                                   : averageSlip.averageSlip < 0
-                                    ? `${averageSlip.averageSlip} dní`
-                                    : "Na čas"}
+                                    ? `${averageSlip.averageSlip} ${t("days")}`
+                                    : t("onTime")}
                               </span>
                             ) : (
-                              "N/A"
+                              t("notAvailable")
                             )}
                           </div>
                         </div>
@@ -276,17 +278,17 @@ export function ModernScopeLayout({
                 <div className="flex items-center gap-4 mb-6">
                   <div className="relative">
                     <h3 className="text-xl font-bold dark:text-white text-gray-900">
-                      ⚡ Rychlé akce
+                      ⚡ {t("quickActions")}
                     </h3>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 bg-white/50 dark:bg-gray-700/50 px-3 py-1 rounded-full backdrop-blur-sm">
-                    <span>Spravujte scope efektivně</span>
+                    <span>{t("manageEffectively")}</span>
                   </div>
                 </div>
 
 
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                  {/* Přidat člena */}
+                  {/* Add Member */}
                   {!readOnlyMode && (
                     <button
                       onClick={() => setAddMemberModalOpen(true)}
@@ -295,12 +297,12 @@ export function ModernScopeLayout({
                       <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                       <span className="relative z-10 text-2xl">👥</span>
                       <span className="relative z-10 text-sm font-semibold">
-                        Přidat člena
+                        {t("addMember")}
                       </span>
                     </button>
                   )}
 
-                  {/* Nový projekt */}
+                  {/* New Project */}
                   {!readOnlyMode && (
                     <button
                       onClick={() => setAddProjectModalOpen(true)}
@@ -309,12 +311,12 @@ export function ModernScopeLayout({
                       <div className="absolute inset-0 bg-gradient-to-r from-emerald-700 via-green-800 to-teal-700 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                       <span className="relative z-10 text-2xl">🚀</span>
                       <span className="relative z-10 text-sm font-semibold">
-                        Nový projekt
+                        {t("addNewProject")}
                       </span>
                     </button>
                   )}
 
-                  {/* Export týmu */}
+                  {/* Export Team */}
                   <button
                     onClick={handleExportTeam}
                     className="relative group bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 text-white rounded-xl p-4 hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-orange-500/25 active:scale-95 flex flex-col items-center gap-3 motion-reduce:scale-100 motion-reduce:transition-none"
@@ -322,11 +324,11 @@ export function ModernScopeLayout({
                     <div className="absolute inset-0 bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <span className="relative z-10 text-2xl">📊</span>
                     <span className="relative z-10 text-sm font-semibold">
-                      Export týmu
+                      {t("exportTeam")}
                     </span>
                   </button>
 
-                  {/* Export projektů */}
+                  {/* Export Projects */}
                   <button
                     onClick={handleExportProjects}
                     className="relative group bg-gradient-to-br from-teal-500 via-cyan-500 to-blue-500 text-white rounded-xl p-4 hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-teal-500/25 active:scale-95 flex flex-col items-center gap-3 motion-reduce:scale-100 motion-reduce:transition-none"
@@ -334,11 +336,11 @@ export function ModernScopeLayout({
                     <div className="absolute inset-0 bg-gradient-to-r from-teal-600 via-cyan-600 to-blue-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <span className="relative z-10 text-2xl">📈</span>
                     <span className="relative z-10 text-sm font-semibold">
-                      Export projektů
+                      {t("exportProjects")}
                     </span>
                   </button>
 
-                  {/* Import týmu - Soon */}
+                  {/* Import Team - Soon */}
                   {!readOnlyMode && (
                   <button
                     onClick={() => {}}
@@ -346,14 +348,14 @@ export function ModernScopeLayout({
                     disabled={true}
                   >
                     <div className="absolute -top-2 -left-2 bg-gradient-to-r from-gray-600 to-gray-700 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">
-                      Soon
+                      {t("soon")}
                     </div>
                     <span className="text-2xl">📥</span>
-                    <span className="text-sm font-semibold">Import týmu</span>
+                    <span className="text-sm font-semibold">{t("importTeam")}</span>
                   </button>
                   )}
-                  
-                  {/* Import projektů - Soon */}
+
+                  {/* Import Projects - Soon */}
                   {!readOnlyMode && (
                   <button
                     onClick={() => {}}
@@ -361,11 +363,11 @@ export function ModernScopeLayout({
                     disabled={true}
                   >
                     <div className="absolute -top-2 -left-2 bg-gradient-to-r from-gray-600 to-gray-700 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">
-                      Soon
+                      {t("soon")}
                     </div>
                     <span className="text-2xl">📥</span>
                     <span className="text-sm font-semibold">
-                      Import projektů
+                      {t("importProjects")}
                     </span>
                   </button>
                   )}

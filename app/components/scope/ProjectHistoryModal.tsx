@@ -13,6 +13,7 @@ import { createPortal } from 'react-dom';
 import { Project, ProjectProgress } from './types';
 import { PROJECT_ROLES } from '@/lib/utils/projectRoles';
 import { ProjectService } from '@/app/services/projectService';
+import { useTranslation } from '@/lib/translation';
 
 interface ProjectHistoryModalProps {
   project: Project;
@@ -21,6 +22,7 @@ interface ProjectHistoryModalProps {
 }
 
 export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ project, onClose, onProjectUpdate }) => {
+  const { t } = useTranslation();
   const [history, setHistory] = useState<ProjectProgress[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -68,7 +70,7 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ projec
   }, [project.id]);
 
   const handleDeleteProgress = async (progressId: string) => {
-    if (!confirm('Opravdu chcete smazat tento záznam?')) return;
+    if (!confirm(t('confirmDeleteRecord'))) return;
     
     try {
       await ProjectService.deleteProjectProgress(progressId);
@@ -95,7 +97,7 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ projec
         return;
       }
       if (mandaysVal !== undefined && (isNaN(Number(mandaysVal)) || Number(mandaysVal) < 0)) {
-        setError(`Odhad (MD) pro ${role.label} musí být číslo >= 0.`);
+        setError(`${t("estimate")} (MD) ${t("for")} ${role.label} ${t("mustBeNumber")}.`);
         return;
       }
     }
@@ -111,7 +113,7 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ projec
       setHistory(data);
     } catch (error) {
       console.error('Chyba při ukládání:', error);
-      setError('Chyba při ukládání změn');
+      setError(t('errorSavingChanges'));
     } finally {
       setSaving(false);
     }
@@ -181,13 +183,13 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ projec
         <button 
           className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 text-3xl font-bold transition-colors duration-200" 
           onClick={onClose} 
-          aria-label="Zavřít"
+          aria-label={t("close")}
         >
           ×
         </button>
         
         <h4 className="text-2xl font-bold mb-2 text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          📊 Historie změn projektu
+          📊 {t("projectHistory")}
         </h4>
         <p className="text-center text-gray-600 dark:text-gray-400 mb-6">{project.name}</p>
         
@@ -209,8 +211,8 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ projec
             {history.length === 0 ? (
               <div className="text-center py-12">
                 <div className="text-6xl mb-4">📊</div>
-                <p className="text-gray-500 dark:text-gray-400 text-lg">Žádná historie změn</p>
-                <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">Změny se zobrazí po úpravě projektu</p>
+                <p className="text-gray-500 dark:text-gray-400 text-lg">{t("noHistory")}</p>
+                <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">{t("changesWillAppear")}</p>
               </div>
             ) : (
               (() => {
@@ -230,7 +232,7 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ projec
                             {formatDateOnly(dayProgresses[0].date)}
                           </div>
                           <div className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-600 px-2 py-1 rounded-full">
-                            {dayProgresses.length} změn • {totalChanges} úprav
+                            {dayProgresses.length} {t("changes")} • {totalChanges} {t("edits")}
                           </div>
                         </div>
                       </div>
@@ -257,14 +259,14 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ projec
                                         disabled={saving} 
                                         onClick={() => progress.id && handleSave(progress.id)}
                                       >
-                                        {saving ? 'Ukládám...' : 'Uložit'}
+                                        {saving ? t('saving') : t('save')}
                                       </button>
                                       <button 
                                         className="text-gray-600 dark:text-gray-400 font-semibold hover:text-gray-700 dark:hover:text-gray-300 hover:underline transition-colors duration-200 text-xs" 
                                         disabled={saving} 
                                         onClick={() => { setEditingId(null); setEditValues({}); setError(null); }}
                                       >
-                                        Zrušit
+                                        {t('cancel')}
                                       </button>
                                     </>
                                   ) : (
@@ -274,13 +276,13 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ projec
                                         disabled={saving} 
                                         onClick={() => { setEditingId(progress.id || ''); setEditValues({}); setError(null); }}
                                       >
-                                        Upravit
+                                        {t('edit')}
                                       </button>
                                       <button 
                                         className="text-red-600 dark:text-red-400 font-semibold hover:text-red-700 dark:hover:text-red-300 hover:underline transition-colors duration-200 text-xs" 
                                         onClick={() => progress.id && handleDeleteProgress(progress.id)}
                                       >
-                                        Smazat
+                                        {t('delete')}
                                       </button>
                                     </>
                                   )}
@@ -302,7 +304,7 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ projec
                                       
                                       {doneValue !== null && (
                                         <div className="mb-1">
-                                          <div className="text-xs text-gray-500 dark:text-gray-400 text-xs">% hotovo</div>
+                                          <div className="text-xs text-gray-500 dark:text-gray-400 text-xs">% {t('done')}</div>
                                           {isEditing ? (
                                             <input
                                               type="number"
