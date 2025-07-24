@@ -47,6 +47,7 @@ interface ModernScopeLayoutProps {
   onAddProject?: (
     project: Omit<Project, "id" | "scope_id" | "created_at">
   ) => Promise<void>;
+  readOnlyMode?: boolean;
 }
 
 type TabType = "overview" | "team" | "projects" | "burndown";
@@ -66,6 +67,7 @@ export function ModernScopeLayout({
   averageSlip,
   onAddMember,
   onAddProject,
+  readOnlyMode = false,
 }: ModernScopeLayoutProps) {
   const [activeTab, setActiveTab] = useState<TabType>("overview");
 
@@ -282,30 +284,35 @@ export function ModernScopeLayout({
                   </div>
                 </div>
 
+
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                   {/* Přidat člena */}
-                  <button
-                    onClick={() => setAddMemberModalOpen(true)}
-                    className="relative group bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 text-white rounded-xl p-4 hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/25 active:scale-95 flex flex-col items-center gap-3 motion-reduce:scale-100 motion-reduce:transition-none"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <span className="relative z-10 text-2xl">👥</span>
-                    <span className="relative z-10 text-sm font-semibold">
-                      Přidat člena
-                    </span>
-                  </button>
+                  {!readOnlyMode && (
+                    <button
+                      onClick={() => setAddMemberModalOpen(true)}
+                      className="relative group bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 text-white rounded-xl p-4 hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/25 active:scale-95 flex flex-col items-center gap-3 motion-reduce:scale-100 motion-reduce:transition-none"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <span className="relative z-10 text-2xl">👥</span>
+                      <span className="relative z-10 text-sm font-semibold">
+                        Přidat člena
+                      </span>
+                    </button>
+                  )}
 
                   {/* Nový projekt */}
-                  <button
-                    onClick={() => setAddProjectModalOpen(true)}
-                    className="relative group bg-gradient-to-br from-emerald-600 via-green-700 to-teal-600 text-white rounded-xl p-4 hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-green-500/25 active:scale-95 flex flex-col items-center gap-3 motion-reduce:scale-100 motion-reduce:transition-none"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-700 via-green-800 to-teal-700 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <span className="relative z-10 text-2xl">🚀</span>
-                    <span className="relative z-10 text-sm font-semibold">
-                      Nový projekt
-                    </span>
-                  </button>
+                  {!readOnlyMode && (
+                    <button
+                      onClick={() => setAddProjectModalOpen(true)}
+                      className="relative group bg-gradient-to-br from-emerald-600 via-green-700 to-teal-600 text-white rounded-xl p-4 hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-green-500/25 active:scale-95 flex flex-col items-center gap-3 motion-reduce:scale-100 motion-reduce:transition-none"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-emerald-700 via-green-800 to-teal-700 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <span className="relative z-10 text-2xl">🚀</span>
+                      <span className="relative z-10 text-sm font-semibold">
+                        Nový projekt
+                      </span>
+                    </button>
+                  )}
 
                   {/* Export týmu */}
                   <button
@@ -332,6 +339,7 @@ export function ModernScopeLayout({
                   </button>
 
                   {/* Import týmu - Soon */}
+                  {!readOnlyMode && (
                   <button
                     onClick={() => {}}
                     className="relative cursor-not-allowed opacity-50 bg-gradient-to-br from-teal-500 via-purple-500 to-pink-500 text-white rounded-xl p-4 hover:scale-105 transition-all duration-300 flex flex-col items-center gap-3 group motion-reduce:scale-100 motion-reduce:transition-none"
@@ -343,8 +351,10 @@ export function ModernScopeLayout({
                     <span className="text-2xl">📥</span>
                     <span className="text-sm font-semibold">Import týmu</span>
                   </button>
-
+                  )}
+                  
                   {/* Import projektů - Soon */}
+                  {!readOnlyMode && (
                   <button
                     onClick={() => {}}
                     className="relative cursor-not-allowed opacity-50 bg-gradient-to-br from-red-500 via-pink-500 to-purple-500 text-white rounded-xl p-4 hover:scale-105 transition-all duration-300 flex flex-col items-center gap-3 group motion-reduce:scale-100 motion-reduce:transition-none"
@@ -358,6 +368,7 @@ export function ModernScopeLayout({
                       Import projektů
                     </span>
                   </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -371,6 +382,7 @@ export function ModernScopeLayout({
               scopeId={scopeId}
               team={team}
               onTeamChange={onTeamChange}
+              readOnlyMode={readOnlyMode}
             />
           </div>
         );
@@ -385,6 +397,7 @@ export function ModernScopeLayout({
               hasQA={hasQA}
               hasPM={hasPM}
               hasDPL={hasDPL}
+              readOnlyMode={readOnlyMode}
             />
           </div>
         );

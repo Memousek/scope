@@ -27,9 +27,10 @@ interface ProjectSectionProps {
   hasQA: boolean;
   hasPM: boolean;
   hasDPL: boolean;
+  readOnlyMode?: boolean;
 }
 
-export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: ProjectSectionProps) {
+export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, readOnlyMode = false }: ProjectSectionProps) {
   const { t } = useTranslation();
   const { 
     projects, 
@@ -288,17 +289,19 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
 
   return (
     <>
-      <AddProjectModal
-        isOpen={addModalOpen}
-        onClose={() => setAddModalOpen(false)}
-        onAddProject={handleAddProject}
-        savingProject={projectsLoading}
-        hasFE={hasFE}
-        hasBE={hasBE}
-        hasQA={hasQA}
-        hasPM={hasPM}
-        hasDPL={hasDPL}
-      />
+      {!readOnlyMode && (
+        <AddProjectModal
+          isOpen={addModalOpen}
+          onClose={() => setAddModalOpen(false)}
+          onAddProject={handleAddProject}
+          savingProject={projectsLoading}
+          hasFE={hasFE}
+          hasBE={hasBE}
+          hasQA={hasQA}
+          hasPM={hasPM}
+          hasDPL={hasDPL}
+        />
+      )}
 
       {/* Projekty */}
       <section className="mb-8">
@@ -320,18 +323,20 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
                   <span>Přehled projektů v rámci scopey</span>
                 </div>
               </div>
-              <button
-                className="relative group bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/25 active:scale-95"
-                onClick={() => setAddModalOpen(true)}
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <span className="relative z-10 flex items-center gap-2">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  {t('addProject')}
-                </span>
-              </button>
+              {!readOnlyMode && (
+                <button
+                  className="relative group bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/25 active:scale-95"
+                  onClick={() => setAddModalOpen(true)}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <span className="relative z-10 flex items-center gap-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    {t('addProject')}
+                  </span>
+                </button>
+              )}
             </div>
             
             <div className="space-y-6">
@@ -378,18 +383,18 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
                             <div 
                               key={project.id} 
                               ref={isBeingDragged ? dragRef : null}
-                              draggable
-                              onDragStart={(e) => handleDragStart(e, project)}
-                              onDragEnd={handleDragEnd}
-                              onDragOver={handleDragOver}
-                              onDragEnter={(e) => handleDragEnter(e, project.id)}
-                              onDragLeave={handleDragLeave}
-                              onDrop={(e) => handleDrop(e, project)}
+                              draggable={!readOnlyMode}
+                              onDragStart={!readOnlyMode ? (e) => handleDragStart(e, project) : undefined}
+                              onDragEnd={!readOnlyMode ? handleDragEnd : undefined}
+                              onDragOver={!readOnlyMode ? handleDragOver : undefined}
+                              onDragEnter={!readOnlyMode ? (e) => handleDragEnter(e, project.id) : undefined}
+                              onDragLeave={!readOnlyMode ? handleDragLeave : undefined}
+                              onDrop={!readOnlyMode ? (e) => handleDrop(e, project) : undefined}
                               className={`
                                 relative group bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-700/90 dark:via-gray-700/70 dark:to-gray-700/50 backdrop-blur-lg rounded-2xl border border-white/40 dark:border-gray-600/40 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/10
                                 ${isDragOver ? 'border-blue-500 border-2 bg-blue-50/50 dark:bg-blue-900/20 scale-105' : ''}
                                 ${isBeingDragged ? 'opacity-50 scale-95 ' : ''}
-                                ${isDragging && !isBeingDragged ? 'cursor-grabbing' : 'cursor-grab'}
+                                ${!readOnlyMode && isDragging && !isBeingDragged ? 'cursor-grabbing' : !readOnlyMode ? 'cursor-grab' : 'cursor-default'}
                                 ${isUpdatingPriority ? 'pointer-events-none opacity-75' : ''}
                                 animate-in slide-in-from-bottom-8 fade-in duration-700
                               `}
@@ -491,15 +496,17 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
                                       </button>
                                       
                                       <div className="flex items-center gap-1">
-                                        <button
-                                          onClick={() => handleOpenEditModal(project)}
-                                          className="p-3 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-all duration-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl group"
-                                          title={t('edit')}
-                                        >
-                                          <svg className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                          </svg>
-                                        </button>
+                                        {!readOnlyMode && (
+                                          <button
+                                            onClick={() => handleOpenEditModal(project)}
+                                            className="p-3 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-all duration-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl group"
+                                            title={t('edit')}
+                                          >
+                                            <svg className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
+                                          </button>
+                                        )}
                                         
                                         <button
                                           onClick={() => setHistoryModalProject(project)}
@@ -511,15 +518,17 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
                                           </svg>
                                         </button>
                                         
-                                        <button
-                                          onClick={() => handleDeleteProject(project.id)}
-                                          className="p-3 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-all duration-200 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl group"
-                                          title={t('delete')}
-                                        >
-                                          <svg className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                          </svg>
-                                        </button>
+                                        {!readOnlyMode && (
+                                          <button
+                                            onClick={() => handleDeleteProject(project.id)}
+                                            className="p-3 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-all duration-200 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl group"
+                                            title={t('delete')}
+                                          >
+                                            <svg className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                          </button>
+                                        )}
                                       </div>
                                     </div>
                                   </div>
@@ -561,25 +570,29 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
                                         </svg>
                                       </button>
                                       
-                                      <button
-                                        onClick={() => handleOpenEditModal(project)}
-                                        className="p-2 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-all duration-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
-                                        title={t('edit')}
-                                      >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                        </svg>
-                                      </button>
+                                      {!readOnlyMode && (
+                                        <button
+                                          onClick={() => handleOpenEditModal(project)}
+                                          className="p-2 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-all duration-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
+                                          title={t('edit')}
+                                        >
+                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                          </svg>
+                                        </button>
+                                      )}
                                       
-                                      <button
-                                        onClick={() => handleDeleteProject(project.id)}
-                                        className="p-2 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-all duration-200 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
-                                        title={t('delete')}
-                                      >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
-                                      </button>
+                                      {!readOnlyMode && (
+                                        <button
+                                          onClick={() => handleDeleteProject(project.id)}
+                                          className="p-2 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-all duration-200 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+                                          title={t('delete')}
+                                        >
+                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                          </svg>
+                                        </button>
+                                      )}
                                     </div>
                                   </div>
                                   
@@ -733,7 +746,7 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL }: 
       </section>
 
       {/* Modal pro editaci projektu */}
-      {editModalOpen && editProject && (
+      {!readOnlyMode && editModalOpen && editProject && (
         <EditProjectModal
           isOpen={editModalOpen}
           onClose={handleCloseEditModal}
