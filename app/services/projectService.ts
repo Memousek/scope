@@ -112,9 +112,35 @@ export class ProjectService {
       .from('project_progress')
       .select('*')
       .eq('project_id', projectId)
-      .order('date', { ascending: true });
+      .order('date', { ascending: false });
 
     if (error) throw error;
     return data || [];
+  }
+
+  /**
+   * Update project progress entry
+   */
+  static async updateProjectProgress(progressId: string, updates: Partial<ProjectProgress>): Promise<void> {
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('project_progress')
+      .update(updates)
+      .eq('id', progressId);
+
+    if (error) throw error;
+  }
+
+  /**
+   * Delete project progress entry
+   */
+  static async deleteProjectProgress(progressId: string): Promise<void> {
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('project_progress')
+      .delete()
+      .eq('id', progressId);
+
+    if (error) throw error;
   }
 } 

@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { createClient } from '@/lib/supabase/client';
 import { FiCopy, FiX, FiMail, FiUsers, FiLink, FiEdit, FiEye, FiPlus, FiTrash2 } from 'react-icons/fi';
 import { v4 as uuidv4 } from 'uuid';
 import { useTranslation } from '@/lib/translation';
 import { ContainerService } from '@/lib/container.service';
 import { GetScopeEditorsWithUsersService, ScopeEditorWithUser } from '@/lib/domain/services/get-scope-editors-with-users.service';
+import { ScopeEditorService } from '@/app/services/scopeEditorService';
 import { UserAvatar } from './UserAvatar';
 
 interface ShareModalProps {
@@ -49,55 +49,49 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
     setInviteError('');
     if (!inviteEmail) return;
     
-    const supabase = createClient();
-    // Zkontroluj, zda už není editor
-    const { data: existing } = await supabase
-      .from('scope_editors')
-      .select('id')
-      .eq('scope_id', scopeId)
-      .eq('email', inviteEmail);
-    if (existing && existing.length > 0) {
-      setInviteError('already_has_access');
-      return;
-    }
-    // Zjisti, jestli uživatel existuje v auth.users
-    const { data: userRows } = await supabase.from('auth.users').select('id').eq('email', inviteEmail);
-    let user_id = null;
-    if (userRows && userRows.length > 0) {
-      user_id = userRows[0].id;
-    }
-    const token = uuidv4();
-    const insertObj: Record<string, unknown> = { scope_id: scopeId, email: inviteEmail, invite_token: token };
-    if (user_id) {
-      insertObj.user_id = user_id;
-      insertObj.accepted_at = new Date().toISOString();
-    }
-    const { error } = await supabase.from('scope_editors').insert([insertObj]);
-    if (error) {
-      setInviteError('invite_error');
-      return;
-    }
-    setInviteEmail('');
-    // Refresh editorů
-    if (isOwner) {
-      setEditorsLoading(true);
-      const getScopeEditorsWithUsersService = ContainerService.getInstance().get(GetScopeEditorsWithUsersService, { autobind: true });
-      const editorsData = await getScopeEditorsWithUsersService.execute(scopeId);
-      setEditors(editorsData);
-      setEditorsLoading(false);
+    try {
+      await ScopeEditorService.inviteEditor({
+        scopeId,
+        email: inviteEmail
+      });
+      
+      setInviteEmail('');
+      
+      // Refresh editorů
+      if (isOwner) {
+        setEditorsLoading(true);
+        const getScopeEditorsWithUsersService = ContainerService.getInstance().get(GetScopeEditorsWithUsersService, { autobind: true });
+        const editorsData = await getScopeEditorsWithUsersService.execute(scopeId);
+        setEditors(editorsData);
+        setEditorsLoading(false);
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        if (error.message === 'EDITOR_ALREADY_EXISTS') {
+          setInviteError('already_has_access');
+        } else {
+          setInviteError('invite_error');
+        }
+      } else {
+        setInviteError('invite_error');
+      }
     }
   };
 
   const handleRemoveEditor = async (editorId: string) => {
-    const supabase = createClient();
-    await supabase.from('scope_editors').delete().eq('id', editorId);
-    // Refresh editorů
-    if (isOwner) {
-      setEditorsLoading(true);
-      const getScopeEditorsWithUsersService = ContainerService.getInstance().get(GetScopeEditorsWithUsersService, { autobind: true });
-      const editorsData = await getScopeEditorsWithUsersService.execute(scopeId);
-      setEditors(editorsData);
-      setEditorsLoading(false);
+    try {
+      await ScopeEditorService.removeEditor(editorId);
+      
+      // Refresh editorů
+      if (isOwner) {
+        setEditorsLoading(true);
+        const getScopeEditorsWithUsersService = ContainerService.getInstance().get(GetScopeEditorsWithUsersService, { autobind: true });
+        const editorsData = await getScopeEditorsWithUsersService.execute(scopeId);
+        setEditors(editorsData);
+        setEditorsLoading(false);
+      }
+    } catch (error) {
+      console.error('Chyba při odstraňování editora:', error);
     }
   };
 

@@ -10,9 +10,9 @@
 
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { createClient } from '@/lib/supabase/client';
 import { Project, ProjectProgress } from './types';
 import { PROJECT_ROLES } from '@/lib/utils/projectRoles';
+import { ProjectService } from '@/app/services/projectService';
 
 interface ProjectHistoryModalProps {
   project: Project;
@@ -54,17 +54,14 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ projec
   useEffect(() => {
     const loadHistory = async () => {
       setLoading(true);
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('project_progress')
-        .select('*')
-        .eq('project_id', project.id)
-        .order('date', { ascending: false });
-
-      if (!error && data) {
+      try {
+        const data = await ProjectService.loadProjectProgress(project.id);
         setHistory(data);
+      } catch (error) {
+        console.error('Chyba při načítání historie projektu:', error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     loadHistory();
@@ -73,16 +70,15 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ projec
   const handleDeleteProgress = async (progressId: string) => {
     if (!confirm('Opravdu chcete smazat tento záznam?')) return;
     
-    const supabase = createClient();
-    await supabase.from('project_progress').delete().eq('id', progressId);
-    onProjectUpdate();
-    // Refresh history
-    const { data } = await supabase
-      .from('project_progress')
-      .select('*')
-      .eq('project_id', project.id)
-      .order('date', { ascending: false });
-    if (data) setHistory(data);
+    try {
+      await ProjectService.deleteProjectProgress(progressId);
+      onProjectUpdate();
+      // Refresh history
+      const data = await ProjectService.loadProjectProgress(project.id);
+      setHistory(data);
+    } catch (error) {
+      console.error('Chyba při mazání záznamu:', error);
+    }
   };
 
   // Uložení úprav
@@ -105,19 +101,20 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ projec
     }
     
     setSaving(true);
-    const supabase = createClient();
-    await supabase.from('project_progress').update(editValues).eq('id', id);
-    setEditingId(null);
-    setEditValues({});
-    setSaving(false);
-    
-    // Refresh history
-    const { data } = await supabase
-      .from('project_progress')
-      .select('*')
-      .eq('project_id', project.id)
-      .order('date', { ascending: false });
-    if (data) setHistory(data);
+    try {
+      await ProjectService.updateProjectProgress(id, editValues);
+      setEditingId(null);
+      setEditValues({});
+      
+      // Refresh history
+      const data = await ProjectService.loadProjectProgress(project.id);
+      setHistory(data);
+    } catch (error) {
+      console.error('Chyba při ukládání:', error);
+      setError('Chyba při ukládání změn');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const formatDate = (dateString: string) => {

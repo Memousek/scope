@@ -7,10 +7,10 @@
  */
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { TeamMember, ROLES } from "./types";
 import { AddMemberModal } from "./AddMemberModal";
 import { useTranslation } from "@/lib/translation";
+import { TeamService } from "@/app/services/teamService";
 
 interface TeamSectionProps {
   scopeId: string;
@@ -30,14 +30,13 @@ export function TeamSection({ scopeId, team, onTeamChange }: TeamSectionProps) {
     fte: number;
   }) => {
     setSavingMember(true);
-    const supabase = createClient();
-    const { error, data } = await supabase
-      .from("team_members")
-      .insert([{ ...member, scope_id: scopeId }])
-      .select();
-    setSavingMember(false);
-    if (!error && data && data[0]) {
-      onTeamChange([...team, data[0]]);
+    try {
+      const newMember = await TeamService.createTeamMember(scopeId, member);
+      onTeamChange([...team, newMember]);
+    } catch (error) {
+      console.error('Chyba při přidávání člena týmu:', error);
+    } finally {
+      setSavingMember(false);
     }
   };
 
@@ -47,16 +46,12 @@ export function TeamSection({ scopeId, team, onTeamChange }: TeamSectionProps) {
     value: string | number
   ) => {
     setSavingMember(true);
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("team_members")
-      .update({ [field]: value })
-      .eq("id", memberId);
-    setSavingMember(false);
-    
-    if (error) {
+    try {
+      await TeamService.updateTeamMember(memberId, { [field]: value } as Partial<TeamMember>);
+    } catch (error) {
       console.error('Chyba při ukládání člena týmu:', error);
-      // Můžete zde přidat toast notifikaci nebo jiné chybové zpracování
+    } finally {
+      setSavingMember(false);
     }
   }, []);
 
@@ -96,8 +91,13 @@ export function TeamSection({ scopeId, team, onTeamChange }: TeamSectionProps) {
 
   const handleDeleteMember = async (memberId: string) => {
     onTeamChange(team.filter((m) => m.id !== memberId));
-    const supabase = createClient();
-    await supabase.from("team_members").delete().eq("id", memberId);
+    try {
+      await TeamService.deleteTeamMember(memberId);
+    } catch (error) {
+      console.error('Chyba při mazání člena týmu:', error);
+      // Vraťte člena zpět do seznamu při chybě
+      // V produkčním kódu byste měli implementovat lepší error handling
+    }
   };
 
   const getRoleColor = (role: string) => {

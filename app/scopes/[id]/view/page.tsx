@@ -7,11 +7,13 @@
  * - Moderní glass-like design s dark mode podporou
  */
 import { useEffect, useState, use } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { ProjectSectionRefactored } from "@/app/components/scope/ProjectSectionRefactored";
 import { TeamMember, Project } from "@/app/components/scope/types";
 import { useTranslation } from "@/lib/translation";
 import { downloadCSV } from "@/app/utils/csvUtils";
+import { ScopeService } from "@/app/services/scopeService";
+import { TeamService } from "@/app/services/teamService";
+import { ProjectService } from "@/app/services/projectService";
 
 export default function ScopeViewPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -28,17 +30,16 @@ export default function ScopeViewPage({ params }: { params: Promise<{ id: string
   useEffect(() => {
     if (id) {
       setFetching(true);
-      const supabase = createClient();
-      supabase
-        .from("scopes")
-        .select("id, name, description")
-        .eq("id", id)
-        .single()
-        .then(({ data, error }) => {
-          if (!error && data) {
-            setScope(data as { id: string; name: string; description?: string });
+      ScopeService.loadScope(id)
+        .then(data => {
+          if (data) {
+            setScope(data);
             setDescription(data.description || "");
           }
+          setFetching(false);
+        })
+        .catch(error => {
+          console.error("Chyba při načítání scope:", error);
           setFetching(false);
         });
     }
@@ -47,14 +48,12 @@ export default function ScopeViewPage({ params }: { params: Promise<{ id: string
   // Načtení členů týmu
   useEffect(() => {
     if (id) {
-      const supabase = createClient();
-      supabase
-        .from("team_members")
-        .select("*")
-        .eq("scope_id", id)
-        .order("role", { ascending: true })
-        .then(({ data, error }) => {
-          if (!error && data) setTeam(data);
+      TeamService.loadTeam(id)
+        .then(data => {
+          if (data) setTeam(data);
+        })
+        .catch(error => {
+          console.error("Chyba při načítání týmu:", error);
         });
     }
   }, [id]);
@@ -62,14 +61,12 @@ export default function ScopeViewPage({ params }: { params: Promise<{ id: string
   // Načtení projektů
   useEffect(() => {
     if (id) {
-      const supabase = createClient();
-      supabase
-        .from("projects")
-        .select("*")
-        .eq("scope_id", id)
-        .order("priority", { ascending: true })
-        .then(({ data, error }) => {
-          if (!error && data) setProjects(data);
+      ProjectService.loadProjects(id)
+        .then(data => {
+          if (data) setProjects(data);
+        })
+        .catch(error => {
+          console.error("Chyba při načítání projektů:", error);
         });
     }
   }, [id]);

@@ -8,9 +8,9 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { createClient } from '@/lib/supabase/client';
 import { Project, ProjectProgress } from './types';
 import { PROJECT_ROLES } from '@/lib/utils/projectRoles';
+import { ProjectService } from '@/app/services/projectService';
 
 interface EditProjectModalProps {
   isOpen: boolean;
@@ -47,10 +47,11 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
       alert('Odhad mandays nesmí být 0 pro existující role v projektu.');
       return;
     }
-    const supabase = createClient();
-    const { error } = await supabase.from('projects').update(editProject).eq('id', editProject.id);
-    if (!error) {
-      onProjectChange(editProject);
+    
+    try {
+      const updatedProject = await ProjectService.updateProject(editProject.id, editProject);
+      onProjectChange(updatedProject);
+      
       // --- Ulož změny do project_progress pokud se změnilo % hotovo ---
       if (initialEditState.current) {
         const changed: Partial<ProjectProgress> = {};
@@ -60,16 +61,12 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
         if (editProject.pm_done !== initialEditState.current.pm_done) changed.pm_done = Number(editProject.pm_done);
         if (editProject.dpl_done !== initialEditState.current.dpl_done) changed.dpl_done = Number(editProject.dpl_done);
         if (Object.keys(changed).length > 0) {
-          const progress: ProjectProgress = {
-            project_id: editProject.id,
-            date: new Date().toISOString(),
-            ...changed
-          };
-          await supabase.from('project_progress').insert([progress]);
+          await ProjectService.saveProjectProgress(editProject.id, changed);
         }
       }
       onClose();
-    } else {
+    } catch (error) {
+      console.error('Chyba při ukládání projektu:', error);
       alert('Chyba při ukládání projektu.');
     }
   };

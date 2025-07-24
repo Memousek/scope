@@ -9,7 +9,6 @@
  */
 
 import { useEffect, useState, use, useCallback } from "react";
-import { createClient } from "@/lib/supabase/client";
 
 import { ModernScopeLayout } from "@/app/components/scope/ModernScopeLayout";
 import { ShareModal } from "@/app/components/scope/ShareModal";
@@ -24,6 +23,10 @@ import { CalculateAverageSlipService } from "@/lib/domain/services/calculate-ave
 import { AddTeamMemberService } from "@/lib/domain/services/add-team-member.service";
 import { AddProjectService } from "@/lib/domain/services/add-project.service";
 import { CheckScopeOwnershipService } from "@/lib/domain/services/check-scope-ownership.service";
+
+import { TeamService } from "@/app/services/teamService";
+import { ProjectService } from "@/app/services/projectService";
+import { ScopeService } from "@/app/services/scopeService";
 
 export default function ScopePage({
   params,
@@ -159,21 +162,12 @@ export default function ScopePage({
 
     setFetching(true);
     try {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from("scopes")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-      if (error) {
-        console.error("Chyba při načítání scope:", error);
-        return;
+      const data = await ScopeService.loadScope(id);
+      if (data) {
+        setScope(data);
+        setDescription(data.description || "");
+        setName(data.name || "");
       }
-
-      setScope(data);
-      setDescription(data.description || "");
-      setName(data.name || "");
     } catch (error) {
       console.error("Chyba při načítání scope:", error);
     } finally {
@@ -185,18 +179,7 @@ export default function ScopePage({
     if (!userId) return;
 
     try {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from("team_members")
-        .select("*")
-        .eq("scope_id", id)
-        .order("created_at", { ascending: true });
-
-      if (error) {
-        console.error("Chyba při načítání týmu:", error);
-        return;
-      }
-
+      const data = await TeamService.loadTeam(id);
       setTeam(data || []);
     } catch (error) {
       console.error("Chyba při načítání týmu:", error);
@@ -207,18 +190,7 @@ export default function ScopePage({
     if (!userId) return;
 
     try {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from("projects")
-        .select("*")
-        .eq("scope_id", id)
-        .order("created_at", { ascending: true });
-
-      if (error) {
-        console.error("Chyba při načítání projektů:", error);
-        return;
-      }
-
+      const data = await ProjectService.loadProjects(id);
       setProjects(data || []);
     } catch (error) {
       console.error("Chyba při načítání projektů:", error);
@@ -314,17 +286,7 @@ export default function ScopePage({
 
     setSavingDescription(true);
     try {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from("scopes")
-        .update({ description })
-        .eq("id", id);
-
-      if (error) {
-        console.error("Chyba při ukládání popisu:", error);
-        return;
-      }
-
+      await ScopeService.updateScopeDescription(id, description);
       setEditingDescription(false);
     } catch (error) {
       console.error("Chyba při ukládání popisu:", error);
@@ -340,18 +302,7 @@ export default function ScopePage({
     setErrorName(null);
 
     try {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from("scopes")
-        .update({ name: name.trim() })
-        .eq("id", id);
-
-      if (error) {
-        console.error("Chyba při ukládání názvu:", error);
-        setErrorName("Chyba při ukládání názvu");
-        return;
-      }
-
+      await ScopeService.updateScopeName(id, name);
       setEditingName(false);
       setScope((prev) => (prev ? { ...prev, name: name.trim() } : null));
     } catch (error) {
