@@ -7,7 +7,7 @@
  * - Drag and drop pro změnu pořadí
  */
 
-import { useState } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { TeamMember, ROLES } from "./types";
 import { AddMemberModal } from "./AddMemberModal";
@@ -23,6 +23,7 @@ export function TeamSection({ scopeId, team, onTeamChange }: TeamSectionProps) {
   const { t } = useTranslation();
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [savingMember, setSavingMember] = useState(false);
+  const debounceTimeouts = useRef<Record<string, NodeJS.Timeout>>({});
 
   const handleAddMember = async (member: {
     name: string;
@@ -41,7 +42,7 @@ export function TeamSection({ scopeId, team, onTeamChange }: TeamSectionProps) {
     }
   };
 
-  const handleEditMember = async (
+  const saveToDatabase = useCallback(async (
     memberId: string,
     field: keyof TeamMember,
     value: string | number
@@ -53,13 +54,46 @@ export function TeamSection({ scopeId, team, onTeamChange }: TeamSectionProps) {
       .update({ [field]: value })
       .eq("id", memberId);
     setSavingMember(false);
-    if (!error) {
-      const updated = team.map((m) =>
-        m.id === memberId ? { ...m, [field]: value } : m
-      );
-      onTeamChange(updated);
+    
+    if (error) {
+      console.error('Chyba při ukládání člena týmu:', error);
+      // Můžete zde přidat toast notifikaci nebo jiné chybové zpracování
     }
-  };
+  }, []);
+
+  const handleEditMember = useCallback((
+    memberId: string,
+    field: keyof TeamMember,
+    value: string | number
+  ) => {
+    // Okamžitě aktualizuj UI
+    const updated = team.map((m) =>
+      m.id === memberId ? { ...m, [field]: value } : m
+    );
+    onTeamChange(updated);
+
+    // Zruš předchozí timeout pro tento member a field
+    const timeoutKey = `${memberId}-${field}`;
+    if (debounceTimeouts.current[timeoutKey]) {
+      clearTimeout(debounceTimeouts.current[timeoutKey]);
+    }
+
+    // Nastav nový timeout pro uložení do databáze
+    debounceTimeouts.current[timeoutKey] = setTimeout(() => {
+      saveToDatabase(memberId, field, value);
+      delete debounceTimeouts.current[timeoutKey];
+    }, 1000); // Debounce 1 sekunda
+  }, [team, onTeamChange, saveToDatabase]);
+
+  // Cleanup timeouts při unmount
+  useEffect(() => {
+    const timeouts = debounceTimeouts.current;
+    return () => {
+      Object.values(timeouts).forEach(timeout => {
+        clearTimeout(timeout);
+      });
+    };
+  }, []);
 
   const handleDeleteMember = async (memberId: string) => {
     onTeamChange(team.filter((m) => m.id !== memberId));
