@@ -425,41 +425,50 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                             </div>
 
                             <div className="flex-1">
-                              <input
-                                className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 font-semibold text-base"
-                                value={member.name}
-                                onChange={(e) =>
-                                  handleEditMember(
-                                    member.id,
-                                    "name",
-                                    e.target.value
-                                  )
-                                }
-                                placeholder="Jméno člena"
-                              />
+                              {!readOnlyMode && (
+                                <input
+                                  className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 font-semibold text-base"
+                                  value={member.name}
+                                  onChange={(e) =>
+                                    handleEditMember(
+                                      member.id,
+                                      "name",
+                                      e.target.value
+                                    )
+                                  }
+                                  placeholder="Jméno člena"
+                                />
+                              )}
+                              {readOnlyMode && (
+                                <div className="text-gray-600 dark:text-gray-400 font-semibold text-base">
+                                  {member.name}
+                                </div>
+                              )}
                             </div>
                           </div>
 
                           {/* Delete button */}
-                          <button
-                            onClick={() => handleDeleteMember(member.id)}
-                            className="p-2 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-all duration-200 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
-                            title={t("delete")}
-                          >
-                            <svg
-                              className="w-5 h-5"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
+                          {!readOnlyMode && (
+                            <button
+                              onClick={() => handleDeleteMember(member.id)}
+                              className="p-2 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-all duration-200 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+                              title={t("delete")}
                             >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
-                            </svg>
-                          </button>
+                              <svg
+                                className="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                />
+                              </svg>
+                            </button>
+                          )}
                         </div>
 
                         {/* Role a FTE */}
@@ -469,24 +478,31 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                             <span className="text-xl">
                               {getRoleIcon(member.role)}
                             </span>
-                            <select
-                              className="flex-1 bg-gradient-to-r from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 font-medium text-sm"
-                              value={member.role}
-                              onChange={(e) =>
-                                handleEditMember(
-                                  member.id,
-                                  "role",
-                                  e.target.value
-                                )
-                              }
-                              disabled={readOnlyMode}
-                            >
-                              {ROLES.map((role) => (
-                                <option key={role.value} value={role.value}>
-                                  {role.value}
-                                </option>
-                              ))}
-                            </select>
+                            {!readOnlyMode && (
+                              <select
+                                className="flex-1 bg-gradient-to-r from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 font-medium text-sm"
+                                value={member.role}
+                                onChange={(e) =>
+                                  handleEditMember(
+                                    member.id,
+                                    "role",
+                                    e.target.value
+                                  )
+                                }
+                                disabled={readOnlyMode}
+                              >
+                                {ROLES.map((role) => (
+                                  <option key={role.value} value={role.value}>
+                                    {role.value}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
+                            {readOnlyMode && (
+                              <div className="flex-1 text-gray-600 dark:text-gray-400 font-medium text-sm">
+                                {member.role}
+                              </div>
+                            )}
                           </div>
 
                           {/* FTE */}
@@ -495,75 +511,82 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                               FTE:
                             </span>
                             <div className="relative flex-1">
-                              <input
-                                className="w-full bg-gradient-to-r from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 text-center font-semibold text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                type="number"
-                                min={0.1}
-                                step={0.01}
-                                value={member.fte}
-                                onChange={(e) =>
-                                  handleEditMember(
-                                    member.id,
-                                    "fte",
-                                    Number(e.target.value)
-                                  )
-                                }
-                                disabled={readOnlyMode}
-                              />
-
-                              {/* Custom spinner buttons */}
                               {!readOnlyMode && (
-                                <div className="absolute right-1 top-1/2 transform -translate-y-1/2 flex gap-1">
-                                  <button
-                                    type="button"
-                                    className="w-4 h-4 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                                    onClick={() =>
+                                <>
+                                  <input
+                                    className="w-full bg-gradient-to-r from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 text-center font-semibold text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                    type="number"
+                                    min={0.1}
+                                    step={0.01}
+                                    value={member.fte}
+                                    onChange={(e) =>
                                       handleEditMember(
                                         member.id,
                                         "fte",
-                                        Math.min(member.fte + 0.1, 2)
+                                        Number(e.target.value)
                                       )
                                     }
-                                  >
-                                    <svg
-                                      className="w-3 h-3"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      viewBox="0 0 24 24"
+                                    disabled={readOnlyMode}
+                                  />
+
+                                  {/* Custom spinner buttons */}
+                                  <div className="absolute right-1 top-1/2 transform -translate-y-1/2 flex gap-1">
+                                    <button
+                                      type="button"
+                                      className="w-4 h-4 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                                      onClick={() =>
+                                        handleEditMember(
+                                          member.id,
+                                          "fte",
+                                          Math.min(member.fte + 0.1, 2)
+                                        )
+                                      }
                                     >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={3}
-                                        d="M5 15l7-7 7 7"
-                                      />
-                                    </svg>
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="w-4 h-4 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                                    onClick={() =>
-                                      handleEditMember(
-                                        member.id,
-                                        "fte",
-                                        Math.max(member.fte - 0.1, 0.1)
-                                      )
-                                    }
-                                  >
-                                    <svg
-                                      className="w-3 h-3"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      viewBox="0 0 24 24"
+                                      <svg
+                                        className="w-3 h-3"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={3}
+                                          d="M5 15l7-7 7 7"
+                                        />
+                                      </svg>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="w-4 h-4 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                                      onClick={() =>
+                                        handleEditMember(
+                                          member.id,
+                                          "fte",
+                                          Math.max(member.fte - 0.1, 0.1)
+                                        )
+                                      }
                                     >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={3}
-                                        d="M19 9l-7 7-7-7"
-                                      />
-                                    </svg>
-                                  </button>
+                                      <svg
+                                        className="w-3 h-3"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={3}
+                                          d="M19 9l-7 7-7-7"
+                                        />
+                                      </svg>
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                              {readOnlyMode && (
+                                <div className="w-full text-center font-semibold text-sm text-gray-600 dark:text-gray-400">
+                                  {member.fte.toFixed(2)}
                                 </div>
                               )}
                             </div>

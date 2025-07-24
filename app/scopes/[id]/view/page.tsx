@@ -277,7 +277,7 @@ export default function ScopePage({
                   {scope.name.charAt(0).toUpperCase()}
                 </span>
               </div>
-              <div className="absolute top-2 -right-2 bg-gradient-to-r from-gray-600 to-gray-700 text-white text-xs font-bold px-2 py-1 rounded-full">
+              <div className="absolute top-5 right-5 bg-gradient-to-r from-gray-600 to-gray-700 text-white text-xs font-bold px-2 py-1 rounded-full">
                 Náhledová verze
               </div>
               <div>

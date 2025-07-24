@@ -430,14 +430,18 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
                                 <div className="hidden md:flex items-center justify-between">
                                   <div className="flex items-center gap-4">
                                     {/* Drag handle */}
-                                    <div 
-                                      className="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg"
-                                      title="Přetáhněte pro změnu priority"
-                                    >
-                                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    {!readOnlyMode && (
+                                      <div
+                                        className="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg"
+                                        title="Přetáhněte pro změnu priority"
+                                      >
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
                                       </svg>
                                     </div>
+                                    )}
+                                    
+                                    {/* Project name and priority */}
                                     
                                     <div className="flex items-center gap-3">
                                       <h4 className="text-xl font-bold text-gray-900 dark:text-gray-100">
@@ -542,14 +546,16 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
                                   <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
                                       {/* Drag handle */}
-                                      <div 
-                                        className="flex items-center justify-center w-6 h-6 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg"
-                                        title="Přetáhněte pro změnu priority"
-                                      >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      {!readOnlyMode && (
+                                        <div
+                                          className="flex items-center justify-center w-6 h-6 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg"
+                                          title="Přetáhněte pro změnu priority"
+                                        >
+                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
                                         </svg>
                                       </div>
+                                      )}
                                       
                                       <div className="flex items-center gap-2">
                                         <h4 className="text-lg font-bold text-gray-900 dark:text-gray-100">
