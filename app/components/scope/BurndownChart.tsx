@@ -35,6 +35,7 @@ interface ChartDataPoint {
 
 export function BurndownChart({ projects, team }: BurndownChartProps) {
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+  const [activeLegend, setActiveLegend] = useState<string | null>(null); // Přidáno
 
   // Generate chart data based on projects and team
   useEffect(() => {
@@ -223,6 +224,14 @@ export function BurndownChart({ projects, team }: BurndownChartProps) {
     color: projectColors[index % projectColors.length],
   }));
 
+  // Legend handlers
+  const handleLegendMouseEnter = (o: any) => {
+    setActiveLegend(o.dataKey);
+  };
+  const handleLegendMouseLeave = () => {
+    setActiveLegend(null);
+  };
+
   return (
     <div className="relative bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 rounded-2xl p-8 shadow-2xl">
       {/* Decorative background elements */}
@@ -317,6 +326,8 @@ export function BurndownChart({ projects, team }: BurndownChartProps) {
                 wrapperStyle={{ paddingTop: "20px" }}
                 iconType="line"
                 iconSize={12}
+                onMouseEnter={handleLegendMouseEnter}
+                onMouseLeave={handleLegendMouseLeave}
               />
 
               {/* Ideální průběh (burndown) */}
@@ -328,7 +339,9 @@ export function BurndownChart({ projects, team }: BurndownChartProps) {
                 strokeDasharray="5 5"
                 name="Ideální průběh"
                 dot={false}
-                opacity={0.7}
+                opacity={
+                  !activeLegend || activeLegend === "idealProgress" ? 0.7 : 0.2
+                }
               />
 
               {/* Project progress */}
@@ -341,7 +354,9 @@ export function BurndownChart({ projects, team }: BurndownChartProps) {
                   strokeWidth={2}
                   name={project.label}
                   dot={{ fill: project.color, strokeWidth: 2, r: 3 }}
-                  opacity={0.8}
+                  opacity={
+                    !activeLegend || activeLegend === project.key ? 1 : 0.2
+                  }
                 />
               ))}
 
@@ -353,7 +368,9 @@ export function BurndownChart({ projects, team }: BurndownChartProps) {
                 strokeWidth={4}
                 name="Celkem % hotovo"
                 dot={{ fill: "#3b82f6", strokeWidth: 2, r: 5 }}
-                opacity={1}
+                opacity={
+                  !activeLegend || activeLegend === "totalProgress" ? 1 : 0.2
+                }
               />
             </LineChart>
           </ResponsiveContainer>

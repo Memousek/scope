@@ -40,6 +40,7 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
   priorityDates
 }) => {
   const [progressData, setProgressData] = useState<ProgressData[]>([]);
+  const [activeLegend, setActiveLegend] = useState<string | null>(null); // Přidáno
 
   // Generování dat pro graf
   useEffect(() => {
@@ -169,6 +170,14 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
     return null;
   };
 
+  // Legend handlers
+  const handleLegendMouseEnter = (o: any) => {
+    setActiveLegend(o.dataKey);
+  };
+  const handleLegendMouseLeave = () => {
+    setActiveLegend(null);
+  };
+
   return (
     <div className={`bg-white/80 dark:bg-gray-700/80 rounded-xl border border-gray-200 dark:border-gray-600 p-4 ${className}`}>
       {/* Hlavička grafu */}
@@ -219,7 +228,10 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
               interval={0}
             />
             <Tooltip content={<CustomTooltip />} />
-            <Legend />
+            <Legend
+              onMouseEnter={handleLegendMouseEnter}
+              onMouseLeave={handleLegendMouseLeave}
+            />
             
             {/* Ideální progress */}
             <Line
@@ -230,6 +242,9 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
               strokeDasharray="5 5"
               name="Ideální progress"
               dot={false}
+              opacity={
+                !activeLegend || activeLegend === "idealProgress" ? 0.7 : 0.2
+              }
             />
             
             {/* Role progress */}
@@ -242,6 +257,9 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
                 strokeWidth={2}
                 name={role.label}
                 dot={false}
+                opacity={
+                  !activeLegend || activeLegend === role.key ? 0.8 : 0.2
+                }
               />
             ))}
             
@@ -253,6 +271,9 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
               strokeWidth={4}
               name="Celkový progress"
               dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
+              opacity={
+                !activeLegend || activeLegend === "actualProgress" ? 1 : 0.2
+              }
             />
           </LineChart>
         </ResponsiveContainer>
@@ -302,4 +323,4 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
       </div>
     </div>
   );
-}; 
+};
