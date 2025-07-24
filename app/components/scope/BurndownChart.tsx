@@ -352,7 +352,7 @@ export function BurndownChart({ projects, team }: BurndownChartProps) {
                   type="monotone"
                   dataKey={project.key}
                   stroke={project.color}
-                  strokeWidth={2}
+                  strokeWidth={activeLegend === project.key ? 4 : 1}
                   name={project.label}
                   dot={{ fill: project.color, strokeWidth: 2, r: 3 }}
                   opacity={

@@ -10,7 +10,7 @@ import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Project, ProjectDeliveryInfo } from './types';
 import { PROJECT_ROLES, calculateRoleProgress } from '@/lib/utils/projectRoles';
-import { Payload } from 'recharts';
+import { Payload } from "recharts/types/component/DefaultLegendContent";
 
 interface ProjectProgressChartProps {
   project: Project;
@@ -171,12 +171,12 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
     return null;
   };
 
-  const handleLegendMouseEnter = (payload: Payload) => {
-    setActiveLegend(payload.dataKey as string);
-  };
-  const handleLegendMouseLeave = () => {
-    setActiveLegend(null);
-  };
+  const handleLegendMouseEnter = (o: Payload) => {
+      setActiveLegend(o.dataKey as string);
+    };
+    const handleLegendMouseLeave = () => {
+      setActiveLegend(null);
+    };
 
   return (
     <div className={`bg-white/80 dark:bg-gray-700/80 rounded-xl border border-gray-200 dark:border-gray-600 p-4 ${className}`}>
@@ -229,8 +229,11 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
             />
             <Tooltip content={<CustomTooltip />} />
             <Legend
-              onMouseEnter={handleLegendMouseEnter}
-              onMouseLeave={handleLegendMouseLeave}
+                wrapperStyle={{ paddingTop: "20px" }}
+                iconType="line"
+                iconSize={12}
+                onMouseEnter={handleLegendMouseEnter}
+                onMouseLeave={handleLegendMouseLeave}
             />
             
             {/* Ideální progress */}
@@ -238,12 +241,12 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
               type="monotone"
               dataKey="idealProgress"
               stroke="#60a5fa"
-              strokeWidth={2}
+              strokeWidth={!activeLegend || activeLegend === "idealProgress" ? 2 : 1}
               strokeDasharray="5 5"
               name="Ideální progress"
               dot={false}
               opacity={
-                !activeLegend || activeLegend === "idealProgress" ? 0.7 : 0.2
+                !activeLegend || activeLegend === "idealProgress" ? 1 : 0.2
               }
             />
             
@@ -254,11 +257,11 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
                 type="monotone"
                 dataKey={role.key}
                 stroke={role.color}
-                strokeWidth={2}
+                strokeWidth={activeLegend === role.key ? 4 : 1}
                 name={role.label}
                 dot={false}
                 opacity={
-                  !activeLegend || activeLegend === role.key ? 0.8 : 0.2
+                  !activeLegend || activeLegend === role.key ? 1 : 0.2
                 }
               />
             ))}
