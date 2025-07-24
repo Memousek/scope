@@ -240,11 +240,12 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                             </div>
 
                             <div className="flex-1">
-                              <input
-                                className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 font-semibold text-lg"
-                                value={member.name}
-                                onChange={(e) =>
-                                  handleEditMember(
+                              {!readOnlyMode && (
+                                <input
+                                  className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 font-semibold text-lg"
+                                  value={member.name}
+                                  onChange={(e) =>
+                                    handleEditMember(
                                     member.id,
                                     "name",
                                     e.target.value
@@ -252,6 +253,12 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                                 }
                                 placeholder="Jméno člena"
                               />
+                              )}
+                              {readOnlyMode && (
+                                <div className="text-gray-600 dark:text-gray-400 text-sm">
+                                  {member.name}
+                                </div>
+                              )}
                             </div>
                           </div>
 
@@ -260,11 +267,12 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                             <span className="text-2xl">
                               {getRoleIcon(member.role)}
                             </span>
-                            <select
-                              className="bg-gradient-to-r from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 font-medium min-w-[120px]"
-                              value={member.role}
-                              onChange={(e) =>
-                                handleEditMember(
+                            {!readOnlyMode && (
+                              <select
+                                className="bg-gradient-to-r from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 font-medium min-w-[120px]"
+                                value={member.role}
+                                onChange={(e) =>
+                                  handleEditMember(
                                   member.id,
                                   "role",
                                   e.target.value
@@ -278,6 +286,12 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                                 </option>
                               ))}
                             </select>
+                            )}
+                            {readOnlyMode && (
+                              <div className="text-gray-600 dark:text-gray-400 text-sm">
+                                {member.role}
+                              </div>
+                            )}
                           </div>
 
                           {/* FTE */}
@@ -286,24 +300,33 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                               Úvazek:
                             </span>
                             <div className="relative">
-                              <input
-                                className="w-20 bg-gradient-to-r from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 text-center font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                type="number"
-                                min={0.1}
-                                step={0.01}
-                                value={member.fte}
-                                onChange={(e) =>
-                                  handleEditMember(
-                                    member.id,
-                                    "fte",
-                                    Number(e.target.value)
-                                  )
-                                }
-                                disabled={readOnlyMode}
-                              />
-                              <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-gray-500 dark:text-gray-400">
-                                FTE
-                              </span>
+                              {!readOnlyMode && (
+                                <>
+                                  <input
+                                    className="w-20 bg-gradient-to-r from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 text-center font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                    type="number"
+                                    min={0.1}
+                                    step={0.01}
+                                    value={member.fte}
+                                    onChange={(e) =>
+                                      handleEditMember(
+                                        member.id,
+                                        "fte",
+                                        Number(e.target.value)
+                                      )
+                                    }
+                                    disabled={readOnlyMode}
+                                  />
+                                  <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-gray-500 dark:text-gray-400">
+                                    FTE
+                                  </span>
+                                </>
+                              )}
+                              {readOnlyMode && (
+                                <span className="text-gray-500 dark:text-gray-400">
+                                  {member.fte.toFixed(2)} FTE
+                                </span>
+                              )}
 
                               {/* Custom spinner buttons */}
                               {!readOnlyMode && (
@@ -456,6 +479,7 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                                   e.target.value
                                 )
                               }
+                              disabled={readOnlyMode}
                             >
                               {ROLES.map((role) => (
                                 <option key={role.value} value={role.value}>
