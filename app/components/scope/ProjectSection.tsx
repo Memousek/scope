@@ -17,8 +17,10 @@ import { AddProjectModal } from './AddProjectModal';
 import { EditProjectModal } from './EditProjectModal';
 import { ProjectHistoryModal } from './ProjectHistoryModal';
 import { ProjectProgressChart } from './ProjectProgressChart';
+import { ProjectTeamAssignmentModal } from './ProjectTeamAssignmentModal';
 import { calculateProjectDeliveryInfo, calculatePriorityDates } from '@/app/utils/dateUtils';
 import { PROJECT_ROLES, calculateRoleProgress, calculateTotalProgress } from '@/lib/utils/projectRoles';
+import { FiUsers } from "react-icons/fi";
 
 interface ProjectSectionProps {
   scopeId: string;
@@ -51,6 +53,8 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [historyModalProject, setHistoryModalProject] = useState<Project | null>(null);
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
+  const [teamAssignmentModalOpen, setTeamAssignmentModalOpen] = useState(false);
+  const [teamAssignmentProject, setTeamAssignmentProject] = useState<Project | null>(null);
   
   // Drag and drop state
   const [draggedProject, setDraggedProject] = useState<Project | null>(null);
@@ -85,6 +89,16 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
   const handleCloseEditModal = () => {
     setEditModalOpen(false);
     setEditProject(null);
+  };
+
+  const handleOpenTeamAssignmentModal = (project: Project) => {
+    setTeamAssignmentProject(project);
+    setTeamAssignmentModalOpen(true);
+  };
+
+  const handleCloseTeamAssignmentModal = () => {
+    setTeamAssignmentModalOpen(false);
+    setTeamAssignmentProject(null);
   };
 
   const handleProjectChange = async (updatedProject: Project) => {
@@ -514,9 +528,19 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
                                         
                                         {!readOnlyMode && (
                                           <button
+                                            onClick={() => handleOpenTeamAssignmentModal(project)}
+                                            className="p-3 text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 transition-all duration-200 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-xl group"
+                                            title={t('manage_team')}
+                                          >
+                                            <FiUsers className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
+                                          </button>
+                                        )}
+                                        
+                                        {!readOnlyMode && (
+                                          <button
                                             onClick={() => setHistoryModalProject(project)}
                                             className="p-3 text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-xl group"
-                                            title={t('history')}
+                                            title={t('projectHistory')}
                                           >
                                             <svg className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -587,6 +611,16 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
                                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                           </svg>
+                                        </button>
+                                      )}
+                                      
+                                      {!readOnlyMode && (
+                                        <button
+                                          onClick={() => handleOpenTeamAssignmentModal(project)}
+                                          className="p-2 text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 transition-all duration-200 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg"
+                                          title={t('manage_team')}
+                                        >
+                                          <FiUsers className="w-4 h-4" />
                                         </button>
                                       )}
                                       
@@ -770,6 +804,17 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
           project={historyModalProject}
           onClose={() => setHistoryModalProject(null)}
           onProjectUpdate={loadProjects}
+        />
+      )}
+
+      {/* Modal pro správu přiřazení týmu */}
+      {!readOnlyMode && teamAssignmentModalOpen && teamAssignmentProject && (
+        <ProjectTeamAssignmentModal
+          isOpen={teamAssignmentModalOpen}
+          onClose={handleCloseTeamAssignmentModal}
+          project={teamAssignmentProject}
+          team={team}
+          onAssignmentsChange={loadProjects}
         />
       )}
     </>

@@ -104,6 +104,102 @@ export function calculateProjectDeliveryInfo(
 }
 
 /**
+ * Calculate project delivery information using assigned team members
+ * This function uses project team assignments instead of the full team
+ */
+export function calculateProjectDeliveryInfoWithAssignments(
+  project: Project, 
+  team: TeamMember[],
+  projectAssignments: Array<{ teamMemberId: string; role: string }>
+): ProjectDeliveryInfo {
+  // Get assigned team members for this project
+  const assignedTeamMembers = team.filter(member => 
+    projectAssignments.some(assignment => assignment.teamMemberId === member.id)
+  );
+
+  // If no assignments, fall back to full team
+  if (assignedTeamMembers.length === 0) {
+    return calculateProjectDeliveryInfo(project, team);
+  }
+
+  // Calculate FTE for each role based on assignments
+  const feFte = assignedTeamMembers
+    .filter(member => projectAssignments.some(assignment => 
+      assignment.teamMemberId === member.id && assignment.role === 'FE'
+    ))
+    .reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
+
+  const beFte = assignedTeamMembers
+    .filter(member => projectAssignments.some(assignment => 
+      assignment.teamMemberId === member.id && assignment.role === 'BE'
+    ))
+    .reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
+
+  const qaFte = assignedTeamMembers
+    .filter(member => projectAssignments.some(assignment => 
+      assignment.teamMemberId === member.id && assignment.role === 'QA'
+    ))
+    .reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
+
+  const pmFte = assignedTeamMembers
+    .filter(member => projectAssignments.some(assignment => 
+      assignment.teamMemberId === member.id && assignment.role === 'PM'
+    ))
+    .reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
+
+  const dplFte = assignedTeamMembers
+    .filter(member => projectAssignments.some(assignment => 
+      assignment.teamMemberId === member.id && assignment.role === 'DPL'
+    ))
+    .reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
+  
+  // Zbývající mandays pro projekt (podle aktuálního progressu)
+  const feRem = Number(project.fe_mandays) * (1 - (Number(project.fe_done) || 0) / 100);
+  const beRem = Number(project.be_mandays) * (1 - (Number(project.be_done) || 0) / 100);
+  const qaRem = Number(project.qa_mandays) * (1 - (Number(project.qa_done) || 0) / 100);
+  const pmRem = Number(project.pm_mandays) * (1 - (Number(project.pm_done) || 0) / 100);
+  const dplRem = Number(project.dpl_mandays) * (1 - (Number(project.dpl_done) || 0) / 100);
+  
+  // Zbývající dny potřebné pro dokončení
+  const feDays = feRem / feFte;
+  const beDays = beRem / beFte;
+  const qaDays = qaRem / qaFte;
+  const pmDays = pmRem / pmFte;
+  const dplDays = dplRem / dplFte;
+  
+  const remainingWorkdays = Math.ceil(Math.max(feDays, beDays, pmDays, dplDays)) + Math.ceil(qaDays);
+  
+  // Počítat od dnešního data + zbývající práce
+  const today = new Date();
+  const calculatedDeliveryDate = addWorkdays(today, remainingWorkdays);
+  
+  const deliveryDate = project.delivery_date ? new Date(project.delivery_date) : null;
+  
+  let diffWorkdays: number | null = null;
+  let slip: number | null = null;
+  if (deliveryDate) {
+    // Rozdíl = počet pracovních dnů mezi plánovaným a vypočítaným termínem
+    // Pozitivní = máme rezervu (vypočítaný termín je před plánovaným)
+    // Negativní = máme skluz (vypočítaný termín je po plánovaném)
+    diffWorkdays = getWorkdaysCount(deliveryDate, calculatedDeliveryDate);
+    
+    // Skluz = pokud je vypočítaný termín po plánovaném termínu
+    if (calculatedDeliveryDate > deliveryDate) {
+      slip = getWorkdaysCount(deliveryDate, calculatedDeliveryDate);
+    } else {
+      slip = 0; // Projekt není opožděný
+    }
+  }
+  
+  return {
+    calculatedDeliveryDate,
+    slip,
+    diffWorkdays,
+    deliveryDate,
+  };
+}
+
+/**
  * Calculate priority start and end dates for all projects
  * Returns map of projectId -> { priorityStartDate, priorityEndDate, blockingProjectName }
  */
