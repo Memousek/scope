@@ -265,10 +265,9 @@
   "enterNewPassword": "Zadejte nové heslo",
   "changingPassword": "Měním heslo",
   "open": "Otevřít",
-  "shareScopeDescription": "Sdílejte tento scope s ostatními uživateli pomocí odkazu níže.",
   "shareLinkType": "Typ odkazu pro sdílení",
   "fullAccess": "Plný přístup (editace)",
   "readOnly": "Pouze pro čtení",
   "copyLink": "Kopírovat odkaz",
-  "user": "Uživatel"
+  "reserveOrSlip": "Rezerva/Skluz"
 } 

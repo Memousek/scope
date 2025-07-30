@@ -271,8 +271,8 @@
   "viewOnly": "View only",
   "readOnly": "Read only",
   "scopeType": "Scope type",
-  "shareScopeDescription": "Share this scope with others by generating a share link or inviting users via email.",
   "shareLinkEdit": "Share link (edit)",
   "shareLinkViewOnly": "Share link (view only)",
-  "copyLink": "Copy link"
+  "copyLink": "Copy link",
+  "reserveOrSlip": "Rezerva/Skluz"
 }

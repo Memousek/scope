@@ -43,6 +43,14 @@ export function getWorkdaysBetween(start: Date, end: Date): Date[] {
 }
 
 /**
+ * Get number of workdays between two dates (excluding weekends)
+ */
+export function getWorkdaysCount(start: Date, end: Date): number {
+  const workdays = getWorkdaysBetween(start, end);
+  return workdays.length;
+}
+
+/**
  * Calculate project delivery information including calculated delivery date and slip
  */
 export function calculateProjectDeliveryInfo(
@@ -53,28 +61,43 @@ export function calculateProjectDeliveryInfo(
   const beFte = team.filter(m => m.role === 'BE').reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
   const qaFte = team.filter(m => m.role === 'QA').reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
   
+  // Zbývající mandays pro projekt (podle aktuálního progressu)
   const feRem = Number(project.fe_mandays) * (1 - (Number(project.fe_done) || 0) / 100);
   const beRem = Number(project.be_mandays) * (1 - (Number(project.be_done) || 0) / 100);
   const qaRem = Number(project.qa_mandays) * (1 - (Number(project.qa_done) || 0) / 100);
   
+  // Zbývající dny potřebné pro dokončení
   const feDays = feRem / feFte;
   const beDays = beRem / beFte;
   const qaDays = qaRem / qaFte;
   
-  const totalWorkdays = Math.ceil(Math.max(feDays, beDays)) + Math.ceil(qaDays);
+  const remainingWorkdays = Math.ceil(Math.max(feDays, beDays)) + Math.ceil(qaDays);
+  
+  // Počítat od dnešního data + zbývající práce
   const today = new Date();
-  const calculatedDeliveryDate = addWorkdays(today, totalWorkdays);
+  const calculatedDeliveryDate = addWorkdays(today, remainingWorkdays);
+  
   const deliveryDate = project.delivery_date ? new Date(project.delivery_date) : null;
   
   let diffWorkdays: number | null = null;
+  let slip: number | null = null;
   if (deliveryDate) {
-    const workdaysToPlanned = getWorkdaysBetween(today, deliveryDate).length - 1;
-    diffWorkdays = workdaysToPlanned - totalWorkdays;
+    // Rozdíl = počet pracovních dnů mezi plánovaným a vypočítaným termínem
+    // Pozitivní = máme rezervu (vypočítaný termín je před plánovaným)
+    // Negativní = máme skluz (vypočítaný termín je po plánovaném)
+    diffWorkdays = getWorkdaysCount(deliveryDate, calculatedDeliveryDate);
+    
+    // Skluz = pokud je vypočítaný termín po plánovaném termínu
+    if (calculatedDeliveryDate > deliveryDate) {
+      slip = getWorkdaysCount(deliveryDate, calculatedDeliveryDate);
+    } else {
+      slip = 0; // Projekt není opožděný
+    }
   }
   
   return {
     calculatedDeliveryDate,
-    slip: diffWorkdays,
+    slip,
     diffWorkdays,
     deliveryDate,
   };

@@ -10,6 +10,7 @@ import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Project, ProjectDeliveryInfo } from './types';
 import { PROJECT_ROLES, calculateRoleProgress } from '@/lib/utils/projectRoles';
+import { getWorkdaysCount } from '@/app/utils/dateUtils';
 import { Payload } from "recharts/types/component/DefaultLegendContent";
 
 interface ProjectProgressChartProps {
@@ -311,10 +312,24 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
         )}
         
         <div className="text-center">
-          <div className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-            {deliveryInfo.diffWorkdays || 0} dní
+          <div className={`text-lg font-semibold ${
+            (() => {
+              if (!deliveryInfo.deliveryDate || !deliveryInfo.calculatedDeliveryDate) return 'text-gray-800 dark:text-gray-200';
+              const diff = getWorkdaysCount(deliveryInfo.calculatedDeliveryDate, deliveryInfo.deliveryDate);
+              return diff >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
+            })()
+          }`}>
+            {(() => {
+              if (!deliveryInfo.deliveryDate || !deliveryInfo.calculatedDeliveryDate) return 'N/A';
+              const diff = getWorkdaysCount(deliveryInfo.calculatedDeliveryDate, deliveryInfo.deliveryDate);
+              if (diff >= 0) {
+                return `+${diff} dní`;
+              } else {
+                return `${diff} dní`;
+              }
+            })()}
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Rozdíl</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">Rezerva/Skluz</div>
         </div>
         
         <div className="text-center">

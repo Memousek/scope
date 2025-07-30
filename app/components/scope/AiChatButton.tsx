@@ -13,7 +13,7 @@ export function AiChatButton({ onClick }: AiChatButtonProps) {
   return (
     <button
       onClick={onClick}
-      className="cursor-not-allowed fixed bottom-6 right-24 w-16 h-16 bg-gradient-to-r from-gray-500 to-gray-500 text-white rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center justify-center group z-50 opacity-50"
+      className="hidden cursor-not-allowed fixed bottom-6 right-24 w-16 h-16 bg-gradient-to-r from-gray-500 to-gray-500 text-white rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center justify-center group z-50 opacity-50"
       aria-label="Ask AI"
       disabled={true}
     >

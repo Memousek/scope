@@ -476,7 +476,7 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
                                     
                                     {/* Deadline and Slip */}
                                     <div className="text-right">
-                                      <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('deadline')}</div>
+                                      <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('reserveOrSlip')}</div>
                                       <div className={`text-lg font-bold ${
                                         info.diffWorkdays && info.diffWorkdays >= 0 
                                           ? 'text-green-600 dark:text-green-400' 
@@ -630,7 +630,7 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
                                     
                                     {/* Deadline */}
                                     <div className="text-center">
-                                      <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">{t('deadline')}</div>
+                                      <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">{t('reserveOrSlip')}</div>
                                       <div className={`text-sm font-bold ${
                                         info.diffWorkdays && info.diffWorkdays >= 0 
                                           ? 'text-green-600 dark:text-green-400' 
