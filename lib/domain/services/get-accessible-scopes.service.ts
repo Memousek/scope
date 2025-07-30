@@ -20,20 +20,31 @@ export class GetAccessibleScopesService {
 
   public async getAccessibleScopes(user: User): Promise<Scope[]> {
     // Fetch all scopes the user has access to
-    const scopeEditors = await this.scopeEditorRepository.findBy({
-      userId: user.id,
+    // Hledáme scopy kde je uživatel buď jako editor (user_id) nebo pozván (email)
+    const scopeEditorsByUserId = await this.scopeEditorRepository.findByUserId(user.id);
+    
+    // Hledáme scopy kde je uživatel pozván podle emailu
+    const scopeEditorsByEmail = await this.scopeEditorRepository.findBy({
       email: user.email,
     });
 
-    // Extract scope IDs from the scope editors
-    const scopeIds = scopeEditors.map(editor => editor.scopeId);
-
-    const scopes = [
-      ...await this.scopeRepository.findByIds(scopeIds),
-      ...await this.scopeRepository.findByOwnerId(user.id),
+    // Extract scope IDs from both queries
+    const scopeIds = [
+      ...scopeEditorsByUserId.map(editor => editor.scopeId),
+      ...scopeEditorsByEmail.map(editor => editor.scopeId),
     ];
 
-    // Remove duplicates by converting to a Set and back to an array
+    // Add scopes where user is the owner
+    const ownedScopes = await this.scopeRepository.findByOwnerId(user.id);
+    const ownedScopeIds = ownedScopes.map(scope => scope.id);
+
+    // Combine all scope IDs
+    const allScopeIds = [...new Set([...scopeIds, ...ownedScopeIds])];
+
+    // Fetch all scopes by IDs
+    const scopes = await this.scopeRepository.findByIds(allScopeIds);
+
+    // Remove duplicates by converting to a Map and back to an array
     return Array.from(new Map(scopes.map(scope => [scope.id, scope])).values());
   }
 }

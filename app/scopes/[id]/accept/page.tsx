@@ -35,6 +35,19 @@ export default function AcceptScopePage() {
       }
       // Pokud není token, použij univerzální link
       if (!token) {
+        // Zkontroluj, zda je uživatel vlastníkem scope
+        const { data: scopeData } = await supabase
+          .from('scopes')
+          .select('owner_id')
+          .eq('id', scopeId)
+          .single();
+        
+        if (scopeData?.owner_id === user.id) {
+          setStatus('error');
+          setMessage('Nemůžete se přidat jako editor k vlastnímu scope.');
+          return;
+        }
+        
         // Zjisti, jestli už je editor
         const { data: existing } = await supabase
           .from('scope_editors')
@@ -73,6 +86,20 @@ export default function AcceptScopePage() {
         return;
       }
       const editor = editors[0];
+      
+      // Zkontroluj, zda je uživatel vlastníkem scope
+      const { data: scopeData } = await supabase
+        .from('scopes')
+        .select('owner_id')
+        .eq('id', scopeId)
+        .single();
+      
+      if (scopeData?.owner_id === user.id) {
+        setStatus('error');
+        setMessage('Nemůžete se přidat jako editor k vlastnímu scope.');
+        return;
+      }
+      
       // Pokud už je accepted, jen přesměruj
       if (editor.accepted_at && editor.user_id === user.id) {
         setStatus('success');

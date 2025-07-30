@@ -28,6 +28,7 @@ import { CheckScopeOwnershipService } from "@/lib/domain/services/check-scope-ow
 import { TeamService } from "@/app/services/teamService";
 import { ProjectService } from "@/app/services/projectService";
 import { ScopeService } from "@/app/services/scopeService";
+import { ScopeEditorService } from "@/app/services/scopeEditorService";
 
 export default function ScopePage({
   params,
@@ -77,6 +78,7 @@ export default function ScopePage({
   // --- Sdílení ---
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
+  const [isEditor, setIsEditor] = useState(false);
 
   // --- Název ---
   const [editingName, setEditingName] = useState(false);
@@ -254,6 +256,17 @@ export default function ScopePage({
     }
   }, [userId, id]);
 
+  const checkEditorStatus = useCallback(async () => {
+    if (!userId) return;
+
+    try {
+      const isEditorResult = await ScopeEditorService.checkScopeEditor(id, userId);
+      setIsEditor(isEditorResult);
+    } catch (error) {
+      console.error("Chyba při kontrole editora:", error);
+    }
+  }, [userId, id]);
+
   // Načítání dat při mount
   useEffect(() => {
     if (!loading && user) {
@@ -263,6 +276,7 @@ export default function ScopePage({
       fetchStats();
       fetchAverageSlip();
       checkOwnership();
+      checkEditorStatus();
     }
   }, [
     loading,
@@ -274,6 +288,7 @@ export default function ScopePage({
     fetchStats,
     fetchAverageSlip,
     checkOwnership,
+    checkEditorStatus,
   ]);
 
   // Redirect pokud není přihlášen
@@ -414,7 +429,7 @@ export default function ScopePage({
             </div>
 
             <div className="flex items-center gap-3">
-              {isOwner && (
+              {(isOwner || isEditor) && (
                 <button
                   onClick={() => setShareModalOpen(true)}
                   className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all duration-200 shadow-lg"
@@ -505,6 +520,7 @@ export default function ScopePage({
         onClose={() => setShareModalOpen(false)}
         scopeId={id}
         isOwner={isOwner}
+        isEditor={isEditor}
       />
 
       <AiChatModal

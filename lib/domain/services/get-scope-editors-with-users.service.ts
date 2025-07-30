@@ -7,6 +7,7 @@ export interface ScopeEditorWithUser {
   userId: string | null;
   acceptedAt?: Date;
   invitedAt?: Date;
+  inviteToken?: string;
   user?: {
     id: string;
     email: string;
@@ -23,7 +24,7 @@ export class GetScopeEditorsWithUsersService {
     // Získat editory scope
     const { data: editors, error } = await supabase
       .from('scope_editors')
-      .select('id, email, user_id, accepted_at, invited_at')
+      .select('id, email, user_id, accepted_at, invited_at, invite_token')
       .eq('scope_id', scopeId);
 
     if (error || !editors) {
@@ -56,6 +57,7 @@ export class GetScopeEditorsWithUsersService {
         userId: editor.user_id,
         acceptedAt: editor.accepted_at ? new Date(editor.accepted_at) : undefined,
         invitedAt: editor.invited_at ? new Date(editor.invited_at) : undefined,
+        inviteToken: editor.invite_token,
         user: userData,
       };
     });

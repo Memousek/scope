@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { FiCopy, FiX, FiMail, FiUsers, FiLink, FiEdit, FiEye, FiPlus, FiTrash2 } from 'react-icons/fi';
 import { v4 as uuidv4 } from 'uuid';
@@ -13,9 +13,10 @@ interface ShareModalProps {
   onClose: () => void;
   scopeId: string;
   isOwner: boolean;
+  isEditor?: boolean;
 }
 
-export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId, isOwner }) => {
+export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId, isOwner, isEditor = false }) => {
   /**
    * ShareModal umožňuje sdílení scope pomocí pozvánek a generovaných odkazů.
    * Moderní design s animacemi a lepším UX.
@@ -27,9 +28,15 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
   const [inviteError, setInviteError] = useState('');
   const [selectedLinkType, setSelectedLinkType] = useState<'default' | 'edit' | 'view'>('default');
   const [copiedLink, setCopiedLink] = useState(false);
+  const [currentLink, setCurrentLink] = useState<string>('');
+  const [linkLoading, setLinkLoading] = useState(false);
+
+  // Editor může sdílet pouze v view módu
+  const canShare = isOwner || isEditor;
+  const canInvite = isOwner; // Pouze vlastník může pozvat nové editory
 
   useEffect(() => {
-    if (isOpen && isOwner) {
+    if (isOpen && canShare) {
       setEditorsLoading(true);
       const getScopeEditorsWithUsersService = ContainerService.getInstance().get(GetScopeEditorsWithUsersService, { autobind: true });
       getScopeEditorsWithUsersService.execute(scopeId)
@@ -42,7 +49,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
           setEditorsLoading(false);
         });
     }
-  }, [isOpen, isOwner, scopeId]);
+  }, [isOpen, canShare, scopeId]);
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,6 +76,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
       if (error instanceof Error) {
         if (error.message === 'EDITOR_ALREADY_EXISTS') {
           setInviteError('already_has_access');
+        } else if (error.message === 'CANNOT_INVITE_OWNER') {
+          setInviteError('cannot_invite_owner');
         } else {
           setInviteError('invite_error');
         }
@@ -95,33 +104,53 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
     }
   };
 
-  const getLastInviteToken = () => {
+  const getLastInviteToken = (): string | null => {
     if (editors && editors.length > 0) {
-      // Najdi poslední pozvánku bez acceptedAt
-      const pending = editors.filter(e => !e.acceptedAt);
+      // Najdi poslední pozvánku bez acceptedAt (pending invitation)
+      const pending = editors.filter(e => !e.acceptedAt && e.inviteToken);
       if (pending.length > 0) {
-        // Pro jednoduchost vrátíme null, token se bude generovat při vytvoření odkazu
-        return null;
+        // Vrátíme token z první pending pozvánky
+        return pending[0].inviteToken || null;
       }
     }
     return null;
   };
 
-  const getShareLink = () => {
+  const generateShareLink = useCallback(async () => {
+    setLinkLoading(true);
+    setCurrentLink('');
+    
     const baseUrl = window.location.origin;
-    const token = getLastInviteToken() || uuidv4();
-    if (selectedLinkType === 'edit') {
-      return `${baseUrl}/scopes/${scopeId}/accept?token=${token}`;
-    } else if (selectedLinkType === 'view') {
-      return `${baseUrl}/scopes/${scopeId}/view`;
+    let token = getLastInviteToken();
+    
+    // Pokud nemáme existující token, vytvoříme nový
+    if (!token) {
+      try {
+        token = await ScopeEditorService.createInviteLink({ scopeId });
+        // setLinkError(''); // Vymazat chybu při úspěchu - odstraněno
+      } catch (error) {
+        console.error('Chyba při vytváření pozvánky:', error);
+        // Fallback na uuidv4 pro případ chyby
+        token = uuidv4();
+      }
     }
-    // Default link type
-    return `${baseUrl}/scopes/${scopeId}/accept?token=${token}&type=${selectedLinkType}`;
-  };
+    
+    if (selectedLinkType === 'edit') {
+      setCurrentLink(`${baseUrl}/scopes/${scopeId}/accept?token=${token}`);
+    } else if (selectedLinkType === 'view') {
+      setCurrentLink(`${baseUrl}/scopes/${scopeId}/view`);
+    }
+    
+    setLinkLoading(false);
+  }, [scopeId, selectedLinkType]);
 
   const handleCopyLink = async () => {
+    if (!currentLink) {
+      await generateShareLink();
+    }
+    
     try {
-      await navigator.clipboard.writeText(getShareLink());
+      await navigator.clipboard.writeText(currentLink);
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);
     } catch (error) {
@@ -139,6 +168,41 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
     document.addEventListener('keydown', handleEsc);
     return () => document.removeEventListener('keydown', handleEsc);
   }, [onClose]);
+
+  // Generuj odkaz při změně typu
+  useEffect(() => {
+    if (selectedLinkType !== 'default') {
+      generateShareLink();
+    } else {
+      setCurrentLink('');
+    }
+  }, [selectedLinkType, generateShareLink]);
+
+  // Nastav výchozí typ odkazu podle role uživatele
+  useEffect(() => {
+    if (isOpen) {
+      if (isEditor && !isOwner) {
+        // Editor může sdílet pouze v view módu
+        setSelectedLinkType('view');
+      } else {
+        setSelectedLinkType('default');
+      }
+    }
+  }, [isOpen, isEditor, isOwner]);
+
+  // Refresh editorů po vytvoření nového odkazu
+  useEffect(() => {
+    if (currentLink && isOwner) {
+      const refreshEditors = async () => {
+        setEditorsLoading(true);
+        const getScopeEditorsWithUsersService = ContainerService.getInstance().get(GetScopeEditorsWithUsersService, { autobind: true });
+        const editorsData = await getScopeEditorsWithUsersService.execute(scopeId);
+        setEditors(editorsData);
+        setEditorsLoading(false);
+      };
+      refreshEditors();
+    }
+  }, [currentLink, isOwner, scopeId]);
 
   if (!isOpen) return null;
 
@@ -182,27 +246,29 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
               <h3 className="font-semibold text-gray-900 dark:text-white">{t('share_link_type')}</h3>
             </div>
             
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => setSelectedLinkType('edit')}
-                className={`p-4 rounded-xl border-2 transition-all duration-200 ${
-                  selectedLinkType === 'edit'
-                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                    : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${
-                    selectedLinkType === 'edit' ? 'bg-blue-100 dark:bg-blue-800' : 'bg-gray-100 dark:bg-gray-800'
-                  }`}>
-                    <FiEdit size={20} />
+            <div className={`grid gap-3 ${isOwner ? 'grid-cols-2' : 'grid-cols-1'}`}>
+              {isOwner && (
+                <button
+                  onClick={() => setSelectedLinkType('edit')}
+                  className={`p-4 rounded-xl border-2 transition-all duration-200 ${
+                    selectedLinkType === 'edit'
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-lg ${
+                      selectedLinkType === 'edit' ? 'bg-blue-100 dark:bg-blue-800' : 'bg-gray-100 dark:bg-gray-800'
+                    }`}>
+                      <FiEdit size={20} />
+                    </div>
+                    <div className="text-left">
+                      <div className="font-medium">{t('share_link_edit')}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">{t('fullAccess')}</div>
+                    </div>
                   </div>
-                  <div className="text-left">
-                    <div className="font-medium">{t('share_link_edit')}</div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">{t('fullAccess')}</div>
-                  </div>
-                </div>
-              </button>
+                </button>
+              )}
 
               <button
                 onClick={() => setSelectedLinkType('view')}
@@ -235,27 +301,41 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
                       {selectedLinkType === 'edit' ? t('share_link_edit') : t('share_link_view_only')}
                     </div>
                     <div className="text-xs text-gray-500 dark:text-gray-400 break-all">
-                      {getShareLink()}
+                      {linkLoading ? (
+                        <div className="flex items-center gap-2">
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-500"></div>
+                          {t('generating_link')}...
+                        </div>
+                      ) : currentLink ? (
+                        currentLink
+                      ) : (
+                        <span className="text-gray-400">{t('click_generate_to_create_link')}</span>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-2 ml-4">
-                    <a 
-                      href={getShareLink()} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                      title={t('open_link_in_new_tab')}
-                    >
-                      <FiLink size={16} />
-                    </a>
+                    {currentLink && !linkLoading && (
+                      <a 
+                        href={currentLink} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                        title={t('open_link_in_new_tab')}
+                      >
+                        <FiLink size={16} />
+                      </a>
+                    )}
                     <button
                       onClick={handleCopyLink}
+                      disabled={linkLoading || !currentLink}
                       className={`p-2 rounded-lg transition-colors ${
                         copiedLink 
                           ? 'text-green-600 bg-green-50 dark:bg-green-900/20' 
+                          : linkLoading || !currentLink
+                          ? 'text-gray-400 cursor-not-allowed'
                           : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50 dark:hover:bg-blue-900/20'
                       }`}
-                      title={copiedLink ? 'Zkopírováno!' : t('copy')}
+                      title={copiedLink ? 'Zkopírováno!' : linkLoading ? t('generating') : t('copy')}
                     >
                       <FiCopy size={16} />
                     </button>
@@ -266,38 +346,40 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
           </div>
 
           {/* Invite Section */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <FiMail className="text-purple-600" size={18} />
-              <h3 className="font-semibold text-gray-900 dark:text-white">{t('invite_user_using_email')}</h3>
+          {canInvite && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <FiMail className="text-purple-600" size={18} />
+                <h3 className="font-semibold text-gray-900 dark:text-white">{t('invite_user_using_email')}</h3>
+              </div>
+              
+              <form onSubmit={handleInvite} className="flex gap-3">
+                <div className="flex-1 relative">
+                  <input
+                    type="email"
+                    className="w-full pl-4 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200"
+                    placeholder={t('user_email')}
+                    value={inviteEmail}
+                    onChange={e => setInviteEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+                >
+                  <FiPlus size={16} />
+                  {t('invite')}
+                </button>
+              </form>
+              
+              {inviteError && (
+                <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-xl text-red-600 dark:text-red-400 text-sm">
+                  {t(inviteError)}
+                </div>
+              )}
             </div>
-            
-            <form onSubmit={handleInvite} className="flex gap-3">
-              <div className="flex-1 relative">
-                <input
-                  type="email"
-                  className="w-full pl-4 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200"
-                  placeholder={t('user_email')}
-                  value={inviteEmail}
-                  onChange={e => setInviteEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <button
-                type="submit"
-                className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
-              >
-                <FiPlus size={16} />
-                {t('invite')}
-              </button>
-            </form>
-            
-            {inviteError && (
-              <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-xl text-red-600 dark:text-red-400 text-sm">
-                {t(inviteError)}
-              </div>
-            )}
-          </div>
+          )}
 
           {/* Editors Section */}
           <div className="space-y-3">
@@ -351,13 +433,15 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
                         )}
                       </div>
                     </div>
-                    <button
-                      onClick={() => handleRemoveEditor(editor.id)}
-                      className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors duration-200"
-                      title={t('remove_rights')}
-                    >
-                      <FiTrash2 size={16} />
-                    </button>
+                    {canInvite && (
+                      <button
+                        onClick={() => handleRemoveEditor(editor.id)}
+                        className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors duration-200"
+                        title={t('remove_rights')}
+                      >
+                        <FiTrash2 size={16} />
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>

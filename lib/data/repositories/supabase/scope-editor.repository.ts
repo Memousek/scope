@@ -97,21 +97,17 @@ export class SupabaseScopeEditorRepository extends ScopeEditorRepository {
     userId?: string | null
   }): Promise<ScopeEditor[]> {
     const supabase = createClient();
-    const orConditions: string[] = [];
+    let query = supabase.from('scope_editors').select('*');
 
+    // Pro email a userId používáme AND logiku, ne OR
     if (params.email !== undefined && params.email !== null) {
-      orConditions.push(`email.eq.${params.email}`);
+      query = query.eq('email', params.email);
     }
     if (params.scopeId !== undefined && params.scopeId !== null) {
-      orConditions.push(`scope_id.eq.${params.scopeId}`);
+      query = query.eq('scope_id', params.scopeId);
     }
     if (params.userId !== undefined && params.userId !== null) {
-      orConditions.push(`user_id.eq.${params.userId}`);
-    }
-
-    let query = supabase.from('scope_editors').select('*');
-    if (orConditions.length > 0) {
-      query = query.or(orConditions.join(','));
+      query = query.eq('user_id', params.userId);
     }
 
     const { data, error } = await query;

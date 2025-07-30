@@ -93,8 +93,15 @@
   "editor": "editor",
   "invited": "invited",
   "remove_rights": "Remove rights",
+  "generating_link": "Generating link",
+  "generating": "Generating",
+  "click_generate_to_create_link": "Click to create link",
+  "shareScopeDescription": "Share scope with colleagues using links or invitations",
   "already_has_access": "This user already has access.",
   "invite_error": "Error while inviting.",
+  "cannot_invite_owner": "You cannot invite the scope owner as an editor",
+  "user": "user",
+  "users": "users",
   "memberName": "Team member name",
   "memberNamePlaceholder": "Jane Doe",
   "ftePlaceholder": "FTE",
@@ -267,6 +274,5 @@
   "shareScopeDescription": "Share this scope with others by generating a share link or inviting users via email.",
   "shareLinkEdit": "Share link (edit)",
   "shareLinkViewOnly": "Share link (view only)",
-  "copyLink": "Copy link",
-  "user": "User"
+  "copyLink": "Copy link"
 }
