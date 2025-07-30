@@ -8,19 +8,23 @@
  * - Skupinování projektů podle priority
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from '@/lib/translation';
+import { Project } from './types';
 import { useProjects } from '@/app/hooks/useProjects';
 import { useTeam } from '@/app/hooks/useTeam';
-import { Project } from './types';
 import { AddProjectModal } from './AddProjectModal';
 import { EditProjectModal } from './EditProjectModal';
 import { ProjectHistoryModal } from './ProjectHistoryModal';
-import { ProjectProgressChart } from './ProjectProgressChart';
 import { ProjectTeamAssignmentModal } from './ProjectTeamAssignmentModal';
-import { calculateProjectDeliveryInfo, calculatePriorityDates } from '@/app/utils/dateUtils';
+import { ProjectProgressChart } from './ProjectProgressChart';
+import { calculateProjectDeliveryInfoWithAssignments, calculatePriorityDatesWithAssignments } from '@/app/utils/dateUtils';
+import { ContainerService } from '@/lib/container.service';
+import { ManageProjectTeamAssignmentsService } from '@/lib/domain/services/manage-project-team-assignments.service';
+import { ProjectTeamAssignment } from '@/lib/domain/models/project-team-assignment.model';
 import { PROJECT_ROLES, calculateRoleProgress, calculateTotalProgress } from '@/lib/utils/projectRoles';
 import { FiUsers } from "react-icons/fi";
+import { Badge } from '@/app/components/ui/Badge';
 
 interface ProjectSectionProps {
   scopeId: string;
@@ -56,6 +60,9 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
   const [teamAssignmentModalOpen, setTeamAssignmentModalOpen] = useState(false);
   const [teamAssignmentProject, setTeamAssignmentProject] = useState<Project | null>(null);
   
+  // Project assignments state
+  const [projectAssignments, setProjectAssignments] = useState<Record<string, ProjectTeamAssignment[]>>({});
+  
   // Drag and drop state
   const [draggedProject, setDraggedProject] = useState<Project | null>(null);
   const [dragOverProject, setDragOverProject] = useState<string | null>(null);
@@ -68,6 +75,29 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
     loadProjects();
     loadTeam();
   }, [loadProjects, loadTeam]);
+
+  const loadProjectAssignments = useCallback(async () => {
+    try {
+      const manageAssignmentsService = ContainerService.getInstance().get(ManageProjectTeamAssignmentsService, { autobind: true });
+      const assignmentsMap: Record<string, ProjectTeamAssignment[]> = {};
+      
+      for (const project of projects) {
+        const assignments = await manageAssignmentsService.getProjectAssignments(project.id);
+        assignmentsMap[project.id] = assignments;
+      }
+      
+      setProjectAssignments(assignmentsMap);
+    } catch (error) {
+      console.error('Failed to load project assignments:', error);
+    }
+  }, [projects]);
+
+  // Load project assignments when projects change
+  useEffect(() => {
+    if (projects.length > 0) {
+      loadProjectAssignments();
+    }
+  }, [projects, loadProjectAssignments]);
 
   const handleAddProject = async (project: Omit<Project, 'id' | 'scope_id' | 'created_at'>) => {
     try {
@@ -297,8 +327,18 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
       case 1: return '🔥';
       case 2: return '⚡';
       case 3: return '💡';
+      case 4: return '📌';
       default: return '📋';
     }
+  };
+
+  const hasTeamAssignments = (projectId: string) => {
+    return projectAssignments[projectId] && projectAssignments[projectId].length > 0;
+  };
+
+  const isRoleAssigned = (projectId: string, roleKey: string) => {
+    const assignments = projectAssignments[projectId] || [];
+    return assignments.some(assignment => assignment.role === roleKey.toUpperCase());
   };
 
   return (
@@ -386,8 +426,8 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
                       {/* Projects in this priority group */}
                       <div className="space-y-4">
                         {projectsInGroup.map((project) => {
-                          const info = calculateProjectDeliveryInfo(project, team);
-                          const priorityDates = calculatePriorityDates(projects, team)[project.id];
+                          const info = calculateProjectDeliveryInfoWithAssignments(project, team, projectAssignments[project.id] || []);
+                          const priorityDates = calculatePriorityDatesWithAssignments(projects, team, projectAssignments)[project.id];
                           const isExpanded = expandedProject === project.id;
                           const isDragOver = dragOverProject === project.id;
                           const isBeingDragged = draggedProject?.id === project.id;
@@ -492,13 +532,19 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
                                     <div className="text-right">
                                       <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('reserveOrSlip')}</div>
                                       <div className={`text-lg font-bold ${
-                                        info.diffWorkdays && info.diffWorkdays >= 0 
-                                          ? 'text-green-600 dark:text-green-400' 
-                                          : 'text-red-600 dark:text-red-400'
+                                        !hasTeamAssignments(project.id) 
+                                          ? 'text-orange-600 dark:text-orange-400' 
+                                          : info.diffWorkdays && info.diffWorkdays >= 0 
+                                            ? 'text-green-600 dark:text-green-400' 
+                                            : 'text-red-600 dark:text-red-400'
                                       }`}>
-                                        {info.diffWorkdays === null ? t('notAvailable') : 
-                                         info.diffWorkdays >= 0 ? `+${info.diffWorkdays} ${t('days')}` : 
-                                         `${info.diffWorkdays} ${t('days')}`}
+                                        {!hasTeamAssignments(project.id) 
+                                          ? t('assignTeamMembers') 
+                                          : info.diffWorkdays === null 
+                                            ? t('notAvailable') 
+                                            : info.diffWorkdays >= 0 
+                                              ? `+${info.diffWorkdays} ${t('days')}` 
+                                              : `${info.diffWorkdays} ${t('days')}`}
                                       </div>
                                     </div>
                                     
@@ -666,13 +712,19 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
                                     <div className="text-center">
                                       <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">{t('reserveOrSlip')}</div>
                                       <div className={`text-sm font-bold ${
-                                        info.diffWorkdays && info.diffWorkdays >= 0 
-                                          ? 'text-green-600 dark:text-green-400' 
-                                          : 'text-red-600 dark:text-red-400'
+                                        !hasTeamAssignments(project.id) 
+                                          ? 'text-orange-600 dark:text-orange-400' 
+                                          : info.diffWorkdays && info.diffWorkdays >= 0 
+                                            ? 'text-green-600 dark:text-green-400' 
+                                            : 'text-red-600 dark:text-red-400'
                                       }`}>
-                                        {info.diffWorkdays === null ? t('notAvailable') : 
-                                         info.diffWorkdays >= 0 ? `+${info.diffWorkdays} ${t('days')}` : 
-                                         `${info.diffWorkdays} ${t('days')}`}
+                                        {!hasTeamAssignments(project.id) 
+                                          ? t('assignTeamMembers') 
+                                          : info.diffWorkdays === null 
+                                            ? t('notAvailable') 
+                                            : info.diffWorkdays >= 0 
+                                              ? `+${info.diffWorkdays} ${t('days')}` 
+                                              : `${info.diffWorkdays} ${t('days')}`}
                                       </div>
                                     </div>
                                   </div>
@@ -696,8 +748,18 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
                                           const progress = getRoleProgress(project, role.key);
                                           if (!progress) return null;
                                           
+                                          const isAssigned = isRoleAssigned(project.id, role.key);
+                                          
                                           return (
-                                            <div key={role.key} className="bg-gradient-to-br from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-gray-200/50 dark:border-gray-600/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                                            <div key={role.key} className="relative bg-gradient-to-br from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-gray-200/50 dark:border-gray-600/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                                              {/* Badge pro nepřiřazené role */}
+                                              {!isAssigned && (
+                                                <Badge 
+                                                  label={t('noTeamMember')} 
+                                                  variant="warning" 
+                                                />
+                                              )}
+                                              
                                               <div className="flex items-center justify-between mb-2 sm:mb-3">
                                                 <span className="text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200">{role.label}</span>
                                                 <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-medium">
@@ -728,6 +790,7 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
                                         project={project} 
                                         deliveryInfo={info}
                                         priorityDates={priorityDates}
+                                        projectAssignments={projectAssignments[project.id] || []}
                                         className="mb-6"
                                       />
                                     </div>
@@ -765,8 +828,8 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
                                             {t('deadlineByPriority')}
                                           </div>
                                           <div className="text-blue-600 dark:text-blue-400 text-xs sm:text-sm font-medium">
-                                            <div>{t('from')}: {priorityDates.priorityStartDate.toLocaleDateString()}</div>
-                                            <div>{t('to')}: {priorityDates.priorityEndDate.toLocaleDateString()}</div>
+                                            <div>{t('from')}: {priorityDates?.priorityStartDate?.toLocaleDateString() || t('notSet')}</div>
+                                            <div>{t('to')}: {priorityDates?.priorityEndDate?.toLocaleDateString() || t('notSet')}</div>
                                           </div>
                                         </div>
                                       )}

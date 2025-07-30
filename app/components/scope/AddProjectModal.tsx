@@ -6,11 +6,11 @@
  * - Smooth transitions a hover efekty
  */
 
-import { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
+import { useState } from 'react';
 import { Project } from './types';
 import { useTranslation } from '@/lib/translation';
-
+import { Modal } from '@/app/components/ui/Modal';
+import { FiPlus } from 'react-icons/fi';
 
 interface AddProjectModalProps {
   isOpen: boolean;
@@ -86,20 +86,6 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
     onClose();
   };
 
-  // ESC key handler
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    };
-
-    document.addEventListener('keydown', handleEsc);
-    return () => document.removeEventListener('keydown', handleEsc);
-  }, [onClose]);
-
-  if (!isOpen) return null;
-
   const roleConfigs = [
     { key: 'fe', label: 'FE', hasRole: hasFE, color: '#2563eb' },
     { key: 'be', label: 'BE', hasRole: hasBE, color: '#059669' },
@@ -108,116 +94,109 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
     { key: 'dpl', label: 'DPL', hasRole: hasDPL, color: '#e11d48' },
   ];
 
-  const modalContent = (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md" style={{ backdropFilter: 'blur(12px)', zIndex: 9999 }}>
-      <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border border-white/20 dark:border-gray-700 rounded-2xl shadow-2xl p-8 w-full max-w-2xl relative overflow-y-auto max-h-[90vh] mx-4">
-        <button 
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 text-3xl font-bold transition-colors duration-200" 
-          onClick={onClose} 
-          aria-label={t('close')}
-        >
-          ×
-        </button>
-        
-        <h4 className="text-2xl font-bold mb-6 text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          🚀 {t('addNewProject')}
-        </h4>
-        
-        <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
-          {/* Základní informace */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">{t('projectName')}</label>
-              <input
-                className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
-                placeholder={t('projectName')}
-                value={newProject.name}
-                onChange={e => setNewProject(p => ({ ...p, name: e.target.value }))}
-                disabled={savingProject}
-                required
-              />
-            </div>
-            <div>
-              <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">{t('priority')}</label>
-              <input
-                className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
-                type="number"
-                min={1}
-                value={newProject.priority}
-                onChange={e => setNewProject(p => ({ ...p, priority: Number(e.target.value) }))}
-                disabled={savingProject}
-                required
-              />
-            </div>
-            <div>
-              <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">{t('deliveryDate')}</label>
-              <input
-                className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
-                type="date"
-                value={newProject.delivery_date || ''}
-                onChange={e => setNewProject(p => ({ ...p, delivery_date: e.target.value || null }))}
-                disabled={savingProject}
-                required
-              />
-            </div>
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={t('addNewProject')}
+      icon={<FiPlus size={24} className="text-white" />}
+    >
+      <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
+        {/* Základní informace */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">{t('projectName')}</label>
+            <input
+              className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
+              placeholder={t('projectName')}
+              value={newProject.name}
+              onChange={e => setNewProject(p => ({ ...p, name: e.target.value }))}
+              disabled={savingProject}
+              required
+            />
           </div>
-          
-          {/* Role estimates */}
-          <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-            <h4 className="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200">Odhad mandays podle rolí</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {roleConfigs.map(config => 
-                config.hasRole && (
-                  <div key={config.key} className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 border border-gray-200 dark:border-gray-600">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div 
-                        className="w-3 h-3 rounded-full" 
-                        style={{ backgroundColor: config.color }}
-                      ></div>
-                      <h5 className="font-medium text-gray-800 dark:text-gray-200">{config.label}</h5>
-                    </div>
-                    <div>
-                      <label className="block mb-1 text-sm font-medium text-gray-600 dark:text-gray-400">
-                        {t(`${config.key}Estimate`)}
-                      </label>
-                      <input
-                        className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
-                        type="number"
-                        min={0.01}
-                        step={0.01}
-                        value={newProject[`${config.key}_mandays` as keyof typeof newProject] || ''}
-                        onChange={e => setNewProject(p => ({ ...p, [`${config.key}_mandays`]: e.target.value ? Number(e.target.value) : 0 }))}
-                        disabled={savingProject}
-                        required
-                      />
-                    </div>
+          <div>
+            <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">{t('priority')}</label>
+            <input
+              className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
+              type="number"
+              min={1}
+              value={newProject.priority}
+              onChange={e => setNewProject(p => ({ ...p, priority: Number(e.target.value) }))}
+              disabled={savingProject}
+              required
+            />
+          </div>
+          <div>
+            <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">{t('deliveryDate')}</label>
+            <input
+              className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
+              type="date"
+              value={newProject.delivery_date || ''}
+              onChange={e => setNewProject(p => ({ ...p, delivery_date: e.target.value || null }))}
+              disabled={savingProject}
+              required
+            />
+          </div>
+        </div>
+        
+        {/* Role estimates */}
+        <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+          <h4 className="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200">Odhad mandays podle rolí</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {roleConfigs.map(config => 
+              config.hasRole && (
+                <div key={config.key} className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 border border-gray-200 dark:border-gray-600">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: config.color }}
+                    ></div>
+                    <h5 className="font-medium text-gray-800 dark:text-gray-200">{config.label}</h5>
                   </div>
-                )
-              )}
-            </div>
+                  <div>
+                    <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
+                      Odhad {config.label} (MD)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.5"
+                      value={newProject[`${config.key}_mandays` as keyof typeof newProject] as number}
+                      onChange={e => setNewProject(p => ({ 
+                        ...p, 
+                        [`${config.key}_mandays`]: Number(e.target.value) 
+                      } as Omit<Project, 'id' | 'scope_id' | 'created_at'>))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      disabled={savingProject}
+                      required
+                    />
+                  </div>
+                </div>
+              )
+            )}
           </div>
-          
-          {/* Tlačítka */}
-          <div className="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
-            <button 
-              type="button" 
-              className="px-6 py-3 rounded-xl bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-200" 
-              onClick={onClose}
-            >
-              {t('cancel')}
-            </button>
-            <button
-              className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 text-white font-medium hover:from-blue-600 hover:to-purple-600 transition-all duration-200 shadow-lg disabled:opacity-60"
-              type="submit"
-              disabled={savingProject || !newProject.name.trim()}
-            >
-              {savingProject ? t('saving') : t('addProject')}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
+        </div>
 
-  return createPortal(modalContent, document.body);
+        {/* Action buttons */}
+        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={savingProject}
+            className="px-6 py-3 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl font-medium transition-all duration-200 disabled:opacity-50"
+          >
+            {t('cancel')}
+          </button>
+          <button
+            type="submit"
+            disabled={savingProject || !newProject.name.trim()}
+            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-xl transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          >
+            {savingProject ? t('adding') : t('addProject')}
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
 }; 

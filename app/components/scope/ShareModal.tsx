@@ -1,12 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
-import { createPortal } from 'react-dom';
-import { FiCopy, FiX, FiMail, FiUsers, FiLink, FiEdit, FiEye, FiPlus, FiTrash2 } from 'react-icons/fi';
-import { v4 as uuidv4 } from 'uuid';
+import { FiCopy, FiMail, FiUsers, FiLink, FiEdit, FiEye, FiPlus, FiTrash2 } from 'react-icons/fi';
 import { useTranslation } from '@/lib/translation';
 import { ContainerService } from '@/lib/container.service';
 import { GetScopeEditorsWithUsersService, ScopeEditorWithUser } from '@/lib/domain/services/get-scope-editors-with-users.service';
 import { ScopeEditorService } from '@/app/services/scopeEditorService';
-import { UserAvatar } from './UserAvatar';
+import { Modal } from '@/app/components/ui/Modal';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -35,21 +33,27 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
   const canShare = isOwner || isEditor;
   const canInvite = isOwner; // Pouze vlastník může pozvat nové editory
 
-  useEffect(() => {
-    if (isOpen && canShare) {
-      setEditorsLoading(true);
+  // Filtrovat pouze skutečné editory (s přiřazenými uživateli nebo přijaté pozvánky)
+  const filteredEditors = editors.filter(editor => editor.user || editor.acceptedAt);
+
+  const loadEditors = useCallback(async () => {
+    if (!isOpen || !canShare) return;
+    
+    setEditorsLoading(true);
+    try {
       const getScopeEditorsWithUsersService = ContainerService.getInstance().get(GetScopeEditorsWithUsersService, { autobind: true });
-      getScopeEditorsWithUsersService.execute(scopeId)
-        .then((editorsData) => {
-          setEditors(editorsData);
-          setEditorsLoading(false);
-        })
-        .catch((error) => {
-          console.error('Chyba při načítání editorů:', error);
-          setEditorsLoading(false);
-        });
+      const editorsData = await getScopeEditorsWithUsersService.execute(scopeId);
+      setEditors(editorsData);
+    } catch (error) {
+      console.error('Chyba při načítání editorů:', error);
+    } finally {
+      setEditorsLoading(false);
     }
   }, [isOpen, canShare, scopeId]);
+
+  useEffect(() => {
+    loadEditors();
+  }, [loadEditors]);
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,15 +67,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
       });
       
       setInviteEmail('');
-      
-      // Refresh editorů
-      if (isOwner) {
-        setEditorsLoading(true);
-        const getScopeEditorsWithUsersService = ContainerService.getInstance().get(GetScopeEditorsWithUsersService, { autobind: true });
-        const editorsData = await getScopeEditorsWithUsersService.execute(scopeId);
-        setEditors(editorsData);
-        setEditorsLoading(false);
-      }
+      await loadEditors(); // Refresh editorů
     } catch (error) {
       if (error instanceof Error) {
         if (error.message === 'EDITOR_ALREADY_EXISTS') {
@@ -90,84 +86,41 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
   const handleRemoveEditor = async (editorId: string) => {
     try {
       await ScopeEditorService.removeEditor(editorId);
-      
-      // Refresh editorů
-      if (isOwner) {
-        setEditorsLoading(true);
-        const getScopeEditorsWithUsersService = ContainerService.getInstance().get(GetScopeEditorsWithUsersService, { autobind: true });
-        const editorsData = await getScopeEditorsWithUsersService.execute(scopeId);
-        setEditors(editorsData);
-        setEditorsLoading(false);
-      }
+      await loadEditors(); // Refresh editorů
     } catch (error) {
       console.error('Chyba při odstraňování editora:', error);
     }
   };
 
-  const getLastInviteToken = (): string | null => {
-    if (editors && editors.length > 0) {
-      // Najdi poslední pozvánku bez acceptedAt (pending invitation)
-      const pending = editors.filter(e => !e.acceptedAt && e.inviteToken);
-      if (pending.length > 0) {
-        // Vrátíme token z první pending pozvánky
-        return pending[0].inviteToken || null;
-      }
-    }
-    return null;
-  };
+
 
   const generateShareLink = useCallback(async () => {
+    if (selectedLinkType === 'default') return;
+    
     setLinkLoading(true);
-    setCurrentLink('');
-    
-    const baseUrl = window.location.origin;
-    let token = getLastInviteToken();
-    
-    // Pokud nemáme existující token, vytvoříme nový
-    if (!token) {
-      try {
-        token = await ScopeEditorService.createInviteLink({ scopeId });
-        // setLinkError(''); // Vymazat chybu při úspěchu - odstraněno
-      } catch (error) {
-        console.error('Chyba při vytváření pozvánky:', error);
-        // Fallback na uuidv4 pro případ chyby
-        token = uuidv4();
-      }
+    try {
+      const token = await ScopeEditorService.createInviteLink({ scopeId });
+      const baseUrl = window.location.origin;
+      const shareUrl = `${baseUrl}/scopes/${scopeId}/${selectedLinkType === 'edit' ? 'edit' : 'view'}?token=${token}`;
+      setCurrentLink(shareUrl);
+    } catch (error) {
+      console.error('Chyba při generování odkazu:', error);
+    } finally {
+      setLinkLoading(false);
     }
-    
-    if (selectedLinkType === 'edit') {
-      setCurrentLink(`${baseUrl}/scopes/${scopeId}/accept?token=${token}`);
-    } else if (selectedLinkType === 'view') {
-      setCurrentLink(`${baseUrl}/scopes/${scopeId}/view`);
-    }
-    
-    setLinkLoading(false);
   }, [scopeId, selectedLinkType]);
 
   const handleCopyLink = async () => {
-    if (!currentLink) {
-      await generateShareLink();
-    }
+    if (!currentLink) return;
     
     try {
       await navigator.clipboard.writeText(currentLink);
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);
     } catch (error) {
-      console.error('Chyba při kopírování:', error);
+      console.error('Chyba při kopírování odkazu:', error);
     }
   };
-
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    };
-
-    document.addEventListener('keydown', handleEsc);
-    return () => document.removeEventListener('keydown', handleEsc);
-  }, [onClose]);
 
   // Generuj odkaz při změně typu
   useEffect(() => {
@@ -204,253 +157,206 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
     }
   }, [currentLink, isOwner, scopeId]);
 
-  if (!isOpen) return null;
-
-  const modalContent = (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ zIndex: 9999 }}>
-      {/* Backdrop s animací */}
-      <div 
-        className="absolute inset-0 bg-black/70 backdrop-blur-md transition-opacity duration-300"
-        onClick={onClose}
-      />
-      
-      {/* Modal s animací */}
-      <div className="relative bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden transform transition-all duration-300 scale-100">
-        {/* Header s gradientem */}
-        <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 p-6 relative">
-          <button 
-            className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors duration-200 p-2 rounded-full hover:bg-white/10"
-            onClick={onClose}
-            aria-label={t('close')}
-          >
-            <FiX size={24} />
-          </button>
-          
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
-              <FiUsers size={24} className="text-white" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-white">{t('share_scope')}</h2>
-              <p className="text-white/80 text-sm">{t('shareScopeDescription')}</p>
-            </div>
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={t('share_scope')}
+      description={t('shareScopeDescription')}
+      icon={<FiUsers size={24} className="text-white" />}
+    >
+      <div className="space-y-6">
+        {/* Link Type Section */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <FiLink className="text-blue-600" size={18} />
+            <h3 className="font-semibold text-gray-900 dark:text-white">{t('share_link_type')}</h3>
           </div>
-        </div>
-
-        {/* Content */}
-        <div className="p-6 space-y-6">
-          {/* Link Type Section */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <FiLink className="text-blue-600" size={18} />
-              <h3 className="font-semibold text-gray-900 dark:text-white">{t('share_link_type')}</h3>
-            </div>
-            
-            <div className={`grid gap-3 ${isOwner ? 'grid-cols-2' : 'grid-cols-1'}`}>
-              {isOwner && (
-                <button
-                  onClick={() => setSelectedLinkType('edit')}
-                  className={`p-4 rounded-xl border-2 transition-all duration-200 ${
-                    selectedLinkType === 'edit'
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                      : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg ${
-                      selectedLinkType === 'edit' ? 'bg-blue-100 dark:bg-blue-800' : 'bg-gray-100 dark:bg-gray-800'
-                    }`}>
-                      <FiEdit size={20} />
-                    </div>
-                    <div className="text-left">
-                      <div className="font-medium">{t('share_link_edit')}</div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">{t('fullAccess')}</div>
-                    </div>
-                  </div>
-                </button>
-              )}
-
+          
+          <div className={`grid gap-3 ${isOwner ? 'grid-cols-2' : 'grid-cols-1'}`}>
+            {isOwner && (
               <button
-                onClick={() => setSelectedLinkType('view')}
+                onClick={() => setSelectedLinkType('edit')}
                 className={`p-4 rounded-xl border-2 transition-all duration-200 ${
-                  selectedLinkType === 'view'
-                    ? 'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300'
-                    : 'border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-600'
+                  selectedLinkType === 'edit'
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${
-                    selectedLinkType === 'view' ? 'bg-green-100 dark:bg-green-800' : 'bg-gray-100 dark:bg-gray-800'
-                  }`}>
-                    <FiEye size={20} />
-                  </div>
+                  <FiEdit size={20} />
                   <div className="text-left">
-                    <div className="font-medium">{t('share_link_view_only')}</div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">{t('readOnly')}</div>
+                    <div className="font-semibold">{t('share_link_edit')}</div>
+                    <div className="text-sm opacity-75">{t('fullAccess')}</div>
                   </div>
                 </div>
               </button>
-            </div>
-
-            {/* Share Link Display */}
-            {selectedLinkType !== 'default' && (
-              <div className="mt-4 p-4 bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-800 dark:to-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-700">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      {selectedLinkType === 'edit' ? t('share_link_edit') : t('share_link_view_only')}
-                    </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 break-all">
-                      {linkLoading ? (
-                        <div className="flex items-center gap-2">
-                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-500"></div>
-                          {t('generating_link')}...
-                        </div>
-                      ) : currentLink ? (
-                        currentLink
-                      ) : (
-                        <span className="text-gray-400">{t('click_generate_to_create_link')}</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 ml-4">
-                    {currentLink && !linkLoading && (
-                      <a 
-                        href={currentLink} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                        title={t('open_link_in_new_tab')}
-                      >
-                        <FiLink size={16} />
-                      </a>
-                    )}
-                    <button
-                      onClick={handleCopyLink}
-                      disabled={linkLoading || !currentLink}
-                      className={`p-2 rounded-lg transition-colors ${
-                        copiedLink 
-                          ? 'text-green-600 bg-green-50 dark:bg-green-900/20' 
-                          : linkLoading || !currentLink
-                          ? 'text-gray-400 cursor-not-allowed'
-                          : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50 dark:hover:bg-blue-900/20'
-                      }`}
-                      title={copiedLink ? 'Zkopírováno!' : linkLoading ? t('generating') : t('copy')}
-                    >
-                      <FiCopy size={16} />
-                    </button>
-                  </div>
+            )}
+            
+            <button
+              onClick={() => setSelectedLinkType('view')}
+              className={`p-4 rounded-xl border-2 transition-all duration-200 ${
+                selectedLinkType === 'view'
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                  : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <FiEye size={20} />
+                <div className="text-left">
+                  <div className="font-semibold">{t('share_link_view_only')}</div>
+                  <div className="text-sm opacity-75">{t('readOnly')}</div>
                 </div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        {/* Generated Link Section */}
+        {selectedLinkType !== 'default' && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-gray-900 dark:text-white">{t('generated_link')}</h3>
+              {linkLoading && (
+                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  {t('generating')}
+                </div>
+              )}
+            </div>
+            
+            {currentLink ? (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={currentLink}
+                  readOnly
+                  className="flex-1 px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm"
+                />
+                <button
+                  onClick={handleCopyLink}
+                  className="px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 flex items-center gap-2"
+                >
+                  <FiCopy size={16} />
+                  {copiedLink ? t('copied') : t('copy')}
+                </button>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                <FiLink size={48} className="mx-auto mb-3 opacity-50" />
+                <p>{t('click_generate_to_create_link')}</p>
               </div>
             )}
           </div>
+        )}
 
-          {/* Invite Section */}
-          {canInvite && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <FiMail className="text-purple-600" size={18} />
-                <h3 className="font-semibold text-gray-900 dark:text-white">{t('invite_user_using_email')}</h3>
-              </div>
-              
-              <form onSubmit={handleInvite} className="flex gap-3">
-                <div className="flex-1 relative">
-                  <input
-                    type="email"
-                    className="w-full pl-4 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200"
-                    placeholder={t('user_email')}
-                    value={inviteEmail}
-                    onChange={e => setInviteEmail(e.target.value)}
-                    required
-                  />
-                </div>
+        {/* Invite Section */}
+        {canInvite && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <FiMail className="text-green-600" size={18} />
+              <h3 className="font-semibold text-gray-900 dark:text-white">{t('invite_user_using_email')}</h3>
+            </div>
+            
+            <form onSubmit={handleInvite} className="space-y-3">
+              <div className="flex gap-2">
+                <input
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  placeholder={t('user_email')}
+                  className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  disabled={editorsLoading}
+                />
                 <button
                   type="submit"
-                  className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+                  disabled={!inviteEmail || editorsLoading}
+                  className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   <FiPlus size={16} />
                   {t('invite')}
                 </button>
-              </form>
+              </div>
               
               {inviteError && (
-                <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-xl text-red-600 dark:text-red-400 text-sm">
+                <div className="text-red-600 dark:text-red-400 text-sm">
                   {t(inviteError)}
                 </div>
               )}
-            </div>
-          )}
+            </form>
+          </div>
+        )}
 
-          {/* Editors Section */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <FiUsers className="text-green-600" size={18} />
-                <h3 className="font-semibold text-gray-900 dark:text-white">{t('invited_and_editors')}</h3>
-              </div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">
-                {editors.length} {editors.length === 1 ? t('user') : editors.length < 5 ? t('users') : t('users')}
-              </div>
+        {/* Current Editors Section */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FiUsers className="text-purple-600" size={18} />
+              <h3 className="font-semibold text-gray-900 dark:text-white">{t('invited_and_editors')}</h3>
             </div>
-
-            {editorsLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                <span className="ml-3 text-gray-500 dark:text-gray-400">{t('loading')}…</span>
-              </div>
-            ) : editors.length === 0 ? (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                <FiUsers size={48} className="mx-auto mb-3 opacity-50" />
-                <p>{t('no_invited_or_editors')}</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {editors.map(editor => (
-                  <div key={editor.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200">
-                    <div className="flex items-center gap-3">
-                      <UserAvatar 
-                        user={editor.user ? {
-                          fullName: editor.user.fullName,
-                          email: editor.user.email,
-                          avatarUrl: editor.user.avatarUrl,
-                        } : {
-                          email: editor.email,
-                        }}
-                        size="sm"
-                        showName={true}
-                      />
-                      <div className="flex items-center gap-2">
-                        {editor.acceptedAt ? (
-                          <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs font-medium rounded-full">
-                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                            {t('editor')}
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-3 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 text-xs font-medium rounded-full">
-                            <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                            {t('invited')}
-                          </span>
-                        )}
-                      </div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              {filteredEditors.length} {filteredEditors.length === 1 ? t('user') : t('users')}
+            </div>
+          </div>
+          
+          {editorsLoading ? (
+            <div className="text-center py-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            </div>
+          ) : filteredEditors.length === 0 ? (
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+              <FiUsers size={48} className="mx-auto mb-3 opacity-50" />
+              <p>{t('no_invited_or_editors')}</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {filteredEditors.map((editor) => (
+                <div
+                  key={editor.id}
+                  className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold border-2 border-gray-200 dark:border-gray-600">
+                      {editor.user?.fullName 
+                        ? editor.user.fullName.split(' ').map(word => word.charAt(0)).join('').toUpperCase().slice(0, 2)
+                        : editor.email?.charAt(0).toUpperCase() || '?'
+                      }
                     </div>
-                    {canInvite && (
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white">
+                        {editor.user?.fullName || editor.email?.split('@')[0] || 'Unknown User'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      {editor.acceptedAt ? (
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs font-medium rounded-full">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          {t('editor')}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 text-xs font-medium rounded-full">
+                          <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                          {t('invited')}
+                        </span>
+                      )}
+                    </div>
+                    {canInvite && editor.id !== 'owner' && (
                       <button
                         onClick={() => handleRemoveEditor(editor.id)}
                         className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors duration-200"
-                        title={t('remove_rights')}
                       >
-                        <FiTrash2 size={16} />
+                        <FiTrash2 size={18} />
                       </button>
                     )}
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
-    </div>
+    </Modal>
   );
-
-  return createPortal(modalContent, document.body);
 }; 

@@ -283,5 +283,7 @@
   "fullAccess": "Plný přístup (editace)",
   "readOnly": "Pouze pro čtení",
   "copyLink": "Kopírovat odkaz",
-  "reserveOrSlip": "Rezerva/Skluz"
+  "reserveOrSlip": "Rezerva/Skluz",
+  "assignTeamMembers": "Přiřadit členy týmu",
+  "noTeamMember": "Chybí člen"
 } 

@@ -288,5 +288,7 @@
   "shareLinkEdit": "Share link (edit)",
   "shareLinkViewOnly": "Share link (view only)",
   "copyLink": "Copy link",
-  "reserveOrSlip": "Rezerva/Skluz"
+  "reserveOrSlip": "Rezerva/Skluz",
+  "assignTeamMembers": "Assign team members",
+  "noTeamMember": "No member"
 }

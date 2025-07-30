@@ -7,25 +7,18 @@
  * - Burndown chart showing remaining work over time
  */
 
-import { useState, useEffect } from "react";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
-import { Project, TeamMember } from "./types";
-import { calculatePriorityDates } from "@/app/utils/dateUtils";
+import { useState, useEffect } from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Project, TeamMember } from './types';
+import { calculatePriorityDatesWithAssignments } from '@/app/utils/dateUtils';
+import { ProjectTeamAssignment } from '@/lib/domain/models/project-team-assignment.model';
 import { Payload } from "recharts/types/component/DefaultLegendContent";
 import { useTranslation } from "@/lib/translation";
 
 interface BurndownChartProps {
   projects: Project[];
   team: TeamMember[];
+  projectAssignments?: Record<string, ProjectTeamAssignment[]>;
 }
 
 interface ChartDataPoint {
@@ -35,7 +28,7 @@ interface ChartDataPoint {
   [key: string]: number | string; // Pro dynamické projekty
 }
 
-export function BurndownChart({ projects, team }: BurndownChartProps) {
+export function BurndownChart({ projects, team, projectAssignments = {} }: BurndownChartProps) {
   const { t } = useTranslation();
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [activeLegend, setActiveLegend] = useState<string | null>(null); // Přidáno
@@ -44,7 +37,7 @@ export function BurndownChart({ projects, team }: BurndownChartProps) {
   useEffect(() => {
     if (projects.length === 0 || team.length === 0) return;
 
-    const priorityDates = calculatePriorityDates(projects, team);
+    const priorityDates = calculatePriorityDatesWithAssignments(projects, team, projectAssignments);
     const data: ChartDataPoint[] = [];
 
     const bufferDays = 2;
@@ -142,7 +135,7 @@ export function BurndownChart({ projects, team }: BurndownChartProps) {
     });
 
     setChartData(data);
-  }, [projects, team]);
+  }, [projects, team, projectAssignments]);
 
   const CustomTooltip = ({
     active,
@@ -159,7 +152,7 @@ export function BurndownChart({ projects, team }: BurndownChartProps) {
           <p className="font-semibold mb-2">{label}</p>
           {payload.map((entry, index: number) => (
             <p key={index} style={{ color: entry.color }} className="text-sm">
-              {entry.name}: {entry.value}%
+              {entry.name}: {Math.round(entry.value)}%
             </p>
           ))}
         </div>

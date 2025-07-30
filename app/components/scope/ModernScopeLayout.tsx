@@ -16,11 +16,14 @@ import { AiChatModal } from "./AiChatModal";
 import { TeamMember, Project } from "./types";
 import { downloadCSV } from "../../utils/csvUtils";
 import { useTranslation } from "@/lib/translation";
+import { ProjectTeamAssignment } from "@/lib/domain/models/project-team-assignment.model";
+import { Badge } from "../ui/Badge";
 
 interface ModernScopeLayoutProps {
   scopeId: string;
   team: TeamMember[];
   projects: Project[];
+  projectAssignments?: Record<string, ProjectTeamAssignment[]>;
   onTeamChange: (team: TeamMember[]) => void;
   hasFE: boolean;
   hasBE: boolean;
@@ -57,6 +60,7 @@ export function ModernScopeLayout({
   scopeId,
   team,
   projects,
+  projectAssignments = {},
   onTeamChange,
   hasFE,
   hasBE,
@@ -347,9 +351,7 @@ export function ModernScopeLayout({
                     className="relative cursor-not-allowed opacity-50 bg-gradient-to-br from-teal-500 via-purple-500 to-pink-500 text-white rounded-xl p-4 hover:scale-105 transition-all duration-300 flex flex-col items-center gap-3 group motion-reduce:scale-100 motion-reduce:transition-none"
                     disabled={true}
                   >
-                    <div className="absolute -top-2 -left-2 bg-gradient-to-r from-gray-600 to-gray-700 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">
-                      {t("soon")}
-                    </div>
+                    <Badge label={t("soon")} variant="soon" />
                     <span className="text-2xl">📥</span>
                     <span className="text-sm font-semibold">{t("importTeam")}</span>
                   </button>
@@ -362,13 +364,9 @@ export function ModernScopeLayout({
                     className="relative cursor-not-allowed opacity-50 bg-gradient-to-br from-red-500 via-pink-500 to-purple-500 text-white rounded-xl p-4 hover:scale-105 transition-all duration-300 flex flex-col items-center gap-3 group motion-reduce:scale-100 motion-reduce:transition-none"
                     disabled={true}
                   >
-                    <div className="absolute -top-2 -left-2 bg-gradient-to-r from-gray-600 to-gray-700 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">
-                      {t("soon")}
-                    </div>
+                    <Badge label={t("soon")} variant="soon" />
                     <span className="text-2xl">📥</span>
-                    <span className="text-sm font-semibold">
-                      {t("importProjects")}
-                    </span>
+                    <span className="text-sm font-semibold">{t("importProjects")}</span>
                   </button>
                   )}
                 </div>
@@ -407,7 +405,7 @@ export function ModernScopeLayout({
       case "burndown":
         return (
           <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-xl p-6">
-            <BurndownChart projects={projects} team={team} />
+            <BurndownChart projects={projects} team={team} projectAssignments={projectAssignments} />
           </div>
         );
 

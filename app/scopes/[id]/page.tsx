@@ -24,11 +24,14 @@ import { CalculateAverageSlipService } from "@/lib/domain/services/calculate-ave
 import { AddTeamMemberService } from "@/lib/domain/services/add-team-member.service";
 import { AddProjectService } from "@/lib/domain/services/add-project.service";
 import { CheckScopeOwnershipService } from "@/lib/domain/services/check-scope-ownership.service";
+import { ManageProjectTeamAssignmentsService } from "@/lib/domain/services/manage-project-team-assignments.service";
+import { ProjectTeamAssignment } from "@/lib/domain/models/project-team-assignment.model";
 
 import { TeamService } from "@/app/services/teamService";
 import { ProjectService } from "@/app/services/projectService";
 import { ScopeService } from "@/app/services/scopeService";
 import { ScopeEditorService } from "@/app/services/scopeEditorService";
+import { Badge } from "@/app/components/ui/Badge";
 
 export default function ScopePage({
   params,
@@ -53,6 +56,9 @@ export default function ScopePage({
 
   // --- Projekty ---
   const [projects, setProjects] = useState<Project[]>([]);
+
+  // --- Project Assignments ---
+  const [projectAssignments, setProjectAssignments] = useState<Record<string, ProjectTeamAssignment[]>>({});
 
   // --- Statistiky ---
   const [stats, setStats] = useState<
@@ -201,6 +207,31 @@ export default function ScopePage({
     }
   }, [userId, id]);
 
+  const fetchProjectAssignments = useCallback(async () => {
+    if (!userId) return;
+
+    try {
+      const manageAssignmentsService = ContainerService.getInstance().get(
+        ManageProjectTeamAssignmentsService,
+        { autobind: true }
+      );
+      
+      const assignmentsMap: Record<string, ProjectTeamAssignment[]> = {};
+      const projectsData = await ProjectService.loadProjects(id);
+      
+      if (projectsData) {
+        for (const project of projectsData) {
+          const assignments = await manageAssignmentsService.getProjectAssignments(project.id);
+          assignmentsMap[project.id] = assignments;
+        }
+      }
+      
+      setProjectAssignments(assignmentsMap);
+    } catch (error) {
+      console.error("Chyba při načítání project assignments:", error);
+    }
+  }, [userId, id]);
+
   const fetchStats = useCallback(async () => {
     if (!userId) return;
 
@@ -273,6 +304,7 @@ export default function ScopePage({
       fetchScope();
       fetchTeam();
       fetchProjects();
+      fetchProjectAssignments();
       fetchStats();
       fetchAverageSlip();
       checkOwnership();
@@ -285,6 +317,7 @@ export default function ScopePage({
     fetchScope,
     fetchTeam,
     fetchProjects,
+    fetchProjectAssignments,
     fetchStats,
     fetchAverageSlip,
     checkOwnership,
@@ -442,7 +475,7 @@ export default function ScopePage({
                 className="relative bg-gradient-to-r from-gray-500 to-gray-600 text-white px-4 py-2 rounded-lg hover:from-gray-600 hover:to-gray-700 transition-all duration-200 shadow-lg opacity-50 cursor-not-allowed"
                 disabled={true}
               >
-                <div className="absolute -top-2 -left-2 bg-gradient-to-r from-gray-600 to-gray-700 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">{t('soon')}</div>
+                <Badge label={t('soon')} variant="soon" />
                 🤖 Ai Chat
               </button>
             </div>
@@ -501,6 +534,7 @@ export default function ScopePage({
           scopeId={id}
           team={team}
           projects={projects}
+          projectAssignments={projectAssignments}
           onTeamChange={setTeam}
           hasFE={hasFE}
           hasBE={hasBE}
