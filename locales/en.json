@@ -290,5 +290,6 @@
   "copyLink": "Copy link",
   "reserveOrSlip": "Rezerva/Skluz",
   "assignTeamMembers": "Assign team members",
-  "noTeamMember": "No member"
+  "noTeamMember": "No member",
+  "projectChangeHistory": "Project change history"
 }

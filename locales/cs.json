@@ -285,5 +285,6 @@
   "copyLink": "Kopírovat odkaz",
   "reserveOrSlip": "Rezerva/Skluz",
   "assignTeamMembers": "Přiřadit členy týmu",
-  "noTeamMember": "Chybí člen"
+  "noTeamMember": "Chybí člen",
+  "projectChangeHistory": "Historie změn projektu"
 } 
