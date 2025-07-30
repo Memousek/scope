@@ -174,7 +174,7 @@ export function ModernScopeLayout({
                     <div className="p-6 relative">
                       <div className="flex items-center gap-4">
                         <div className="relative">
-                          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg motion-reduce:scale-100 motion-reduce:transition-none">
+                          <div className="select-none w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg motion-reduce:scale-100 motion-reduce:transition-none">
                             <span className="text-white text-2xl">👥</span>
                           </div>
                         </div>
@@ -203,7 +203,7 @@ export function ModernScopeLayout({
                     <div className="p-6 relative">
                       <div className="flex items-center gap-4">
                         <div className="relative">
-                          <div className="w-16 h-16 bg-gradient-to-br from-emerald-600 to-green-700 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg motion-reduce:scale-100 motion-reduce:transition-none">
+                          <div className="select-none w-16 h-16 bg-gradient-to-br from-emerald-600 to-green-700 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg motion-reduce:scale-100 motion-reduce:transition-none">
                             <span className="text-white text-2xl">🚀</span>
                           </div>
                         </div>
@@ -232,7 +232,7 @@ export function ModernScopeLayout({
                     <div className="p-6 relative">
                       <div className="flex items-center gap-4">
                         <div className="relative">
-                          <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg motion-reduce:scale-100 motion-reduce:transition-none">
+                          <div className="select-none w-16 h-16 bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg motion-reduce:scale-100 motion-reduce:transition-none">
                             <span className="text-white text-2xl">⏰</span>
                           </div>
                         </div>
