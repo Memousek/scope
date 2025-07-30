@@ -88,7 +88,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
             <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">{t('projectName')}</label>
             <input
               className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
-              value={editProject.name}
+              value={editProject.name || ''}
               onChange={e => setEditProject(p => ({ ...p, name: e.target.value }))}
               required
             />
@@ -99,7 +99,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
               type="number"
               min="1"
               className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
-              value={editProject.priority}
+              value={editProject.priority || 1}
               onChange={e => setEditProject(p => ({ ...p, priority: Number(e.target.value) }))}
               required
             />
@@ -139,7 +139,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
                       min="0"
                       step="0.5"
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      value={editProject[role.mandays as keyof Project] as number}
+                      value={editProject[role.mandays as keyof Project] as number || 0}
                       onChange={e => setEditProject(p => ({ 
                         ...p, 
                         [role.mandays]: Number(e.target.value) 
@@ -148,16 +148,17 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
-                      % {t('done')} ({editProject[role.done as keyof Project] as number} MD)
+                    <label htmlFor={`${role.key}-done`} className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
+                      % {t('done')} ({editProject[role.done as keyof Project] as number || 0} MD)
                     </label>
                     <input
+                      id={`${role.key}-done`}
                       type="number"
                       min="0"
                       max="100"
                       step="1"
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      value={editProject[role.done as keyof Project] as number}
+                      value={editProject[role.done as keyof Project] as number || 0}
                       onChange={e => setEditProject(p => ({ 
                         ...p, 
                         [role.done]: Number(e.target.value) 
