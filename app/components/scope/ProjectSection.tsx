@@ -927,7 +927,7 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                                                 <div className="flex items-center justify-between mb-2 sm:mb-3">
                                                   <span className="text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200">{role.label}</span>
                                                   <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-medium">
-                                                    {progress ? `${progress.done}/${progress.mandays} MD` : '0/0 MD'}
+                                                    {progress ? `${progress.done.toFixed(1)}/${progress.mandays.toFixed(1)} MD` : '0/0 MD'}
                                                   </span>
                                                 </div>
                                                 <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2 sm:h-3 overflow-hidden">
