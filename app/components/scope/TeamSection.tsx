@@ -11,6 +11,8 @@ import { TeamMember, ROLES } from "./types";
 import { AddMemberModal } from "./AddMemberModal";
 import { useTranslation } from "@/lib/translation";
 import { TeamService } from "@/app/services/teamService";
+import { Badge } from "../ui/Badge";
+import { SettingsIcon } from "lucide-react";
 
 interface TeamSectionProps {
   scopeId: string;
@@ -167,28 +169,44 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                 </div>
               </div>
               {!readOnlyMode && (
-                <button
-                  className="relative group bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/25 active:scale-95"
-                  onClick={() => setAddModalOpen(true)}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  <span className="relative z-10 flex items-center gap-2">
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                <div className="flex items-center gap-2">
+                  <button
+                    className="relative group bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/25 active:scale-95"
+                    onClick={() => setAddModalOpen(true)}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <span className="relative z-10 flex items-center gap-2">
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                        />
+                      </svg>
+                      {t("addMember")}
+                    </span>
+                  </button>
+
+                  <div className="relative">
+                    <button
+                      disabled={true}
+                      className="relative group bg-gradient-to-r from-gray-500 via-gray-500 to-gray-500 text-white px-6 py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() => setAddModalOpen(true)}
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                      />
-                    </svg>
-                    {t("addMember")}
-                  </span>
-                </button>
+                    <Badge label={t("soon")} variant="soon" />
+                      <span className="flex items-center gap-2">
+                        <SettingsIcon className="w-5 h-5" />
+                        <span className="relative z-10">Spravovat role</span>
+                      </span>
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
 
@@ -246,13 +264,13 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                                   value={member.name}
                                   onChange={(e) =>
                                     handleEditMember(
-                                    member.id,
-                                    "name",
-                                    e.target.value
-                                  )
-                                }
-                                placeholder={t("memberNamePlaceholder")}
-                              />
+                                      member.id,
+                                      "name",
+                                      e.target.value
+                                    )
+                                  }
+                                  placeholder={t("memberNamePlaceholder")}
+                                />
                               )}
                               {readOnlyMode && (
                                 <div className="text-gray-600 dark:text-gray-400 text-sm">
@@ -273,19 +291,19 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                                 value={member.role}
                                 onChange={(e) =>
                                   handleEditMember(
-                                  member.id,
-                                  "role",
-                                  e.target.value
-                                )
-                              }
-                              disabled={readOnlyMode}
-                            >
-                              {ROLES.map((role) => (
-                                <option key={role.value} value={role.value}>
-                                  {role.value}
-                                </option>
-                              ))}
-                            </select>
+                                    member.id,
+                                    "role",
+                                    e.target.value
+                                  )
+                                }
+                                disabled={readOnlyMode}
+                              >
+                                {ROLES.map((role) => (
+                                  <option key={role.value} value={role.value}>
+                                    {role.value}
+                                  </option>
+                                ))}
+                              </select>
                             )}
                             {readOnlyMode && (
                               <div className="text-gray-600 dark:text-gray-400 text-sm">
