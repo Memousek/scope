@@ -2,6 +2,9 @@ import { createClient } from '@/lib/supabase/client';
 import { Project } from "@/lib/domain/models/project.model";
 import { ProjectRepository } from "@/lib/domain/repositories/project.repository";
 
+// Typ pro dynamické role data
+type ProjectWithCustomRoles = Project & Record<string, string | number | null | undefined>;
+
 export class SupabaseProjectRepository implements ProjectRepository {
   async findById(id: string): Promise<Project | null> {
     const supabase = createClient();
@@ -30,25 +33,70 @@ export class SupabaseProjectRepository implements ProjectRepository {
 
   async create(project: Omit<Project, 'id' | 'createdAt'>): Promise<Project> {
     const supabase = createClient();
+    
+    // Explicitní mapování standardních rolí
+    const feMandays = project.feMandays ?? 0;
+    const beMandays = project.beMandays ?? 0;
+    const qaMandays = project.qaMandays ?? 0;
+    const pmMandays = project.pmMandays ?? 0;
+    const dplMandays = project.dplMandays ?? 0;
+
+    const feDone = project.feDone ?? 0;
+    const beDone = project.beDone ?? 0;
+    const qaDone = project.qaDone ?? 0;
+    const pmDone = project.pmDone ?? 0;
+    const dplDone = project.dplDone ?? 0;
+
+    // Extrahujeme custom role data
+    const customRoleData: Record<string, number> = {};
+    const standardRoleKeys = ['fe', 'be', 'qa', 'pm', 'dpl'];
+    
+    // Pokud máme customRoleData v project objektu, použijeme to
+    if ((project as Record<string, unknown>).customRoleData) {
+      Object.assign(customRoleData, (project as Record<string, unknown>).customRoleData as Record<string, number>);
+    } else {
+      // Jinak extrahujeme z dynamických vlastností
+      Object.entries(project).forEach(([key, value]) => {
+        if ((key.includes('_mandays') || key.includes('_done')) && 
+            !['feMandays', 'beMandays', 'qaMandays', 'pmMandays', 'dplMandays', 'feDone', 'beDone', 'qaDone', 'pmDone', 'dplDone'].includes(key)) {
+          const roleKey = key.replace(/_mandays$/, '').replace(/_done$/, '');
+          if (!standardRoleKeys.includes(roleKey)) {
+            customRoleData[key] = value as number || 0;
+          }
+        }
+      });
+    }
+
+    const insertData: Record<string, unknown> = {
+      scope_id: project.scopeId,
+      name: project.name,
+      priority: project.priority,
+      fe_mandays: feMandays,
+      be_mandays: beMandays,
+      qa_mandays: qaMandays,
+      pm_mandays: pmMandays,
+      dpl_mandays: dplMandays,
+      fe_done: feDone,
+      be_done: beDone,
+      qa_done: qaDone,
+      pm_done: pmDone,
+      dpl_done: dplDone,
+      delivery_date: project.deliveryDate?.toISOString()
+    };
+
+    // Přidáme custom role data pokud existují
+    if (Object.keys(customRoleData).length > 0) {
+      insertData.custom_role_data = customRoleData;
+    }
+
+    // Safeguard - odstraníme slip property pokud existuje
+    if (insertData.slip !== undefined) {
+      delete insertData.slip;
+    }
+
     const { data, error } = await supabase
       .from('projects')
-      .insert({
-        scope_id: project.scopeId,
-        name: project.name,
-        priority: project.priority,
-        fe_mandays: project.feMandays ?? 0,
-        be_mandays: project.beMandays ?? 0,
-        qa_mandays: project.qaMandays ?? 0,
-        pm_mandays: project.pmMandays ?? 0,
-        dpl_mandays: project.dplMandays ?? 0,
-        fe_done: project.feDone ?? 0,
-        be_done: project.beDone ?? 0,
-        qa_done: project.qaDone ?? 0,
-        pm_done: project.pmDone ?? 0,
-        dpl_done: project.dplDone ?? 0,
-        delivery_date: project.deliveryDate?.toISOString(),
-        slip: project.slip ?? 0
-      })
+      .insert(insertData)
       .select()
       .single();
 
@@ -61,23 +109,46 @@ export class SupabaseProjectRepository implements ProjectRepository {
 
   async update(id: string, project: Partial<Project>): Promise<Project> {
     const supabase = createClient();
-    const updateData: Record<string, string | number | boolean | null | undefined> = {};
+    const updateData: Record<string, string | number | boolean | null | undefined | Record<string, number>> = {};
 
+    // Standardní sloupce
     if (project.scopeId !== undefined) updateData.scope_id = project.scopeId;
     if (project.name !== undefined) updateData.name = project.name;
     if (project.priority !== undefined) updateData.priority = project.priority;
-    if (project.feMandays !== undefined) updateData.fe_mandays = project.feMandays ?? 0;
-    if (project.beMandays !== undefined) updateData.be_mandays = project.beMandays ?? 0;
-    if (project.qaMandays !== undefined) updateData.qa_mandays = project.qaMandays ?? 0;
-    if (project.pmMandays !== undefined) updateData.pm_mandays = project.pmMandays ?? 0;
-    if (project.dplMandays !== undefined) updateData.dpl_mandays = project.dplMandays ?? 0;
-    if (project.feDone !== undefined) updateData.fe_done = project.feDone ?? 0;
-    if (project.beDone !== undefined) updateData.be_done = project.beDone ?? 0;
-    if (project.qaDone !== undefined) updateData.qa_done = project.qaDone ?? 0;
-    if (project.pmDone !== undefined) updateData.pm_done = project.pmDone ?? 0;
-    if (project.dplDone !== undefined) updateData.dpl_done = project.dplDone ?? 0;
+    if (project.feMandays !== undefined) updateData.fe_mandays = project.feMandays;
+    if (project.beMandays !== undefined) updateData.be_mandays = project.beMandays;
+    if (project.qaMandays !== undefined) updateData.qa_mandays = project.qaMandays;
+    if (project.pmMandays !== undefined) updateData.pm_mandays = project.pmMandays;
+    if (project.dplMandays !== undefined) updateData.dpl_mandays = project.dplMandays;
+    if (project.feDone !== undefined) updateData.fe_done = project.feDone;
+    if (project.beDone !== undefined) updateData.be_done = project.beDone;
+    if (project.qaDone !== undefined) updateData.qa_done = project.qaDone;
+    if (project.pmDone !== undefined) updateData.pm_done = project.pmDone;
+    if (project.dplDone !== undefined) updateData.dpl_done = project.dplDone;
     if (project.deliveryDate !== undefined) updateData.delivery_date = project.deliveryDate?.toISOString();
-    if (project.slip !== undefined) updateData.slip = project.slip ?? 0;
+
+    // Extrahujeme custom role data
+    const customRoleData: Record<string, number> = {};
+    const standardRoleKeys = ['fe', 'be', 'qa', 'pm', 'dpl'];
+    
+    Object.keys(project).forEach(key => {
+      if (key.includes('_mandays') || key.includes('_done')) {
+        const roleKey = key.replace(/_mandays$/, '').replace(/_done$/, '');
+        if (!standardRoleKeys.includes(roleKey)) {
+          // Toto je custom role
+          customRoleData[key] = (project as ProjectWithCustomRoles)[key] as number || 0;
+        }
+      }
+    });
+
+    // Pokud máme customRoleData v project objektu, použijeme to
+    if ((project as Record<string, unknown>).customRoleData) {
+      Object.assign(customRoleData, (project as Record<string, unknown>).customRoleData as Record<string, number>);
+    }
+
+    if (Object.keys(customRoleData).length > 0) {
+      updateData.custom_role_data = customRoleData;
+    }
 
     const { data, error } = await supabase
       .from('projects')
@@ -106,8 +177,8 @@ export class SupabaseProjectRepository implements ProjectRepository {
   }
 
   // eslint-disable-next-line
-  private mapToModel(data: any): Project {
-    return {
+  private mapToModel(data: Record<string, unknown>): Project {
+    const baseProject = {
       id: data.id,
       scopeId: data.scope_id,
       name: data.name,
@@ -122,9 +193,14 @@ export class SupabaseProjectRepository implements ProjectRepository {
       qaDone: data.qa_done,
       pmDone: data.pm_done,
       dplDone: data.dpl_done,
-      deliveryDate: data.delivery_date ? new Date(data.delivery_date) : undefined,
-      createdAt: new Date(data.created_at),
-      slip: data.slip
+      deliveryDate: data.delivery_date ? new Date(data.delivery_date as string) : undefined,
+      createdAt: new Date(data.created_at as string)
     };
+
+    // Přidáme custom role data z JSON sloupce
+    const customRoleData = data.custom_role_data || {};
+    const projectWithCustomRoles = { ...baseProject, ...customRoleData };
+    
+    return projectWithCustomRoles as Project;
   }
 }

@@ -57,21 +57,27 @@ export function calculateProjectDeliveryInfo(
   project: Project, 
   team: TeamMember[]
 ): ProjectDeliveryInfo {
-  const feFte = team.filter(m => m.role === 'FE').reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
-  const beFte = team.filter(m => m.role === 'BE').reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
-  const qaFte = team.filter(m => m.role === 'QA').reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
+  // Získáme všechny role (standardní i custom) podle klíčů v projektu
+  const roleKeys = Object.keys(project)
+    .filter(key => key.endsWith('_mandays'))
+    .map(key => key.replace(/_mandays$/, ''));
+
+  let maxDays = 0;
+
+  roleKeys.forEach(roleKey => {
+    // Najdeme FTE pro tuto roli
+    const fte = team.filter(m => m.role === roleKey.toUpperCase() || m.role === roleKey)
+      .reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
+    
+    const mandays = Number(project[`${roleKey}_mandays`]) || 0;
+    const done = Number(project[`${roleKey}_done`]) || 0;
+    const rem = mandays * (1 - (done / 100));
+    const days = rem / fte;
+
+    if (days > maxDays) maxDays = days;
+  });
   
-  // Zbývající mandays pro projekt (podle aktuálního progressu)
-  const feRem = Number(project.fe_mandays) * (1 - (Number(project.fe_done) || 0) / 100);
-  const beRem = Number(project.be_mandays) * (1 - (Number(project.be_done) || 0) / 100);
-  const qaRem = Number(project.qa_mandays) * (1 - (Number(project.qa_done) || 0) / 100);
-  
-  // Zbývající dny potřebné pro dokončení
-  const feDays = feRem / feFte;
-  const beDays = beRem / beFte;
-  const qaDays = qaRem / qaFte;
-  
-  const remainingWorkdays = Math.ceil(Math.max(feDays, beDays)) + Math.ceil(qaDays);
+  const remainingWorkdays = Math.ceil(maxDays);
   
   // Počítat od dnešního data + zbývající práce
   const today = new Date();
@@ -80,24 +86,15 @@ export function calculateProjectDeliveryInfo(
   const deliveryDate = project.delivery_date ? new Date(project.delivery_date) : null;
   
   let diffWorkdays: number | null = null;
-  let slip: number | null = null;
   if (deliveryDate) {
     // Rozdíl = počet pracovních dnů mezi plánovaným a vypočítaným termínem
     // Pozitivní = máme rezervu (vypočítaný termín je před plánovaným)
     // Negativní = máme skluz (vypočítaný termín je po plánovaném)
     diffWorkdays = getWorkdaysCount(deliveryDate, calculatedDeliveryDate);
-    
-    // Skluz = pokud je vypočítaný termín po plánovaném termínu
-    if (calculatedDeliveryDate > deliveryDate) {
-      slip = getWorkdaysCount(deliveryDate, calculatedDeliveryDate);
-    } else {
-      slip = 0; // Projekt není opožděný
-    }
   }
   
   return {
     calculatedDeliveryDate,
-    slip,
     diffWorkdays,
     deliveryDate,
   };
@@ -127,58 +124,36 @@ export function calculateProjectDeliveryInfoWithAssignments(
     
     return {
       calculatedDeliveryDate: farFutureDate,
-      slip: deliveryDate ? getWorkdaysCount(deliveryDate, farFutureDate) : null,
       diffWorkdays: deliveryDate ? getWorkdaysCount(deliveryDate, farFutureDate) : null,
       deliveryDate,
     };
   }
 
-  // Calculate FTE for each role based on assignments
-  const feFte = assignedTeamMembers
-    .filter(member => projectAssignments.some(assignment => 
-      assignment.teamMemberId === member.id && assignment.role === 'FE'
-    ))
-    .reduce((sum, m) => sum + (m.fte || 0), 0);
+  // Získáme všechny role (standardní i custom) podle klíčů v projektu
+  const roleKeys = Object.keys(project)
+    .filter(key => key.endsWith('_mandays'))
+    .map(key => key.replace(/_mandays$/, ''));
 
-  const beFte = assignedTeamMembers
-    .filter(member => projectAssignments.some(assignment => 
-      assignment.teamMemberId === member.id && assignment.role === 'BE'
-    ))
-    .reduce((sum, m) => sum + (m.fte || 0), 0);
+  let maxDays = 0;
 
-  const qaFte = assignedTeamMembers
-    .filter(member => projectAssignments.some(assignment => 
-      assignment.teamMemberId === member.id && assignment.role === 'QA'
-    ))
-    .reduce((sum, m) => sum + (m.fte || 0), 0);
+  roleKeys.forEach(roleKey => {
+    // Najdeme všechny assignmenty pro tuto roli (label u custom rolí)
+    const fte = assignedTeamMembers
+      .filter(member => projectAssignments.some(assignment => 
+        assignment.teamMemberId === member.id && 
+        (assignment.role === roleKey.toUpperCase() || assignment.role === roleKey)
+      ))
+      .reduce((sum, m) => sum + (m.fte || 0), 0);
 
-  const pmFte = assignedTeamMembers
-    .filter(member => projectAssignments.some(assignment => 
-      assignment.teamMemberId === member.id && assignment.role === 'PM'
-    ))
-    .reduce((sum, m) => sum + (m.fte || 0), 0);
+    const mandays = Number(project[`${roleKey}_mandays`]) || 0;
+    const done = Number(project[`${roleKey}_done`]) || 0;
+    const rem = fte > 0 ? mandays * (1 - (done / 100)) : 0;
+    const days = fte > 0 ? rem / fte : 0;
 
-  const dplFte = assignedTeamMembers
-    .filter(member => projectAssignments.some(assignment => 
-      assignment.teamMemberId === member.id && assignment.role === 'DPL'
-    ))
-    .reduce((sum, m) => sum + (m.fte || 0), 0);
+    if (days > maxDays) maxDays = days;
+  });
   
-  // Zbývající mandays pro projekt (podle aktuálního progressu)
-  const feRem = feFte > 0 ? Number(project.fe_mandays) * (1 - (Number(project.fe_done) || 0) / 100) : 0;
-  const beRem = beFte > 0 ? Number(project.be_mandays) * (1 - (Number(project.be_done) || 0) / 100) : 0;
-  const qaRem = qaFte > 0 ? Number(project.qa_mandays) * (1 - (Number(project.qa_done) || 0) / 100) : 0;
-  const pmRem = pmFte > 0 ? Number(project.pm_mandays) * (1 - (Number(project.pm_done) || 0) / 100) : 0;
-  const dplRem = dplFte > 0 ? Number(project.dpl_mandays) * (1 - (Number(project.dpl_done) || 0) / 100) : 0;
-  
-  // Zbývající dny potřebné pro dokončení (pouze pro přiřazené role)
-  const feDays = feFte > 0 ? feRem / feFte : 0;
-  const beDays = beFte > 0 ? beRem / beFte : 0;
-  const qaDays = qaFte > 0 ? qaRem / qaFte : 0;
-  const pmDays = pmFte > 0 ? pmRem / pmFte : 0;
-  const dplDays = dplFte > 0 ? dplRem / dplFte : 0;
-  
-  const remainingWorkdays = Math.ceil(Math.max(feDays, beDays, pmDays, dplDays)) + Math.ceil(qaDays);
+  const remainingWorkdays = Math.ceil(maxDays);
   
   // Počítat od dnešního data + zbývající práce
   const today = new Date();
@@ -187,24 +162,20 @@ export function calculateProjectDeliveryInfoWithAssignments(
   const deliveryDate = project.delivery_date ? new Date(project.delivery_date) : null;
   
   let diffWorkdays: number | null = null;
-  let slip: number | null = null;
   if (deliveryDate) {
     // Rozdíl = počet pracovních dnů mezi plánovaným a vypočítaným termínem
     // Pozitivní = máme rezervu (vypočítaný termín je před plánovaným)
     // Negativní = máme skluz (vypočítaný termín je po plánovaném)
     diffWorkdays = getWorkdaysCount(deliveryDate, calculatedDeliveryDate);
-    
-    // Skluz = pokud je vypočítaný termín po plánovaném termínu
-    if (calculatedDeliveryDate > deliveryDate) {
-      slip = getWorkdaysCount(deliveryDate, calculatedDeliveryDate);
-    } else {
-      slip = 0; // Projekt není opožděný
-    }
+  } else {
+    // Pokud není nastaven delivery_date, počítáme rozdíl mezi calculatedDeliveryDate a dnešním datem
+    // Pozitivní = projekt bude hotový v budoucnosti
+    // Negativní = projekt měl být hotový v minulosti
+    diffWorkdays = getWorkdaysCount(today, calculatedDeliveryDate);
   }
   
   return {
     calculatedDeliveryDate,
-    slip,
     diffWorkdays,
     deliveryDate,
   };
@@ -239,20 +210,27 @@ export function calculatePriorityDates(
   for (let i = 0; i < sorted.length; i++) {
     const project = sorted[i];
     
-    // Calculate project duration in workdays (same as in calculateProjectDeliveryInfo)
-    const feFte = team.filter(m => m.role === 'FE').reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
-    const beFte = team.filter(m => m.role === 'BE').reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
-    const qaFte = team.filter(m => m.role === 'QA').reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
+    // Získáme všechny role (standardní i custom) podle klíčů v projektu
+    const roleKeys = Object.keys(project)
+      .filter(key => key.endsWith('_mandays'))
+      .map(key => key.replace(/_mandays$/, ''));
+
+    let maxDays = 0;
+
+    roleKeys.forEach(roleKey => {
+      // Najdeme FTE pro tuto roli
+      const fte = team.filter(m => m.role === roleKey.toUpperCase() || m.role === roleKey)
+        .reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
+      
+      const mandays = Number(project[`${roleKey}_mandays`]) || 0;
+      const done = Number(project[`${roleKey}_done`]) || 0;
+      const rem = mandays * (1 - (done / 100));
+      const days = rem / fte;
+
+      if (days > maxDays) maxDays = days;
+    });
     
-    const feRem = Number(project.fe_mandays) * (1 - (Number(project.fe_done) || 0) / 100);
-    const beRem = Number(project.be_mandays) * (1 - (Number(project.be_done) || 0) / 100);
-    const qaRem = Number(project.qa_mandays) * (1 - (Number(project.qa_done) || 0) / 100);
-    
-    const feDays = feRem / feFte;
-    const beDays = beRem / beFte;
-    const qaDays = qaRem / qaFte;
-    
-    const projectWorkdays = Math.ceil(Math.max(feDays, beDays)) + Math.ceil(qaDays);
+    const projectWorkdays = Math.ceil(maxDays);
     
     let priorityStartDate: Date;
     let blockingProjectName: string | undefined = undefined;
@@ -274,7 +252,7 @@ export function calculatePriorityDates(
       blockingProjectName = prev.name;
     }
     
-    // Priority end date = start + project duration in workdays
+    // Priority end date = start + project duration
     const priorityEndDate = addWorkdays(priorityStartDate, projectWorkdays);
     
     result[project.id] = { priorityStartDate, priorityEndDate, blockingProjectName };
@@ -346,39 +324,28 @@ export function calculatePriorityDatesWithAssignments(
     }
     
     // Calculate project duration in workdays using assignments
-    const feFte = assignments
-      .filter(assignment => assignment.role === 'FE')
-      .reduce((sum, assignment) => sum + assignment.allocationFte, 0);
-    
-    const beFte = assignments
-      .filter(assignment => assignment.role === 'BE')
-      .reduce((sum, assignment) => sum + assignment.allocationFte, 0);
-    
-    const qaFte = assignments
-      .filter(assignment => assignment.role === 'QA')
-      .reduce((sum, assignment) => sum + assignment.allocationFte, 0);
-    
-    const pmFte = assignments
-      .filter(assignment => assignment.role === 'PM')
-      .reduce((sum, assignment) => sum + assignment.allocationFte, 0);
-    
-    const dplFte = assignments
-      .filter(assignment => assignment.role === 'DPL')
-      .reduce((sum, assignment) => sum + assignment.allocationFte, 0);
-    
-    const feRem = feFte > 0 ? Number(project.fe_mandays) * (1 - (Number(project.fe_done) || 0) / 100) : 0;
-    const beRem = beFte > 0 ? Number(project.be_mandays) * (1 - (Number(project.be_done) || 0) / 100) : 0;
-    const qaRem = qaFte > 0 ? Number(project.qa_mandays) * (1 - (Number(project.qa_done) || 0) / 100) : 0;
-    const pmRem = pmFte > 0 ? Number(project.pm_mandays) * (1 - (Number(project.pm_done) || 0) / 100) : 0;
-    const dplRem = dplFte > 0 ? Number(project.dpl_mandays) * (1 - (Number(project.dpl_done) || 0) / 100) : 0;
-    
-    const feDays = feFte > 0 ? feRem / feFte : 0;
-    const beDays = beFte > 0 ? beRem / beFte : 0;
-    const qaDays = qaFte > 0 ? qaRem / qaFte : 0;
-    const pmDays = pmFte > 0 ? pmRem / pmFte : 0;
-    const dplDays = dplFte > 0 ? dplRem / dplFte : 0;
-    
-    const projectWorkdays = Math.ceil(Math.max(feDays, beDays, pmDays, dplDays)) + Math.ceil(qaDays);
+    // Získáme všechny role (standardní i custom) podle klíčů v projektu
+    const roleKeys = Object.keys(project)
+      .filter(key => key.endsWith('_mandays'))
+      .map(key => key.replace(/_mandays$/, ''));
+
+    let maxDays = 0;
+
+    roleKeys.forEach(roleKey => {
+      // Najdeme všechny assignmenty pro tuto roli (label u custom rolí)
+      const fte = assignments
+        .filter(assignment => assignment.role === roleKey.toUpperCase() || assignment.role === roleKey)
+        .reduce((sum, assignment) => sum + assignment.allocationFte, 0);
+
+      const mandays = Number(project[`${roleKey}_mandays`]) || 0;
+      const done = Number(project[`${roleKey}_done`]) || 0;
+      const rem = fte > 0 ? mandays * (1 - (done / 100)) : 0;
+      const days = fte > 0 ? rem / fte : 0;
+
+      if (days > maxDays) maxDays = days;
+    });
+
+    const projectWorkdays = Math.ceil(maxDays);
     
     let priorityStartDate: Date;
     let blockingProjectName: string | undefined = undefined;

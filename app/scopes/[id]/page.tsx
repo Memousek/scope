@@ -97,11 +97,6 @@ export default function ScopePage({
 
   // Zjistím, které role jsou v týmu
   const teamRoles = Array.from(new Set(team.map((m) => m.role)));
-  const hasFE = teamRoles.includes("FE");
-  const hasBE = teamRoles.includes("BE");
-  const hasQA = teamRoles.includes("QA");
-  const hasPM = teamRoles.includes("PM");
-  const hasDPL = teamRoles.includes("DPL");
 
   const handleAddMember = async (member: {
     name: string;
@@ -140,24 +135,25 @@ export default function ScopePage({
     );
 
     try {
-      await addProjectService.execute(id, {
+      // Vytvoříme dynamický objekt pro mandays a done hodnoty
+      const projectData: Record<string, unknown> = {
         name: project.name,
         priority: project.priority,
         deliveryDate: project.delivery_date
           ? new Date(project.delivery_date)
           : undefined,
-        feMandays: project.fe_mandays ?? 0,
-        beMandays: project.be_mandays ?? 0,
-        qaMandays: project.qa_mandays ?? 0,
-        pmMandays: project.pm_mandays ?? 0,
-        dplMandays: project.dpl_mandays ?? 0,
-        feDone: project.fe_done ?? 0,
-        beDone: project.be_done ?? 0,
-        qaDone: project.qa_done ?? 0,
-        pmDone: project.pm_done ?? 0,
-        dplDone: project.dpl_done ?? 0,
         slip: 0, // Default value
+      };
+
+      // Přidáme pole pro každou roli z týmu
+      teamRoles.forEach(role => {
+        const roleKey = role.toLowerCase();
+        projectData[`${roleKey}Mandays`] = (project as Record<string, unknown>)[`${roleKey}_mandays`] ?? 0;
+        projectData[`${roleKey}Done`] = (project as Record<string, unknown>)[`${roleKey}_done`] ?? 0;
       });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await addProjectService.execute(id, projectData as any);
 
       // Refresh project data
       await fetchProjects();
@@ -231,6 +227,39 @@ export default function ScopePage({
       console.error("Chyba při načítání project assignments:", error);
     }
   }, [userId, id]);
+
+  // Funkce pro aktualizaci týmu s aktualizací přiřazení k projektům
+  const handleTeamChange = useCallback(async (newTeam: TeamMember[]) => {
+    setTeam(newTeam);
+    
+    // Aktualizuj přiřazení k projektům, pokud se změnila role člena týmu
+    const manageAssignmentsService = ContainerService.getInstance().get(
+      ManageProjectTeamAssignmentsService,
+      { autobind: true }
+    );
+
+    try {
+      // Pro každý projekt zkontroluj, jestli je potřeba aktualizovat přiřazení
+      for (const project of projects) {
+        const projectAssignments = await manageAssignmentsService.getProjectAssignments(project.id);
+        
+        for (const assignment of projectAssignments) {
+          const teamMember = newTeam.find(tm => tm.id === assignment.teamMemberId);
+          if (teamMember && assignment.role !== teamMember.role) {
+            // Aktualizuj roli přiřazení podle nové role člena týmu
+            await manageAssignmentsService.updateAssignment(assignment.id, {
+              role: teamMember.role
+            });
+          }
+        }
+      }
+      
+      // Refresh project assignments
+      await fetchProjectAssignments();
+    } catch (error) {
+      console.error('Chyba při aktualizaci přiřazení k projektům:', error);
+    }
+  }, [projects, fetchProjectAssignments]);
 
   const fetchStats = useCallback(async () => {
     if (!userId) return;
@@ -535,12 +564,7 @@ export default function ScopePage({
           team={team}
           projects={projects}
           projectAssignments={projectAssignments}
-          onTeamChange={setTeam}
-          hasFE={hasFE}
-          hasBE={hasBE}
-          hasQA={hasQA}
-          hasPM={hasPM}
-          hasDPL={hasDPL}
+          onTeamChange={handleTeamChange}
           stats={stats}
           loadingStats={loadingStats}
           averageSlip={averageSlip}

@@ -6,56 +6,55 @@
  * - Built-in legends and axes
  */
 
-import { useState, useEffect } from 'react';
+import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Project, ProjectDeliveryInfo } from './types';
-import { PROJECT_ROLES, calculateRoleProgress } from '@/lib/utils/projectRoles';
+import { calculateRoleProgress } from '@/lib/utils/dynamicProjectRoles';
 import { getWorkdaysCount } from '@/app/utils/dateUtils';
 import { Payload } from "recharts/types/component/DefaultLegendContent";
-import { ProjectTeamAssignment } from '@/lib/domain/models/project-team-assignment.model';
 import { useTranslation } from "@/lib/translation";
+import { useScopeRoles } from '@/app/hooks/useScopeRoles';
 
 interface ProjectProgressChartProps {
   project: Project;
   deliveryInfo: ProjectDeliveryInfo;
-  className?: string;
+  scopeId: string;
   priorityDates?: {
     priorityStartDate: Date;
     priorityEndDate: Date;
   };
-  projectAssignments?: ProjectTeamAssignment[];
+  projectAssignments: Array<{ teamMemberId: string; role: string }>;
+  className?: string;
 }
 
 interface ProgressData {
   date: string;
-  idealProgress: number;
-  actualProgress: number;
-  slippage: number;
-  fe: number;
-  be: number;
-  qa: number;
-  pm: number;
-  dpl: number;
+  ideal: number;
+  actual: number;
+  total: number;
 }
 
-export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({ 
-  project, 
-  deliveryInfo, 
-  className = '',
+const ProjectProgressChartComponent: React.FC<ProjectProgressChartProps> = ({
+  project,
+  deliveryInfo,
+  scopeId,
   priorityDates,
-  projectAssignments = []
+  projectAssignments,
+  className = ""
 }) => {
   const { t } = useTranslation();
-  const [progressData, setProgressData] = useState<ProgressData[]>([]);
-  const [activeLegend, setActiveLegend] = useState<string | null>(null); // Přidáno
+  const { activeRoles } = useScopeRoles(scopeId);
+  const [progressData, setProgressData] = React.useState<ProgressData[]>([]);
+  const [activeLegend, setActiveLegend] = React.useState<string | null>(null); // Přidáno
 
   // Generování dat pro graf
-  useEffect(() => {
-    if (!project.delivery_date) return;
-
+  React.useEffect(() => {
     // Použít priority dates pokud jsou dostupné, jinak created_at a delivery_date
     const startDate = priorityDates ? new Date(priorityDates.priorityStartDate) : new Date(project.created_at);
-    const endDate = priorityDates ? new Date(priorityDates.priorityEndDate) : new Date(project.delivery_date);
+    const endDate = priorityDates ? new Date(priorityDates.priorityEndDate) : (project.delivery_date ? new Date(project.delivery_date) : null);
+    
+    // Pokud nemáme endDate, nemůžeme generovat graf
+    if (!endDate) return;
     
     // Vypočítat aktuální progress
     const currentProgress = getCurrentProgress(project);
@@ -77,59 +76,58 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
       const progressRatio = Math.min(i / days, 1);
       const actualProgress = currentProgress * progressRatio;
       
-      // Skluz (rozdíl mezi ideálním a aktuálním)
-      const slippage = actualProgress - idealProgress;
+      // Skluz (rozdíl mezi ideálním a aktuálním) - currently unused
+      // const slippage = actualProgress - idealProgress;
       
-      // Realistický progress pro role v čase
-      const fe = Math.min(project.fe_done || 0, actualProgress * 0.8 + (project.fe_done || 0) * 0.2);
-      const be = Math.min(project.be_done || 0, actualProgress * 0.7 + (project.be_done || 0) * 0.3);
-      const qa = Math.min(project.qa_done || 0, actualProgress * 0.6 + (project.qa_done || 0) * 0.4);
-      const pm = Math.min(project.pm_done || 0, actualProgress * 0.9 + (project.pm_done || 0) * 0.1);
-      const dpl = Math.min(project.dpl_done || 0, actualProgress * 0.5 + (project.dpl_done || 0) * 0.5);
+      // Dynamický progress pro role v čase
+      const roleData: Record<string, number> = {};
+      activeRoles.forEach(role => {
+        const doneKey = `${role.key}_done`;
+        const currentDone = Number((project as Record<string, unknown>)[doneKey]) || 0;
+        roleData[role.key] = Math.min(currentDone, actualProgress * 0.7 + currentDone * 0.3);
+      });
       
       data.push({
         date: currentDate.toLocaleDateString('cs-CZ', { day: '2-digit', month: '2-digit' }),
-        idealProgress,
-        actualProgress,
-        slippage,
-        fe,
-        be,
-        qa,
-        pm,
-        dpl
+        ideal: idealProgress,
+        actual: actualProgress,
+        total: currentProgress,
+        ...roleData
       });
     }
     
     // Přidat poslední bod pokud chybí
     if (data.length > 0) {
       const lastDate = new Date(endDate);
+      const finalRoleData: Record<string, number> = {};
+      activeRoles.forEach(role => {
+        const doneKey = `${role.key}_done`;
+        finalRoleData[role.key] = Number(project[doneKey as keyof Project]) || 0;
+      });
+      
       data.push({
         date: lastDate.toLocaleDateString('cs-CZ', { day: '2-digit', month: '2-digit' }),
-        idealProgress: 100,
-        actualProgress: currentProgress,
-        slippage: currentProgress - 100,
-        fe: project.fe_done || 0,
-        be: project.be_done || 0,
-        qa: project.qa_done || 0,
-        pm: project.pm_done || 0,
-        dpl: project.dpl_done || 0
+        ideal: 100,
+        actual: currentProgress,
+        total: currentProgress,
+        ...finalRoleData
       });
     }
     
     setProgressData(data);
-  }, [project, priorityDates, projectAssignments]);
+  }, [project, priorityDates, projectAssignments, activeRoles]);
 
   const getCurrentProgress = (project: Project) => {
     let totalDone = 0;
     let totalMandays = 0;
 
-          PROJECT_ROLES.forEach(role => {
-        const progress = calculateRoleProgress(project as unknown as Record<string, unknown>, role.key);
-        if (progress) {
-          totalDone += progress.done;
-          totalMandays += progress.mandays;
-        }
-      });
+    activeRoles.forEach(role => {
+      const progress = calculateRoleProgress(project as unknown as Record<string, unknown>, role);
+      if (progress) {
+        totalDone += progress.done;
+        totalMandays += progress.mandays;
+      }
+    });
 
     return totalMandays > 0 ? Math.round((totalDone / totalMandays) * 100) : 0;
   };
@@ -146,14 +144,14 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
     return '🔴';
   };
 
-  // Používáme centralizované role z utility
-  const roles = PROJECT_ROLES
+  // Používáme dynamické role z databáze
+  const roles = activeRoles
     .map(role => ({
       key: role.key,
       label: role.label,
       color: role.color,
-      done: project[role.doneKey as keyof Project] || 0,
-      mandays: project[role.mandaysKey as keyof Project] || 0
+      done: (project as Record<string, unknown>)[`${role.key}_done`] as number || 0,
+      mandays: (project as Record<string, unknown>)[`${role.key}_mandays`] as number || 0
     }))
     .filter(role => Number(role.mandays) > 0);
 
@@ -207,8 +205,8 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
           </div>
           
           <div className="text-center">
-            <div className={`text-lg font-semibold ${getSlippageColor(deliveryInfo.slip || 0)}`}>
-              {getSlippageIcon(deliveryInfo.slip || 0)} {deliveryInfo.slip || 0} dní
+            <div className={`text-lg font-semibold ${getSlippageColor(deliveryInfo.diffWorkdays || 0)}`}>
+              {getSlippageIcon(deliveryInfo.diffWorkdays || 0)} {deliveryInfo.diffWorkdays || 0} dní
             </div>
             <div className="text-xs text-gray-500 dark:text-gray-400">Skluz</div>
           </div>
@@ -245,14 +243,14 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
             {/* Ideální progress */}
             <Line
               type="monotone"
-              dataKey="idealProgress"
+              dataKey="ideal"
               stroke="#60a5fa"
-              strokeWidth={!activeLegend || activeLegend === "idealProgress" ? 2 : 1}
+              strokeWidth={!activeLegend || activeLegend === "ideal" ? 2 : 1}
               strokeDasharray="5 5"
               name={t("idealProgress")}
               dot={false}
               opacity={
-                !activeLegend || activeLegend === "idealProgress" ? 1 : 0.2
+                !activeLegend || activeLegend === "ideal" ? 1 : 0.2
               }
             />
             
@@ -275,13 +273,13 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
             {/* Celkový progress */}
             <Line
               type="monotone"
-              dataKey="actualProgress"
+              dataKey="total"
               stroke="#10b981"
               strokeWidth={4}
               name={t("totalProgress")}
               dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
               opacity={
-                !activeLegend || activeLegend === "actualProgress" ? 1 : 0.2
+                !activeLegend || activeLegend === "total" ? 1 : 0.2
               }
             />
           </LineChart>
@@ -343,9 +341,9 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
           <div className={`text-lg font-semibold ${
             projectAssignments.length === 0 
               ? 'text-orange-600 dark:text-orange-400' 
-              : getSlippageColor(deliveryInfo.slip || 0)
+              : getSlippageColor(deliveryInfo.diffWorkdays || 0)
           }`}>
-            {projectAssignments.length === 0 ? t("assignTeamMembers") : `${deliveryInfo.slip || 0} dní`}
+            {projectAssignments.length === 0 ? t("assignTeamMembers") : `${deliveryInfo.diffWorkdays || 0} dní`}
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-400">{t("slip")}</div>
         </div>
@@ -353,3 +351,5 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
     </div>
   );
 };
+
+export const ProjectProgressChart = React.memo(ProjectProgressChartComponent);

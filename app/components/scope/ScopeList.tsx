@@ -16,6 +16,7 @@ import {TeamMemberRepository} from "@/lib/domain/repositories/team-member.reposi
 import {ProjectRepository} from "@/lib/domain/repositories/project.repository";
 import {ContainerService} from "@/lib/container.service";
 
+
 export type ScopeListItem = {
   scope: Scope,
   type: ScopeType,
@@ -237,7 +238,6 @@ export const ScopeList: React.FC<ScopeListProps> = ({
                       {scopeItem.type === ScopeType.OWNED && onDelete ? (
                         <button
                           onClick={() => {
-                            console.log('Kliknuto na smazat scope:', scopeItem.scope.id);
                             onDelete(scopeItem.scope.id);
                           }}
                           disabled={deletingScope === scopeItem.scope.id}

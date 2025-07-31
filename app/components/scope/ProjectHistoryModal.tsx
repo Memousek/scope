@@ -9,7 +9,7 @@
 
 import { useState, useEffect } from 'react';
 import { Project, ProjectProgress } from './types';
-import { PROJECT_ROLES } from '@/lib/utils/projectRoles';
+import { useScopeRoles } from '@/app/hooks/useScopeRoles';
 import { ProjectService } from '@/app/services/projectService';
 import { useTranslation } from '@/lib/translation';
 import { Modal } from '@/app/components/ui/Modal';
@@ -17,12 +17,14 @@ import { FiClock } from 'react-icons/fi';
 
 interface ProjectHistoryModalProps {
   project: Project;
+  scopeId: string;
   onClose: () => void;
   onProjectUpdate: () => void;
 }
 
-export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ project, onClose, onProjectUpdate }) => {
+export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ project, scopeId, onClose, onProjectUpdate }) => {
   const { t } = useTranslation();
+  const { activeRoles } = useScopeRoles(scopeId);
   const [history, setHistory] = useState<ProjectProgress[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -30,15 +32,12 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ projec
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Používáme centralizované role z utility
-  const roles = PROJECT_ROLES.map(role => ({
-    done: role.doneKey,
-    mandays: role.mandaysKey,
+  // Používáme dynamické role z databáze
+  const roles = activeRoles.map(role => ({
+    done: `${role.key}_done`,
+    mandays: `${role.key}_mandays`,
     label: role.label,
-    color: role.key === 'fe' ? 'blue' : 
-           role.key === 'be' ? 'green' : 
-           role.key === 'qa' ? 'orange' : 
-           role.key === 'pm' ? 'purple' : 'red'
+    color: role.color
   }));
 
   useEffect(() => {
@@ -76,30 +75,27 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ projec
     setError(null);
     if (!id) return;
     
-    console.log('Saving progress with ID:', id);
-    console.log('Edit values:', editValues);
-    
-    // Validace: % hotovo 0-100, mandays >= 0
-    for (const role of roles) {
-      const doneVal = editValues[role.done as keyof ProjectProgress];
-      const mandaysVal = editValues[role.mandays as keyof ProjectProgress];
-      console.log('Validating', role.label, 'done:', doneVal, 'mandays:', mandaysVal);
-      if (doneVal !== undefined && (isNaN(Number(doneVal)) || Number(doneVal) < 0 || Number(doneVal) > 100)) {
-        setError(`% hotovo pro ${role.label} musí být číslo 0-100.`);
-        return;
-      }
-      if (mandaysVal !== undefined && (isNaN(Number(mandaysVal)) || Number(mandaysVal) < 0)) {
-        setError(`${t("estimate")} (MD) ${t("for")} ${role.label} ${t("mustBeNumber")}.`);
-        return;
-      }
-    }
-    
-    setSaving(true);
     try {
-      console.log('Calling ProjectService.updateProjectProgress with:', id, editValues);
-      console.log('Edit values types:', Object.entries(editValues).map(([key, value]) => `${key}: ${typeof value} (${value})`));
+      const editValues: Record<string, number> = {};
+
+      // Validate and collect all role values
+      roles.forEach(role => {
+        const doneVal = Number(editValues[role.done] || 0);
+        const mandaysVal = Number(editValues[role.mandays] || 0);
+
+        if (doneVal < 0 || doneVal > 100) {
+          throw new Error(`% hotovo pro ${role.label} musí být číslo 0-100.`);
+        }
+
+        if (mandaysVal < 0) {
+          throw new Error(`${role.label} mandays cannot be negative.`);
+        }
+
+        editValues[role.done] = doneVal;
+        editValues[role.mandays] = mandaysVal;
+      });
+
       await ProjectService.updateProjectProgress(id, editValues);
-      console.log('Update successful');
       
       // Refresh history first
       const data = await ProjectService.loadProjectProgress(project.id);
@@ -119,33 +115,8 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ projec
   };
 
   const handleEdit = (progress: ProjectProgress) => {
-    console.log('Starting edit for progress:', progress);
-    console.log('Progress values:', {
-      fe_done: progress.fe_done,
-      be_done: progress.be_done,
-      qa_done: progress.qa_done,
-      pm_done: progress.pm_done,
-      dpl_done: progress.dpl_done,
-      fe_mandays: progress.fe_mandays,
-      be_mandays: progress.be_mandays,
-      qa_mandays: progress.qa_mandays,
-      pm_mandays: progress.pm_mandays,
-      dpl_mandays: progress.dpl_mandays
-    });
     setEditingId(progress.id || null);
     setEditValues({
-      fe_done: progress.fe_done,
-      be_done: progress.be_done,
-      qa_done: progress.qa_done,
-      pm_done: progress.pm_done,
-      dpl_done: progress.dpl_done,
-      fe_mandays: progress.fe_mandays,
-      be_mandays: progress.be_mandays,
-      qa_mandays: progress.qa_mandays,
-      pm_mandays: progress.pm_mandays,
-      dpl_mandays: progress.dpl_mandays
-    });
-    console.log('Set edit values:', {
       fe_done: progress.fe_done,
       be_done: progress.be_done,
       qa_done: progress.qa_done,
@@ -320,7 +291,6 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ projec
                                     value={editValues[role.done as keyof ProjectProgress] || ''}
                                     onChange={(e) => {
                                       const value = e.target.value === '' ? null : Number(e.target.value);
-                                      console.log('Setting', role.done, 'to', value);
                                       setEditValues(prev => ({
                                         ...prev,
                                         [role.done]: value
@@ -344,7 +314,6 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ projec
                                     value={editValues[role.mandays as keyof ProjectProgress] || ''}
                                     onChange={(e) => {
                                       const value = e.target.value === '' ? null : Number(e.target.value);
-                                      console.log('Setting', role.mandays, 'to', value);
                                       setEditValues(prev => ({
                                         ...prev,
                                         [role.mandays]: value

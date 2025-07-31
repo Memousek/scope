@@ -5,21 +5,16 @@
 
 import { createClient } from '@/lib/supabase/client';
 import { Project, ProjectProgress } from '@/app/components/scope/types';
+import { ContainerService } from '@/lib/container.service';
+import { ProjectRepository } from '@/lib/domain/repositories/project.repository';
 
 export interface CreateProjectData {
   name: string;
   priority: number;
-  fe_mandays: number | null;
-  be_mandays: number | null;
-  qa_mandays: number | null;
-  pm_mandays: number | null;
-  dpl_mandays: number | null;
-  fe_done: number;
-  be_done: number;
-  qa_done: number;
-  pm_done: number;
-  dpl_done: number;
   delivery_date: string | null;
+  custom_role_data?: Record<string, number> | null;
+  // Dynamické role data - klíče budou generovány z scope_roles
+  [key: string]: string | number | null | undefined | Record<string, number> | null; // Pro role sloupce jako fe_mandays, be_done, atd.
 }
 
 export class ProjectService {
@@ -27,64 +22,208 @@ export class ProjectService {
    * Load all projects for a scope
    */
   static async loadProjects(scopeId: string): Promise<Project[]> {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from('projects')
-      .select('*')
-      .eq('scope_id', scopeId)
-      .order('priority', { ascending: true });
-
-    if (error) throw error;
-    return data || [];
+    const projectRepository = ContainerService.getInstance().get(ProjectRepository);
+    const domainProjects = await projectRepository.findByScopeId(scopeId);
+    
+    const componentProjects = domainProjects.map(domainProject => {
+      const componentProject = {
+        id: domainProject.id,
+        name: domainProject.name,
+        priority: domainProject.priority,
+        delivery_date: domainProject.deliveryDate?.toISOString() || null,
+        created_at: domainProject.createdAt.toISOString(),
+        // Map standard role data
+        fe_mandays: domainProject.feMandays,
+        be_mandays: domainProject.beMandays,
+        qa_mandays: domainProject.qaMandays,
+        pm_mandays: domainProject.pmMandays,
+        dpl_mandays: domainProject.dplMandays,
+        fe_done: domainProject.feDone,
+        be_done: domainProject.beDone,
+        qa_done: domainProject.qaDone,
+        pm_done: domainProject.pmDone,
+        dpl_done: domainProject.dplDone,
+        // Map custom role data from top-level properties
+        ...(domainProject as unknown as Record<string, unknown>)
+      } as Project;
+      
+      // Odstraníme standardní vlastnosti, které už jsme explicitně namapovali
+      delete (componentProject as Record<string, unknown>).feMandays;
+      delete (componentProject as Record<string, unknown>).beMandays;
+      delete (componentProject as Record<string, unknown>).qaMandays;
+      delete (componentProject as Record<string, unknown>).pmMandays;
+      delete (componentProject as Record<string, unknown>).dplMandays;
+      delete (componentProject as Record<string, unknown>).feDone;
+      delete (componentProject as Record<string, unknown>).beDone;
+      delete (componentProject as Record<string, unknown>).qaDone;
+      delete (componentProject as Record<string, unknown>).pmDone;
+      delete (componentProject as Record<string, unknown>).dplDone;
+      delete (componentProject as Record<string, unknown>).scopeId;
+      delete (componentProject as Record<string, unknown>).deliveryDate;
+      delete (componentProject as Record<string, unknown>).createdAt;
+      
+      return componentProject;
+    });
+    
+    return componentProjects;
   }
 
   /**
    * Create a new project
    */
   static async createProject(scopeId: string, projectData: CreateProjectData): Promise<Project> {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from('projects')
-      .insert([{ ...projectData, scope_id: scopeId }])
-      .select()
-      .single();
+    const projectRepository = ContainerService.getInstance().get(ProjectRepository);
+    
+    // Explicitní mapování standardních rolí
+    const feMandays = (projectData as Record<string, unknown>).fe_mandays as number ?? 0;
+    const beMandays = (projectData as Record<string, unknown>).be_mandays as number ?? 0;
+    const qaMandays = (projectData as Record<string, unknown>).qa_mandays as number ?? 0;
+    const pmMandays = (projectData as Record<string, unknown>).pm_mandays as number ?? 0;
+    const dplMandays = (projectData as Record<string, unknown>).dpl_mandays as number ?? 0;
 
-    if (error) throw error;
-    return data;
+    const feDone = (projectData as Record<string, unknown>).fe_done as number ?? 0;
+    const beDone = (projectData as Record<string, unknown>).be_done as number ?? 0;
+    const qaDone = (projectData as Record<string, unknown>).qa_done as number ?? 0;
+    const pmDone = (projectData as Record<string, unknown>).pm_done as number ?? 0;
+    const dplDone = (projectData as Record<string, unknown>).dpl_done as number ?? 0;
+
+    // Extrahujeme custom role data
+    const customRoleData: Record<string, number> = {};
+    const standardRoleKeys = ['fe', 'be', 'qa', 'pm', 'dpl'];
+    
+    // Pokud máme custom_role_data v projectData, použijeme to
+    if (projectData.custom_role_data) {
+      Object.assign(customRoleData, projectData.custom_role_data);
+    } else {
+      // Jinak extrahujeme z dynamických vlastností
+      Object.entries(projectData).forEach(([key, value]) => {
+        if ((key.includes('_mandays') || key.includes('_done')) && 
+            !['fe_mandays', 'be_mandays', 'qa_mandays', 'pm_mandays', 'dpl_mandays', 'fe_done', 'be_done', 'qa_done', 'pm_done', 'dpl_done'].includes(key)) {
+          const roleKey = key.replace(/_mandays$/, '').replace(/_done$/, '');
+          if (!standardRoleKeys.includes(roleKey)) {
+            customRoleData[key] = value as number || 0;
+          }
+        }
+      });
+    }
+
+    const domainProject = await projectRepository.create({
+      scopeId,
+      name: projectData.name,
+      priority: projectData.priority,
+      deliveryDate: projectData.delivery_date ? new Date(projectData.delivery_date) : undefined,
+      feMandays,
+      beMandays,
+      qaMandays,
+      pmMandays,
+      dplMandays,
+      feDone,
+      beDone,
+      qaDone,
+      pmDone,
+      dplDone,
+      // Přidáme custom role data
+      ...(Object.keys(customRoleData).length > 0 ? { customRoleData } : {})
+    });
+    
+    // Map domain project to component project
+    return {
+      id: domainProject.id,
+      name: domainProject.name,
+      priority: domainProject.priority,
+      delivery_date: domainProject.deliveryDate?.toISOString() || null,
+      created_at: domainProject.createdAt.toISOString(),
+      // Map standard role data
+      fe_mandays: domainProject.feMandays,
+      be_mandays: domainProject.beMandays,
+      qa_mandays: domainProject.qaMandays,
+      pm_mandays: domainProject.pmMandays,
+      dpl_mandays: domainProject.dplMandays,
+      fe_done: domainProject.feDone,
+      be_done: domainProject.beDone,
+      qa_done: domainProject.qaDone,
+      pm_done: domainProject.pmDone,
+      dpl_done: domainProject.dplDone,
+      // Map custom role data from top-level properties
+      ...(domainProject as unknown as Record<string, unknown>)
+    } as Project;
   }
 
   /**
    * Update an existing project
    */
   static async updateProject(projectId: string, updates: Partial<Project>): Promise<Project> {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from('projects')
-      .update(updates)
-      .eq('id', projectId)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data;
+    const projectRepository = ContainerService.getInstance().get(ProjectRepository);
+    
+    // Map component updates to domain updates
+    const domainUpdates: Record<string, unknown> = {};
+    
+    if (updates.name !== undefined) domainUpdates.name = updates.name;
+    if (updates.priority !== undefined) domainUpdates.priority = updates.priority;
+    if (updates.delivery_date !== undefined) domainUpdates.deliveryDate = updates.delivery_date ? new Date(updates.delivery_date) : undefined;
+    
+    // Map standard role data
+    if ((updates as Record<string, unknown>).fe_mandays !== undefined) domainUpdates.feMandays = (updates as Record<string, unknown>).fe_mandays as number;
+    if ((updates as Record<string, unknown>).be_mandays !== undefined) domainUpdates.beMandays = (updates as Record<string, unknown>).be_mandays as number;
+    if ((updates as Record<string, unknown>).qa_mandays !== undefined) domainUpdates.qaMandays = (updates as Record<string, unknown>).qa_mandays as number;
+    if ((updates as Record<string, unknown>).pm_mandays !== undefined) domainUpdates.pmMandays = (updates as Record<string, unknown>).pm_mandays as number;
+    if ((updates as Record<string, unknown>).dpl_mandays !== undefined) domainUpdates.dplMandays = (updates as Record<string, unknown>).dpl_mandays as number;
+    if ((updates as Record<string, unknown>).fe_done !== undefined) domainUpdates.feDone = (updates as Record<string, unknown>).fe_done as number;
+    if ((updates as Record<string, unknown>).be_done !== undefined) domainUpdates.beDone = (updates as Record<string, unknown>).be_done as number;
+    if ((updates as Record<string, unknown>).qa_done !== undefined) domainUpdates.qaDone = (updates as Record<string, unknown>).qa_done as number;
+    if ((updates as Record<string, unknown>).pm_done !== undefined) domainUpdates.pmDone = (updates as Record<string, unknown>).pm_done as number;
+    if ((updates as Record<string, unknown>).dpl_done !== undefined) domainUpdates.dplDone = (updates as Record<string, unknown>).dpl_done as number;
+    
+    // Map custom role data
+    Object.entries(updates).forEach(([key, value]) => {
+      if ((key.includes('_mandays') || key.includes('_done')) && 
+          !['fe_mandays', 'be_mandays', 'qa_mandays', 'pm_mandays', 'dpl_mandays', 'fe_done', 'be_done', 'qa_done', 'pm_done', 'dpl_done'].includes(key)) {
+        domainUpdates[key] = value;
+      }
+    });
+    
+    // Handle custom_role_data if present
+    if ((updates as Record<string, unknown>).custom_role_data) {
+      domainUpdates.customRoleData = (updates as Record<string, unknown>).custom_role_data;
+    }
+    
+    const domainProject = await projectRepository.update(projectId, domainUpdates);
+    
+    // Map domain project to component project
+    return {
+      id: domainProject.id,
+      name: domainProject.name,
+      priority: domainProject.priority,
+      delivery_date: domainProject.deliveryDate?.toISOString() || null,
+      created_at: domainProject.createdAt.toISOString(),
+      // Map standard role data
+      fe_mandays: domainProject.feMandays,
+      be_mandays: domainProject.beMandays,
+      qa_mandays: domainProject.qaMandays,
+      pm_mandays: domainProject.pmMandays,
+      dpl_mandays: domainProject.dplMandays,
+      fe_done: domainProject.feDone,
+      be_done: domainProject.beDone,
+      qa_done: domainProject.qaDone,
+      pm_done: domainProject.pmDone,
+      dpl_done: domainProject.dplDone,
+      // Map custom role data from customRoleData property
+      ...(domainProject.customRoleData || {})
+    } as Project;
   }
 
   /**
    * Delete a project and its associated progress data
    */
   static async deleteProject(projectId: string): Promise<boolean> {
-    const supabase = createClient();
+    const projectRepository = ContainerService.getInstance().get(ProjectRepository);
     
     // Delete associated progress data first
+    const supabase = createClient();
     await supabase.from('project_progress').delete().eq('project_id', projectId);
     
     // Delete the project
-    const { error } = await supabase
-      .from('projects')
-      .delete()
-      .eq('id', projectId);
-
-    if (error) throw error;
+    await projectRepository.delete(projectId);
     return true;
   }
 
@@ -93,10 +232,22 @@ export class ProjectService {
    */
   static async saveProjectProgress(projectId: string, progressData: Partial<ProjectProgress>): Promise<void> {
     const supabase = createClient();
+    
+    // Filtrujeme pouze standardní role data pro project_progress
+    const standardRoleKeys = ['fe', 'be', 'qa', 'pm', 'dpl'];
+    const filteredProgressData: Partial<ProjectProgress> = {};
+    
+    Object.entries(progressData).forEach(([key, value]) => {
+      const roleKey = key.replace(/_done$/, '').replace(/_mandays$/, '');
+      if (standardRoleKeys.includes(roleKey)) {
+        (filteredProgressData as Record<string, unknown>)[key] = value;
+      }
+    });
+    
     const progress: ProjectProgress = {
       project_id: projectId,
       date: new Date().toISOString(),
-      ...progressData
+      ...filteredProgressData
     };
 
     const { error } = await supabase.from('project_progress').insert([progress]);
@@ -148,7 +299,6 @@ export class ProjectService {
    * Update project progress entry
    */
   static async updateProjectProgress(progressId: string, updates: Partial<ProjectProgress>): Promise<void> {
-    console.log('ProjectService.updateProjectProgress called with:', progressId, updates);
     const supabase = createClient();
     
     // First, get the progress entry to find the project_id
@@ -159,11 +309,8 @@ export class ProjectService {
       .single();
 
     if (progressError) {
-      console.error('Error getting progress data:', progressError);
       throw progressError;
     }
-
-    console.log('Found project_id:', progressData.project_id);
 
     // Update the progress entry
     const { error: updateError } = await supabase
@@ -172,11 +319,8 @@ export class ProjectService {
       .eq('id', progressId);
 
     if (updateError) {
-      console.error('Supabase error updating progress:', updateError);
       throw updateError;
     }
-
-    console.log('Progress update successful');
 
     // Also update the current project values
     const projectUpdates: Partial<Project> = {};
@@ -196,23 +340,16 @@ export class ProjectService {
     if (updates.dpl_mandays !== undefined) projectUpdates.dpl_mandays = updates.dpl_mandays;
 
     if (Object.keys(projectUpdates).length > 0) {
-      console.log('Updating project with:', projectUpdates);
-      console.log('Project updates types:', Object.entries(projectUpdates).map(([key, value]) => `${key}: ${typeof value} (${value})`));
-      console.log('Project ID:', progressData.project_id);
-      
       // Try to get the current project data first
-      const { data: currentProject, error: getProjectError } = await supabase
+      const { error: getProjectError } = await supabase
         .from('projects')
         .select('*')
         .eq('id', progressData.project_id)
         .single();
 
       if (getProjectError) {
-        console.error('Error getting current project data:', getProjectError);
         throw getProjectError;
       }
-
-      console.log('Current project data:', currentProject);
       
       const { error: projectError } = await supabase
         .from('projects')
@@ -220,14 +357,9 @@ export class ProjectService {
         .eq('id', progressData.project_id);
 
       if (projectError) {
-        console.error('Supabase error updating project:', projectError);
-        console.error('Project updates that failed:', projectUpdates);
-        console.error('Current project data:', currentProject);
         throw projectError;
       }
     }
-
-    console.log('ProjectService.updateProjectProgress successful');
   }
 
   /**
@@ -244,7 +376,6 @@ export class ProjectService {
       .single();
 
     if (progressError) {
-      console.error('Error getting progress data:', progressError);
       throw progressError;
     }
 
@@ -255,7 +386,6 @@ export class ProjectService {
       .eq('id', progressId);
 
     if (deleteError) {
-      console.error('Supabase error deleting progress:', deleteError);
       throw deleteError;
     }
 
@@ -266,13 +396,11 @@ export class ProjectService {
       .eq('project_id', progressData.project_id);
 
     if (countError) {
-      console.error('Error checking remaining progress:', countError);
       throw countError;
     }
 
     // If no progress entries remain, reset the project values to 0
     if (!remainingProgress || remainingProgress.length === 0) {
-      console.log('No progress entries remaining, resetting project values');
       const { error: resetError } = await supabase
         .from('projects')
         .update({
@@ -290,11 +418,8 @@ export class ProjectService {
         .eq('id', progressData.project_id);
 
       if (resetError) {
-        console.error('Supabase error resetting project:', resetError);
         throw resetError;
       }
     }
-
-    console.log('ProjectService.deleteProjectProgress successful');
   }
 } 

@@ -44,7 +44,7 @@ export function validateProject(project: Partial<Project>): ValidationResult {
     if (mandays > 0) {
       if (done < 0 || done > 100) {
         errors.push({ 
-          field: doneKey, 
+          field: doneKey as string, 
           message: `Procento hotovo pro ${label} musí být mezi 0 a 100` 
         });
       }

@@ -75,12 +75,10 @@ export default function Home() {
     }
 
     try {
-      console.log('Načítám scopes pro uživatele:', user.id);
       const scopes = await ContainerService.getInstance()
           .get(GetAccessibleScopesService, { autobind: true })
           .getAccessibleScopes(user);
 
-      console.log('Načteno scopes:', scopes.length);
       setScopes(scopes);
     } catch (err) {
       console.error('Chyba při načítání scopes:', err);
@@ -101,16 +99,11 @@ export default function Home() {
     setDeletingScope(scopeId);
     
     try {
-      console.log('Mazání scope:', scopeId);
-      
       await ContainerService.getInstance()
         .get(DeleteScopeService, { autobind: true } )
         .deleteScope(scopeId);
 
-      console.log('Scope úspěšně smazán, aktualizuji seznam...');
       await fetchScopes();
-      
-      console.log('Seznam aktualizován');
     } catch (err: unknown) {
       const message = handleErrorMessage(err);
       setError('Chyba při mazání scope: ' + message);

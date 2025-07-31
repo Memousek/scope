@@ -9,12 +9,13 @@
  */
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { TeamMember, ROLES } from "./types";
+import { TeamMember } from "./types";
+import { useScopeRoles } from '@/app/hooks/useScopeRoles';
 import { AddMemberModal } from "./AddMemberModal";
+import { RoleManagementModal } from "./RoleManagementModal";
 import { useTranslation } from "@/lib/translation";
 import { TeamService } from "@/app/services/teamService";
 import { SettingsIcon, FilterIcon, XIcon, ChevronDownIcon } from "lucide-react";
-import { Badge } from "../ui/Badge";
 
 interface TeamSectionProps {
   scopeId: string;
@@ -25,7 +26,9 @@ interface TeamSectionProps {
 
 export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false }: TeamSectionProps) {
   const { t } = useTranslation();
+  const { activeRoles } = useScopeRoles(scopeId);
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [roleManagementModalOpen, setRoleManagementModalOpen] = useState(false);
   const [savingMember, setSavingMember] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [roleFilter, setRoleFilter] = useState<string>("");
@@ -135,22 +138,18 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
     }
   };
 
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case "PM":
-        return "from-purple-500 to-pink-500";
-      case "FE":
-        return "from-blue-500 to-cyan-500";
-      case "BE":
-        return "from-green-500 to-emerald-500";
-      case "QA":
-        return "from-orange-500 to-red-500";
-      case "DPL":
-        return "from-indigo-500 to-purple-500";
-      default:
-        return "from-gray-500 to-gray-600";
-    }
-  };
+
+  // pomocná funkce pro ztmavení barvy (např. na 10 % tmavší) - currently unused
+  // function shadeColor(color: string, percent: number) {
+  //   const f = parseInt(color.slice(1), 16);
+  //   const t = percent < 0 ? 0 : 255;
+  //   const p = Math.abs(percent) / 100;
+  //   const R = f >> 16;
+  //   const G = (f >> 8) & 0x00FF;
+  //   const B = f & 0x0000FF;
+  //   return `rgb(${Math.round((t - R) * p + R)}, ${Math.round((t - G) * p + G)}, ${Math.round((t - B) * p + B)})`;
+  // }
+  
 
   return (
     <>
@@ -160,6 +159,7 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
           onClose={() => setAddModalOpen(false)}
           onAddMember={handleAddMember}
           savingMember={savingMember}
+          scopeId={scopeId}
         />
       )}
 
@@ -239,13 +239,13 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                       </span>
                     </button>
                     <button
-                      disabled={true}
-                      className="relative group bg-gradient-to-r from-gray-500 via-gray-500 to-gray-500 text-white px-6 py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                      className={`relative group bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${!isReducedMotion ? 'hover:scale-105 hover:shadow-2xl hover:shadow-green-500/25 active:scale-95' : 'hover:bg-gradient-to-r hover:from-green-600 hover:via-emerald-600 hover:to-teal-600'}`}
+                      onClick={() => setRoleManagementModalOpen(true)}
                     >
-                      <Badge label={t("soon")} variant="soon" />
-                      <span className="flex items-center gap-2">
+                      <div className="absolute inset-0 bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <span className="relative z-10 flex items-center gap-2">
                         <SettingsIcon className="w-5 h-5" />
-                        <span className="relative z-10">Spravovat role</span>
+                        {t("manageRoles")}
                       </span>
                     </button>
                   </>
@@ -346,7 +346,9 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                     )}
 
                     <div className="p-4 sm:p-6 relative">
-                      <Badge label={member.role} variant="custom" className={`bg-gradient-to-r z-10 top-2 left-2 ${getRoleColor(member.role)}`} />
+                      <div  className="text-xs font-bold px-2 py-1 rounded-full shadow-lg z-10 bg-gradient-to-r from-blue-500 to-purple-500 text-white absolute top-2 left-2">
+                        {member.role}
+                      </div>
                       {/* Desktop layout */}
                       <div className="hidden md:flex items-center justify-between">
                         <div className="flex items-center gap-2 flex-1">
@@ -404,9 +406,9 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                                   }
                                   disabled={readOnlyMode}
                                 >
-                                  {ROLES.map((role) => (
-                                    <option key={role.value} value={role.value}>
-                                      {role.value}
+                                  {activeRoles.map((role) => (
+                                    <option key={role.key} value={role.label}>
+                                      {role.label}
                                     </option>
                                   ))}
                                 </select>
@@ -611,9 +613,9 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                                   }
                                   disabled={readOnlyMode}
                                 >
-                                  {ROLES.map((role) => (
-                                    <option key={role.value} value={role.value}>
-                                      {role.value}
+                                  {activeRoles.map((role) => (
+                                    <option key={role.key} value={role.label}>
+                                      {role.label}
                                     </option>
                                   ))}
                                 </select>
@@ -794,6 +796,15 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
           </div>
         </div>
       </section>
+
+      {/* Role Management Modal */}
+      {roleManagementModalOpen && (
+        <RoleManagementModal
+          isOpen={roleManagementModalOpen}
+          onClose={() => setRoleManagementModalOpen(false)}
+          scopeId={scopeId}
+        />
+      )}
     </>
   );
 }
