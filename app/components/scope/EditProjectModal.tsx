@@ -52,7 +52,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
       key: role.mandays,
       label: role.label
     }));
-    const missing = projectMandays.filter(r => Number((editProject as any)[r.key]) > 0 && Number((editProject as any)[r.key]) === 0);
+    const missing = projectMandays.filter(r => Number((editProject as Record<string, unknown>)[r.key]) > 0 && Number((editProject as Record<string, unknown>)[r.key]) === 0);
     if (missing.length > 0) {
       alert(t('estimateRequired'));
       return;
@@ -65,8 +65,8 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
       const customData: Record<string, number> = {};
       
       projectRoles.forEach(role => {
-        const mandaysValue = (editProject as any)[role.mandays] as number || 0;
-        const doneValue = (editProject as any)[role.done] as number || 0;
+        const mandaysValue = (editProject as Record<string, unknown>)[role.mandays] as number || 0;
+        const doneValue = (editProject as Record<string, unknown>)[role.done] as number || 0;
         
         if (standardRoleKeys.includes(role.key)) {
           // Standardní role - přidáme do standardních sloupců
@@ -88,7 +88,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
         ...customData
       };
       
-      const updatedProject = await ProjectService.updateProject(editProject.id, validUpdates);
+      await ProjectService.updateProject(editProject.id, validUpdates);
       
       // Předáme aktuální změny místo dat z databáze
       onProjectChange(editProject);
@@ -105,9 +105,8 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
           // Ukládáme pouze standardní role do project_progress
           if (standardRoleKeys.includes(role.key)) {
             const doneKey = role.done;
-            if ((editProject as any)[doneKey] !== (initialEditState.current as any)[doneKey]) {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (changed as any)[doneKey] = Number((editProject as any)[doneKey]);
+            if ((editProject as Record<string, unknown>)[doneKey] !== (initialEditState.current as Record<string, unknown>)[doneKey]) {
+              (changed as Record<string, unknown>)[doneKey] = Number((editProject as Record<string, unknown>)[doneKey]);
             }
           }
         });
@@ -177,7 +176,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
                       min="0"
                       step="0.5"
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      value={(editProject as any)[role.mandays] as number || 0}
+                      value={(editProject as Record<string, unknown>)[role.mandays] as number || 0}
                       onChange={e => setEditProject(p => ({ 
                         ...p, 
                         [role.mandays]: Number(e.target.value) 
@@ -196,7 +195,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
                       max="100"
                       step="1"
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      value={(editProject as any)[role.done] as number || 0}
+                      value={(editProject as Record<string, unknown>)[role.done] as number || 0}
                       onChange={e => setEditProject(p => ({ 
                         ...p, 
                         [role.done]: Number(e.target.value) 

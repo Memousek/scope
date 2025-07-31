@@ -16,7 +16,6 @@ import { RoleManagementModal } from "./RoleManagementModal";
 import { useTranslation } from "@/lib/translation";
 import { TeamService } from "@/app/services/teamService";
 import { SettingsIcon, FilterIcon, XIcon, ChevronDownIcon } from "lucide-react";
-import { Badge } from "../ui/Badge";
 
 interface TeamSectionProps {
   scopeId: string;
@@ -140,26 +139,16 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
   };
 
 
-  {/* Get color and create from it gradient in tailwind that color needs to be in format without # */}
-  const getRoleColor = (role: string) => {
-    const roleObject = activeRoles.find(r => r.label === role);
-    if (!roleObject) return "";
-  
-    return {
-      backgroundImage: `linear-gradient(to right, ${roleObject.color}, ${shadeColor(roleObject.color, -10)})`
-    };
-  };
-  
-  // pomocná funkce pro ztmavení barvy (např. na 10 % tmavší)
-  function shadeColor(color: string, percent: number) {
-    const f = parseInt(color.slice(1), 16);
-    const t = percent < 0 ? 0 : 255;
-    const p = Math.abs(percent) / 100;
-    const R = f >> 16;
-    const G = (f >> 8) & 0x00FF;
-    const B = f & 0x0000FF;
-    return `rgb(${Math.round((t - R) * p + R)}, ${Math.round((t - G) * p + G)}, ${Math.round((t - B) * p + B)})`;
-  }
+  // pomocná funkce pro ztmavení barvy (např. na 10 % tmavší) - currently unused
+  // function shadeColor(color: string, percent: number) {
+  //   const f = parseInt(color.slice(1), 16);
+  //   const t = percent < 0 ? 0 : 255;
+  //   const p = Math.abs(percent) / 100;
+  //   const R = f >> 16;
+  //   const G = (f >> 8) & 0x00FF;
+  //   const B = f & 0x0000FF;
+  //   return `rgb(${Math.round((t - R) * p + R)}, ${Math.round((t - G) * p + G)}, ${Math.round((t - B) * p + B)})`;
+  // }
   
 
   return (

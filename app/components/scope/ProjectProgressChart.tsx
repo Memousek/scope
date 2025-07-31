@@ -12,7 +12,6 @@ import { Project, ProjectDeliveryInfo } from './types';
 import { calculateRoleProgress } from '@/lib/utils/dynamicProjectRoles';
 import { getWorkdaysCount } from '@/app/utils/dateUtils';
 import { Payload } from "recharts/types/component/DefaultLegendContent";
-import { ProjectTeamAssignment } from '@/lib/domain/models/project-team-assignment.model';
 import { useTranslation } from "@/lib/translation";
 import { useScopeRoles } from '@/app/hooks/useScopeRoles';
 
@@ -35,7 +34,7 @@ interface ProgressData {
   total: number;
 }
 
-export const ProjectProgressChart = React.memo<ProjectProgressChartProps>(({
+const ProjectProgressChartComponent: React.FC<ProjectProgressChartProps> = ({
   project,
   deliveryInfo,
   scopeId,
@@ -77,14 +76,14 @@ export const ProjectProgressChart = React.memo<ProjectProgressChartProps>(({
       const progressRatio = Math.min(i / days, 1);
       const actualProgress = currentProgress * progressRatio;
       
-      // Skluz (rozdíl mezi ideálním a aktuálním)
-      const slippage = actualProgress - idealProgress;
+      // Skluz (rozdíl mezi ideálním a aktuálním) - currently unused
+      // const slippage = actualProgress - idealProgress;
       
       // Dynamický progress pro role v čase
       const roleData: Record<string, number> = {};
       activeRoles.forEach(role => {
         const doneKey = `${role.key}_done`;
-        const currentDone = Number((project as any)[doneKey]) || 0;
+        const currentDone = Number((project as Record<string, unknown>)[doneKey]) || 0;
         roleData[role.key] = Math.min(currentDone, actualProgress * 0.7 + currentDone * 0.3);
       });
       
@@ -151,8 +150,8 @@ export const ProjectProgressChart = React.memo<ProjectProgressChartProps>(({
       key: role.key,
       label: role.label,
       color: role.color,
-      done: (project as any)[`${role.key}_done`] || 0,
-      mandays: (project as any)[`${role.key}_mandays`] || 0
+      done: (project as Record<string, unknown>)[`${role.key}_done`] as number || 0,
+      mandays: (project as Record<string, unknown>)[`${role.key}_mandays`] as number || 0
     }))
     .filter(role => Number(role.mandays) > 0);
 
@@ -351,4 +350,6 @@ export const ProjectProgressChart = React.memo<ProjectProgressChartProps>(({
       </div>
     </div>
   );
-});
+};
+
+export const ProjectProgressChart = React.memo(ProjectProgressChartComponent);

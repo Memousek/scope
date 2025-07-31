@@ -15,7 +15,7 @@ import {ScopeRepository} from "@/lib/domain/repositories/scope.repository";
 import {TeamMemberRepository} from "@/lib/domain/repositories/team-member.repository";
 import {ProjectRepository} from "@/lib/domain/repositories/project.repository";
 import {ContainerService} from "@/lib/container.service";
-import { DeleteScopeService } from "@/lib/domain/services/delete-scope.service";
+
 
 export type ScopeListItem = {
   scope: Scope,

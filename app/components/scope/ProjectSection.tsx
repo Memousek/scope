@@ -10,7 +10,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from '@/lib/translation';
-import { Project } from './types';
+import { Project, ProjectDeliveryInfo } from './types';
 import { useProjects } from '@/app/hooks/useProjects';
 import { CreateProjectData } from '@/app/services/projectService';
 import { useTeam } from '@/app/hooks/useTeam';
@@ -248,8 +248,8 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
       const customData: Record<string, number> = {};
       
       projectRoles.forEach(role => {
-        const mandaysValue = (updatedProject as any)[role.mandays] as number || 0;
-        const doneValue = (updatedProject as any)[role.done] as number || 0;
+        const mandaysValue = (updatedProject as Record<string, unknown>)[role.mandays] as number || 0;
+        const doneValue = (updatedProject as Record<string, unknown>)[role.done] as number || 0;
         
         if (standardRoleKeys.includes(role.key)) {
           // Standardní role - přidáme do standardních sloupců
@@ -271,7 +271,7 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
       
       // Přidáme custom role data pokud existují
       if (Object.keys(customData).length > 0) {
-        (updates as any).custom_role_data = customData;
+        (updates as Record<string, unknown>).custom_role_data = customData;
       }
       
       // Nevoláme updateProject, protože se už volá z EditProjectModal
@@ -403,8 +403,8 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
   // Optimalizace výpočtů pro každý projekt
   const projectCalculations = useMemo(() => {
     const calculations: Record<string, {
-      info: any;
-      priorityDates: any;
+      info: ProjectDeliveryInfo;
+      priorityDates: { priorityStartDate: Date; priorityEndDate: Date; blockingProjectName?: string } | undefined;
       totalProgress: number;
       formattedAssignments: Record<string, Array<{ teamMemberId: string; role: string; allocationFte: number }>>;
     }> = {};
@@ -907,7 +907,7 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                                         {projectRoles
                                           .filter(role => {
                                             // Zobrazíme jen role, které mají odhad > 0
-                                            const mandaysValue = (project as any)[role.mandays] as number || 0;
+                                            const mandaysValue = (project as Record<string, unknown>)[role.mandays] as number || 0;
                                             return mandaysValue > 0;
                                           })
                                           .map(role => {

@@ -52,8 +52,8 @@ export class SupabaseProjectRepository implements ProjectRepository {
     const standardRoleKeys = ['fe', 'be', 'qa', 'pm', 'dpl'];
     
     // Pokud máme customRoleData v project objektu, použijeme to
-    if ((project as any).customRoleData) {
-      Object.assign(customRoleData, (project as any).customRoleData);
+    if ((project as Record<string, unknown>).customRoleData) {
+      Object.assign(customRoleData, (project as Record<string, unknown>).customRoleData as Record<string, number>);
     } else {
       // Jinak extrahujeme z dynamických vlastností
       Object.entries(project).forEach(([key, value]) => {
@@ -67,7 +67,7 @@ export class SupabaseProjectRepository implements ProjectRepository {
       });
     }
 
-    const insertData: Record<string, any> = {
+    const insertData: Record<string, unknown> = {
       scope_id: project.scopeId,
       name: project.name,
       priority: project.priority,
@@ -142,8 +142,8 @@ export class SupabaseProjectRepository implements ProjectRepository {
     });
 
     // Pokud máme customRoleData v project objektu, použijeme to
-    if ((project as any).customRoleData) {
-      Object.assign(customRoleData, (project as any).customRoleData);
+    if ((project as Record<string, unknown>).customRoleData) {
+      Object.assign(customRoleData, (project as Record<string, unknown>).customRoleData as Record<string, number>);
     }
 
     if (Object.keys(customRoleData).length > 0) {
@@ -177,7 +177,7 @@ export class SupabaseProjectRepository implements ProjectRepository {
   }
 
   // eslint-disable-next-line
-  private mapToModel(data: any): Project {
+  private mapToModel(data: Record<string, unknown>): Project {
     const baseProject = {
       id: data.id,
       scopeId: data.scope_id,
@@ -193,8 +193,8 @@ export class SupabaseProjectRepository implements ProjectRepository {
       qaDone: data.qa_done,
       pmDone: data.pm_done,
       dplDone: data.dpl_done,
-      deliveryDate: data.delivery_date ? new Date(data.delivery_date) : undefined,
-      createdAt: new Date(data.created_at)
+      deliveryDate: data.delivery_date ? new Date(data.delivery_date as string) : undefined,
+      createdAt: new Date(data.created_at as string)
     };
 
     // Přidáme custom role data z JSON sloupce

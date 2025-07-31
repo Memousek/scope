@@ -49,9 +49,9 @@ export function calculateRoleProgress(
   const mandaysKey = `${role.key}_mandays`;
   const doneKey = `${role.key}_done`;
   
-  // Použijeme any pro přístup k dynamickým vlastnostem
-  const mandays = (project as any)[mandaysKey] as number;
-  const donePercent = (project as any)[doneKey] as number;
+  // Použijeme Record<string, unknown> pro přístup k dynamickým vlastnostem
+  const mandays = (project as Record<string, unknown>)[mandaysKey] as number;
+  const donePercent = (project as Record<string, unknown>)[doneKey] as number;
   
   if (!mandays || mandays === 0) return null;
   
@@ -95,7 +95,7 @@ export function getActiveRoles(
 ): ScopeRole[] {
   return roles.filter(role => {
     const mandaysKey = `${role.key}_mandays`;
-    const mandays = (project as any)[mandaysKey] as number;
+    const mandays = (project as Record<string, unknown>)[mandaysKey] as number;
     return mandays && mandays > 0;
   });
 }

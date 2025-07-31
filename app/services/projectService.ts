@@ -44,23 +44,23 @@ export class ProjectService {
         pm_done: domainProject.pmDone,
         dpl_done: domainProject.dplDone,
         // Map custom role data from top-level properties
-        ...(domainProject as any)
+        ...(domainProject as unknown as Record<string, unknown>)
       } as Project;
       
       // Odstraníme standardní vlastnosti, které už jsme explicitně namapovali
-      delete (componentProject as any).feMandays;
-      delete (componentProject as any).beMandays;
-      delete (componentProject as any).qaMandays;
-      delete (componentProject as any).pmMandays;
-      delete (componentProject as any).dplMandays;
-      delete (componentProject as any).feDone;
-      delete (componentProject as any).beDone;
-      delete (componentProject as any).qaDone;
-      delete (componentProject as any).pmDone;
-      delete (componentProject as any).dplDone;
-      delete (componentProject as any).scopeId;
-      delete (componentProject as any).deliveryDate;
-      delete (componentProject as any).createdAt;
+      delete (componentProject as Record<string, unknown>).feMandays;
+      delete (componentProject as Record<string, unknown>).beMandays;
+      delete (componentProject as Record<string, unknown>).qaMandays;
+      delete (componentProject as Record<string, unknown>).pmMandays;
+      delete (componentProject as Record<string, unknown>).dplMandays;
+      delete (componentProject as Record<string, unknown>).feDone;
+      delete (componentProject as Record<string, unknown>).beDone;
+      delete (componentProject as Record<string, unknown>).qaDone;
+      delete (componentProject as Record<string, unknown>).pmDone;
+      delete (componentProject as Record<string, unknown>).dplDone;
+      delete (componentProject as Record<string, unknown>).scopeId;
+      delete (componentProject as Record<string, unknown>).deliveryDate;
+      delete (componentProject as Record<string, unknown>).createdAt;
       
       return componentProject;
     });
@@ -75,17 +75,17 @@ export class ProjectService {
     const projectRepository = ContainerService.getInstance().get(ProjectRepository);
     
     // Explicitní mapování standardních rolí
-    const feMandays = (projectData as any).fe_mandays ?? 0;
-    const beMandays = (projectData as any).be_mandays ?? 0;
-    const qaMandays = (projectData as any).qa_mandays ?? 0;
-    const pmMandays = (projectData as any).pm_mandays ?? 0;
-    const dplMandays = (projectData as any).dpl_mandays ?? 0;
+    const feMandays = (projectData as Record<string, unknown>).fe_mandays as number ?? 0;
+    const beMandays = (projectData as Record<string, unknown>).be_mandays as number ?? 0;
+    const qaMandays = (projectData as Record<string, unknown>).qa_mandays as number ?? 0;
+    const pmMandays = (projectData as Record<string, unknown>).pm_mandays as number ?? 0;
+    const dplMandays = (projectData as Record<string, unknown>).dpl_mandays as number ?? 0;
 
-    const feDone = (projectData as any).fe_done ?? 0;
-    const beDone = (projectData as any).be_done ?? 0;
-    const qaDone = (projectData as any).qa_done ?? 0;
-    const pmDone = (projectData as any).pm_done ?? 0;
-    const dplDone = (projectData as any).dpl_done ?? 0;
+    const feDone = (projectData as Record<string, unknown>).fe_done as number ?? 0;
+    const beDone = (projectData as Record<string, unknown>).be_done as number ?? 0;
+    const qaDone = (projectData as Record<string, unknown>).qa_done as number ?? 0;
+    const pmDone = (projectData as Record<string, unknown>).pm_done as number ?? 0;
+    const dplDone = (projectData as Record<string, unknown>).dpl_done as number ?? 0;
 
     // Extrahujeme custom role data
     const customRoleData: Record<string, number> = {};
@@ -145,7 +145,7 @@ export class ProjectService {
       pm_done: domainProject.pmDone,
       dpl_done: domainProject.dplDone,
       // Map custom role data from top-level properties
-      ...(domainProject as any)
+      ...(domainProject as unknown as Record<string, unknown>)
     } as Project;
   }
 
@@ -156,23 +156,23 @@ export class ProjectService {
     const projectRepository = ContainerService.getInstance().get(ProjectRepository);
     
     // Map component updates to domain updates
-    const domainUpdates: any = {};
+    const domainUpdates: Record<string, unknown> = {};
     
     if (updates.name !== undefined) domainUpdates.name = updates.name;
     if (updates.priority !== undefined) domainUpdates.priority = updates.priority;
     if (updates.delivery_date !== undefined) domainUpdates.deliveryDate = updates.delivery_date ? new Date(updates.delivery_date) : undefined;
     
     // Map standard role data
-    if ((updates as any).fe_mandays !== undefined) domainUpdates.feMandays = (updates as any).fe_mandays;
-    if ((updates as any).be_mandays !== undefined) domainUpdates.beMandays = (updates as any).be_mandays;
-    if ((updates as any).qa_mandays !== undefined) domainUpdates.qaMandays = (updates as any).qa_mandays;
-    if ((updates as any).pm_mandays !== undefined) domainUpdates.pmMandays = (updates as any).pm_mandays;
-    if ((updates as any).dpl_mandays !== undefined) domainUpdates.dplMandays = (updates as any).dpl_mandays;
-    if ((updates as any).fe_done !== undefined) domainUpdates.feDone = (updates as any).fe_done;
-    if ((updates as any).be_done !== undefined) domainUpdates.beDone = (updates as any).be_done;
-    if ((updates as any).qa_done !== undefined) domainUpdates.qaDone = (updates as any).qa_done;
-    if ((updates as any).pm_done !== undefined) domainUpdates.pmDone = (updates as any).pm_done;
-    if ((updates as any).dpl_done !== undefined) domainUpdates.dplDone = (updates as any).dpl_done;
+    if ((updates as Record<string, unknown>).fe_mandays !== undefined) domainUpdates.feMandays = (updates as Record<string, unknown>).fe_mandays as number;
+    if ((updates as Record<string, unknown>).be_mandays !== undefined) domainUpdates.beMandays = (updates as Record<string, unknown>).be_mandays as number;
+    if ((updates as Record<string, unknown>).qa_mandays !== undefined) domainUpdates.qaMandays = (updates as Record<string, unknown>).qa_mandays as number;
+    if ((updates as Record<string, unknown>).pm_mandays !== undefined) domainUpdates.pmMandays = (updates as Record<string, unknown>).pm_mandays as number;
+    if ((updates as Record<string, unknown>).dpl_mandays !== undefined) domainUpdates.dplMandays = (updates as Record<string, unknown>).dpl_mandays as number;
+    if ((updates as Record<string, unknown>).fe_done !== undefined) domainUpdates.feDone = (updates as Record<string, unknown>).fe_done as number;
+    if ((updates as Record<string, unknown>).be_done !== undefined) domainUpdates.beDone = (updates as Record<string, unknown>).be_done as number;
+    if ((updates as Record<string, unknown>).qa_done !== undefined) domainUpdates.qaDone = (updates as Record<string, unknown>).qa_done as number;
+    if ((updates as Record<string, unknown>).pm_done !== undefined) domainUpdates.pmDone = (updates as Record<string, unknown>).pm_done as number;
+    if ((updates as Record<string, unknown>).dpl_done !== undefined) domainUpdates.dplDone = (updates as Record<string, unknown>).dpl_done as number;
     
     // Map custom role data
     Object.entries(updates).forEach(([key, value]) => {
@@ -183,8 +183,8 @@ export class ProjectService {
     });
     
     // Handle custom_role_data if present
-    if ((updates as any).custom_role_data) {
-      domainUpdates.customRoleData = (updates as any).custom_role_data;
+    if ((updates as Record<string, unknown>).custom_role_data) {
+      domainUpdates.customRoleData = (updates as Record<string, unknown>).custom_role_data;
     }
     
     const domainProject = await projectRepository.update(projectId, domainUpdates);
@@ -240,7 +240,7 @@ export class ProjectService {
     Object.entries(progressData).forEach(([key, value]) => {
       const roleKey = key.replace(/_done$/, '').replace(/_mandays$/, '');
       if (standardRoleKeys.includes(roleKey)) {
-        (filteredProgressData as any)[key] = value;
+        (filteredProgressData as Record<string, unknown>)[key] = value;
       }
     });
     
@@ -341,7 +341,7 @@ export class ProjectService {
 
     if (Object.keys(projectUpdates).length > 0) {
       // Try to get the current project data first
-      const { data: currentProject, error: getProjectError } = await supabase
+      const { error: getProjectError } = await supabase
         .from('projects')
         .select('*')
         .eq('id', progressData.project_id)

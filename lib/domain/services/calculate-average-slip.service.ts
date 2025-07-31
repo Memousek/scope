@@ -86,8 +86,8 @@ export class CalculateAverageSlipService {
           const fte = team.filter(m => m.role === roleKey.toUpperCase() || m.role === roleKey)
             .reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
           
-          const mandays = Number((project as any)[`${roleKey}Mandays`]) || 0;
-          const done = Number((project as any)[`${roleKey}Done`]) || 0;
+          const mandays = Number((project as unknown as Record<string, unknown>)[`${roleKey}Mandays`]) || 0;
+          const done = Number((project as unknown as Record<string, unknown>)[`${roleKey}Done`]) || 0;
           const rem = mandays * (1 - (done / 100));
           const days = rem / fte;
 
