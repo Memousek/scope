@@ -15,11 +15,13 @@ import { ProjectTeamAssignment } from '@/lib/domain/models/project-team-assignme
 import { Payload } from "recharts/types/component/DefaultLegendContent";
 import { useTranslation } from "@/lib/translation";
 import { Badge } from "../ui/Badge";
+import { useScopeRoles } from '@/app/hooks/useScopeRoles';
 
 interface BurndownChartProps {
   projects: Project[];
   team: TeamMember[];
   projectAssignments?: Record<string, ProjectTeamAssignment[]>;
+  scopeId: string;
 }
 
 interface ChartDataPoint {
@@ -29,8 +31,9 @@ interface ChartDataPoint {
   [key: string]: number | string; // Pro dynamické projekty
 }
 
-export function BurndownChart({ projects, team, projectAssignments = {} }: BurndownChartProps) {
+export function BurndownChart({ projects, team, projectAssignments = {}, scopeId }: BurndownChartProps) {
   const { t } = useTranslation();
+  const { activeRoles } = useScopeRoles(scopeId);
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [activeLegend, setActiveLegend] = useState<string | null>(null); // Přidáno
 
@@ -96,21 +99,24 @@ export function BurndownChart({ projects, team, projectAssignments = {} }: Burnd
           );
           const timeProgress = Math.min(daysElapsed / projectDuration, 1);
 
-          const feActual = Number(project.fe_done) || 0;
-          const beActual = Number(project.be_done) || 0;
-          const qaActual = Number(project.qa_done) || 0;
-          const pmActual = Number(project.pm_done) || 0;
-          const dplActual = Number(project.dpl_done) || 0;
+          // Dynamicky počítáme progress pro všechny aktivní role
+          let totalActual = 0;
+          let totalMandays = 0;
+          let roleCount = 0;
 
-          const feMd = Number(project.fe_mandays) || 0;
-          const beMd = Number(project.be_mandays) || 0;
-          const qaMd = Number(project.qa_mandays) || 0;
-          const pmMd = Number(project.pm_mandays) || 0;
-          const dplMd = Number(project.dpl_mandays) || 0;
+          activeRoles.forEach(role => {
+            const doneKey = `${role.key}_done`;
+            const mandaysKey = `${role.key}_mandays`;
+            const actual = Number((project as any)[doneKey]) || 0;
+            const mandays = Number((project as any)[mandaysKey]) || 0;
+            
+            totalActual += actual;
+            totalMandays += mandays;
+            if (mandays > 0) roleCount++;
+          });
 
-          const weight = feMd + beMd + qaMd + pmMd + dplMd || 1;
-          const actualProgress =
-            (feActual + beActual + qaActual + pmActual + dplActual) / 5;
+          const weight = totalMandays || 1;
+          const actualProgress = roleCount > 0 ? totalActual / roleCount : 0;
           const projectProgressValue =
             actualProgress * 0.7 + timeProgress * 100 * 0.3;
 
@@ -136,7 +142,7 @@ export function BurndownChart({ projects, team, projectAssignments = {} }: Burnd
     });
 
     setChartData(data);
-  }, [projects, team, projectAssignments]);
+  }, [projects, team, projectAssignments, activeRoles]);
 
   const CustomTooltip = ({
     active,

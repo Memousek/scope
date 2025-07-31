@@ -8,34 +8,33 @@
  * - Skupinování projektů podle priority
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from '@/lib/translation';
 import { Project } from './types';
 import { useProjects } from '@/app/hooks/useProjects';
+import { CreateProjectData } from '@/app/services/projectService';
 import { useTeam } from '@/app/hooks/useTeam';
 import { AddProjectModal } from './AddProjectModal';
 import { EditProjectModal } from './EditProjectModal';
 import { ProjectHistoryModal } from './ProjectHistoryModal';
 import { ProjectProgressChart } from './ProjectProgressChart';
+import { ProjectTeamAssignmentModal } from './ProjectTeamAssignmentModal';
 import { calculateProjectDeliveryInfoWithAssignments, calculatePriorityDatesWithAssignments } from '@/app/utils/dateUtils';
 import { ContainerService } from '@/lib/container.service';
 import { ManageProjectTeamAssignmentsService } from '@/lib/domain/services/manage-project-team-assignments.service';
 import { ProjectTeamAssignment } from '@/lib/domain/models/project-team-assignment.model';
-import { PROJECT_ROLES, calculateRoleProgress, calculateTotalProgress } from '@/lib/utils/projectRoles';
+import { calculateRoleProgress, calculateTotalProgress } from '@/lib/utils/dynamicProjectRoles';
+import { useScopeRoles } from '@/app/hooks/useScopeRoles';
 
 import { Badge } from '@/app/components/ui/Badge';
+import { FiUsers } from 'react-icons/fi';
 
 interface ProjectSectionProps {
   scopeId: string;
-  hasFE: boolean;
-  hasBE: boolean;
-  hasQA: boolean;
-  hasPM: boolean;
-  hasDPL: boolean;
   readOnlyMode?: boolean;
 }
 
-export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, readOnlyMode = false }: ProjectSectionProps) {
+export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSectionProps) {
   const { t } = useTranslation();
   const { 
     projects, 
@@ -51,10 +50,13 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
     loadTeam 
   } = useTeam(scopeId);
 
+  const { activeRoles } = useScopeRoles(scopeId);
+
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editProject, setEditProject] = useState<Project | null>(null);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [historyModalProject, setHistoryModalProject] = useState<Project | null>(null);
+  const [teamAssignmentModalProject, setTeamAssignmentModalProject] = useState<Project | null>(null);
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   
   // Project assignments state
@@ -145,13 +147,52 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
       const maxPriority = existingPriorities.length > 0 ? Math.max(...existingPriorities) : 0;
       const newPriority = maxPriority + 1;
       
-      // Vytvoříme projekt s novou priority
-      const projectWithPriority = {
-        ...project,
-        priority: newPriority
+      // Rozdělíme data na standardní a custom role
+      const standardRoleKeys = ['fe', 'be', 'qa', 'pm', 'dpl'];
+      const standardData: Record<string, unknown> = {};
+      const customData: Record<string, number> = {};
+      
+      activeRoles.forEach(role => {
+        let cleanKey: string;
+        
+        if (standardRoleKeys.includes(role.key)) {
+          // Standardní role - klíč je přímo fe, be, atd.
+          cleanKey = role.key;
+        } else {
+          // Custom role - klíč obsahuje suffix, extrahujeme základní název
+          cleanKey = role.key.replace(/_mandays$/, '').replace(/_done$/, '');
+        }
+        
+        const mandaysKey = `${cleanKey}_mandays`;
+        const doneKey = `${cleanKey}_done`;
+        const mandaysValue = (project as Record<string, unknown>)[mandaysKey] as number || 0;
+        const doneValue = (project as Record<string, unknown>)[doneKey] as number || 0;
+        
+        if (standardRoleKeys.includes(role.key)) {
+          // Standardní role - přidáme do standardních sloupců
+          standardData[mandaysKey] = mandaysValue;
+          standardData[doneKey] = doneValue;
+        } else {
+          // Custom role - přidáme do custom data
+          customData[mandaysKey] = mandaysValue;
+          customData[doneKey] = doneValue;
+        }
+      });
+      
+      // Vytvoříme CreateProjectData objekt
+      const projectData: CreateProjectData = {
+        name: project.name as string,
+        priority: newPriority,
+        delivery_date: project.delivery_date as string | null,
+        ...standardData,
+        // Přidáme custom role data jako jednotlivé vlastnosti
+        ...customData
       };
       
-      await addProject(projectWithPriority);
+      await addProject(projectData);
+      
+      // Reload projects to get updated data
+      await loadProjects();
     } catch (error) {
       console.error('Failed to add project:', error);
     }
@@ -201,7 +242,43 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
 
   const handleProjectChange = async (updatedProject: Project) => {
     try {
-      await updateProject(updatedProject.id, updatedProject);
+      // Rozdělíme data na standardní a custom role
+      const standardRoleKeys = ['fe', 'be', 'qa', 'pm', 'dpl'];
+      const standardData: Record<string, unknown> = {};
+      const customData: Record<string, number> = {};
+      
+      projectRoles.forEach(role => {
+        const mandaysValue = (updatedProject as any)[role.mandays] as number || 0;
+        const doneValue = (updatedProject as any)[role.done] as number || 0;
+        
+        if (standardRoleKeys.includes(role.key)) {
+          // Standardní role - přidáme do standardních sloupců
+          standardData[role.mandays] = mandaysValue;
+          standardData[role.done] = doneValue;
+        } else {
+          // Custom role - přidáme do custom data
+          customData[role.mandays] = mandaysValue;
+          customData[role.done] = doneValue;
+        }
+      });
+      
+      // Vytvoříme updates objekt
+      const updates: Partial<Project> = {
+        name: updatedProject.name,
+        delivery_date: updatedProject.delivery_date,
+        ...standardData
+      };
+      
+      // Přidáme custom role data pokud existují
+      if (Object.keys(customData).length > 0) {
+        (updates as any).custom_role_data = customData;
+      }
+      
+      // Nevoláme updateProject, protože se už volá z EditProjectModal
+      // await updateProject(updatedProject.id, updates);
+      
+      // Reload projects to get updated data from database
+      await loadProjects();
     } catch (error) {
       console.error('Failed to update project:', error);
     }
@@ -310,33 +387,83 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
     }
   };
 
-  // Používáme centralizované role z utility
-  const projectRoles = PROJECT_ROLES.map(role => ({
-    key: role.key,
-    label: role.label,
-    mandays: role.mandaysKey,
-    done: role.doneKey,
-    color: role.color
-  }));
+  // Používáme dynamické role z hooku
+  const projectRoles = useMemo(() => activeRoles.map(role => {
+    // Získáme cleanKey (bez suffixů _mandays nebo _done)
+    const cleanKey = role.key.replace(/_mandays$/, '').replace(/_done$/, '');
+    return {
+      key: cleanKey,
+      label: role.label,
+      mandays: `${cleanKey}_mandays`,
+      done: `${cleanKey}_done`,
+      color: role.color
+    };
+  }), [activeRoles]);
 
-  const getRoleProgress = (project: Project, roleKey: string) => {
-    return calculateRoleProgress(project as unknown as Record<string, unknown>, roleKey);
-  };
+  // Optimalizace výpočtů pro každý projekt
+  const projectCalculations = useMemo(() => {
+    const calculations: Record<string, {
+      info: any;
+      priorityDates: any;
+      totalProgress: number;
+      formattedAssignments: Record<string, Array<{ teamMemberId: string; role: string; allocationFte: number }>>;
+    }> = {};
+
+    // Převést projectAssignments na správný formát pro calculatePriorityDatesWithAssignments
+    const formattedAssignments: Record<string, Array<{ teamMemberId: string; role: string; allocationFte: number }>> = {};
+    Object.entries(projectAssignments).forEach(([projectId, assignments]) => {
+      formattedAssignments[projectId] = assignments.map(assignment => ({
+        teamMemberId: assignment.teamMemberId,
+        role: assignment.role,
+        allocationFte: assignment.allocationFte || 1
+      }));
+    });
+
+    const priorityDates = calculatePriorityDatesWithAssignments(projects, team, formattedAssignments);
+
+    projects.forEach(project => {
+      const info = calculateProjectDeliveryInfoWithAssignments(project, team, projectAssignments[project.id] || []);
+      const totalProgress = calculateTotalProgress(project as unknown as Record<string, unknown>, activeRoles);
+      
+      calculations[project.id] = {
+        info,
+        priorityDates: priorityDates[project.id],
+        totalProgress,
+        formattedAssignments
+      };
+    });
+
+    return calculations;
+  }, [projects, team, projectAssignments, activeRoles]);
 
   // Skupinování projektů podle priority
-  const groupedProjects = projects.reduce((groups, project) => {
-    const priority = project.priority;
-    if (!groups[priority]) {
-      groups[priority] = [];
-    }
-    groups[priority].push(project);
-    return groups;
-  }, {} as Record<number, Project[]>);
+  const groupedProjects = useMemo(() => {
+    return projects.reduce((groups, project) => {
+      const priority = project.priority;
+      if (!groups[priority]) {
+        groups[priority] = [];
+      }
+      groups[priority].push(project);
+      return groups;
+    }, {} as Record<number, Project[]>);
+  }, [projects]);
 
   // Seřadit priority skupiny
-  const sortedPriorities = Object.keys(groupedProjects)
-    .map(Number)
-    .sort((a, b) => a - b);
+  const sortedPriorities = useMemo(() => {
+    return Object.keys(groupedProjects)
+      .map(Number)
+      .sort((a, b) => a - b);
+  }, [groupedProjects]);
+
+  const getRoleProgress = (project: Project, roleKey: string) => {
+    // Najdeme roli podle cleanKey (bez suffixů)
+    const role = activeRoles.find(r => {
+      const cleanKey = r.key.replace(/_mandays$/, '').replace(/_done$/, '');
+      return cleanKey === roleKey;
+    });
+    if (!role) return null;
+    return calculateRoleProgress(project as unknown as Record<string, unknown>, role);
+  };
 
   const getPriorityColor = (priority: number) => {
     switch (priority) {
@@ -363,7 +490,23 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
 
   const isRoleAssigned = (projectId: string, roleKey: string) => {
     const assignments = projectAssignments[projectId] || [];
-    return assignments.some(assignment => assignment.role === roleKey.toUpperCase());
+    
+    // Najdeme roli podle key a porovnáme s label
+    const role = activeRoles.find(r => {
+      const cleanKey = r.key.replace(/_mandays$/, '').replace(/_done$/, '');
+      return cleanKey === roleKey;
+    });
+    
+    if (!role) {
+      return false;
+    }
+    
+    // Porovnáme label role s role v assignments
+    const isAssigned = assignments.some(assignment => 
+      assignment.role.toLowerCase() === role.label.toLowerCase()
+    );
+    
+    return isAssigned;
   };
 
   return (
@@ -374,11 +517,7 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
           onClose={() => setAddModalOpen(false)}
           onAddProject={handleAddProject}
           savingProject={projectsLoading}
-          hasFE={hasFE}
-          hasBE={hasBE}
-          hasQA={hasQA}
-          hasPM={hasPM}
-          hasDPL={hasDPL}
+          scopeId={scopeId}
           existingProjects={projects}
         />
       )}
@@ -450,12 +589,14 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
                       {/* Projects in this priority group */}
                       <div className="space-y-4">
                         {projectsInGroup.map((project) => {
-                          const info = calculateProjectDeliveryInfoWithAssignments(project, team, projectAssignments[project.id] || []);
-                          const priorityDates = calculatePriorityDatesWithAssignments(projects, team, projectAssignments)[project.id];
+                          const calculations = projectCalculations[project.id];
+                          const info = calculations.info;
+                          const priorityDates = calculations.priorityDates;
+                          const totalProgress = calculations.totalProgress;
+                          
                           const isExpanded = expandedProject === project.id;
                           const isDragOver = dragOverProject === project.id;
                           const isBeingDragged = draggedProject?.id === project.id;
-                          const totalProgress = calculateTotalProgress(project as unknown as Record<string, unknown>);
                           
                           return (
                             <div 
@@ -583,6 +724,16 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
                                       </button>
                                       
                                       <div className="flex items-center gap-1">
+                                        {!readOnlyMode && (
+                                          <button
+                                            onClick={() => setTeamAssignmentModalProject(project)}
+                                            className="p-3 text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 transition-all duration-200 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-xl group"
+                                            title={t('assignTeam')}
+                                          >
+                                            <FiUsers size={18} className="text-green-600" />
+                                          </button>
+                                        )}
+                                        
                                         {!readOnlyMode && (
                                           <button
                                             onClick={() => handleOpenEditModal(project)}
@@ -753,43 +904,47 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
                                         {t("roleAndProgress")}
                                       </h4>
                                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                                        {projectRoles.map(role => {
-                                          const progress = getRoleProgress(project, role.key);
-                                          if (!progress) return null;
-                                          
-                                          const isAssigned = isRoleAssigned(project.id, role.key);
-                                          
-                                          return (
-                                            <div key={role.key} className="relative bg-gradient-to-br from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-gray-200/50 dark:border-gray-600/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                                              {/* Badge pro nepřiřazené role */}
-                                              {!isAssigned && (
-                                                <Badge 
-                                                  label={t('noTeamMember')} 
-                                                  variant="warning" 
-                                                />
-                                              )}
-                                              
-                                              <div className="flex items-center justify-between mb-2 sm:mb-3">
-                                                <span className="text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200">{role.label}</span>
-                                                <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-medium">
-                                                  {progress.done}/{progress.mandays} MD
-                                                </span>
+                                        {projectRoles
+                                          .filter(role => {
+                                            // Zobrazíme jen role, které mají odhad > 0
+                                            const mandaysValue = (project as any)[role.mandays] as number || 0;
+                                            return mandaysValue > 0;
+                                          })
+                                          .map(role => {
+                                            const progress = getRoleProgress(project, role.key);
+                                            const isAssigned = isRoleAssigned(project.id, role.key);
+                                            
+                                            return (
+                                              <div key={role.key} className="relative bg-gradient-to-br from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-gray-200/50 dark:border-gray-600/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                                                {/* Badge pro nepřiřazené role */}
+                                                {!isAssigned && (
+                                                  <Badge 
+                                                    label={t('noTeamMember')} 
+                                                    variant="warning" 
+                                                  />
+                                                )}
+                                                
+                                                <div className="flex items-center justify-between mb-2 sm:mb-3">
+                                                  <span className="text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200">{role.label}</span>
+                                                  <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-medium">
+                                                    {progress ? `${progress.done}/${progress.mandays} MD` : '0/0 MD'}
+                                                  </span>
+                                                </div>
+                                                <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2 sm:h-3 overflow-hidden">
+                                                  <div 
+                                                    className="h-2 sm:h-3 rounded-full transition-all duration-300 ease-out"
+                                                    style={{ 
+                                                      width: `${progress ? progress.percentage : 0}%`,
+                                                      background: `linear-gradient(90deg, ${role.color}, ${role.color}dd)`
+                                                    }}
+                                                  ></div>
+                                                </div>
+                                                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 sm:mt-2 font-medium">
+                                                  {progress ? `${progress.percentage}%` : '0%'} {t('done')}
+                                                </div>
                                               </div>
-                                              <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2 sm:h-3 overflow-hidden">
-                                                <div 
-                                                  className="h-2 sm:h-3 rounded-full transition-all duration-300 ease-out"
-                                                  style={{ 
-                                                    width: `${progress.percentage}%`,
-                                                    background: `linear-gradient(90deg, ${role.color}, ${role.color}dd)`
-                                                  }}
-                                                ></div>
-                                              </div>
-                                              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 sm:mt-2 font-medium">
-                                                {progress.percentage}% {t('done')}
-                                              </div>
-                                            </div>
-                                          );
-                                        })}
+                                            );
+                                          })}
                                       </div>
                                     </div>
                                     
@@ -798,6 +953,7 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
                                       <ProjectProgressChart 
                                         project={project} 
                                         deliveryInfo={info}
+                                        scopeId={scopeId}
                                         priorityDates={priorityDates}
                                         projectAssignments={projectAssignments[project.id] || []}
                                         className="mb-6"
@@ -874,8 +1030,20 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
       {!readOnlyMode && historyModalProject && (
         <ProjectHistoryModal
           project={historyModalProject}
+          scopeId={scopeId}
           onClose={() => setHistoryModalProject(null)}
           onProjectUpdate={loadProjects}
+        />
+      )}
+
+      {/* Modal pro přiřazení týmu */}
+      {!readOnlyMode && teamAssignmentModalProject && (
+        <ProjectTeamAssignmentModal
+          isOpen={!!teamAssignmentModalProject}
+          onClose={() => setTeamAssignmentModalProject(null)}
+          project={teamAssignmentModalProject}
+          scopeId={scopeId}
+          onAssignmentsChange={loadProjectAssignments}
         />
       )}
     </>

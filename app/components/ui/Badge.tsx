@@ -10,13 +10,15 @@ interface BadgeProps {
   variant?: 'default' | 'warning' | 'error' | 'success' | 'info' | 'soon' | 'custom';
   className?: string;
   position?: 'left' | 'right' | 'top' | 'bottom' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+  customStyle?: React.CSSProperties;
 }
 
 export function Badge({ 
   label, 
   variant = 'default',
   className = '',
-  position = 'top-left'
+  position = 'top-left',
+  customStyle
 }: BadgeProps) {
   const getVariantStyles = () => {
     switch (variant) {
@@ -38,7 +40,7 @@ export function Badge({
   };
 
   return (
-    <div className={`absolute ${position === 'top-left' ? '-top-2 -left-2' : position === 'top-right' ? '-top-2 -right-2' : position === 'bottom-left' ? '-bottom-2 -left-2' : '-bottom-2 -right-2'} ${getVariantStyles()} text-xs font-bold px-2 py-1 rounded-full shadow-lg z-10 ${className}`}>
+    <div style={customStyle} className={`absolute ${position === 'top-left' ? '-top-2 -left-2' : position === 'top-right' ? '-top-2 -right-2' : position === 'bottom-left' ? '-bottom-2 -left-2' : '-bottom-2 -right-2'} ${getVariantStyles()} text-xs font-bold px-2 py-1 rounded-full shadow-lg z-10 ${className}`}>
       {label}
     </div>
   );

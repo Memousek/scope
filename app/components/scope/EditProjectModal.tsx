@@ -6,9 +6,8 @@
  * - Smooth transitions a hover efekty
  */
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Project, ProjectProgress } from './types';
-import { PROJECT_ROLES } from '@/lib/utils/projectRoles';
 import { ProjectService } from '@/app/services/projectService';
 import { useTranslation } from '@/lib/translation';
 import { Modal } from '@/app/components/ui/Modal';
@@ -39,30 +38,80 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
   const [editProject, setEditProject] = useState<Project>({ ...project });
   const initialEditState = useRef<Project>({ ...project });
 
+  // Aktualizujeme editProject když se změní project nebo projectRoles
+  useEffect(() => {
+    if (project) {
+      setEditProject({ ...project });
+      initialEditState.current = { ...project };
+    }
+  }, [project]);
+
   const handleSaveEditProject = async () => {
     // Validace: pouze role, které už v projektu mají mandays > 0, musí mít nenulový odhad
-    const projectMandays = PROJECT_ROLES.map(role => ({
-      key: role.mandaysKey,
+    const projectMandays = projectRoles.map(role => ({
+      key: role.mandays,
       label: role.label
     }));
-    const missing = projectMandays.filter(r => Number(editProject[r.key as keyof Project]) > 0 && Number(editProject[r.key as keyof Project]) === 0);
+    const missing = projectMandays.filter(r => Number((editProject as any)[r.key]) > 0 && Number((editProject as any)[r.key]) === 0);
     if (missing.length > 0) {
       alert(t('estimateRequired'));
       return;
     }
     
     try {
-      const updatedProject = await ProjectService.updateProject(editProject.id, editProject);
-      onProjectChange(updatedProject);
+      // Rozdělíme data na standardní a custom role
+      const standardRoleKeys = ['fe', 'be', 'qa', 'pm', 'dpl'];
+      const standardData: Record<string, unknown> = {};
+      const customData: Record<string, number> = {};
+      
+      projectRoles.forEach(role => {
+        const mandaysValue = (editProject as any)[role.mandays] as number || 0;
+        const doneValue = (editProject as any)[role.done] as number || 0;
+        
+        if (standardRoleKeys.includes(role.key)) {
+          // Standardní role - přidáme do standardních sloupců
+          standardData[role.mandays] = mandaysValue;
+          standardData[role.done] = doneValue;
+        } else {
+          // Custom role - přidáme do custom data
+          customData[role.mandays] = mandaysValue;
+          customData[role.done] = doneValue;
+        }
+      });
+      
+      // Vytvoříme updates objekt
+      const validUpdates: Partial<Project> = {
+        name: editProject.name,
+        delivery_date: editProject.delivery_date,
+        ...standardData,
+        // Přidáme custom role data jako jednotlivé vlastnosti
+        ...customData
+      };
+      
+      const updatedProject = await ProjectService.updateProject(editProject.id, validUpdates);
+      
+      // Předáme aktuální změny místo dat z databáze
+      onProjectChange(editProject);
+      
+      // Reload projects to get updated data
+      await new Promise(resolve => setTimeout(resolve, 100)); // Small delay to ensure DB update
       
       // --- Ulož změny do project_progress pokud se změnilo % hotovo ---
       if (initialEditState.current) {
         const changed: Partial<ProjectProgress> = {};
-        if (editProject.fe_done !== initialEditState.current.fe_done) changed.fe_done = Number(editProject.fe_done);
-        if (editProject.be_done !== initialEditState.current.be_done) changed.be_done = Number(editProject.be_done);
-        if (editProject.qa_done !== initialEditState.current.qa_done) changed.qa_done = Number(editProject.qa_done);
-        if (editProject.pm_done !== initialEditState.current.pm_done) changed.pm_done = Number(editProject.pm_done);
-        if (editProject.dpl_done !== initialEditState.current.dpl_done) changed.dpl_done = Number(editProject.dpl_done);
+        const standardRoleKeys = ['fe', 'be', 'qa', 'pm', 'dpl'];
+        
+        projectRoles.forEach(role => {
+          // Ukládáme pouze standardní role do project_progress
+          if (standardRoleKeys.includes(role.key)) {
+            const doneKey = role.done;
+            if ((editProject as any)[doneKey] !== (initialEditState.current as any)[doneKey]) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (changed as any)[doneKey] = Number((editProject as any)[doneKey]);
+            }
+          }
+        });
+        
         if (Object.keys(changed).length > 0) {
           await ProjectService.saveProjectProgress(editProject.id, changed);
         }
@@ -98,7 +147,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
             <input
               type="date"
               className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
-              value={editProject.delivery_date || ''}
+              value={editProject.delivery_date ? new Date(editProject.delivery_date).toISOString().split('T')[0] : ''}
               onChange={e => setEditProject(p => ({ ...p, delivery_date: e.target.value || null }))}
               required
             />
@@ -128,7 +177,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
                       min="0"
                       step="0.5"
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      value={editProject[role.mandays as keyof Project] as number || 0}
+                      value={(editProject as any)[role.mandays] as number || 0}
                       onChange={e => setEditProject(p => ({ 
                         ...p, 
                         [role.mandays]: Number(e.target.value) 
@@ -147,7 +196,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
                       max="100"
                       step="1"
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      value={editProject[role.done as keyof Project] as number || 0}
+                      value={(editProject as any)[role.done] as number || 0}
                       onChange={e => setEditProject(p => ({ 
                         ...p, 
                         [role.done]: Number(e.target.value) 

@@ -15,5 +15,5 @@ export interface Project {
   dplDone: number;
   deliveryDate?: Date;
   createdAt: Date;
-  slip?: number;
+  customRoleData?: Record<string, number>;
 }

@@ -7,30 +7,32 @@
  */
 
 import { useState } from 'react';
-import { ROLES } from './types';
 import { useTranslation } from '@/lib/translation';
 import { Modal } from '@/app/components/ui/Modal';
 import { FiUserPlus } from 'react-icons/fi';
-
-type Role = typeof ROLES[number]['value'];
+import { useScopeRoles } from '@/app/hooks/useScopeRoles';
 
 interface AddMemberModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddMember: (member: { name: string; role: Role; fte: number }) => Promise<void>;
+  onAddMember: (member: { name: string; role: string; fte: number }) => Promise<void>;
   savingMember: boolean;
+  scopeId: string;
 }
 
 export const AddMemberModal: React.FC<AddMemberModalProps> = ({ 
   isOpen, 
   onClose, 
   onAddMember, 
-  savingMember 
+  savingMember,
+  scopeId
 }) => {
   const { t } = useTranslation();
-  const [newMember, setNewMember] = useState<{ name: string; role: Role; fte: number }>({ 
+  const { activeRoles } = useScopeRoles(scopeId);
+  
+  const [newMember, setNewMember] = useState<{ name: string; role: string; fte: number }>({ 
     name: '', 
-    role: ROLES[0].value, 
+    role: activeRoles.length > 0 ? activeRoles[0].label : '', 
     fte: 1 
   });
 
@@ -38,7 +40,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
     e.preventDefault();
     if (!newMember.name.trim()) return;
     await onAddMember(newMember);
-    setNewMember({ name: '', role: ROLES[0].value, fte: 1 });
+    setNewMember({ name: '', role: activeRoles.length > 0 ? activeRoles[0].label : '', fte: 1 });
     onClose();
   };
 
@@ -70,11 +72,11 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
           <select
             className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
             value={newMember.role}
-            onChange={e => setNewMember(m => ({ ...m, role: e.target.value as Role }))}
+            onChange={e => setNewMember(m => ({ ...m, role: e.target.value }))}
             disabled={savingMember}
           >
-            {ROLES.map(role => (
-              <option key={role.value} value={role.value}>{role.label}</option>
+            {activeRoles.map(role => (
+              <option key={role.key} value={role.label}>{role.label}</option>
             ))}
           </select>
         </div>

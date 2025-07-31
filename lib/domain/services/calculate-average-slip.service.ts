@@ -1,9 +1,6 @@
-import { inject, injectable } from 'inversify';
-import { ProjectRepository } from '@/lib/domain/repositories/project.repository';
-import { TeamMemberRepository } from '@/lib/domain/repositories/team-member.repository';
-import { calculateProjectDeliveryInfo } from '@/app/utils/dateUtils';
-
-import { Project as ComponentProject, TeamMember as ComponentTeamMember } from '@/app/components/scope/types';
+import { injectable, inject } from 'inversify';
+import { ProjectRepository } from '../repositories/project.repository';
+import { TeamMemberRepository } from '../repositories/team-member.repository';
 
 export interface AverageSlipResult {
   averageSlip: number;
@@ -20,15 +17,48 @@ export class CalculateAverageSlipService {
     @inject(TeamMemberRepository) private teamMemberRepository: TeamMemberRepository
   ) {}
 
+  /**
+   * Add specified number of workdays to a date (excluding weekends)
+   */
+  private addWorkdays(date: Date, workdays: number): Date {
+    const result = new Date(date);
+    let added = 0;
+    
+    while (added < workdays) {
+      result.setDate(result.getDate() + 1);
+      const day = result.getDay();
+      if (day !== 0 && day !== 6) { // 0 = neděle, 6 = sobota
+        added++;
+      }
+    }
+    
+    return result;
+  }
+
+  /**
+   * Get number of workdays between two dates (excluding weekends)
+   */
+  private getWorkdaysCount(start: Date, end: Date): number {
+    const days: Date[] = [];
+    const d = new Date(start);
+    d.setHours(0, 0, 0, 0);
+    
+    while (d <= end) {
+      if (d.getDay() !== 0 && d.getDay() !== 6) {
+        days.push(new Date(d));
+      }
+      d.setDate(d.getDate() + 1);
+    }
+    
+    return days.length;
+  }
+
   async execute(scopeId: string): Promise<AverageSlipResult> {
     const [projects, team] = await Promise.all([
       this.projectRepository.findByScopeId(scopeId),
       this.teamMemberRepository.findByScopeId(scopeId)
     ]);
-    
-    console.log('Projects found:', projects.length);
-    console.log('Team members found:', team.length);
-    
+
     if (projects.length === 0) {
       return {
         averageSlip: 0,
@@ -39,53 +69,49 @@ export class CalculateAverageSlipService {
       };
     }
 
-    // Převést domain modely na component modely
-    const componentProjects: ComponentProject[] = projects.map(project => ({
-      id: project.id,
-      name: project.name,
-      priority: project.priority,
-      fe_mandays: project.feMandays || null,
-      be_mandays: project.beMandays || null,
-      qa_mandays: project.qaMandays || null,
-      pm_mandays: project.pmMandays || null,
-      dpl_mandays: project.dplMandays || null,
-      fe_done: project.feDone,
-      be_done: project.beDone,
-      qa_done: project.qaDone,
-      pm_done: project.pmDone,
-      dpl_done: project.dplDone,
-      delivery_date: project.deliveryDate?.toISOString() || null,
-      created_at: project.createdAt.toISOString(),
-      slip: project.slip || null
-    }));
+    // Calculate slip for each project
+    const projectsWithCalculatedSlip = projects.map(project => {
+      let finalSlip: number | null = null;
 
-    const componentTeam: ComponentTeamMember[] = team.map(member => ({
-      id: member.id,
-      name: member.name,
-      role: member.role,
-      fte: member.fte,
-      created_at: member.createdAt.toISOString()
-    }));
+      // Only calculate slip if project has a delivery date
+      if (project.deliveryDate) {
+        // Calculate remaining work for each role
+        const roleKeys = Object.keys(project)
+          .filter(key => key.endsWith('Mandays'))
+          .map(key => key.replace('Mandays', ''));
 
-    // Počítat skluz dynamicky pro každý projekt
-    const projectsWithCalculatedSlip = componentProjects.map(project => {
-      const info = calculateProjectDeliveryInfo(project, componentTeam);
-      // Použít dynamicky vypočítaný skluz, nebo uložený skluz, nebo null
-      const finalSlip = info.slip !== null ? info.slip : (project.slip || null);
+        let maxDays = 0;
+
+        roleKeys.forEach(roleKey => {
+          const fte = team.filter(m => m.role === roleKey.toUpperCase() || m.role === roleKey)
+            .reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
+          
+          const mandays = Number((project as any)[`${roleKey}Mandays`]) || 0;
+          const done = Number((project as any)[`${roleKey}Done`]) || 0;
+          const rem = mandays * (1 - (done / 100));
+          const days = rem / fte;
+
+          if (days > maxDays) maxDays = days;
+        });
+
+        const remainingWorkdays = Math.ceil(maxDays);
+        
+        // Calculate delivery date from today + remaining work
+        const today = new Date();
+        const calculatedDeliveryDate = this.addWorkdays(today, remainingWorkdays);
+        
+        // Calculate slip (difference between planned and calculated delivery)
+        const plannedDeliveryDate = new Date(project.deliveryDate);
+        finalSlip = this.getWorkdaysCount(plannedDeliveryDate, calculatedDeliveryDate);
+      }
+
       return {
         ...project,
         calculatedSlip: finalSlip
       };
     });
     
-    console.log('Projects with calculated slip:', projectsWithCalculatedSlip.map(p => ({ 
-      name: p.name, 
-      slip: p.calculatedSlip 
-    })));
-    
     const projectsWithSlip = projectsWithCalculatedSlip.filter(project => project.calculatedSlip !== null);
-    
-    console.log('Projects with defined slip:', projectsWithSlip.length);
     
     if (projectsWithSlip.length === 0) {
       return {
@@ -103,14 +129,6 @@ export class CalculateAverageSlipService {
     const delayedProjects = projectsWithSlip.filter(project => (project.calculatedSlip || 0) > 0).length;
     const onTimeProjects = projectsWithSlip.filter(project => (project.calculatedSlip || 0) === 0).length;
     const aheadProjects = projectsWithSlip.filter(project => (project.calculatedSlip || 0) < 0).length;
-    
-    console.log('Average slip calculation:', {
-      totalSlip,
-      averageSlip,
-      delayedProjects,
-      onTimeProjects,
-      aheadProjects
-    });
 
     return {
       averageSlip,

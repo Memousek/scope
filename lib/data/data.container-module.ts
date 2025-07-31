@@ -22,6 +22,9 @@ import { CheckScopeOwnershipService } from "@/lib/domain/services/check-scope-ow
 import { GetScopeWithAuthorService } from "@/lib/domain/services/get-scope-with-author.service";
 import { GetScopeEditorsWithUsersService } from "@/lib/domain/services/get-scope-editors-with-users.service";
 import { ManageProjectTeamAssignmentsService } from "@/lib/domain/services/manage-project-team-assignments.service";
+import { ScopeRoleRepositorySymbol } from "@/lib/domain/repositories/scope-role.repository";
+import { SupabaseScopeRoleRepository } from "@/lib/data/repositories/supabase/scope-role.repository";
+import { ManageScopeRolesService } from "@/lib/domain/services/manage-scope-roles.service";
 
 export class DataContainerModule implements ContainerModule {
   bind(container: Container): Promise<void> | void {
@@ -40,6 +43,8 @@ export class DataContainerModule implements ContainerModule {
     container.bind(GetScopeWithAuthorService).toSelf().inSingletonScope();
     container.bind(GetScopeEditorsWithUsersService).toSelf().inSingletonScope();
     container.bind(ManageProjectTeamAssignmentsService).toSelf().inSingletonScope();
+    container.bind(ScopeRoleRepositorySymbol).to(SupabaseScopeRoleRepository).inSingletonScope();
+    container.bind(ManageScopeRolesService).toSelf().inSingletonScope();
   }
 
 }

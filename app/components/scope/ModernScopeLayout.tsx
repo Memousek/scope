@@ -18,6 +18,7 @@ import { downloadCSV } from "../../utils/csvUtils";
 import { useTranslation } from "@/lib/translation";
 import { ProjectTeamAssignment } from "@/lib/domain/models/project-team-assignment.model";
 import { Badge } from "../ui/Badge";
+import { useScopeRoles } from "@/app/hooks/useScopeRoles";
 
 interface ModernScopeLayoutProps {
   scopeId: string;
@@ -25,11 +26,6 @@ interface ModernScopeLayoutProps {
   projects: Project[];
   projectAssignments?: Record<string, ProjectTeamAssignment[]>;
   onTeamChange: (team: TeamMember[]) => void;
-  hasFE: boolean;
-  hasBE: boolean;
-  hasQA: boolean;
-  hasPM: boolean;
-  hasDPL: boolean;
   stats?: {
     projectCount: number;
     teamMemberCount: number;
@@ -62,11 +58,6 @@ export function ModernScopeLayout({
   projects,
   projectAssignments = {},
   onTeamChange,
-  hasFE,
-  hasBE,
-  hasQA,
-  hasPM,
-  hasDPL,
   stats,
   loadingStats,
   averageSlip,
@@ -75,6 +66,7 @@ export function ModernScopeLayout({
   readOnlyMode = false,
 }: ModernScopeLayoutProps) {
   const { t } = useTranslation();
+  const { activeRoles } = useScopeRoles(scopeId);
   const [activeTab, setActiveTab] = useState<TabType>("overview");
 
   // Export functions
@@ -89,35 +81,28 @@ export function ModernScopeLayout({
   };
 
   const handleExportProjects = () => {
+    // Dynamicky vytvoříme sloupce pro každou roli
+    const roleColumns: (keyof Project)[] = [];
+    const roleHeaderMap: Record<string, string> = {};
+    
+    activeRoles.forEach(role => {
+      roleColumns.push(`${role.key}_mandays` as keyof Project);
+      roleColumns.push(`${role.key}_done` as keyof Project);
+      roleHeaderMap[`${role.key}_mandays`] = `${role.label} MD`;
+      roleHeaderMap[`${role.key}_done`] = `${role.label} ${t('done')}`;
+    });
+    
     const projectColumns: (keyof Project)[] = [
       "name",
       "priority",
-      "fe_mandays",
-      "be_mandays",
-      "qa_mandays",
-      "pm_mandays",
-      "dpl_mandays",
-      "fe_done",
-      "be_done",
-      "qa_done",
-      "pm_done",
-      "dpl_done",
+      ...roleColumns,
       "delivery_date",
       "slip",
     ];
     const projectHeaderMap = {
       name: t("projectName"),
       priority: t("priority"),
-      fe_mandays: t("fe_mandays"),
-      be_mandays: t("be_mandays"),
-      qa_mandays: t("qa_mandays"),
-      pm_mandays: t("pm_mandays"),
-      dpl_mandays: t("dpl_mandays"),
-      fe_done: t("fe_done"),
-      be_done: t("be_done"),
-      qa_done: t("qa_done"),
-      pm_done: t("pm_done"),
-      dpl_done: t("dpl_done"),
+      ...roleHeaderMap,
       delivery_date: t("deliveryDate"),
       slip: t("slip"),
     };
@@ -389,11 +374,6 @@ export function ModernScopeLayout({
         return (
             <ProjectSection
               scopeId={scopeId}
-              hasFE={hasFE}
-              hasBE={hasBE}
-              hasQA={hasQA}
-              hasPM={hasPM}
-              hasDPL={hasDPL}
               readOnlyMode={readOnlyMode}
             />
         );
@@ -402,7 +382,7 @@ export function ModernScopeLayout({
         return (
             <div className="relative">
                 <Badge label={t("experimental")} variant="info" position="top-right" />
-                <BurndownChart projects={projects} team={team} projectAssignments={projectAssignments} />
+                <BurndownChart projects={projects} team={team} projectAssignments={projectAssignments} scopeId={scopeId} />
             </div>
         );
 
@@ -469,6 +449,7 @@ export function ModernScopeLayout({
             }
           }}
           savingMember={savingMember}
+          scopeId={scopeId}
         />
       )}
 
@@ -486,11 +467,7 @@ export function ModernScopeLayout({
             }
           }}
           savingProject={savingProject}
-          hasFE={hasFE}
-          hasBE={hasBE}
-          hasQA={hasQA}
-          hasPM={hasPM}
-          hasDPL={hasDPL}
+          scopeId={scopeId}
           existingProjects={projects}
         />
       )}

@@ -23,8 +23,7 @@ export class AddProjectService {
       qaDone: projectData.qaDone,
       pmDone: projectData.pmDone,
       dplDone: projectData.dplDone,
-      deliveryDate: projectData.deliveryDate,
-      slip: projectData.slip
+      deliveryDate: projectData.deliveryDate
     };
 
     return await this.projectRepository.create(project);

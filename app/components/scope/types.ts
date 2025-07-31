@@ -5,52 +5,44 @@ export interface TeamMember {
   fte: number;
 }
 
+// Dynamické typy pro role
+export interface ScopeRole {
+  id: string;
+  scope_id: string;
+  key: string;
+  label: string;
+  color: string;
+  translation_key: string;
+  is_active: boolean;
+  order_index: number;
+  created_at: string;
+  updated_at: string;
+}
+
+// Dynamický Project interface - role data budou uložena jako Record
 export interface Project {
   id: string;
   name: string;
   priority: number;
-  fe_mandays: number | null;
-  be_mandays: number | null;
-  qa_mandays: number | null;
-  pm_mandays: number | null;
-  dpl_mandays: number | null;
-  fe_done: number;
-  be_done: number;
-  qa_done: number;
-  pm_done: number;
-  dpl_done: number;
   delivery_date: string | null;
   created_at: string;
-  slip?: number | null;
+  // Dynamické role data - klíče budou generovány z scope_roles
+  [key: string]: string | number | null | undefined; // Pro role sloupce jako fe_mandays, be_done, atd.
 }
 
+// Dynamický ProjectProgress interface
 export interface ProjectProgress {
   id?: string;
   project_id: string;
   date: string;
-  fe_done?: number;
-  be_done?: number;
-  qa_done?: number;
-  pm_done?: number;
-  dpl_done?: number;
-  fe_mandays?: number;
-  be_mandays?: number;
-  qa_mandays?: number;
-  pm_mandays?: number;
-  dpl_mandays?: number;
+  // Dynamické role data - klíče budou generovány z scope_roles
+  [key: string]: string | number | null | undefined; // Pro role sloupce jako fe_done, be_mandays, atd.
 }
 
 export interface ProjectDeliveryInfo {
   calculatedDeliveryDate: Date;
-  slip: number | null;
   diffWorkdays: number | null;
   deliveryDate: Date | null;
 }
 
-export const ROLES = [
-  { value: 'FE', label: 'FE' },
-  { value: 'QA', label: 'QA' },
-  { value: 'BE', label: 'BE' },
-  { value: 'PM', label: 'PM' },
-  { value: 'DPL', label: 'DPL' },
-] as const; 
+// Odstraněno: ROLES constant - nyní se načítá dynamicky z databáze 
