@@ -4,6 +4,8 @@
  * - Dark mode podpora
  * - Inline editace členů týmu
  * - Moderní UI s gradient efekty
+ * - Filtrování členů týmu podle role a FTE
+ * - Animace s respektem k prefers-reduced-motion
  */
 
 import { useState, useRef, useCallback, useEffect } from "react";
@@ -11,8 +13,8 @@ import { TeamMember, ROLES } from "./types";
 import { AddMemberModal } from "./AddMemberModal";
 import { useTranslation } from "@/lib/translation";
 import { TeamService } from "@/app/services/teamService";
+import { SettingsIcon, FilterIcon, XIcon, ChevronDownIcon } from "lucide-react";
 import { Badge } from "../ui/Badge";
-import { SettingsIcon } from "lucide-react";
 
 interface TeamSectionProps {
   scopeId: string;
@@ -25,7 +27,37 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
   const { t } = useTranslation();
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [savingMember, setSavingMember] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [roleFilter, setRoleFilter] = useState<string>("");
+  const [isReducedMotion, setIsReducedMotion] = useState(false);
   const debounceTimeouts = useRef<Record<string, NodeJS.Timeout>>({});
+
+  // Detekce prefers-reduced-motion
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setIsReducedMotion(mediaQuery.matches);
+
+    const handleChange = (e: MediaQueryListEvent) => {
+      setIsReducedMotion(e.matches);
+    };
+
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
+
+  // Filtrování členů týmu
+  const filteredTeam = team.filter((member) => {
+    const matchesRole = !roleFilter || member.role === roleFilter;
+    return matchesRole;
+  });
+
+  // Reset filtrů
+  const resetFilters = () => {
+    setRoleFilter("");
+  };
+
+  // Získání unikátních rolí pro filtr
+  const uniqueRoles = Array.from(new Set(team.map(member => member.role))).sort();
 
   const handleAddMember = async (member: {
     name: string;
@@ -120,23 +152,6 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
     }
   };
 
-  const getRoleIcon = (role: string) => {
-    switch (role) {
-      case "PM":
-        return "👨‍💼";
-      case "FE":
-        return "🎨";
-      case "BE":
-        return "⚙️";
-      case "QA":
-        return "🔍";
-      case "DPL":
-        return "🚀";
-      default:
-        return "👤";
-    }
-  };
-
   return (
     <>
       {!readOnlyMode && (
@@ -168,67 +183,152 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                   <span>{t("teamManagement")}</span>
                 </div>
               </div>
-              {!readOnlyMode && (
-                <div className="flex items-center gap-2">
-                  <button
-                    className="relative group bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/25 active:scale-95"
-                    onClick={() => setAddModalOpen(true)}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <span className="relative z-10 flex items-center gap-2">
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                        />
-                      </svg>
-                      {t("addMember")}
-                    </span>
-                  </button>
+              <div className="flex items-center gap-2">
+                {/* Filter button */}
+                <button
+                  className={`relative group px-4 py-3 rounded-xl font-semibold transition-all duration-300 ${showFilters || roleFilter
+                    ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white"
+                    : "bg-white/80 dark:bg-gray-700/80 text-gray-700 dark:text-gray-300 hover:bg-white/90 dark:hover:bg-gray-700/90"
+                    }`}
+                  onClick={() => setShowFilters(!showFilters)}
+                >
+                  <div className="flex items-center gap-2">
+                    <FilterIcon className={`w-5 h-5 transition-transform duration-300`} />
+                    <span className="hidden sm:inline">{t("filter")}</span>
+                    <ChevronDownIcon className={`w-4 h-4 transition-transform duration-300 ${showFilters && !isReducedMotion ? 'rotate-180' : ''}`} />
+                  </div>
+                </button>
 
-                  <div className="relative">
+                {/* Reset filters button */}
+                {(roleFilter) && (
+                  <button
+                    className={`relative group bg-gradient-to-r from-red-500 to-pink-500 text-white px-4 py-3 rounded-xl font-semibold transition-all duration-300 ${!isReducedMotion ? 'hover:scale-105' : 'hover:bg-gradient-to-r hover:from-red-600 hover:to-pink-600'
+                      }`}
+                    onClick={resetFilters}
+                  >
+                    <div className="flex items-center gap-2">
+                      <XIcon className="w-5 h-5" />
+                      <span className="hidden sm:inline">{t("clear")}</span>
+                    </div>
+                  </button>
+                )}
+
+                {!readOnlyMode && (
+                  <>
+                    <button
+                      className={`relative group bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${!isReducedMotion ? 'hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/25 active:scale-95' : 'hover:bg-gradient-to-r hover:from-blue-600 hover:via-purple-600 hover:to-pink-600'
+                        }`}
+                      onClick={() => setAddModalOpen(true)}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <span className="relative z-10 flex items-center gap-2">
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                          />
+                        </svg>
+                        {t("addMember")}
+                      </span>
+                    </button>
                     <button
                       disabled={true}
                       className="relative group bg-gradient-to-r from-gray-500 via-gray-500 to-gray-500 text-white px-6 py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                      onClick={() => setAddModalOpen(true)}
                     >
-                    <Badge label={t("soon")} variant="soon" />
+                      <Badge label={t("soon")} variant="soon" />
                       <span className="flex items-center gap-2">
                         <SettingsIcon className="w-5 h-5" />
                         <span className="relative z-10">Spravovat role</span>
                       </span>
                     </button>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Filter panel */}
+            <div
+              className={`overflow-hidden transition-all duration-500 ease-in-out ${showFilters ? 'max-h-96 opacity-100 mb-6' : 'max-h-0 opacity-0 mb-0'
+                }`}
+            >
+              <div className={`p-4 bg-white/80 dark:bg-gray-700/80 backdrop-blur-sm rounded-xl border border-gray-200/50 dark:border-gray-600/50 ${!isReducedMotion ? 'animate-in slide-in-from-top-4 fade-in duration-500' : ''
+                }`}>
+                <div className="flex items-center gap-4 mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    {t("filterMembers")}
+                  </h3>
+                  {(roleFilter) && (
+                    <button
+                      onClick={resetFilters}
+                      className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors duration-200"
+                    >
+                      {t("clearAll")}
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 gap-4">
+                  {/* Role filter */}
+                  <div className={`${!isReducedMotion ? 'animate-in slide-in-from-top-4 fade-in duration-500 delay-100' : ''}`}>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      {t("filterByRole")}
+                    </label>
+                    <select
+                      className="w-full bg-white/90 dark:bg-gray-700/90 text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
+                      value={roleFilter}
+                      onChange={(e) => setRoleFilter(e.target.value)}
+                    >
+                      <option value="">{t("allRoles")}</option>
+                      {uniqueRoles.map((role) => (
+                        <option key={role} value={role}>
+                          {role}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
-              )}
+              </div>
             </div>
 
             <div className="space-y-4">
-              {team.length === 0 ? (
-                <div className="text-center py-16">
+              {filteredTeam.length === 0 ? (
+                <div className={`text-center py-16 ${!isReducedMotion ? 'animate-in fade-in duration-700' : ''}`}>
                   <div className="relative mb-6">
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur-xl opacity-20"></div>
-                    <div className="relative text-8xl">👥</div>
+                    <div className={`relative text-8xl ${!isReducedMotion ? 'animate-bounce' : ''}`}>
+                      {team.length === 0 ? "👥" : "🔍"}
+                    </div>
                   </div>
                   <p className="text-gray-600 dark:text-gray-300 text-xl font-medium mb-2">
-                    {t("noMembers")}
+                    {team.length === 0 ? t("noMembers") : t("noMembersMatchFilter")}
                   </p>
                   <p className="text-gray-500 dark:text-gray-400 text-sm">
-                    {t("startByAddingFirstMember")}
+                    {team.length === 0 ? t("startByAddingFirstMember") : t("tryAdjustingFilters")}
                   </p>
+                  {team.length > 0 && (
+                    <button
+                      onClick={resetFilters}
+                      className={`mt-4 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg transition-all duration-200 ${!isReducedMotion ? 'hover:scale-105' : 'hover:bg-gradient-to-r hover:from-blue-600 hover:to-purple-600'
+                        }`}
+                    >
+                      {t("clearFilters")}
+                    </button>
+                  )}
                 </div>
               ) : (
-                team.map((member) => (
+                filteredTeam.map((member, index) => (
                   <div
                     key={member.id}
-                    className="relative group bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-700/90 dark:via-gray-700/70 dark:to-gray-700/50 backdrop-blur-lg rounded-2xl border border-white/40 dark:border-gray-600/40 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/10 animate-in slide-in-from-bottom-8 fade-in duration-700"
+                    className={`relative group bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-700/90 dark:via-gray-700/70 dark:to-gray-700/50 backdrop-blur-lg rounded-2xl border border-white/40 dark:border-gray-600/40 overflow-hidden transition-all duration-300 ${!isReducedMotion ? 'hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/10 animate-in slide-in-from-bottom-8 fade-in duration-700' : 'hover:shadow-lg'
+                      }`}
+                    style={!isReducedMotion ? { animationDelay: `${index * 100}ms` } : {}}
                   >
                     {/* Hover effect overlay */}
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-blue-500/5 group-hover:via-purple-500/5 group-hover:to-pink-500/5 transition-all duration-300 rounded-2xl"></div>
@@ -237,7 +337,7 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                     {savingMember && (
                       <div className="absolute inset-0 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm flex items-center justify-center rounded-2xl z-30">
                         <div className="flex items-center gap-3 text-blue-600 dark:text-blue-400">
-                          <div className="animate-spin rounded-full h-6 w-6 border-2 border-current border-t-transparent"></div>
+                          <div className={`rounded-full h-6 w-6 border-2 border-current border-t-transparent ${!isReducedMotion ? 'animate-spin' : ''}`}></div>
                           <span className="text-sm font-semibold">
                             {t("saving")}
                           </span>
@@ -246,9 +346,10 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                     )}
 
                     <div className="p-4 sm:p-6 relative">
+                      <Badge label={member.role} variant="custom" className={`bg-gradient-to-r z-10 top-2 left-2 ${getRoleColor(member.role)}`} />
                       {/* Desktop layout */}
                       <div className="hidden md:flex items-center justify-between">
-                        <div className="flex items-center gap-6 flex-1">
+                        <div className="flex items-center gap-2 flex-1">
                           {/* Avatar a jméno */}
                           <div className="flex items-center gap-4">
                             <div className="relative">
@@ -259,56 +360,57 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
 
                             <div className="flex-1">
                               {!readOnlyMode && (
-                                <input
-                                  className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 font-semibold text-lg"
-                                  value={member.name}
-                                  onChange={(e) =>
-                                    handleEditMember(
-                                      member.id,
-                                      "name",
-                                      e.target.value
-                                    )
-                                  }
-                                  placeholder={t("memberNamePlaceholder")}
-                                />
+                                <>
+                                  <input
+                                    className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 font-semibold text-lg"
+                                    value={member.name}
+                                    onChange={(e) =>
+                                      handleEditMember(
+                                        member.id,
+                                        "name",
+                                        e.target.value
+                                      )
+                                    }
+                                    placeholder={t("memberNamePlaceholder")}
+                                  />
+                                </>
                               )}
                               {readOnlyMode && (
-                                <div className="text-gray-600 dark:text-gray-400 text-sm">
-                                  {member.name}
-                                </div>
+                                <>
+                                  <div className="flex items-center gap-2">
+
+                                    <div className="w-full text-center font-bold text-sm text-gray-600 dark:text-gray-400">
+                                      {member.name}
+                                    </div>
+                                  </div>
+                                </>
                               )}
                             </div>
                           </div>
 
                           {/* Role */}
                           <div className="flex items-center gap-3">
-                            <span className="text-2xl">
-                              {getRoleIcon(member.role)}
-                            </span>
                             {!readOnlyMode && (
-                              <select
-                                className="bg-gradient-to-r from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 font-medium min-w-[120px]"
-                                value={member.role}
-                                onChange={(e) =>
-                                  handleEditMember(
-                                    member.id,
-                                    "role",
-                                    e.target.value
-                                  )
-                                }
-                                disabled={readOnlyMode}
-                              >
-                                {ROLES.map((role) => (
-                                  <option key={role.value} value={role.value}>
-                                    {role.value}
-                                  </option>
-                                ))}
-                              </select>
-                            )}
-                            {readOnlyMode && (
-                              <div className="text-gray-600 dark:text-gray-400 text-sm">
-                                {member.role}
-                              </div>
+                              <>
+                                <select
+                                  className="bg-gradient-to-r from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 font-medium min-w-[120px]"
+                                  value={member.role}
+                                  onChange={(e) =>
+                                    handleEditMember(
+                                      member.id,
+                                      "role",
+                                      e.target.value
+                                    )
+                                  }
+                                  disabled={readOnlyMode}
+                                >
+                                  {ROLES.map((role) => (
+                                    <option key={role.value} value={role.value}>
+                                      {role.value}
+                                    </option>
+                                  ))}
+                                </select>
+                              </>
                             )}
                           </div>
 
@@ -493,33 +595,29 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                         <div className="grid grid-cols-2 gap-3">
                           {/* Role */}
                           <div className="flex items-center gap-2">
-                            <span className="text-xl">
-                              {getRoleIcon(member.role)}
-                            </span>
                             {!readOnlyMode && (
-                              <select
-                                className="flex-1 bg-gradient-to-r from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 font-medium text-sm"
-                                value={member.role}
-                                onChange={(e) =>
-                                  handleEditMember(
-                                    member.id,
-                                    "role",
-                                    e.target.value
-                                  )
-                                }
-                                disabled={readOnlyMode}
-                              >
-                                {ROLES.map((role) => (
-                                  <option key={role.value} value={role.value}>
-                                    {role.value}
-                                  </option>
-                                ))}
-                              </select>
-                            )}
-                            {readOnlyMode && (
-                              <div className="flex-1 text-gray-600 dark:text-gray-400 font-medium text-sm">
-                                {member.role}
-                              </div>
+                              <>
+
+
+                                <select
+                                  className="flex-1 bg-gradient-to-r from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 font-medium text-sm"
+                                  value={member.role}
+                                  onChange={(e) =>
+                                    handleEditMember(
+                                      member.id,
+                                      "role",
+                                      e.target.value
+                                    )
+                                  }
+                                  disabled={readOnlyMode}
+                                >
+                                  {ROLES.map((role) => (
+                                    <option key={role.value} value={role.value}>
+                                      {role.value}
+                                    </option>
+                                  ))}
+                                </select>
+                              </>
                             )}
                           </div>
 
@@ -603,26 +701,17 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                                 </>
                               )}
                               {readOnlyMode && (
-                                <div className="w-full text-center font-semibold text-sm text-gray-600 dark:text-gray-400">
-                                  {member.fte.toFixed(2)}
-                                </div>
+                                <>
+                                  <div className="w-full text-center font-semibold text-sm text-gray-600 dark:text-gray-400">
+                                    {member.fte.toFixed(2)}
+                                  </div>
+                                </>
                               )}
                             </div>
                           </div>
                         </div>
                       </div>
 
-                      {/* Role badge - visible on both layouts */}
-                      <div className="mt-4 flex items-center gap-2">
-                        <span
-                          className={`bg-gradient-to-r ${getRoleColor(member.role)} text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg`}
-                        >
-                          {member.role}
-                        </span>
-                        <span className="text-sm text-gray-500 dark:text-gray-400">
-                          {member.fte} FTE
-                        </span>
-                      </div>
                     </div>
                   </div>
                 ))

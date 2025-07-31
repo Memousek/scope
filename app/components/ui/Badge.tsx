@@ -7,7 +7,7 @@
 
 interface BadgeProps {
   label: string;
-  variant?: 'default' | 'warning' | 'error' | 'success' | 'info' | 'soon';
+  variant?: 'default' | 'warning' | 'error' | 'success' | 'info' | 'soon' | 'custom';
   className?: string;
   position?: 'left' | 'right' | 'top' | 'bottom' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 }
@@ -30,6 +30,8 @@ export function Badge({
         return 'bg-gradient-to-r from-blue-500 to-blue-600 text-white';
       case 'soon':
         return 'bg-gradient-to-r from-gray-600 to-gray-700 text-white';
+      case 'custom':
+        return '';
       default:
         return 'bg-gradient-to-r from-gray-600 to-gray-700 text-white';
     }

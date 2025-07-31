@@ -289,5 +289,16 @@
   "projectChangeHistory": "Historie změn projektu",
   "roleAndProgress": "Role a průběh",
   "change": "Změna",
-  "experimental": "Experimentální funkce"
+  "experimental": "Experimentální funkce",
+  "filter": "Filtr",
+  "clear": "Vymazat",
+  "filterMembers": "Filtrovat členy",
+  "clearAll": "Vymazat vše",
+  "filterByRole": "Filtrovat podle role",
+  "filterByFte": "Filtrovat podle FTE",
+  "allRoles": "Všechny role",
+  "minFte": "Min. FTE",
+  "noMembersMatchFilter": "Žádní členové neodpovídají filtru",
+  "tryAdjustingFilters": "Zkuste upravit filtry",
+  "clearFilters": "Vymazat filtry"
 } 

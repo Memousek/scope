@@ -294,5 +294,16 @@
   "projectChangeHistory": "Project change history",
   "roleAndProgress": "Role and progress",
   "change": "Change",
-  "experimental": "experimental feature"
+  "experimental": "experimental feature",
+  "filter": "Filter",
+  "clear": "Clear",
+  "filterMembers": "Filter members",
+  "clearAll": "Clear all",
+  "filterByRole": "Filter by role",
+  "filterByFte": "Filter by FTE",
+  "allRoles": "All roles",
+  "minFte": "Min FTE",
+  "noMembersMatchFilter": "No members match the filter",
+  "tryAdjustingFilters": "Try adjusting your filters",
+  "clearFilters": "Clear filters"
 }
