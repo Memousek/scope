@@ -357,7 +357,9 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                     )}
 
                     <div className="p-4 sm:p-6 relative">
-                      <Badge label={member.role} variant="custom" className="top-2 left-2" customStyle={getRoleColor(member.role) as React.CSSProperties} />
+                      <div  className="text-xs font-bold px-2 py-1 rounded-full shadow-lg z-10 bg-gradient-to-r from-blue-500 to-purple-500 text-white absolute top-2 left-2">
+                        {member.role}
+                      </div>
                       {/* Desktop layout */}
                       <div className="hidden md:flex items-center justify-between">
                         <div className="flex items-center gap-2 flex-1">
