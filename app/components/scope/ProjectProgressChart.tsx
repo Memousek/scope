@@ -166,7 +166,7 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
           <p className="font-semibold mb-2">{label}</p>
           {payload.map((entry, index: number) => (
             <p key={index} style={{ color: entry.color }} className="text-sm">
-              {entry.name}: {entry.value}%
+              {entry.name}: {entry.value.toFixed(0)}%
             </p>
           ))}
         </div>

@@ -66,7 +66,6 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
   // Drag and drop state
   const [draggedProject, setDraggedProject] = useState<Project | null>(null);
   const [dragOverProject, setDragOverProject] = useState<string | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
   const [isUpdatingPriority, setIsUpdatingPriority] = useState(false);
   const dragRef = useRef<HTMLDivElement>(null);
 
@@ -142,7 +141,6 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
   // Drag and drop handlers
   const handleDragStart = (e: React.DragEvent, project: Project) => {
     setDraggedProject(project);
-    setIsDragging(true);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/html', project.id);
     
@@ -153,14 +151,14 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
     
     // Small delay to ensure drag state is set before visual feedback
     setTimeout(() => {
-      setIsDragging(true);
+      // setIsDragging(true); // This line is removed
     }, 10);
   };
 
   const handleDragEnd = () => {
     setDraggedProject(null);
     setDragOverProject(null);
-    setIsDragging(false);
+    // setIsDragging(false); // This line is removed
     
     // Remove visual feedback
     if (dragRef.current) {
@@ -170,7 +168,7 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
     // Ensure all drag states are cleared
     setTimeout(() => {
       setDragOverProject(null);
-      setIsDragging(false);
+      // setIsDragging(false); // This line is removed
     }, 100);
   };
 
@@ -437,9 +435,6 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
                             <div 
                               key={project.id} 
                               ref={isBeingDragged ? dragRef : null}
-                              draggable={!readOnlyMode}
-                              onDragStart={!readOnlyMode ? (e) => handleDragStart(e, project) : undefined}
-                              onDragEnd={!readOnlyMode ? handleDragEnd : undefined}
                               onDragOver={!readOnlyMode ? handleDragOver : undefined}
                               onDragEnter={!readOnlyMode ? (e) => handleDragEnter(e, project.id) : undefined}
                               onDragLeave={!readOnlyMode ? handleDragLeave : undefined}
@@ -448,7 +443,6 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
                                 relative group bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-700/90 dark:via-gray-700/70 dark:to-gray-700/50 backdrop-blur-lg rounded-2xl border border-white/40 dark:border-gray-600/40 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/10
                                 ${isDragOver ? 'border-blue-500 border-2 bg-blue-50/50 dark:bg-blue-900/20 scale-105' : ''}
                                 ${isBeingDragged ? 'opacity-50 scale-95 ' : ''}
-                                ${!readOnlyMode && isDragging && !isBeingDragged ? 'cursor-grabbing' : !readOnlyMode ? 'cursor-grab' : 'cursor-default'}
                                 ${isUpdatingPriority ? 'pointer-events-none opacity-75' : ''}
                                 animate-in slide-in-from-bottom-8 fade-in duration-700
                               `}
@@ -486,6 +480,9 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
                                     {/* Drag handle */}
                                     {!readOnlyMode && (
                                       <div
+                                        draggable={true}
+                                        onDragStart={(e) => handleDragStart(e, project)}
+                                        onDragEnd={handleDragEnd}
                                         className="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg"
                                         title={t('dragToChangePriority')}
                                       >
@@ -618,6 +615,9 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
                                       {/* Drag handle */}
                                       {!readOnlyMode && (
                                         <div
+                                          draggable={true}
+                                          onDragStart={(e) => handleDragStart(e, project)}
+                                          onDragEnd={handleDragEnd}
                                           className="flex items-center justify-center w-6 h-6 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg"
                                           title={t('dragToChangePriority')}
                                         >
