@@ -291,5 +291,8 @@
   "reserveOrSlip": "Rezerva/Skluz",
   "assignTeamMembers": "Assign team members",
   "noTeamMember": "No member",
-  "projectChangeHistory": "Project change history"
+  "projectChangeHistory": "Project change history",
+  "roleAndProgress": "Role and progress",
+  "change": "Change",
+  "experimental": "experimental feature"
 }

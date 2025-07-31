@@ -404,7 +404,8 @@ export function ModernScopeLayout({
 
       case "burndown":
         return (
-          <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-xl p-6">
+          <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 relative">
+            <Badge label={t("experimental")} variant="info" position="top-right" />
             <BurndownChart projects={projects} team={team} projectAssignments={projectAssignments} />
           </div>
         );

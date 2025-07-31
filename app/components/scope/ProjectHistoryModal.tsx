@@ -76,10 +76,14 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ projec
     setError(null);
     if (!id) return;
     
+    console.log('Saving progress with ID:', id);
+    console.log('Edit values:', editValues);
+    
     // Validace: % hotovo 0-100, mandays >= 0
     for (const role of roles) {
       const doneVal = editValues[role.done as keyof ProjectProgress];
       const mandaysVal = editValues[role.mandays as keyof ProjectProgress];
+      console.log('Validating', role.label, 'done:', doneVal, 'mandays:', mandaysVal);
       if (doneVal !== undefined && (isNaN(Number(doneVal)) || Number(doneVal) < 0 || Number(doneVal) > 100)) {
         setError(`% hotovo pro ${role.label} musí být číslo 0-100.`);
         return;
@@ -92,13 +96,20 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ projec
     
     setSaving(true);
     try {
+      console.log('Calling ProjectService.updateProjectProgress with:', id, editValues);
+      console.log('Edit values types:', Object.entries(editValues).map(([key, value]) => `${key}: ${typeof value} (${value})`));
       await ProjectService.updateProjectProgress(id, editValues);
-      onProjectUpdate();
-      setEditingId(null);
-      setEditValues({});
-      // Refresh history
+      console.log('Update successful');
+      
+      // Refresh history first
       const data = await ProjectService.loadProjectProgress(project.id);
       setHistory(data);
+      
+      // Then notify parent about project update
+      onProjectUpdate();
+      
+      setEditingId(null);
+      setEditValues({});
     } catch (error) {
       console.error('Chyba při ukládání úprav:', error);
       setError('Chyba při ukládání úprav.');
@@ -108,8 +119,33 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ projec
   };
 
   const handleEdit = (progress: ProjectProgress) => {
+    console.log('Starting edit for progress:', progress);
+    console.log('Progress values:', {
+      fe_done: progress.fe_done,
+      be_done: progress.be_done,
+      qa_done: progress.qa_done,
+      pm_done: progress.pm_done,
+      dpl_done: progress.dpl_done,
+      fe_mandays: progress.fe_mandays,
+      be_mandays: progress.be_mandays,
+      qa_mandays: progress.qa_mandays,
+      pm_mandays: progress.pm_mandays,
+      dpl_mandays: progress.dpl_mandays
+    });
     setEditingId(progress.id || null);
     setEditValues({
+      fe_done: progress.fe_done,
+      be_done: progress.be_done,
+      qa_done: progress.qa_done,
+      pm_done: progress.pm_done,
+      dpl_done: progress.dpl_done,
+      fe_mandays: progress.fe_mandays,
+      be_mandays: progress.be_mandays,
+      qa_mandays: progress.qa_mandays,
+      pm_mandays: progress.pm_mandays,
+      dpl_mandays: progress.dpl_mandays
+    });
+    console.log('Set edit values:', {
       fe_done: progress.fe_done,
       be_done: progress.be_done,
       qa_done: progress.qa_done,
@@ -266,6 +302,7 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ projec
                       {getChangedRoles(progress).map((role) => {
                         const doneVal = progress[role.done as keyof ProjectProgress];
                         const mandaysVal = progress[role.mandays as keyof ProjectProgress];
+                        const isEditing = editingId === progress.id;
                         
                         return (
                           <div key={role.done} className="flex items-center gap-3">
@@ -275,13 +312,49 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ projec
                             {doneVal !== undefined && (
                               <div className="text-sm">
                                 <span className="text-gray-600 dark:text-gray-400">% {t('done')}: </span>
-                                <span className="font-medium text-blue-600 dark:text-blue-400">{doneVal}%</span>
+                                {isEditing ? (
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    value={editValues[role.done as keyof ProjectProgress] || ''}
+                                    onChange={(e) => {
+                                      const value = e.target.value === '' ? null : Number(e.target.value);
+                                      console.log('Setting', role.done, 'to', value);
+                                      setEditValues(prev => ({
+                                        ...prev,
+                                        [role.done]: value
+                                      }));
+                                    }}
+                                    className="w-16 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                  />
+                                ) : (
+                                  <span className="font-medium text-blue-600 dark:text-blue-400">{doneVal}%</span>
+                                )}
                               </div>
                             )}
                             {mandaysVal !== undefined && (
                               <div className="text-sm">
                                 <span className="text-gray-600 dark:text-gray-400">{t('estimate')} (MD): </span>
-                                <span className="font-medium text-green-600 dark:text-green-400">{mandaysVal}</span>
+                                {isEditing ? (
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="0.1"
+                                    value={editValues[role.mandays as keyof ProjectProgress] || ''}
+                                    onChange={(e) => {
+                                      const value = e.target.value === '' ? null : Number(e.target.value);
+                                      console.log('Setting', role.mandays, 'to', value);
+                                      setEditValues(prev => ({
+                                        ...prev,
+                                        [role.mandays]: value
+                                      }));
+                                    }}
+                                    className="w-16 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                  />
+                                ) : (
+                                  <span className="font-medium text-green-600 dark:text-green-400">{mandaysVal}</span>
+                                )}
                               </div>
                             )}
                           </div>

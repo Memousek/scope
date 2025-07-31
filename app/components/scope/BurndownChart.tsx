@@ -14,6 +14,7 @@ import { calculatePriorityDatesWithAssignments } from '@/app/utils/dateUtils';
 import { ProjectTeamAssignment } from '@/lib/domain/models/project-team-assignment.model';
 import { Payload } from "recharts/types/component/DefaultLegendContent";
 import { useTranslation } from "@/lib/translation";
+import { Badge } from "../ui/Badge";
 
 interface BurndownChartProps {
   projects: Project[];
@@ -403,7 +404,8 @@ export function BurndownChart({ projects, team, projectAssignments = {} }: Burnd
           </div>
 
           <div className="flex gap-2">
-            <button className="relative group/btn bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 text-white px-4 py-2 rounded-xl hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/25 active:scale-95 shadow-lg text-sm font-semibold flex items-center gap-2">
+            <button disabled={true} className="disabled:opacity-50 relative group/btn bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 text-white px-4 py-2 rounded-xl hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/25 active:scale-95 shadow-lg text-sm font-semibold flex items-center gap-2">
+              <Badge label={t("soon")} variant="soon" />
               <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300"></div>
               <svg
                 className="relative z-10 w-4 h-4"
@@ -420,7 +422,8 @@ export function BurndownChart({ projects, team, projectAssignments = {} }: Burnd
               </svg>
               <span className="relative z-10">Export PNG</span>
             </button>
-            <button className="relative group/btn bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 text-white px-4 py-2 rounded-xl hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-green-500/25 active:scale-95 shadow-lg text-sm font-semibold flex items-center gap-2">
+            <button disabled={true} className="disabled:opacity-50 relative group/btn bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 text-white px-4 py-2 rounded-xl hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-green-500/25 active:scale-95 shadow-lg text-sm font-semibold flex items-center gap-2">
+              <Badge label={t("soon")} variant="soon" />
               <div className="absolute inset-0 bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 rounded-xl opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300"></div>
               <svg
                 className="relative z-10 w-4 h-4"

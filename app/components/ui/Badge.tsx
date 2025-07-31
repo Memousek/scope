@@ -9,12 +9,14 @@ interface BadgeProps {
   label: string;
   variant?: 'default' | 'warning' | 'error' | 'success' | 'info' | 'soon';
   className?: string;
+  position?: 'left' | 'right' | 'top' | 'bottom' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 }
 
 export function Badge({ 
   label, 
   variant = 'default',
-  className = ''
+  className = '',
+  position = 'top-left'
 }: BadgeProps) {
   const getVariantStyles = () => {
     switch (variant) {
@@ -34,7 +36,7 @@ export function Badge({
   };
 
   return (
-    <div className={`absolute -top-2 -left-2 ${getVariantStyles()} text-xs font-bold px-2 py-1 rounded-full shadow-lg z-10 ${className}`}>
+    <div className={`absolute ${position === 'top-left' ? '-top-2 -left-2' : position === 'top-right' ? '-top-2 -right-2' : position === 'bottom-left' ? '-bottom-2 -left-2' : '-bottom-2 -right-2'} ${getVariantStyles()} text-xs font-bold px-2 py-1 rounded-full shadow-lg z-10 ${className}`}>
       {label}
     </div>
   );

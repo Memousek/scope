@@ -286,5 +286,8 @@
   "reserveOrSlip": "Rezerva/Skluz",
   "assignTeamMembers": "Přiřadit členy týmu",
   "noTeamMember": "Chybí člen",
-  "projectChangeHistory": "Historie změn projektu"
+  "projectChangeHistory": "Historie změn projektu",
+  "roleAndProgress": "Role a průběh",
+  "change": "Změna",
+  "experimental": "Experimentální funkce"
 } 
