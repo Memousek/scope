@@ -75,6 +75,49 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
     loadTeam();
   }, [loadProjects, loadTeam]);
 
+  // Oprava duplicitních priorit a zajištění souvislých priorit od 1
+  useEffect(() => {
+    const fixPriorities = async () => {
+      if (projects.length === 0) return;
+      
+      // Seřadíme projekty podle priority
+      const sortedProjects = [...projects].sort((a, b) => a.priority - b.priority);
+      
+      // Zkontrolujeme, zda jsou priority souvislé od 1
+      let needsUpdate = false;
+      for (let i = 0; i < sortedProjects.length; i++) {
+        if (sortedProjects[i].priority !== i + 1) {
+          needsUpdate = true;
+          break;
+        }
+      }
+      
+      // Pokud priority nejsou souvislé od 1, přečíslujeme je
+      if (needsUpdate) {
+        const updatePromises = sortedProjects.map((project, index) => {
+          const newPriority = index + 1;
+          if (project.priority !== newPriority) {
+            return updateProject(project.id, { priority: newPriority });
+          }
+          return Promise.resolve();
+        });
+        
+        await Promise.all(updatePromises);
+        await loadProjects();
+      }
+    };
+    
+    // Spustíme opravu pouze pokud neprobíhá drag and drop operace
+    if (!isUpdatingPriority) {
+      // Přidáme malé zpoždění pro zajištění, že se drag and drop operace dokončila
+      const timeoutId = setTimeout(() => {
+        fixPriorities();
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [projects, updateProject, loadProjects, isUpdatingPriority]);
+
   const loadProjectAssignments = useCallback(async () => {
     try {
       const manageAssignmentsService = ContainerService.getInstance().get(ManageProjectTeamAssignmentsService, { autobind: true });
@@ -100,14 +143,51 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
 
   const handleAddProject = async (project: Omit<Project, 'id' | 'scope_id' | 'created_at'>) => {
     try {
-      await addProject(project);
+      // Najdeme nejvyšší dostupnou priority
+      const existingPriorities = projects.map(p => p.priority);
+      const maxPriority = existingPriorities.length > 0 ? Math.max(...existingPriorities) : 0;
+      const newPriority = maxPriority + 1;
+      
+      // Vytvoříme projekt s novou priority
+      const projectWithPriority = {
+        ...project,
+        priority: newPriority
+      };
+      
+      await addProject(projectWithPriority);
     } catch (error) {
       console.error('Failed to add project:', error);
     }
   };
 
   const handleDeleteProject = async (projectId: string) => {
-    await deleteProject(projectId);
+    try {
+      // Najdeme projekt, který se maže
+      const projectToDelete = projects.find(p => p.id === projectId);
+      if (!projectToDelete) return;
+      
+      // Smažeme projekt
+      await deleteProject(projectId);
+      
+      // Přečíslujeme priority zbývajících projektů
+      const remainingProjects = projects.filter(p => p.id !== projectId);
+      const projectsToUpdate = remainingProjects
+        .filter(p => p.priority > projectToDelete.priority)
+        .map(p => ({
+          ...p,
+          priority: p.priority - 1
+        }));
+      
+      // Aktualizujeme priority
+      for (const project of projectsToUpdate) {
+        await updateProject(project.id, { priority: project.priority });
+      }
+      
+      // Reload projects to get updated order
+      await loadProjects();
+    } catch (error) {
+      console.error('Failed to delete project:', error);
+    }
   };
 
   const handleOpenEditModal = (project: Project) => {
@@ -210,67 +290,25 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
     try {
       setIsUpdatingPriority(true);
       
-      // Get current priority groups
-      const currentGroups = projects.reduce((groups, project) => {
-        const priority = project.priority;
-        if (!groups[priority]) {
-          groups[priority] = [];
-        }
-        groups[priority].push(project);
-        return groups;
-      }, {} as Record<number, Project[]>);
-      
-      // Find which group the dragged project should move to
-      const targetPriority = targetProject.priority;
+      // Získáme aktuální priority obou projektů
       const draggedPriority = draggedProject.priority;
+      const targetPriority = targetProject.priority;
       
-      // If moving to same priority group, just reorder within the group
+      // Pokud jsou priority stejné, nic neděláme (už je jen jeden projekt v sekci)
       if (draggedPriority === targetPriority) {
-        const groupProjects = currentGroups[targetPriority];
-        const draggedIndex = groupProjects.findIndex(p => p.id === draggedProject.id);
-        const targetIndex = groupProjects.findIndex(p => p.id === targetProject.id);
-        
-        // Reorder within the group
-        const reorderedGroup = [...groupProjects];
-        const [draggedItem] = reorderedGroup.splice(draggedIndex, 1);
-        reorderedGroup.splice(targetIndex, 0, draggedItem);
-        
-                 // Update all projects in this group with their new order
-         const updatePromises = reorderedGroup.map((project) => 
-           updateProject(project.id, { priority: targetPriority })
-         );
-        
-        await Promise.all(updatePromises);
-      } else {
-        // Moving to different priority group
-        // Remove from old group and add to new group
-        const oldGroup = currentGroups[draggedPriority] || [];
-        const newGroup = currentGroups[targetPriority] || [];
-        
-        // Remove dragged project from old group
-        const updatedOldGroup = oldGroup.filter(p => p.id !== draggedProject.id);
-        
-        // Add to new group at the position of target project
-        const targetIndex = newGroup.findIndex(p => p.id === targetProject.id);
-        const updatedNewGroup = [...newGroup];
-        updatedNewGroup.splice(targetIndex, 0, draggedProject);
-        
-        // Update all projects
-        const updatePromises = [
-          // Update dragged project with new priority
-          updateProject(draggedProject.id, { priority: targetPriority }),
-          // Update other projects in old group (if any)
-          ...updatedOldGroup.map(project => 
-            updateProject(project.id, { priority: draggedPriority })
-          ),
-          // Update other projects in new group
-          ...updatedNewGroup.filter(p => p.id !== draggedProject.id).map(project => 
-            updateProject(project.id, { priority: targetPriority })
-          )
-        ];
-        
-        await Promise.all(updatePromises);
+        setDragOverProject(null);
+        return;
       }
+      
+      // Prohodíme priority obou projektů
+      const updatePromises = [
+        // Přesuneme dragged project na target priority
+        updateProject(draggedProject.id, { priority: targetPriority }),
+        // Přesuneme target project na dragged priority
+        updateProject(targetProject.id, { priority: draggedPriority })
+      ];
+      
+      await Promise.all(updatePromises);
       
       // Reload projects to get updated order
       await loadProjects();
@@ -352,6 +390,7 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
           hasQA={hasQA}
           hasPM={hasPM}
           hasDPL={hasDPL}
+          existingProjects={projects}
         />
       )}
 
@@ -416,9 +455,7 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
                           </h3>
                         </div>
                         <div className="flex-1 h-px bg-gradient-to-r from-gray-300 to-transparent dark:from-gray-600"></div>
-                        <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">
-                          {projectsInGroup.length} {projectsInGroup.length === 1 ? t('project') : projectsInGroup.length < 5 ? t('projects') : t('projectsGenitive')}
-                        </span>
+
                       </div>
                       
                       {/* Projects in this priority group */}

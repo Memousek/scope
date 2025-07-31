@@ -6,7 +6,7 @@
  * - Smooth transitions a hover efekty
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Project } from './types';
 import { useTranslation } from '@/lib/translation';
 import { Modal } from '@/app/components/ui/Modal';
@@ -22,6 +22,7 @@ interface AddProjectModalProps {
   hasQA: boolean;
   hasPM: boolean;
   hasDPL: boolean;
+  existingProjects: Project[]; // Přidáno pro výpočet priority
 }
 
 export const AddProjectModal: React.FC<AddProjectModalProps> = ({ 
@@ -33,12 +34,19 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
   hasBE, 
   hasQA, 
   hasPM, 
-  hasDPL 
+  hasDPL,
+  existingProjects
 }) => {
   const { t } = useTranslation();
+  
+  // Vypočítáme automaticky priority na základě existujících projektů
+  const calculateNextPriority = () => {
+    return existingProjects.length + 1;
+  };
+  
   const [newProject, setNewProject] = useState<Omit<Project, 'id' | 'scope_id' | 'created_at'>>({
     name: '',
-    priority: 1,
+    priority: calculateNextPriority(),
     delivery_date: null,
     fe_mandays: 0,
     be_mandays: 0,
@@ -51,6 +59,16 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
     pm_done: 0,
     dpl_done: 0
   });
+
+  // Reset priority při otevření modalu
+  useEffect(() => {
+    if (isOpen) {
+      setNewProject(prev => ({
+        ...prev,
+        priority: calculateNextPriority()
+      }));
+    }
+  }, [isOpen, existingProjects]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,7 +88,7 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
     await onAddProject(newProject);
     setNewProject({
       name: '',
-      priority: 1,
+      priority: calculateNextPriority(),
       delivery_date: null,
       fe_mandays: 0,
       be_mandays: 0,
@@ -103,7 +121,7 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
     >
       <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
         {/* Základní informace */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">{t('projectName')}</label>
             <input
@@ -116,26 +134,12 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
             />
           </div>
           <div>
-            <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">{t('priority')}</label>
-            <input
-              className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
-              type="number"
-              min={1}
-              value={newProject.priority}
-              onChange={e => setNewProject(p => ({ ...p, priority: Number(e.target.value) }))}
-              disabled={savingProject}
-              required
-            />
-          </div>
-          <div>
             <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">{t('deliveryDate')}</label>
             <input
-              className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
               type="date"
+              className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
               value={newProject.delivery_date || ''}
               onChange={e => setNewProject(p => ({ ...p, delivery_date: e.target.value || null }))}
-              disabled={savingProject}
-              required
             />
           </div>
         </div>

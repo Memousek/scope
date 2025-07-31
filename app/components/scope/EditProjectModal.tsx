@@ -83,24 +83,13 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
     >
       <div className="space-y-6">
         {/* Základní informace */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">{t('projectName')}</label>
             <input
               className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
               value={editProject.name || ''}
               onChange={e => setEditProject(p => ({ ...p, name: e.target.value }))}
-              required
-            />
-          </div>
-          <div>
-            <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">{t('priority')}</label>
-            <input
-              type="number"
-              min="1"
-              className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
-              value={editProject.priority || 1}
-              onChange={e => setEditProject(p => ({ ...p, priority: Number(e.target.value) }))}
               required
             />
           </div>
