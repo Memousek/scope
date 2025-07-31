@@ -142,7 +142,7 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
         
         {/* Role estimates */}
         <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-          <h4 className="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200">Odhad mandays podle rolí</h4>
+          <h4 className="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200">{t("roleAndProgress")}</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {roleConfigs.map(config => 
               config.hasRole && (
@@ -156,7 +156,7 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
                   </div>
                   <div>
                     <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
-                      Odhad {config.label} (MD)
+                      {t("estimate")} {config.label} (MD)
                     </label>
                     <input
                       type="number"

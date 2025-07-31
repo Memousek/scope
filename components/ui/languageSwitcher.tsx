@@ -19,6 +19,7 @@ import { Globe } from "lucide-react";
 const languages = [
   { code: 'cs', label: 'Čeština', flag: 'cz' },
   { code: 'en', label: 'English', flag: 'gb' },
+  { code: 'ru', label: 'Русский', flag: 'ru' }
 ];
 
 export const LanguageSwitcher: React.FC = () => {
@@ -62,7 +63,7 @@ export const LanguageSwitcher: React.FC = () => {
           onValueChange={(e) => setLang(e)}
         >
           {languages.map((l) => (
-            <DropdownMenuRadioItem key={l.code} className="flex gap-2" value={l.code}>
+            <DropdownMenuRadioItem key={l.code} className="flex gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-200 hover:bg-gray-100 cursor-pointer" value={l.code}>
               <Image 
                 src={`https://flagcdn.com/w20/${l.flag}.png`} 
                 alt={l.label} 

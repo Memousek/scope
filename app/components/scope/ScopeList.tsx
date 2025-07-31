@@ -168,7 +168,7 @@ export const ScopeList: React.FC<ScopeListProps> = ({
                               ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white'
                               : 'bg-gradient-to-r from-green-500 to-emerald-500 text-white'
                           }`}>
-                            {scopeItem.type === ScopeType.OWNED ? "Vlastní scope" : "Sdílený scope"}
+                            {scopeItem.type === ScopeType.OWNED ? t("owned_scope") : t("shared_scope")}
                           </span>
                           <span className="text-xs text-gray-500 dark:text-gray-400 font-medium truncate" title={`${scopeItem.scope.id}`}>
                             ID: {scopeItem.scope.id.slice(0, 8)}...
@@ -183,7 +183,7 @@ export const ScopeList: React.FC<ScopeListProps> = ({
                     <div className="bg-gradient-to-br from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-gray-200/50 dark:border-gray-600/50 shadow-lg">
                       <div className="flex items-center gap-1 sm:gap-2 mb-1">
                         <span className="w-2 h-2 sm:w-3 sm:h-3 bg-emerald-600 rounded-full"></span>
-                        <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Členové</span>
+                        <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{t("members")}</span>
                       </div>
                       <div className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
                         {loadingStats[scopeItem.scope.id] ? (
@@ -196,7 +196,7 @@ export const ScopeList: React.FC<ScopeListProps> = ({
                     <div className="bg-gradient-to-br from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-gray-200/50 dark:border-gray-600/50 shadow-lg">
                       <div className="flex items-center gap-1 sm:gap-2 mb-1">
                         <span className="w-2 h-2 sm:w-3 sm:h-3 bg-blue-500 rounded-full"></span>
-                        <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Projekty</span>
+                        <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{t("projects")}</span>
                       </div>
                       <div className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
                         {loadingStats[scopeItem.scope.id] ? (

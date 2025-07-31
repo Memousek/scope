@@ -13,6 +13,7 @@ import { PROJECT_ROLES, calculateRoleProgress } from '@/lib/utils/projectRoles';
 import { getWorkdaysCount } from '@/app/utils/dateUtils';
 import { Payload } from "recharts/types/component/DefaultLegendContent";
 import { ProjectTeamAssignment } from '@/lib/domain/models/project-team-assignment.model';
+import { useTranslation } from "@/lib/translation";
 
 interface ProjectProgressChartProps {
   project: Project;
@@ -44,6 +45,7 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
   priorityDates,
   projectAssignments = []
 }) => {
+  const { t } = useTranslation();
   const [progressData, setProgressData] = useState<ProgressData[]>([]);
   const [activeLegend, setActiveLegend] = useState<string | null>(null); // Přidáno
 
@@ -247,7 +249,7 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
               stroke="#60a5fa"
               strokeWidth={!activeLegend || activeLegend === "idealProgress" ? 2 : 1}
               strokeDasharray="5 5"
-              name="Ideální progress"
+              name={t("idealProgress")}
               dot={false}
               opacity={
                 !activeLegend || activeLegend === "idealProgress" ? 1 : 0.2
@@ -276,7 +278,7 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
               dataKey="actualProgress"
               stroke="#10b981"
               strokeWidth={4}
-              name="Celkový progress"
+              name={t("totalProgress")}
               dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
               opacity={
                 !activeLegend || activeLegend === "actualProgress" ? 1 : 0.2
@@ -292,19 +294,19 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
           <div className="text-lg font-semibold text-gray-800 dark:text-gray-200">
             {deliveryInfo.deliveryDate ? deliveryInfo.deliveryDate.toLocaleDateString() : 'N/A'}
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Plánovaný termín</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{t("plannedDate")}</div>
         </div>
         
         <div className="text-center">
           <div className="text-lg font-semibold text-gray-800 dark:text-gray-200">
             {deliveryInfo.calculatedDeliveryDate.toLocaleDateString()}
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Vypočítaný termín</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{t("calculatedDate")}</div>
         </div>
         
         {priorityDates && (
           <div className="text-center">
-            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Termín podle priority</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t("priorityDate")}</div>
             <div className="text-lg font-semibold text-blue-600 dark:text-blue-400">
               Od: {priorityDates.priorityStartDate.toLocaleDateString()}
             </div>
@@ -324,7 +326,7 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
             })()
           }`}>
             {(() => {
-              if (projectAssignments.length === 0) return 'Přiřadit členy týmu';
+              if (projectAssignments.length === 0) return t("assignTeamMembers");
               if (!deliveryInfo.deliveryDate || !deliveryInfo.calculatedDeliveryDate) return 'N/A';
               const diff = getWorkdaysCount(deliveryInfo.calculatedDeliveryDate, deliveryInfo.deliveryDate);
               if (diff >= 0) {
@@ -334,7 +336,7 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
               }
             })()}
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Rezerva/Skluz</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{t("reserveOrSlip")}</div>
         </div>
         
         <div className="text-center">
@@ -343,9 +345,9 @@ export const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({
               ? 'text-orange-600 dark:text-orange-400' 
               : getSlippageColor(deliveryInfo.slip || 0)
           }`}>
-            {projectAssignments.length === 0 ? 'Přiřadit členy týmu' : `${deliveryInfo.slip || 0} dní`}
+            {projectAssignments.length === 0 ? t("assignTeamMembers") : `${deliveryInfo.slip || 0} dní`}
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Skluz</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{t("slip")}</div>
         </div>
       </div>
     </div>

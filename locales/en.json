@@ -288,7 +288,7 @@
   "shareLinkEdit": "Share link (edit)",
   "shareLinkViewOnly": "Share link (view only)",
   "copyLink": "Copy link",
-  "reserveOrSlip": "Rezerva/Skluz",
+  "reserveOrSlip": "Reserve/Slip",
   "assignTeamMembers": "Assign team members",
   "noTeamMember": "No member",
   "projectChangeHistory": "Project change history",
@@ -305,5 +305,9 @@
   "minFte": "Min FTE",
   "noMembersMatchFilter": "No members match the filter",
   "tryAdjustingFilters": "Try adjusting your filters",
-  "clearFilters": "Clear filters"
+  "clearFilters": "Clear filters",
+  "members": "Members",
+  "plannedDate": "Planned date",
+  "calculatedDate": "Calculated date",
+  "priorityDate": "Date by priority"
 }

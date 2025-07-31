@@ -74,8 +74,10 @@
   "no_scopes": "Zatím nemáte žádné scopy. Vytvořte si nový scope pro sledování projektů.",
   "owned_scope": "Vlastní scope",
   "shared_scope": "Sdílený scope",
+  "members": "Členové",
   "remove": "Odebrat",
   "share": "Sdílet",
+  "generate_link": "Generovaný odkaz",
   "saving": "Ukládání...",
   "no_description": "Žádný popis",
   "fe_mandays": "FE MD",
@@ -300,5 +302,8 @@
   "minFte": "Min. FTE",
   "noMembersMatchFilter": "Žádní členové neodpovídají filtru",
   "tryAdjustingFilters": "Zkuste upravit filtry",
-  "clearFilters": "Vymazat filtry"
+  "clearFilters": "Vymazat filtry",
+  "plannedDate": "Plánovaný termín",
+  "calculatedDate": "Vypočítaný termín",
+  "priorityDate": "Termín podle priority"
 } 
