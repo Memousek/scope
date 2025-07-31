@@ -6,7 +6,7 @@
  * - Smooth transitions a hover efekty
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Project } from './types';
 import { useTranslation } from '@/lib/translation';
 import { Modal } from '@/app/components/ui/Modal';
@@ -40,9 +40,9 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
   const { t } = useTranslation();
   
   // Vypočítáme automaticky priority na základě existujících projektů
-  const calculateNextPriority = () => {
+  const calculateNextPriority = useCallback(() => {
     return existingProjects.length + 1;
-  };
+  }, [existingProjects]);
   
   const [newProject, setNewProject] = useState<Omit<Project, 'id' | 'scope_id' | 'created_at'>>({
     name: '',
@@ -68,7 +68,7 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
         priority: calculateNextPriority()
       }));
     }
-  }, [isOpen, existingProjects]);
+  }, [isOpen, existingProjects, calculateNextPriority]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

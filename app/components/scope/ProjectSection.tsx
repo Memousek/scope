@@ -22,7 +22,7 @@ import { ContainerService } from '@/lib/container.service';
 import { ManageProjectTeamAssignmentsService } from '@/lib/domain/services/manage-project-team-assignments.service';
 import { ProjectTeamAssignment } from '@/lib/domain/models/project-team-assignment.model';
 import { PROJECT_ROLES, calculateRoleProgress, calculateTotalProgress } from '@/lib/utils/projectRoles';
-import { FiUsers } from "react-icons/fi";
+
 import { Badge } from '@/app/components/ui/Badge';
 
 interface ProjectSectionProps {
@@ -56,8 +56,6 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [historyModalProject, setHistoryModalProject] = useState<Project | null>(null);
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
-  const [teamAssignmentModalOpen, setTeamAssignmentModalOpen] = useState(false);
-  const [teamAssignmentProject, setTeamAssignmentProject] = useState<Project | null>(null);
   
   // Project assignments state
   const [projectAssignments, setProjectAssignments] = useState<Record<string, ProjectTeamAssignment[]>>({});
@@ -199,15 +197,7 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
     setEditProject(null);
   };
 
-  const handleOpenTeamAssignmentModal = (project: Project) => {
-    setTeamAssignmentProject(project);
-    setTeamAssignmentModalOpen(true);
-  };
 
-  const handleCloseTeamAssignmentModal = () => {
-    setTeamAssignmentModalOpen(false);
-    setTeamAssignmentProject(null);
-  };
 
   const handleProjectChange = async (updatedProject: Project) => {
     try {
@@ -605,15 +595,7 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
                                           </button>
                                         )}
                                         
-                                        {!readOnlyMode && (
-                                          <button
-                                            onClick={() => handleOpenTeamAssignmentModal(project)}
-                                            className="p-3 text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 transition-all duration-200 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-xl group"
-                                            title={t('manage_team')}
-                                          >
-                                            <FiUsers className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
-                                          </button>
-                                        )}
+
                                         
                                         {!readOnlyMode && (
                                           <button
@@ -695,16 +677,7 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
                                           </svg>
                                         </button>
                                       )}
-                                      
-                                      {!readOnlyMode && (
-                                        <button
-                                          onClick={() => handleOpenTeamAssignmentModal(project)}
-                                          className="p-2 text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 transition-all duration-200 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg"
-                                          title={t('manage_team')}
-                                        >
-                                          <FiUsers className="w-4 h-4" />
-                                        </button>
-                                      )}
+
                                       
                                       {!readOnlyMode && (
                                         <button

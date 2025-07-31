@@ -491,6 +491,7 @@ export function ModernScopeLayout({
           hasQA={hasQA}
           hasPM={hasPM}
           hasDPL={hasDPL}
+          existingProjects={projects}
         />
       )}
 
