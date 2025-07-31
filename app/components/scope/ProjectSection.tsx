@@ -905,17 +905,6 @@ export function ProjectSection({ scopeId, hasFE, hasBE, hasQA, hasPM, hasDPL, re
           onProjectUpdate={loadProjects}
         />
       )}
-
-      {/* Modal pro správu přiřazení týmu */}
-      {!readOnlyMode && teamAssignmentModalOpen && teamAssignmentProject && (
-        <ProjectTeamAssignmentModal
-          isOpen={teamAssignmentModalOpen}
-          onClose={handleCloseTeamAssignmentModal}
-          project={teamAssignmentProject}
-          team={team}
-          onAssignmentsChange={loadProjects}
-        />
-      )}
     </>
   );
 } 
