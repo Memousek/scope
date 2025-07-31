@@ -305,5 +305,6 @@
   "clearFilters": "Vymazat filtry",
   "plannedDate": "Plánovaný termín",
   "calculatedDate": "Vypočítaný termín",
-  "priorityDate": "Termín podle priority"
+  "priorityDate": "Termín podle priority",
+  "totalProgress": "Celkový průběh"
 } 
