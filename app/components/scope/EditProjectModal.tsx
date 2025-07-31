@@ -149,7 +149,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
                   </div>
                   <div>
                     <label htmlFor={`${role.key}-done`} className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
-                      % {t('done')} ({editProject[role.done as keyof Project] as number || 0} MD)
+                      % {t('done')}
                     </label>
                     <input
                       id={`${role.key}-done`}
