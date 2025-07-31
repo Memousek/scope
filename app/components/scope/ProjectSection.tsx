@@ -16,7 +16,6 @@ import { useTeam } from '@/app/hooks/useTeam';
 import { AddProjectModal } from './AddProjectModal';
 import { EditProjectModal } from './EditProjectModal';
 import { ProjectHistoryModal } from './ProjectHistoryModal';
-import { ProjectTeamAssignmentModal } from './ProjectTeamAssignmentModal';
 import { ProjectProgressChart } from './ProjectProgressChart';
 import { calculateProjectDeliveryInfoWithAssignments, calculatePriorityDatesWithAssignments } from '@/app/utils/dateUtils';
 import { ContainerService } from '@/lib/container.service';
