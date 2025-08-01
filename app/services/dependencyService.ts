@@ -151,7 +151,7 @@ export class DependencyService {
       return {
         role: assignment.role,
         name: `${assignment.role} tým (${assignment.team_members?.name || assignment.team_member_id})`,
-        avatar: '👥',
+        avatar: 'users',
         status,
         team_member_id: assignment.team_member_id,
         allocation_fte: assignment.allocation_fte
@@ -300,7 +300,7 @@ export class DependencyService {
     return projectAssignments.map(assignment => ({
       role: assignment.role,
       name: `${assignment.role} tým (${assignment.teamMemberId})`,
-      avatar: '👥',
+      avatar: 'users',
       status: 'waiting',
       team_member_id: assignment.teamMemberId
     }));

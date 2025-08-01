@@ -15,6 +15,7 @@ import { Payload } from "recharts/types/component/DefaultLegendContent";
 import { useTranslation } from "@/lib/translation";
 import { useScopeRoles } from '@/app/hooks/useScopeRoles';
 import ProjectDetailVisualizations from './ProjectDetailVisualizations';
+import { FiTrendingUp, FiAlertTriangle, FiAlertCircle } from 'react-icons/fi';
 
 interface ProjectProgressChartProps {
   project: Project;
@@ -140,9 +141,9 @@ const ProjectProgressChartComponent: React.FC<ProjectProgressChartProps> = ({
   };
 
   const getSlippageIcon = (slippage: number) => {
-    if (slippage >= 0) return '🚀';
-    if (slippage >= -10) return '⚠️';
-    return '🔴';
+    if (slippage >= 0) return <FiTrendingUp />;
+    if (slippage >= -10) return <FiAlertTriangle />;
+    return <FiAlertCircle />;
   };
 
   // Používáme dynamické role z databáze

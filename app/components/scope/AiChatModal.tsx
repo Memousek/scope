@@ -6,6 +6,7 @@
 
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { FiUserMinus } from 'react-icons/fi';
 
 interface AiChatModalProps {
   isOpen: boolean;
@@ -73,7 +74,7 @@ export function AiChatModal({ isOpen, onClose }: AiChatModalProps) {
               </div>
               <div className="bg-gray-100 rounded-lg p-3 max-w-[80%]">
                 <p className="text-sm">
-                  👋 Hi! I&apos;m your personal AI project manager.
+                  <FiUserMinus className="inline mr-2" /> Hi! I&apos;m your personal AI project manager.
                 </p>
               </div>
             </div>

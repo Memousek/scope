@@ -28,7 +28,7 @@ import { calculateRoleProgress, calculateTotalProgress } from '@/lib/utils/dynam
 import { useScopeRoles } from '@/app/hooks/useScopeRoles';
 
 import { Badge } from '@/app/components/ui/Badge';
-import { FiUsers } from 'react-icons/fi';
+import { FiUsers, FiTrendingUp, FiFolder } from 'react-icons/fi';
 
 interface ProjectSectionProps {
   scopeId: string;
@@ -579,7 +579,7 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
               <div className="flex items-center gap-4">
                 <div className="relative">
                   <h2 className="relative text-2xl font-bold dark:text-white text-gray-900">
-                    🚀 {t('projects')}
+                    <FiFolder className="inline mr-2" /> {t('projects')}
                   </h2>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 bg-white/50 dark:bg-gray-700/50 px-3 py-1 rounded-full backdrop-blur-sm">
@@ -607,7 +607,7 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                 <div className="text-center py-16">
                   <div className="relative mb-6">
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur-xl opacity-20"></div>
-                    <div className="relative text-8xl">🚀</div>
+                    <div className="relative text-8xl"><FiTrendingUp /></div>
                   </div>
                   <p className="text-gray-600 dark:text-gray-300 text-xl font-medium mb-2">{t('noProjects')}</p>
                   <p className="text-gray-500 dark:text-gray-400 text-sm">Začněte přidáním prvního projektu</p>

@@ -16,6 +16,7 @@ import { RoleManagementModal } from "./RoleManagementModal";
 import { useTranslation } from "@/lib/translation";
 import { TeamService } from "@/app/services/teamService";
 import { SettingsIcon, FilterIcon, XIcon, ChevronDownIcon } from "lucide-react";
+import { FiUsers, FiSearch } from 'react-icons/fi';
 
 interface TeamSectionProps {
   scopeId: string;
@@ -176,7 +177,7 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
               <div className="flex items-center gap-4">
                 <div className="relative">
                   <h2 className="relative text-2xl font-bold dark:text-white text-gray-900">
-                    👥 {t("teamMembers")}
+                    <FiUsers className="inline mr-2" /> {t("teamMembers")}
                   </h2>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 bg-white/50 dark:bg-gray-700/50 px-3 py-1 rounded-full backdrop-blur-sm">
@@ -304,7 +305,7 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                   <div className="relative mb-6">
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur-xl opacity-20"></div>
                     <div className={`relative text-8xl ${!isReducedMotion ? 'animate-bounce' : ''}`}>
-                      {team.length === 0 ? "👥" : "🔍"}
+                      {team.length === 0 ? <FiUsers /> : <FiSearch />}
                     </div>
                   </div>
                   <p className="text-gray-600 dark:text-gray-300 text-xl font-medium mb-2">

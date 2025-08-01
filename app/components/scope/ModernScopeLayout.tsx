@@ -19,6 +19,7 @@ import { useTranslation } from "@/lib/translation";
 import { ProjectTeamAssignment } from "@/lib/domain/models/project-team-assignment.model";
 import { Badge } from "../ui/Badge";
 import { useScopeRoles } from "@/app/hooks/useScopeRoles";
+import { FiUsers, FiTrendingUp, FiBarChart2, FiClipboard, FiSearch, FiDownload, FiFolder } from 'react-icons/fi';
 
 interface ModernScopeLayoutProps {
   scopeId: string;
@@ -128,10 +129,10 @@ export function ModernScopeLayout({
   const [savingProject, setSavingProject] = useState(false);
 
   const tabs = [
-    { id: "overview", label: t("overview"), icon: "📊" },
-    { id: "team", label: t("team"), icon: "👥" },
-    { id: "projects", label: t("projects"), icon: "🚀" },
-    { id: "burndown", label: t("burndown"), icon: "📈" },
+    { id: "overview", label: t("overview"), icon: <FiBarChart2 /> },
+    { id: "team", label: t("team"), icon: <FiUsers /> },
+    { id: "projects", label: t("projects"), icon: <FiFolder /> },
+    { id: "burndown", label: t("burndown"), icon: <FiTrendingUp /> },
   ];
 
   const renderTabContent = () => {
@@ -150,7 +151,7 @@ export function ModernScopeLayout({
                 <div className="flex items-center gap-4 mb-6">
                   <div className="relative">
                     <h2 className="text-2xl font-bold dark:text-white text-gray-900">
-                      🔍 <span className="">{t("scopeOverview")}</span>
+                      <FiSearch className="inline mr-2" /> <span className="">{t("scopeOverview")}</span>
                     </h2>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 bg-white/50 dark:bg-gray-700/50 px-3 py-1 rounded-full backdrop-blur-sm">
@@ -166,7 +167,7 @@ export function ModernScopeLayout({
                       <div className="flex items-center gap-4">
                         <div className="relative">
                           <div className="select-none w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg motion-reduce:scale-100 motion-reduce:transition-none">
-                            <span className="text-white text-2xl">👥</span>
+                            <FiUsers className="text-white text-2xl" />
                           </div>
                         </div>
                         <div>
@@ -195,7 +196,7 @@ export function ModernScopeLayout({
                       <div className="flex items-center gap-4">
                         <div className="relative">
                           <div className="select-none w-16 h-16 bg-gradient-to-br from-emerald-600 to-green-700 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg motion-reduce:scale-100 motion-reduce:transition-none">
-                            <span className="text-white text-2xl">🚀</span>
+                            <FiFolder className="text-white text-2xl" />
                           </div>
                         </div>
                         <div>
@@ -224,7 +225,7 @@ export function ModernScopeLayout({
                       <div className="flex items-center gap-4">
                         <div className="relative">
                           <div className="select-none w-16 h-16 bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg motion-reduce:scale-100 motion-reduce:transition-none">
-                            <span className="text-white text-2xl">⏰</span>
+                            <FiTrendingUp className="text-white text-2xl" />
                           </div>
                         </div>
                         <div>
@@ -290,7 +291,7 @@ export function ModernScopeLayout({
                       className="relative group bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 text-white rounded-xl p-4 hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/25 active:scale-95 flex flex-col items-center gap-3 motion-reduce:scale-100 motion-reduce:transition-none"
                     >
                       <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                      <span className="relative z-10 text-2xl">👥</span>
+                      <FiUsers className="relative z-10 text-2xl" />
                       <span className="relative z-10 text-sm font-semibold">
                         {t("addMember")}
                       </span>
@@ -304,7 +305,7 @@ export function ModernScopeLayout({
                       className="relative group bg-gradient-to-br from-emerald-600 via-green-700 to-teal-600 text-white rounded-xl p-4 hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-green-500/25 active:scale-95 flex flex-col items-center gap-3 motion-reduce:scale-100 motion-reduce:transition-none"
                     >
                       <div className="absolute inset-0 bg-gradient-to-r from-emerald-700 via-green-800 to-teal-700 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                      <span className="relative z-10 text-2xl">🚀</span>
+                      <FiTrendingUp className="relative z-10 text-2xl" />
                       <span className="relative z-10 text-sm font-semibold">
                         {t("addNewProject")}
                       </span>
@@ -317,7 +318,7 @@ export function ModernScopeLayout({
                     className="relative group bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 text-white rounded-xl p-4 hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-orange-500/25 active:scale-95 flex flex-col items-center gap-3 motion-reduce:scale-100 motion-reduce:transition-none"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <span className="relative z-10 text-2xl">📊</span>
+                    <FiBarChart2 className="relative z-10 text-2xl" />
                     <span className="relative z-10 text-sm font-semibold">
                       {t("exportTeam")}
                     </span>
@@ -329,7 +330,7 @@ export function ModernScopeLayout({
                     className="relative group bg-gradient-to-br from-teal-500 via-cyan-500 to-blue-500 text-white rounded-xl p-4 hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-teal-500/25 active:scale-95 flex flex-col items-center gap-3 motion-reduce:scale-100 motion-reduce:transition-none"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-teal-600 via-cyan-600 to-blue-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <span className="relative z-10 text-2xl">📈</span>
+                    <FiFolder className="relative z-10 text-2xl" />
                     <span className="relative z-10 text-sm font-semibold">
                       {t("exportProjects")}
                     </span>
@@ -343,7 +344,7 @@ export function ModernScopeLayout({
                     disabled={true}
                   >
                     <Badge label={t("soon")} variant="soon" />
-                    <span className="text-2xl">📥</span>
+                    <FiDownload className="text-2xl" />
                     <span className="text-sm font-semibold">{t("importTeam")}</span>
                   </button>
                   )}
@@ -356,7 +357,7 @@ export function ModernScopeLayout({
                     disabled={true}
                   >
                     <Badge label={t("soon")} variant="soon" />
-                    <span className="text-2xl">📥</span>
+                    <FiDownload className="text-2xl" />
                     <span className="text-sm font-semibold">{t("importProjects")}</span>
                   </button>
                   )}

@@ -15,6 +15,7 @@ import {ScopeRepository} from "@/lib/domain/repositories/scope.repository";
 import {TeamMemberRepository} from "@/lib/domain/repositories/team-member.repository";
 import {ProjectRepository} from "@/lib/domain/repositories/project.repository";
 import {ContainerService} from "@/lib/container.service";
+import { FiClipboard } from 'react-icons/fi';
 
 
 export type ScopeListItem = {
@@ -121,7 +122,7 @@ export const ScopeList: React.FC<ScopeListProps> = ({
               <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-br from-purple-400/10 to-pink-400/10 rounded-full blur-2xl"></div>
               
               <div className="relative z-10">
-                <div className="text-6xl mb-6">📋</div>
+                <div className="text-6xl mb-6"><FiClipboard /></div>
                 <h3 className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
                   {t("no_scopes")}
                 </h3>

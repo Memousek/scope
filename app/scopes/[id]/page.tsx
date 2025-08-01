@@ -32,6 +32,7 @@ import { ProjectService } from "@/app/services/projectService";
 import { ScopeService } from "@/app/services/scopeService";
 import { ScopeEditorService } from "@/app/services/scopeEditorService";
 import { Badge } from "@/app/components/ui/Badge";
+import { FiCheck, FiEdit2, FiMessageCircle, FiShare2, FiX } from "react-icons/fi";
 
 export default function ScopePage({
   params,
@@ -494,7 +495,7 @@ export default function ScopePage({
                       disabled={savingName}
                       className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
                     >
-                      {savingName ? t('saving') : "✓"}
+                      {savingName ? t('saving') : <FiCheck className="text-2xl" />}
                     </button>
                     <button
                       onClick={() => {
@@ -504,7 +505,7 @@ export default function ScopePage({
                       }}
                       className="text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
                     >
-                      ✕
+                      <FiX className="text-2xl" />
                     </button>
                   </div>
                 ) : (
@@ -518,7 +519,7 @@ export default function ScopePage({
                         className="transition-transform hover:scale-110 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                         title={t('editScopeName')}
                       >
-                        ✏️
+                        <FiEdit2 className="text-2xl" />
                       </button>
                     )}
                   </div>
@@ -538,18 +539,18 @@ export default function ScopePage({
               {(isOwner || isEditor) && (
                 <button
                   onClick={() => setShareModalOpen(true)}
-                  className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all duration-200 shadow-lg"
+                  className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all duration-200 shadow-lg"
                 >
-                  📤 {t('share')}
+                  <FiShare2 className="text-2xl" /> {t('share')}
                 </button>
               )}
               <button
                 onClick={() => setAiChatOpen(true)}
-                className="relative bg-gradient-to-r from-gray-500 to-gray-600 text-white px-4 py-2 rounded-lg hover:from-gray-600 hover:to-gray-700 transition-all duration-200 shadow-lg opacity-50 cursor-not-allowed"
+                className="flex items-center gap-2 relative bg-gradient-to-r from-gray-500 to-gray-600 text-white px-4 py-2 rounded-lg hover:from-gray-600 hover:to-gray-700 transition-all duration-200 shadow-lg opacity-50 cursor-not-allowed"
                 disabled={true}
               >
                 <Badge label={t('soon')} variant="soon" />
-                🤖 Ai Chat
+                 <FiMessageCircle className="text-2xl" /> Ai Chat
               </button>
             </div>
           </div>
@@ -571,7 +572,7 @@ export default function ScopePage({
                   disabled={savingDescription}
                   className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 px-3 py-1"
                 >
-                  {savingDescription ? t('saving') : "✓"}
+                  {savingDescription ? t('saving') : <FiCheck className="text-2xl" />}
                 </button>
                 <button
                   onClick={() => {
@@ -580,7 +581,7 @@ export default function ScopePage({
                   }}
                   className="text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 px-3 py-1"
                 >
-                  ✕
+                  <FiX className="text-2xl" />
                 </button>
               </div>
             ) : (
@@ -594,7 +595,7 @@ export default function ScopePage({
                     className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-transform hover:scale-110"
                     title={t('editScopeDescription')}
                   >
-                    ✏️
+                    <FiEdit2 className="text-2xl" />
                   </button>
                 )}
               </div>

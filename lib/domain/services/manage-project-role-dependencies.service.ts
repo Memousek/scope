@@ -112,7 +112,7 @@ export class ManageProjectRoleDependenciesService {
       return {
         role: assignment.role,
         name: `${assignment.role} tým (${assignment.teamMemberId})`,
-        avatar: '👥',
+        avatar: 'users',
         status: isActive ? 'active' : 'waiting',
         team_member_id: assignment.teamMemberId,
         allocation_fte: assignment.allocationFte
@@ -223,7 +223,7 @@ export class ManageProjectRoleDependenciesService {
     return projectAssignments.map(assignment => ({
       role: assignment.role,
       name: `${assignment.role} tým (${assignment.teamMemberId})`,
-      avatar: '👥',
+      avatar: 'users',
       status: 'waiting',
       team_member_id: assignment.teamMemberId
     }));

@@ -4,6 +4,8 @@
  * - Podporuje češtinu a angličtinu
  */
 
+import { FiFolder, FiEdit3, FiCheckCircle, FiUsers, FiUserMinus, FiCalendar, FiClipboard } from 'react-icons/fi';
+
 export function formatRelativeTime(date: Date, locale: string = 'cs-CZ'): string {
   const now = new Date();
   const diffInMs = now.getTime() - date.getTime();
@@ -28,22 +30,22 @@ export function formatRelativeTime(date: Date, locale: string = 'cs-CZ'): string
   }
 }
 
-export function getActivityIcon(type: string): string {
+export function getActivityIcon(type: string): React.ReactElement {
   switch (type) {
     case 'project_created':
-      return '🚀';
+      return <FiFolder />;
     case 'project_updated':
-      return '📝';
+      return <FiEdit3 />;
     case 'project_completed':
-      return '✅';
+      return <FiCheckCircle />;
     case 'member_added':
-      return '👥';
+      return <FiUsers />;
     case 'member_removed':
-      return '👋';
+      return <FiUserMinus />;
     case 'delivery_updated':
-      return '📅';
+      return <FiCalendar />;
     default:
-      return '📋';
+      return <FiClipboard />;
   }
 }
 
