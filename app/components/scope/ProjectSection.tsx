@@ -88,7 +88,11 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
     const loadWorkflowDependencies = async () => {
       if (projects.length === 0) return;
       
-      const dependencies: Record<string, any> = {};
+      const dependencies: Record<string, {
+        workflow_type: string;
+        dependencies: Array<{ from: string; to: string; type: 'blocking' | 'waiting' | 'parallel' }>;
+        active_workers: Array<{ role: string; status: 'active' | 'waiting' | 'blocked' }>;
+      }> = {};
       
       for (const project of projects) {
         try {
@@ -547,48 +551,7 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
     return isAssigned;
   };
 
-  // Funkce pro získání aktuálního stavu workflow
-  const getCurrentWorkflowStatus = (projectId: string) => {
-    const dependencies = workflowDependencies[projectId];
-    if (!dependencies || !dependencies.active_workers) {
-      return { status: 'no-workflow', text: 'Bez workflow', color: 'gray', icon: '⚙️' };
-    }
 
-    const activeWorkers = dependencies.active_workers;
-    const activeCount = activeWorkers.filter(w => w.status === 'active').length;
-    const blockedCount = activeWorkers.filter(w => w.status === 'blocked').length;
-    const waitingCount = activeWorkers.filter(w => w.status === 'waiting').length;
-
-    if (blockedCount > 0) {
-      return { 
-        status: 'blocked', 
-        text: `${blockedCount} blokováno`, 
-        color: 'red',
-        icon: '🚫'
-      };
-    } else if (activeCount > 0) {
-      return { 
-        status: 'active', 
-        text: `${activeCount} aktivní`, 
-        color: 'green',
-        icon: '⚡'
-      };
-    } else if (waitingCount > 0) {
-      return { 
-        status: 'waiting', 
-        text: `${waitingCount} čeká`, 
-        color: 'yellow',
-        icon: '⏳'
-      };
-    } else {
-      return { 
-        status: 'completed', 
-        text: 'Dokončeno', 
-        color: 'blue',
-        icon: '✅'
-      };
-    }
-  };
 
   return (
     <>
@@ -1276,11 +1239,7 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
            isOpen={!!dependenciesModalProject}
            onClose={() => setDependenciesModalProject(null)}
            projectId={dependenciesModalProject.id}
-           roles={activeRoles.map(role => ({
-             key: role.key,
-             label: role.label,
-             color: role.color || '#3b82f6'
-           }))}
+
            projectAssignments={projectAssignments[dependenciesModalProject.id]?.map(assignment => ({
              teamMemberId: assignment.teamMemberId,
              role: assignment.role

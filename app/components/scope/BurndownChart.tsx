@@ -10,7 +10,7 @@
 import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Project, TeamMember } from './types';
-import { calculatePriorityDatesWithAssignments, calculateProjectDeliveryInfoWithWorkflow } from '@/app/utils/dateUtils';
+import { calculatePriorityDatesWithAssignments } from '@/app/utils/dateUtils';
 import { ProjectTeamAssignment } from '@/lib/domain/models/project-team-assignment.model';
 import { Payload } from "recharts/types/component/DefaultLegendContent";
 import { useTranslation } from "@/lib/translation";
@@ -148,7 +148,7 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
     });
 
     setChartData(data);
-  }, [projects, team, projectAssignments, activeRoles]);
+  }, [projects, team, projectAssignments, activeRoles, workflowDependencies]);
 
   const CustomTooltip = ({
     active,

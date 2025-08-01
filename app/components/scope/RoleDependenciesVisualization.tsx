@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { useTranslation } from '@/lib/translation';
+
 
 interface RoleDependency {
   fromRole: string;
@@ -18,36 +18,7 @@ interface RoleDependenciesVisualizationProps {
 }
 
 export const RoleDependenciesVisualization: React.FC<RoleDependenciesVisualizationProps> = ({
-  dependencies,
-  roles
 }) => {
-  const { t } = useTranslation();
-
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'blocking':
-        return 'from-red-500 to-pink-500';
-      case 'parallel':
-        return 'from-green-500 to-emerald-500';
-      case 'sequential':
-        return 'from-blue-500 to-purple-500';
-      default:
-        return 'from-gray-500 to-gray-600';
-    }
-  };
-
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'blocking':
-        return '🚫';
-      case 'parallel':
-        return '⚡';
-      case 'sequential':
-        return '➡️';
-      default:
-        return '🔗';
-    }
-  };
 
   return (
     <div className="bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-800/90 dark:via-gray-800/70 dark:to-gray-800/50 backdrop-blur-xl rounded-2xl p-6 border border-white/30 dark:border-gray-600/30 shadow-2xl">
@@ -63,7 +34,7 @@ export const RoleDependenciesVisualization: React.FC<RoleDependenciesVisualizati
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
           </div>
-          {t('roleDependencies')} - Flow vizualizace
+          Role Dependencies - Flow vizualizace
         </h3>
         
         {/* Flow diagram */}

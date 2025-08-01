@@ -2,7 +2,6 @@ import { inject, injectable } from 'inversify';
 import { ProjectRoleDependencyRepository } from '@/lib/domain/repositories/project-role-dependency.repository';
 import { ProjectTeamAssignmentRepository } from '@/lib/domain/repositories/project-team-assignment.repository';
 import { ProjectRoleDependency } from '@/lib/domain/models/project-role-dependency.model';
-import { ProjectTeamAssignment } from '@/lib/domain/models/project-team-assignment.model';
 
 export interface DependencyItem {
   from: string;

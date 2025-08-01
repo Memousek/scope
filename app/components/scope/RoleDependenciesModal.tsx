@@ -6,14 +6,13 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from '@/app/components/ui/Modal';
 import { Badge } from '@/app/components/ui/Badge';
-import { useTranslation } from '@/lib/translation';
-import { DependencyService, DependencyItem, ActiveWorker, ProjectDependencyData } from '@/app/services/dependencyService';
+
+import { DependencyService, DependencyItem, ActiveWorker } from '@/app/services/dependencyService';
 
 interface RoleDependenciesModalProps {
   isOpen: boolean;
   onClose: () => void;
   projectId: string;
-  roles: Array<{ key: string; label: string; color: string }>;
   projectAssignments: Array<{ teamMemberId: string; role: string }>;
   onWorkflowChange?: (workflow: string) => void;
   onWorkersChange?: (workers: ActiveWorker[]) => void;
@@ -23,12 +22,11 @@ export const RoleDependenciesModal: React.FC<RoleDependenciesModalProps> = ({
   isOpen,
   onClose,
   projectId,
-  roles,
   projectAssignments,
   onWorkflowChange,
   onWorkersChange
 }) => {
-  const { t } = useTranslation();
+
   const [selectedWorkflow, setSelectedWorkflow] = useState<string>('FE-First');
   const [activeWorkers, setActiveWorkers] = useState<ActiveWorker[]>([]);
   const [loading, setLoading] = useState(false);
@@ -62,7 +60,7 @@ export const RoleDependenciesModal: React.FC<RoleDependenciesModalProps> = ({
   const handleWorkflowSelect = (workflowId: string) => {
     setSelectedWorkflow(workflowId);
     const templates = DependencyService.getWorkflowTemplates();
-    const selectedTemplate = templates.find((w: any) => w.id === workflowId);
+    const selectedTemplate = templates.find((w) => w.id === workflowId);
     if (selectedTemplate) {
       // Update dependencies based on selected template
       // This would be handled by the service
@@ -84,7 +82,7 @@ export const RoleDependenciesModal: React.FC<RoleDependenciesModalProps> = ({
     setError(null);
     try {
       const templates = DependencyService.getWorkflowTemplates();
-      const selectedTemplate = templates.find((w: any) => w.id === selectedWorkflow);
+      const selectedTemplate = templates.find((w) => w.id === selectedWorkflow);
       const dependencies: DependencyItem[] = selectedTemplate?.dependencies || [];
 
       await DependencyService.saveProjectDependencies({

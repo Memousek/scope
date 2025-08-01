@@ -207,7 +207,11 @@ export default function ScopePage({
   const fetchWorkflowDependencies = useCallback(async () => {
     try {
       const { DependencyService } = await import('@/app/services/dependencyService');
-      const dependenciesMap: Record<string, any> = {};
+      const dependenciesMap: Record<string, {
+        workflow_type: string;
+        dependencies: Array<{ from: string; to: string; type: 'blocking' | 'waiting' | 'parallel' }>;
+        active_workers: Array<{ role: string; status: 'active' | 'waiting' | 'blocked' }>;
+      }> = {};
       const projectsData = await ProjectService.loadProjects(id);
       
       if (projectsData) {
@@ -293,7 +297,6 @@ export default function ScopePage({
     }
   }, [
     loading,
-    id,
     fetchScope,
     fetchTeam,
     fetchProjects,

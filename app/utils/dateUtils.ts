@@ -363,10 +363,8 @@ export function calculatePriorityDatesWithAssignments(
         const remainingMandays = mandays * (1 - (done / 100));
         const normalDays = fte > 0 ? remainingMandays / fte : 0;
 
-        // Zkontrolujeme workflow stav
-        const activeWorker = projectWorkflow.active_workers.find(w => 
-          w.role.toUpperCase() === roleKey.toUpperCase() || w.role === roleKey
-        );
+
+
 
         const roleDays = normalDays;
         // Poznámka: Blokace a čekání se přidávají k celkovému termínu později

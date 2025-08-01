@@ -58,7 +58,7 @@ export class SupabaseProjectRoleDependencyRepository implements ProjectRoleDepen
   }
 
   async update(id: string, dependency: Partial<ProjectRoleDependency>): Promise<ProjectRoleDependency> {
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     
     if (dependency.projectId !== undefined) updateData.project_id = dependency.projectId;
     if (dependency.be_depends_on_fe !== undefined) updateData.be_depends_on_fe = dependency.be_depends_on_fe;
@@ -104,18 +104,18 @@ export class SupabaseProjectRoleDependencyRepository implements ProjectRoleDepen
     }
   }
 
-  private mapToModel(data: any): ProjectRoleDependency {
+  private mapToModel(data: Record<string, unknown>): ProjectRoleDependency {
     return {
-      id: data.id,
-      projectId: data.project_id,
-      be_depends_on_fe: data.be_depends_on_fe,
-      fe_depends_on_be: data.fe_depends_on_be,
-      qa_depends_on_be: data.qa_depends_on_be,
-      qa_depends_on_fe: data.qa_depends_on_fe,
-      parallel_mode: data.parallel_mode,
-      current_active_roles: data.current_active_roles || [],
-      createdAt: new Date(data.created_at),
-      updatedAt: new Date(data.updated_at)
+      id: data.id as string,
+      projectId: data.project_id as string,
+      be_depends_on_fe: data.be_depends_on_fe as boolean,
+      fe_depends_on_be: data.fe_depends_on_be as boolean,
+      qa_depends_on_be: data.qa_depends_on_be as boolean,
+      qa_depends_on_fe: data.qa_depends_on_fe as boolean,
+      parallel_mode: data.parallel_mode as boolean,
+      current_active_roles: (data.current_active_roles as string[]) || [],
+      createdAt: new Date(data.created_at as string),
+      updatedAt: new Date(data.updated_at as string)
     };
   }
 } 

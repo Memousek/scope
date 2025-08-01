@@ -176,7 +176,7 @@ export class SupabaseProjectRepository implements ProjectRepository {
     }
   }
 
-  // eslint-disable-next-line
+
   private mapToModel(data: Record<string, unknown>): Project {
     const baseProject = {
       id: data.id,

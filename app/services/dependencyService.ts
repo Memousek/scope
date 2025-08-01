@@ -132,7 +132,7 @@ export class DependencyService {
       if (dependencies?.worker_states) {
         // If we have worker_states, use them
         console.log('Using worker_states:', dependencies.worker_states);
-        const workerState = dependencies.worker_states.find((ws: any) => 
+        const workerState = dependencies.worker_states.find((ws: { role: string; status: string }) => 
           ws.role.toLowerCase() === assignment.role.toLowerCase()
         );
         if (workerState) {
@@ -168,7 +168,7 @@ export class DependencyService {
   /**
    * Save project dependencies
    */
-  static async saveProjectDependencies(data: CreateProjectRoleDependencyData): Promise<any> {
+  static async saveProjectDependencies(data: CreateProjectRoleDependencyData): Promise<unknown> {
     // Convert workflow type and dependencies to boolean flags
     const be_depends_on_fe = data.dependencies.some(d => d.from === 'FE' && d.to === 'BE');
     const fe_depends_on_be = data.dependencies.some(d => d.from === 'BE' && d.to === 'FE');

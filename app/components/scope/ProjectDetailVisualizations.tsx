@@ -6,8 +6,6 @@
 
 import React from 'react';
 import { Project } from './types';
-import { useTranslation } from '@/lib/translation';
-import { useScopeRoles } from '@/app/hooks/useScopeRoles';
 
 interface ProjectDetailVisualizationsProps {
   project: Project;
@@ -17,13 +15,8 @@ interface ProjectDetailVisualizationsProps {
 }
 
 const ProjectDetailVisualizations: React.FC<ProjectDetailVisualizationsProps> = ({
-  project,
-  scopeId,
-  projectAssignments,
   className = ""
 }) => {
-  const { t } = useTranslation();
-  const { activeRoles } = useScopeRoles(scopeId);
 
   return (
     <div className={`${className}`}>
