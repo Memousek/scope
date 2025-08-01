@@ -303,7 +303,7 @@ export class ProjectService {
       // Použijeme repository místo přímého Supabase update, aby se zachovaly custom role data
       const projectRepository = ContainerService.getInstance().get(ProjectRepository);
       // Převedeme projectUpdates na správný typ pro doménový model a odstraníme startedAt
-      const { startedAt, ...projectUpdatesWithoutStartedAt } = projectUpdates;
+      const { startedAt: _, ...projectUpdatesWithoutStartedAt } = projectUpdates;
       const domainProjectUpdates: Partial<import('../../lib/domain/models/project.model').Project> = {
         ...projectUpdatesWithoutStartedAt
       };

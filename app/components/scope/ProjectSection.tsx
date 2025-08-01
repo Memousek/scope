@@ -28,7 +28,7 @@ import { calculateRoleProgress, calculateTotalProgress } from '@/lib/utils/dynam
 import { useScopeRoles } from '@/app/hooks/useScopeRoles';
 
 import { Badge } from '@/app/components/ui/Badge';
-import { FiUsers, FiTrendingUp, FiFolder, FiFilter, FiX, FiChevronDown, FiEdit } from 'react-icons/fi';
+import { FiUsers, FiFolder, FiFilter, FiChevronDown, FiPlus, FiTrash2, FiClock, FiBarChart2, FiZap } from 'react-icons/fi';
 import { ProjectStatusFilter, ProjectStatus } from './ProjectStatusFilter';
 import { ProjectStatusBadge } from './ProjectStatusBadge';
 

@@ -7,7 +7,7 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
-import { Project, ProjectProgress } from './types';
+import { Project } from './types';
 import { ProjectService } from '@/app/services/projectService';
 import { useTranslation } from '@/lib/translation';
 import { Modal } from '@/app/components/ui/Modal';
