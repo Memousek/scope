@@ -12,6 +12,7 @@ export interface CreateProjectData {
   name: string;
   priority: number;
   delivery_date: string | null;
+  status?: 'not_started' | 'in_progress' | 'paused' | 'completed' | 'cancelled' | 'archived' | 'suspended';
   custom_role_data?: Record<string, number> | null;
   // Dynamické role data - klíče budou generovány z scope_roles
   [key: string]: string | number | null | undefined | Record<string, number> | null; // Pro role sloupce jako fe_mandays, be_done, atd.
@@ -32,6 +33,7 @@ export class ProjectService {
         priority: domainProject.priority,
         delivery_date: domainProject.deliveryDate?.toISOString() || null,
         created_at: domainProject.createdAt.toISOString(),
+        status: domainProject.status || 'not_started',
         // Map standard role data
         fe_mandays: domainProject.feMandays,
         be_mandays: domainProject.beMandays,
@@ -61,6 +63,7 @@ export class ProjectService {
       delete (componentProject as Record<string, unknown>).scopeId;
       delete (componentProject as Record<string, unknown>).deliveryDate;
       delete (componentProject as Record<string, unknown>).createdAt;
+      // Keep status - don't delete it
       
       return componentProject;
     });
@@ -112,6 +115,7 @@ export class ProjectService {
       name: projectData.name,
       priority: projectData.priority,
       deliveryDate: projectData.delivery_date ? new Date(projectData.delivery_date) : undefined,
+      status: projectData.status || 'not_started',
       feMandays,
       beMandays,
       qaMandays,
@@ -133,6 +137,7 @@ export class ProjectService {
       priority: domainProject.priority,
       delivery_date: domainProject.deliveryDate?.toISOString() || null,
       created_at: domainProject.createdAt.toISOString(),
+      status: domainProject.status || 'not_started',
       // Map standard role data
       fe_mandays: domainProject.feMandays,
       be_mandays: domainProject.beMandays,
@@ -144,8 +149,8 @@ export class ProjectService {
       qa_done: domainProject.qaDone,
       pm_done: domainProject.pmDone,
       dpl_done: domainProject.dplDone,
-      // Map custom role data from top-level properties
-      ...(domainProject as unknown as Record<string, unknown>)
+      // Map custom role data from customRoleData property only
+      ...(domainProject.customRoleData || {})
     } as Project;
   }
 
@@ -161,6 +166,7 @@ export class ProjectService {
     if (updates.name !== undefined) domainUpdates.name = updates.name;
     if (updates.priority !== undefined) domainUpdates.priority = updates.priority;
     if (updates.delivery_date !== undefined) domainUpdates.deliveryDate = updates.delivery_date ? new Date(updates.delivery_date) : undefined;
+    if (updates.status !== undefined) domainUpdates.status = updates.status;
     
     // Map standard role data
     if ((updates as Record<string, unknown>).fe_mandays !== undefined) domainUpdates.feMandays = (updates as Record<string, unknown>).fe_mandays as number;
@@ -196,6 +202,7 @@ export class ProjectService {
       priority: domainProject.priority,
       delivery_date: domainProject.deliveryDate?.toISOString() || null,
       created_at: domainProject.createdAt.toISOString(),
+      status: domainProject.status || 'not_started',
       // Map standard role data
       fe_mandays: domainProject.feMandays,
       be_mandays: domainProject.beMandays,
@@ -271,12 +278,9 @@ export class ProjectService {
     if (progressData.dpl_mandays !== undefined) projectUpdates.dpl_mandays = progressData.dpl_mandays;
 
     if (Object.keys(projectUpdates).length > 0) {
-      const { error: projectError } = await supabase
-        .from('projects')
-        .update(projectUpdates)
-        .eq('id', projectId);
-
-      if (projectError) throw projectError;
+      // Použijeme repository místo přímého Supabase update, aby se zachovaly custom role data
+      const projectRepository = ContainerService.getInstance().get(ProjectRepository);
+      await projectRepository.update(projectId, projectUpdates);
     }
   }
 

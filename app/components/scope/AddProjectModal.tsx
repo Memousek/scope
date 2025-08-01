@@ -12,6 +12,8 @@ import { useTranslation } from '@/lib/translation';
 import { Modal } from '@/app/components/ui/Modal';
 import { FiPlus } from 'react-icons/fi';
 import { useScopeRoles } from '@/app/hooks/useScopeRoles';
+import { ProjectStatusSelector } from './ProjectStatusSelector';
+import { ProjectStatus } from './ProjectStatusBadge';
 
 interface AddProjectModalProps {
   isOpen: boolean;
@@ -44,6 +46,7 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
       name: '',
       priority: calculateNextPriority(),
       delivery_date: null,
+      status: 'not_started' as ProjectStatus,
     } as Omit<Project, 'id' | 'scope_id' | 'created_at'>;
     
     // Přidáme pole pro každou aktivní roli
@@ -74,6 +77,7 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
         name: '',
         priority: 1,
         delivery_date: null,
+        status: 'not_started' as ProjectStatus,
       } as Omit<Project, 'id' | 'scope_id' | 'created_at'>;
     }
     return createInitialProjectData();
@@ -167,6 +171,16 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
               onChange={e => setNewProject(p => ({ ...p, delivery_date: e.target.value || null }))}
             />
           </div>
+        </div>
+        
+        {/* Project Status */}
+        <div>
+          <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">{t('projectStatus')}</label>
+          <ProjectStatusSelector
+            value={newProject.status as ProjectStatus || 'not_started'}
+            onChange={(status) => setNewProject(p => ({ ...p, status }))}
+            disabled={savingProject}
+          />
         </div>
         
         {/* Role estimates */}

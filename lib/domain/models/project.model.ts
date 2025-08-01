@@ -16,4 +16,5 @@ export interface Project {
   deliveryDate?: Date;
   createdAt: Date;
   customRoleData?: Record<string, number>;
+  status?: 'not_started' | 'in_progress' | 'paused' | 'completed' | 'cancelled' | 'archived' | 'suspended';
 }

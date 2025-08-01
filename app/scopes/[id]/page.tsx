@@ -495,7 +495,7 @@ export default function ScopePage({
                       disabled={savingName}
                       className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
                     >
-                      {savingName ? t('saving') : <FiCheck className="text-2xl" />}
+                      {savingName ? t('saving') : <FiCheck className="text-sm" />}
                     </button>
                     <button
                       onClick={() => {
@@ -505,7 +505,7 @@ export default function ScopePage({
                       }}
                       className="text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
                     >
-                      <FiX className="text-2xl" />
+                      <FiX className="text-sm" />
                     </button>
                   </div>
                 ) : (
@@ -519,7 +519,7 @@ export default function ScopePage({
                         className="transition-transform hover:scale-110 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                         title={t('editScopeName')}
                       >
-                        <FiEdit2 className="text-2xl" />
+                        <FiEdit2 className="text-xl" />
                       </button>
                     )}
                   </div>
@@ -541,7 +541,7 @@ export default function ScopePage({
                   onClick={() => setShareModalOpen(true)}
                   className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all duration-200 shadow-lg"
                 >
-                  <FiShare2 className="text-2xl" /> {t('share')}
+                  <FiShare2 className="text-sm" /> {t('share')}
                 </button>
               )}
               <button
@@ -550,7 +550,7 @@ export default function ScopePage({
                 disabled={true}
               >
                 <Badge label={t('soon')} variant="soon" />
-                 <FiMessageCircle className="text-2xl" /> Ai Chat
+                 <FiMessageCircle className="text-sm" /> Ai Chat
               </button>
             </div>
           </div>
@@ -572,7 +572,7 @@ export default function ScopePage({
                   disabled={savingDescription}
                   className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 px-3 py-1"
                 >
-                  {savingDescription ? t('saving') : <FiCheck className="text-2xl" />}
+                  {savingDescription ? t('saving') : <FiCheck className="text-sm" />}
                 </button>
                 <button
                   onClick={() => {
@@ -581,7 +581,7 @@ export default function ScopePage({
                   }}
                   className="text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 px-3 py-1"
                 >
-                  <FiX className="text-2xl" />
+                  <FiX className="text-sm" />
                 </button>
               </div>
             ) : (
@@ -595,7 +595,7 @@ export default function ScopePage({
                     className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-transform hover:scale-110"
                     title={t('editScopeDescription')}
                   >
-                    <FiEdit2 className="text-2xl" />
+                    <FiEdit2 className="text-sm" />
                   </button>
                 )}
               </div>

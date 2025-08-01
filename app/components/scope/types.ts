@@ -26,8 +26,10 @@ export interface Project {
   priority: number;
   delivery_date: string | null;
   created_at: string;
+  status?: 'not_started' | 'in_progress' | 'paused' | 'completed' | 'cancelled' | 'archived' | 'suspended';
+  custom_role_data?: Record<string, number> | null;
   // Dynamické role data - klíče budou generovány z scope_roles
-  [key: string]: string | number | null | undefined; // Pro role sloupce jako fe_mandays, be_done, atd.
+  [key: string]: string | number | null | undefined | Record<string, number> | null; // Pro role sloupce jako fe_mandays, be_done, atd.
 }
 
 // Dynamický ProjectProgress interface

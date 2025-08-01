@@ -12,6 +12,8 @@ import { ProjectService } from '@/app/services/projectService';
 import { useTranslation } from '@/lib/translation';
 import { Modal } from '@/app/components/ui/Modal';
 import { FiEdit } from 'react-icons/fi';
+import { ProjectStatusSelector } from './ProjectStatusSelector';
+import { ProjectStatus } from './ProjectStatusBadge';
 
 interface EditProjectModalProps {
   isOpen: boolean;
@@ -83,38 +85,17 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
       const validUpdates: Partial<Project> = {
         name: editProject.name,
         delivery_date: editProject.delivery_date,
+        status: editProject.status,
         ...standardData,
-        // Přidáme custom role data jako jednotlivé vlastnosti
-        ...customData
+        // Přidáme custom role data jako custom_role_data property
+        custom_role_data: customData
       };
       
-      await ProjectService.updateProject(editProject.id, validUpdates);
+      const updatedProject = await ProjectService.updateProject(editProject.id, validUpdates);
       
-      // Předáme aktuální změny místo dat z databáze
-      onProjectChange(editProject);
+      // Předáme aktualizovaný projekt z databáze
+      onProjectChange(updatedProject);
       
-      // Reload projects to get updated data
-      await new Promise(resolve => setTimeout(resolve, 100)); // Small delay to ensure DB update
-      
-      // --- Ulož změny do project_progress pokud se změnilo % hotovo ---
-      if (initialEditState.current) {
-        const changed: Partial<ProjectProgress> = {};
-        const standardRoleKeys = ['fe', 'be', 'qa', 'pm', 'dpl'];
-        
-        projectRoles.forEach(role => {
-          // Ukládáme pouze standardní role do project_progress
-          if (standardRoleKeys.includes(role.key)) {
-            const doneKey = role.done;
-            if ((editProject as Record<string, unknown>)[doneKey] !== (initialEditState.current as Record<string, unknown>)[doneKey]) {
-              (changed as Record<string, unknown>)[doneKey] = Number((editProject as Record<string, unknown>)[doneKey]);
-            }
-          }
-        });
-        
-        if (Object.keys(changed).length > 0) {
-          await ProjectService.saveProjectProgress(editProject.id, changed);
-        }
-      }
       onClose();
     } catch (error) {
       console.error('Chyba při ukládání projektu:', error);
@@ -151,6 +132,15 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
               required
             />
           </div>
+        </div>
+        
+        {/* Project Status */}
+        <div>
+          <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">{t('projectStatus')}</label>
+          <ProjectStatusSelector
+            value={editProject.status as ProjectStatus || 'not_started'}
+            onChange={(status) => setEditProject(p => ({ ...p, status }))}
+          />
         </div>
         
         {/* Role a progress */}
