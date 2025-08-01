@@ -218,9 +218,15 @@ export function calculatePriorityDates(
     let maxDays = 0;
 
     roleKeys.forEach(roleKey => {
-      // Najdeme FTE pro tuto roli
+      // Najdeme FTE pro tuto roli - použijeme skutečné FTE z týmu místo pevné hodnoty 1
       const fte = team.filter(m => m.role === roleKey.toUpperCase() || m.role === roleKey)
-        .reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
+        .reduce((sum, m) => sum + (m.fte || 0), 0);
+      
+      // Pokud není nikdo přiřazen k roli, projekt nelze dokončit
+      if (fte === 0) {
+        maxDays = Math.max(maxDays, 365 * 10); // 10 let práce
+        return;
+      }
       
       const mandays = Number(project[`${roleKey}_mandays`]) || 0;
       const done = Number(project[`${roleKey}_done`]) || 0;

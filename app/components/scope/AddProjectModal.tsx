@@ -190,7 +190,7 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
                   <input
                     type="number"
                     min="0"
-                    step="0.5"
+                    step="0.01"
                     value={(() => {
                       const standardRoleKeys = ['fe', 'be', 'qa', 'pm', 'dpl'];
                       const cleanKey = standardRoleKeys.includes(role.key) 
@@ -211,6 +211,11 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
                         } as Omit<Project, 'id' | 'scope_id' | 'created_at'>;
                         return updated;
                       });
+                    }}
+                    onFocus={(e) => {
+                      if (e.target.value === '0') {
+                        e.target.value = '';
+                      }
                     }}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     disabled={savingProject}

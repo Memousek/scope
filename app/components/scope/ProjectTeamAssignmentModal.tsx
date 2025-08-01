@@ -39,7 +39,7 @@ export function ProjectTeamAssignmentModal({
 
   const [selectedTeamMember, setSelectedTeamMember] = useState<string>("");
   const [selectedRole, setSelectedRole] = useState<string>("");
-  const [allocationFte, setAllocationFte] = useState<number>(1);
+  const [allocationFte, setAllocationFte] = useState<number>(0);
   const { t } = useTranslation();
   const { team, loadTeam } = useTeam(scopeId);
 
@@ -88,7 +88,7 @@ export function ProjectTeamAssignmentModal({
       // Reset form
       setSelectedTeamMember("");
       setSelectedRole("");
-      setAllocationFte(1);
+      setAllocationFte(0);
 
       // Reload assignments
       await loadAssignments();
@@ -121,6 +121,8 @@ export function ProjectTeamAssignmentModal({
     const teamMember = team.find(tm => tm.id === teamMemberId);
     if (teamMember) {
       setSelectedRole(teamMember.role);
+      // Automatically set FTE based on team member's FTE
+      setAllocationFte(teamMember.fte);
     }
   };
 

@@ -310,7 +310,7 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ projec
                                   <input
                                     type="number"
                                     min="0"
-                                    step="0.1"
+                                    step="0.01"
                                     value={editValues[role.mandays as keyof ProjectProgress] || ''}
                                     onChange={(e) => {
                                       const value = e.target.value === '' ? null : Number(e.target.value);
@@ -318,6 +318,11 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({ projec
                                         ...prev,
                                         [role.mandays]: value
                                       }));
+                                    }}
+                                    onFocus={(e) => {
+                                      if (e.target.value === '0') {
+                                        e.target.value = '';
+                                      }
                                     }}
                                     className="w-16 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                                   />
