@@ -19,7 +19,8 @@ export class SupabaseScopeRoleRepository implements ScopeRoleRepository {
 
     if (error) {
       console.error('Error fetching scope roles:', error);
-      throw new Error(`Failed to fetch scope roles: ${error.message}`);
+      const errorMessage = error.message || error.details || error.hint || 'Unknown error';
+      throw new Error(`Failed to fetch scope roles: ${errorMessage}`);
     }
 
     return data.map(this.mapFromDatabase);
@@ -37,7 +38,8 @@ export class SupabaseScopeRoleRepository implements ScopeRoleRepository {
 
     if (error) {
       console.error('Error fetching active scope roles:', error);
-      throw new Error(`Failed to fetch active scope roles: ${error.message}`);
+      const errorMessage = error.message || error.details || error.hint || 'Unknown error';
+      throw new Error(`Failed to fetch active scope roles: ${errorMessage}`);
     }
 
     return data.map(this.mapFromDatabase);
@@ -57,7 +59,8 @@ export class SupabaseScopeRoleRepository implements ScopeRoleRepository {
         return null; // No rows found
       }
       console.error('Error fetching scope role by id:', error);
-      throw new Error(`Failed to fetch scope role: ${error.message}`);
+      const errorMessage = error.message || error.details || error.hint || 'Unknown error';
+      throw new Error(`Failed to fetch scope role: ${errorMessage}`);
     }
 
     return this.mapFromDatabase(data);
@@ -78,7 +81,8 @@ export class SupabaseScopeRoleRepository implements ScopeRoleRepository {
         return null; // No rows found
       }
       console.error('Error fetching scope role by key:', error);
-      throw new Error(`Failed to fetch scope role by key: ${error.message}`);
+      const errorMessage = error.message || error.details || error.hint || 'Unknown error';
+      throw new Error(`Failed to fetch scope role by key: ${errorMessage}`);
     }
 
     return this.mapFromDatabase(data);
@@ -105,7 +109,8 @@ export class SupabaseScopeRoleRepository implements ScopeRoleRepository {
 
     if (error) {
       console.error('Error creating scope role:', error);
-      throw new Error(`Failed to create scope role: ${error.message}`);
+      const errorMessage = error.message || error.details || error.hint || 'Unknown error';
+      throw new Error(`Failed to create scope role: ${errorMessage}`);
     }
 
     return this.mapFromDatabase(result);
@@ -130,7 +135,8 @@ export class SupabaseScopeRoleRepository implements ScopeRoleRepository {
 
     if (error) {
       console.error('Error updating scope role:', error);
-      throw new Error(`Failed to update scope role: ${error.message}`);
+      const errorMessage = error.message || error.details || error.hint || 'Unknown error';
+      throw new Error(`Failed to update scope role: ${errorMessage}`);
     }
 
     return this.mapFromDatabase(result);
@@ -146,7 +152,8 @@ export class SupabaseScopeRoleRepository implements ScopeRoleRepository {
 
     if (error) {
       console.error('Error deleting scope role:', error);
-      throw new Error(`Failed to delete scope role: ${error.message}`);
+      const errorMessage = error.message || error.details || error.hint || 'Unknown error';
+      throw new Error(`Failed to delete scope role: ${errorMessage}`);
     }
   }
 
@@ -160,7 +167,8 @@ export class SupabaseScopeRoleRepository implements ScopeRoleRepository {
 
     if (error) {
       console.error('Error deleting scope roles by scope id:', error);
-      throw new Error(`Failed to delete scope roles: ${error.message}`);
+      const errorMessage = error.message || error.details || error.hint || 'Unknown error';
+      throw new Error(`Failed to delete scope roles: ${errorMessage}`);
     }
   }
 

@@ -15,7 +15,7 @@ import { Payload } from "recharts/types/component/DefaultLegendContent";
 import { useTranslation } from "@/lib/translation";
 import { useScopeRoles } from '@/app/hooks/useScopeRoles';
 import ProjectDetailVisualizations from './ProjectDetailVisualizations';
-import { FiTrendingUp, FiAlertTriangle, FiAlertCircle } from 'react-icons/fi';
+import { FiTrendingUp, FiAlertTriangle, FiAlertCircle, FiBarChart2 } from 'react-icons/fi';
 
 interface ProjectProgressChartProps {
   project: Project;
@@ -190,7 +190,7 @@ const ProjectProgressChartComponent: React.FC<ProjectProgressChartProps> = ({
       <div className="flex items-center justify-between mb-4">
         <div>
           <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-            📊 Progress grafy
+            <FiBarChart2 className="inline mr-2" /> Progress grafy
           </h4>
           <p className="text-sm text-gray-600 dark:text-gray-400">
             {project.name}
@@ -207,7 +207,7 @@ const ProjectProgressChartComponent: React.FC<ProjectProgressChartProps> = ({
           </div>
           
           <div className="text-center">
-            <div className={`text-lg font-semibold ${getSlippageColor(deliveryInfo.diffWorkdays || 0)}`}>
+            <div className={`flex items-center gap-2 text-lg font-semibold ${getSlippageColor(deliveryInfo.diffWorkdays || 0)}`}>
               {getSlippageIcon(deliveryInfo.diffWorkdays || 0)} {deliveryInfo.diffWorkdays || 0} dní
             </div>
             <div className="text-xs text-gray-500 dark:text-gray-400">Skluz</div>

@@ -16,6 +16,7 @@ import { Payload } from "recharts/types/component/DefaultLegendContent";
 import { useTranslation } from "@/lib/translation";
 import { Badge } from "../ui/Badge";
 import { useScopeRoles } from '@/app/hooks/useScopeRoles';
+import { FiBarChart2 } from 'react-icons/fi';
 
 interface BurndownChartProps {
   projects: Project[];
@@ -183,7 +184,7 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
         <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-br from-purple-400/10 to-pink-400/10 rounded-full blur-2xl"></div>
 
         <div className="relative z-10">
-          <div className="text-6xl mb-6">📊</div>
+          <div className="text-6xl mb-6"><FiBarChart2 /></div>
           <h3 className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
             {t("noDataForChart")}
           </h3>
