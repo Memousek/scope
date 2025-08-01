@@ -14,6 +14,7 @@ import { getWorkdaysCount } from '@/app/utils/dateUtils';
 import { Payload } from "recharts/types/component/DefaultLegendContent";
 import { useTranslation } from "@/lib/translation";
 import { useScopeRoles } from '@/app/hooks/useScopeRoles';
+import ProjectDetailVisualizations from './ProjectDetailVisualizations';
 
 interface ProjectProgressChartProps {
   project: Project;
@@ -353,6 +354,14 @@ const ProjectProgressChartComponent: React.FC<ProjectProgressChartProps> = ({
           <div className="text-xs text-gray-500 dark:text-gray-400">{t("slip")}</div>
         </div>
       </div>
+
+      {/* Dodatečné vizualizace */}
+      <ProjectDetailVisualizations
+        project={project}
+        scopeId={scopeId}
+        projectAssignments={projectAssignments}
+        className="mt-6"
+      />
     </div>
   );
 };

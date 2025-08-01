@@ -98,6 +98,7 @@
   "invited_and_editors": "Pozvaní a editoři",
   "no_invited_or_editors": "Nikdo nebyl pozván ani nemá práva na editaci.",
   "editor": "editor",
+  "roleDependencies": "Závislosti rolí",
   "assignTeam": "Přiřadit tým",
   "teamAssignmentToProject": "Přiřazení týmu k projektu",
   "teamManagement": "Správa týmu",

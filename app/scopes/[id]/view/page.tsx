@@ -11,6 +11,7 @@ import { useEffect, useState, use, useCallback } from "react";
 
 import { ModernScopeLayout } from "@/app/components/scope/ModernScopeLayout";
 import { TeamMember, Project } from "@/app/components/scope/types";
+import { ProjectTeamAssignment } from "@/lib/domain/models/project-team-assignment.model";
 import { useAuth } from "@/lib/auth";
 
 import { ContainerService } from "@/lib/container.service";
@@ -44,6 +45,16 @@ export default function ScopePage({
 
   // --- Projekty ---
   const [projects, setProjects] = useState<Project[]>([]);
+  
+  // --- Project Assignments ---
+  const [projectAssignments, setProjectAssignments] = useState<Record<string, ProjectTeamAssignment[]>>({});
+  
+  // --- Workflow Dependencies ---
+  const [workflowDependencies, setWorkflowDependencies] = useState<Record<string, {
+    workflow_type: string;
+    dependencies: Array<{ from: string; to: string; type: 'blocking' | 'waiting' | 'parallel' }>;
+    active_workers: Array<{ role: string; status: 'active' | 'waiting' | 'blocked' }>;
+  }>>({});
 
   // --- Statistiky ---
   const [stats, setStats] = useState<
@@ -169,6 +180,63 @@ export default function ScopePage({
     }
   }, [id]);
 
+  const fetchProjectAssignments = useCallback(async () => {
+    try {
+      const { ManageProjectTeamAssignmentsService } = await import('@/lib/domain/services/manage-project-team-assignments.service');
+      const manageAssignmentsService = ContainerService.getInstance().get(
+        ManageProjectTeamAssignmentsService,
+        { autobind: true }
+      );
+      
+      const assignmentsMap: Record<string, ProjectTeamAssignment[]> = {};
+      const projectsData = await ProjectService.loadProjects(id);
+      
+      if (projectsData) {
+        for (const project of projectsData) {
+          const assignments = await manageAssignmentsService.getProjectAssignments(project.id);
+          assignmentsMap[project.id] = assignments;
+        }
+      }
+      
+      setProjectAssignments(assignmentsMap);
+    } catch (error) {
+      console.error("Chyba při načítání project assignments:", error);
+    }
+  }, [id]);
+
+  const fetchWorkflowDependencies = useCallback(async () => {
+    try {
+      const { DependencyService } = await import('@/app/services/dependencyService');
+      const dependenciesMap: Record<string, {
+        workflow_type: string;
+        dependencies: Array<{ from: string; to: string; type: 'blocking' | 'waiting' | 'parallel' }>;
+        active_workers: Array<{ role: string; status: 'active' | 'waiting' | 'blocked' }>;
+      }> = {};
+      const projectsData = await ProjectService.loadProjects(id);
+      
+      if (projectsData) {
+        for (const project of projectsData) {
+          try {
+            const projectDeps = await DependencyService.getProjectDependencies(project.id);
+            dependenciesMap[project.id] = projectDeps;
+          } catch (error) {
+            console.warn(`Failed to load dependencies for project ${project.id}:`, error);
+            // Use default dependencies if loading fails
+            dependenciesMap[project.id] = {
+              workflow_type: 'FE-First',
+              dependencies: [],
+              active_workers: []
+            };
+          }
+        }
+      }
+      
+      setWorkflowDependencies(dependenciesMap);
+    } catch (error) {
+      console.error("Chyba při načítání workflow dependencies:", error);
+    }
+  }, [id]);
+
   const fetchStats = useCallback(async () => {
     setLoadingStats(true);
     try {
@@ -218,6 +286,8 @@ export default function ScopePage({
     fetchScope();
     fetchTeam();
     fetchProjects();
+    fetchProjectAssignments();
+    fetchWorkflowDependencies();
     fetchStats();
     fetchAverageSlip();
     
@@ -227,10 +297,11 @@ export default function ScopePage({
     }
   }, [
     loading,
-    id,
     fetchScope,
     fetchTeam,
     fetchProjects,
+    fetchProjectAssignments,
+    fetchWorkflowDependencies,
     fetchStats,
     fetchAverageSlip,
     checkOwnership,
@@ -305,6 +376,8 @@ export default function ScopePage({
           scopeId={id}
           team={team}
           projects={projects}
+          projectAssignments={projectAssignments}
+          workflowDependencies={workflowDependencies}
           onTeamChange={setTeam}
           stats={stats}
           loadingStats={loadingStats}

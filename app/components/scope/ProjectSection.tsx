@@ -8,7 +8,7 @@
  * - Skupinování projektů podle priority
  */
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from '@/lib/translation';
 import { Project, ProjectDeliveryInfo } from './types';
 import { useProjects } from '@/app/hooks/useProjects';
@@ -19,7 +19,8 @@ import { EditProjectModal } from './EditProjectModal';
 import { ProjectHistoryModal } from './ProjectHistoryModal';
 import { ProjectProgressChart } from './ProjectProgressChart';
 import { ProjectTeamAssignmentModal } from './ProjectTeamAssignmentModal';
-import { calculateProjectDeliveryInfoWithAssignments, calculatePriorityDatesWithAssignments } from '@/app/utils/dateUtils';
+import { RoleDependenciesModal } from './RoleDependenciesModal';
+import { calculateProjectDeliveryInfoWithAssignments, calculateProjectDeliveryInfoWithWorkflow, calculatePriorityDatesWithAssignments } from '@/app/utils/dateUtils';
 import { ContainerService } from '@/lib/container.service';
 import { ManageProjectTeamAssignmentsService } from '@/lib/domain/services/manage-project-team-assignments.service';
 import { ProjectTeamAssignment } from '@/lib/domain/models/project-team-assignment.model';
@@ -58,9 +59,17 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
   const [historyModalProject, setHistoryModalProject] = useState<Project | null>(null);
   const [teamAssignmentModalProject, setTeamAssignmentModalProject] = useState<Project | null>(null);
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
+  const [dependenciesModalProject, setDependenciesModalProject] = useState<Project | null>(null);
   
   // Project assignments state
   const [projectAssignments, setProjectAssignments] = useState<Record<string, ProjectTeamAssignment[]>>({});
+  
+  // Workflow dependencies state
+  const [workflowDependencies, setWorkflowDependencies] = useState<Record<string, {
+    workflow_type: string;
+    dependencies: Array<{ from: string; to: string; type: 'blocking' | 'waiting' | 'parallel' }>;
+    active_workers: Array<{ role: string; status: 'active' | 'waiting' | 'blocked' }>;
+  }>>({});
   
   // Drag and drop state
   const [draggedProject, setDraggedProject] = useState<Project | null>(null);
@@ -73,6 +82,39 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
     loadProjects();
     loadTeam();
   }, [loadProjects, loadTeam]);
+
+  // Load workflow dependencies for all projects
+  useEffect(() => {
+    const loadWorkflowDependencies = async () => {
+      if (projects.length === 0) return;
+      
+      const dependencies: Record<string, {
+        workflow_type: string;
+        dependencies: Array<{ from: string; to: string; type: 'blocking' | 'waiting' | 'parallel' }>;
+        active_workers: Array<{ role: string; status: 'active' | 'waiting' | 'blocked' }>;
+      }> = {};
+      
+      for (const project of projects) {
+        try {
+          const { DependencyService } = await import('@/app/services/dependencyService');
+          const projectDeps = await DependencyService.getProjectDependencies(project.id);
+          dependencies[project.id] = projectDeps;
+        } catch (error) {
+          console.warn(`Failed to load dependencies for project ${project.id}:`, error);
+          // Use default dependencies if loading fails
+          dependencies[project.id] = {
+            workflow_type: 'FE-First',
+            dependencies: [],
+            active_workers: []
+          };
+        }
+      }
+      
+      setWorkflowDependencies(dependencies);
+    };
+
+    loadWorkflowDependencies();
+  }, [projects]);
 
   // Oprava duplicitních priorit a zajištění souvislých priorit od 1
   useEffect(() => {
@@ -419,10 +461,20 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
       }));
     });
 
-    const priorityDates = calculatePriorityDatesWithAssignments(projects, team, formattedAssignments);
+    const priorityDates = calculatePriorityDatesWithAssignments(projects, team, formattedAssignments, workflowDependencies);
 
     projects.forEach(project => {
-      const info = calculateProjectDeliveryInfoWithAssignments(project, team, projectAssignments[project.id] || []);
+      // Use workflow-aware calculation if dependencies are available
+      const projectDeps = workflowDependencies[project.id];
+      const info = projectDeps 
+        ? calculateProjectDeliveryInfoWithWorkflow(
+            project, 
+            team, 
+            projectAssignments[project.id] || [], 
+            projectDeps
+          )
+        : calculateProjectDeliveryInfoWithAssignments(project, team, projectAssignments[project.id] || []);
+      
       const totalProgress = calculateTotalProgress(project as unknown as Record<string, unknown>, activeRoles);
       
       calculations[project.id] = {
@@ -434,7 +486,7 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
     });
 
     return calculations;
-  }, [projects, team, projectAssignments, activeRoles]);
+  }, [projects, team, projectAssignments, activeRoles, workflowDependencies]);
 
   // Skupinování projektů podle priority
   const groupedProjects = useMemo(() => {
@@ -474,16 +526,6 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
     }
   };
 
-  const getPriorityIcon = (priority: number) => {
-    switch (priority) {
-      case 1: return '🔥';
-      case 2: return '⚡';
-      case 3: return '💡';
-      case 4: return '📌';
-      default: return '📋';
-    }
-  };
-
   const hasTeamAssignments = (projectId: string) => {
     return projectAssignments[projectId] && projectAssignments[projectId].length > 0;
   };
@@ -508,6 +550,8 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
     
     return isAssigned;
   };
+
+
 
   return (
     <>
@@ -577,7 +621,6 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                       {/* Priority Group Header */}
                       <div className="flex items-center gap-3 mb-4">
                         <div className="flex items-center gap-2">
-                          <span className="text-2xl">{getPriorityIcon(priority)}</span>
                           <h3 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                             {t('priority')} {priority}
                           </h3>
@@ -672,24 +715,32 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                                   </div>
                                   
                                   <div className="flex items-center gap-6">
-                                    {/* Progress circle */}
+                                    {/* Workflow status circle */}
                                     <div className="relative">
-                                      <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 36 36">
-                                        <path
-                                          className="text-gray-200 dark:text-gray-600"
-                                          fill="currentColor"
-                                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                        />
-                                        <path
-                                          className="text-blue-500"
-                                          fill="currentColor"
-                                          strokeDasharray={`${totalProgress}, 100`}
-                                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                        />
-                                      </svg>
-                                      <div className="absolute inset-0 flex items-center justify-center">
-                                        <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{totalProgress}%</span>
-                                      </div>
+                                      {(() => {
+
+                                        return (
+                                          <>
+                                            <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 36 36">
+                                              <path
+                                                className="text-gray-200 dark:text-gray-600"
+                                                fill="currentColor"
+                                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                              />
+                                              <path
+                                                className="text-blue-500"
+                                                fill="currentColor"
+                                                strokeDasharray={`${totalProgress}, 100`}
+                                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                              />
+                                            </svg>
+                                            <div className="absolute inset-0 flex items-center justify-center">
+                                              <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{totalProgress}%</span>
+                                            </div>
+
+                                          </>
+                                        );
+                                      })()}
                                     </div>
                                     
                                     {/* Deadline and Slip */}
@@ -747,6 +798,18 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                                         )}
                                         
 
+                                        
+                                        {!readOnlyMode && (
+                                          <button
+                                            onClick={() => setDependenciesModalProject(project)}
+                                            className="p-3 text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 transition-all duration-200 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-xl group"
+                                            title={t('roleDependencies')}
+                                          >
+                                            <svg className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                            </svg>
+                                          </button>
+                                        )}
                                         
                                         {!readOnlyMode && (
                                           <button
@@ -816,6 +879,18 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                         </svg>
                                       </button>
+                                      
+                                      {!readOnlyMode && (
+                                        <button
+                                          onClick={() => setDependenciesModalProject(project)}
+                                          className="p-2 text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 transition-all duration-200 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg"
+                                          title={t('roleDependencies')}
+                                        >
+                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                          </svg>
+                                        </button>
+                                      )}
                                       
                                       {!readOnlyMode && (
                                         <button
@@ -895,6 +970,112 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                               {isExpanded && (
                                 <div className="animate-in slide-in-from-top-4 duration-300 border-t border-gray-200/50 dark:border-gray-600/50 bg-gradient-to-br from-gray-50/50 via-white/30 to-gray-50/50 dark:from-gray-800/50 dark:via-gray-700/30 dark:to-gray-800/50">
                                   <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+                                    {/* Workflow and Active Workers */}
+                                    {workflowDependencies[project.id] && (
+                                      <div className="mb-6">
+                                        <h4 className="text-base sm:text-lg font-bold text-gray-800 dark:text-gray-200 mb-3 sm:mb-4 flex items-center gap-2">
+                                          <svg className="w-4 h-4 sm:w-5 sm:h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                          </svg>
+                                          Workflow
+                                        </h4>
+                                        <div className="relative bg-gradient-to-br from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-gray-200/50 dark:border-gray-600/50 shadow-lg hover:shadow-xl transition-all duration-300">
+                                          {/* Decorative elements */}
+                                          <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-purple-400/10 to-pink-400/10 rounded-full blur-xl"></div>
+                                          <div className="absolute bottom-0 left-0 w-12 h-12 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full blur-lg"></div>
+                                          
+                                          <div className="relative z-10">
+                                            <div className="flex items-center gap-3 mb-4">
+                                              <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                                                <span className="text-white text-sm font-bold">
+                                                  {workflowDependencies[project.id].workflow_type.charAt(0)}
+                                                </span>
+                                              </div>
+                                              <div>
+                                                <div className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                                                  {workflowDependencies[project.id].workflow_type}
+                                                </div>
+                                                <div className="text-xs text-gray-600 dark:text-gray-400">
+                                                  Workflow proces
+                                                </div>
+                                              </div>
+                                            </div>
+                                          </div>
+                                          <div className="flex flex-wrap gap-3 items-center">
+                                            {(() => {
+                                              // Seřadíme role podle workflow pořadí
+                                              const workflowType = workflowDependencies[project.id].workflow_type;
+                                              const workers = [...workflowDependencies[project.id].active_workers];
+                                              
+                                              // Definujeme pořadí rolí podle workflow
+                                              const workflowOrder: Record<string, string[]> = {
+                                                'FE-First': ['PM', 'FE', 'BE', 'QA'],
+                                                'BE-First': ['PM', 'BE', 'FE', 'QA'],
+                                                'Parallel': ['PM', 'FE', 'BE', 'QA']
+                                              };
+                                              
+                                              // Rozdělíme role na standardní a custom
+                                              const standardRoles = ['PM', 'FE', 'BE', 'QA'];
+                                              const standardWorkers = workers.filter(worker => 
+                                                standardRoles.some(role => role.toLowerCase() === worker.role.toLowerCase())
+                                              );
+                                              const customWorkers = workers.filter(worker => 
+                                                !standardRoles.some(role => role.toLowerCase() === worker.role.toLowerCase())
+                                              );
+                                              
+                                              // Seřadíme standardní role podle workflow pořadí
+                                              const order = workflowOrder[workflowType] || ['PM', 'FE', 'BE', 'QA'];
+                                              standardWorkers.sort((a, b) => {
+                                                const aIndex = order.findIndex(role => role.toLowerCase() === a.role.toLowerCase());
+                                                const bIndex = order.findIndex(role => role.toLowerCase() === b.role.toLowerCase());
+                                                return aIndex - bIndex;
+                                              });
+                                              
+                                              // Spojíme standardní a custom role
+                                              const allWorkers = [...standardWorkers, ...customWorkers];
+                                              const standardCount = standardWorkers.length;
+                                              
+                                              return allWorkers.map((worker, index) => (
+                                                <React.Fragment key={index}>
+                                                  {/* Vertikální čára před custom rolemi */}
+                                                  {index === standardCount && customWorkers.length > 0 && (
+                                                    <div className="flex items-center gap-3">
+                                                      <div className="text-blue-500 dark:text-blue-400 font-bold">||</div>
+                                                    </div>
+                                                  )}
+                                                  
+                                                  <div className={`group relative flex items-center gap-3 p-3 rounded-xl border transition-all duration-300 hover:scale-105 ${
+                                                    worker.status === 'active'
+                                                      ? 'bg-gradient-to-br from-green-50/90 to-green-100/70 dark:from-green-900/20 dark:to-green-800/10 border-green-200/50 dark:border-green-600/30 shadow-lg hover:shadow-green-500/25'
+                                                      : worker.status === 'waiting'
+                                                      ? 'bg-gradient-to-br from-yellow-50/90 to-yellow-100/70 dark:from-yellow-900/20 dark:to-yellow-800/10 border-yellow-200/50 dark:border-yellow-600/30 shadow-lg hover:shadow-yellow-500/25'
+                                                      : 'bg-gradient-to-br from-red-50/90 to-red-100/70 dark:from-red-900/20 dark:to-red-800/10 border-red-200/50 dark:border-red-600/30 shadow-lg hover:shadow-red-500/25'
+                                                  }`}>
+                                                    {/* Status indicator */}
+                                                    <div className={`w-3 h-3 rounded-full ${
+                                                      worker.status === 'active'
+                                                        ? 'bg-green-500 animate-pulse'
+                                                        : worker.status === 'waiting'
+                                                        ? 'bg-yellow-500'
+                                                        : 'bg-red-500'
+                                                    }`}></div>
+                                                    {worker.role.charAt(0) + worker.role.charAt(1)}
+                                                  </div>
+                                                  
+                                                  {/* Šipka mezi rolemi (ale ne před custom rolemi) */}
+                                                  {index < allWorkers.length - 1 && !(index === standardCount - 1 && customWorkers.length > 0) && (
+                                                    <div className="flex items-center gap-1">
+                                                      <span className="text-blue-500 dark:text-blue-400 font-bold">→</span>
+                                                    </div>
+                                                  )}
+                                                </React.Fragment>
+                                              ));
+                                            })()}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+
                                     {/* Role progress */}
                                     <div>
                                       <h4 className="text-base sm:text-lg font-bold text-gray-800 dark:text-gray-200 mb-3 sm:mb-4 flex items-center gap-2">
@@ -1051,6 +1232,54 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
           onAssignmentsChange={loadProjectAssignments}
         />
       )}
+
+      {/* Modal pro závislosti rolí */}
+             {!readOnlyMode && dependenciesModalProject && (
+         <RoleDependenciesModal
+           isOpen={!!dependenciesModalProject}
+           onClose={() => setDependenciesModalProject(null)}
+           projectId={dependenciesModalProject.id}
+
+           projectAssignments={projectAssignments[dependenciesModalProject.id]?.map(assignment => ({
+             teamMemberId: assignment.teamMemberId,
+             role: assignment.role
+           })) || []}
+           onWorkflowChange={(workflow) => {
+             console.log('Workflow změněn pro projekt:', dependenciesModalProject.name, workflow);
+             // Reload workflow dependencies after change
+             const loadWorkflowDependencies = async () => {
+               try {
+                 const { DependencyService } = await import('@/app/services/dependencyService');
+                 const projectDeps = await DependencyService.getProjectDependencies(dependenciesModalProject.id);
+                 setWorkflowDependencies(prev => ({
+                   ...prev,
+                   [dependenciesModalProject.id]: projectDeps
+                 }));
+               } catch (error) {
+                 console.error('Failed to reload dependencies:', error);
+               }
+             };
+             loadWorkflowDependencies();
+           }}
+           onWorkersChange={(workers) => {
+             console.log('Stav pracovníků změněn pro projekt:', dependenciesModalProject.name, workers);
+             // Reload workflow dependencies after change
+             const loadWorkflowDependencies = async () => {
+               try {
+                 const { DependencyService } = await import('@/app/services/dependencyService');
+                 const projectDeps = await DependencyService.getProjectDependencies(dependenciesModalProject.id);
+                 setWorkflowDependencies(prev => ({
+                   ...prev,
+                   [dependenciesModalProject.id]: projectDeps
+                 }));
+               } catch (error) {
+                 console.error('Failed to reload dependencies:', error);
+               }
+             };
+             loadWorkflowDependencies();
+           }}
+         />
+       )}
     </>
   );
 } 

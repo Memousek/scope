@@ -59,6 +59,13 @@ export default function ScopePage({
 
   // --- Project Assignments ---
   const [projectAssignments, setProjectAssignments] = useState<Record<string, ProjectTeamAssignment[]>>({});
+  
+  // --- Workflow Dependencies ---
+  const [workflowDependencies, setWorkflowDependencies] = useState<Record<string, {
+    workflow_type: string;
+    dependencies: Array<{ from: string; to: string; type: 'blocking' | 'waiting' | 'parallel' }>;
+    active_workers: Array<{ role: string; status: 'active' | 'waiting' | 'blocked' }>;
+  }>>({});
 
   // --- Statistiky ---
   const [stats, setStats] = useState<
@@ -228,6 +235,41 @@ export default function ScopePage({
     }
   }, [userId, id]);
 
+  const fetchWorkflowDependencies = useCallback(async () => {
+    if (!userId) return;
+
+    try {
+      const { DependencyService } = await import('@/app/services/dependencyService');
+      const dependenciesMap: Record<string, {
+        workflow_type: string;
+        dependencies: Array<{ from: string; to: string; type: 'blocking' | 'waiting' | 'parallel' }>;
+        active_workers: Array<{ role: string; status: 'active' | 'waiting' | 'blocked' }>;
+      }> = {};
+      const projectsData = await ProjectService.loadProjects(id);
+      
+      if (projectsData) {
+        for (const project of projectsData) {
+          try {
+            const projectDeps = await DependencyService.getProjectDependencies(project.id);
+            dependenciesMap[project.id] = projectDeps;
+          } catch (error) {
+            console.warn(`Failed to load dependencies for project ${project.id}:`, error);
+            // Use default dependencies if loading fails
+            dependenciesMap[project.id] = {
+              workflow_type: 'FE-First',
+              dependencies: [],
+              active_workers: []
+            };
+          }
+        }
+      }
+      
+      setWorkflowDependencies(dependenciesMap);
+    } catch (error) {
+      console.error("Chyba při načítání workflow dependencies:", error);
+    }
+  }, [userId, id]);
+
   // Funkce pro aktualizaci týmu s aktualizací přiřazení k projektům
   const handleTeamChange = useCallback(async (newTeam: TeamMember[]) => {
     setTeam(newTeam);
@@ -334,6 +376,7 @@ export default function ScopePage({
       fetchTeam();
       fetchProjects();
       fetchProjectAssignments();
+      fetchWorkflowDependencies();
       fetchStats();
       fetchAverageSlip();
       checkOwnership();
@@ -347,6 +390,7 @@ export default function ScopePage({
     fetchTeam,
     fetchProjects,
     fetchProjectAssignments,
+    fetchWorkflowDependencies,
     fetchStats,
     fetchAverageSlip,
     checkOwnership,
@@ -564,6 +608,7 @@ export default function ScopePage({
           team={team}
           projects={projects}
           projectAssignments={projectAssignments}
+          workflowDependencies={workflowDependencies}
           onTeamChange={handleTeamChange}
           stats={stats}
           loadingStats={loadingStats}
