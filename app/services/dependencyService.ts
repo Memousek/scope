@@ -127,26 +127,19 @@ export class DependencyService {
       // Try to get status from worker_states if available, otherwise use current_active_roles
       let status: 'active' | 'waiting' | 'blocked' = 'waiting';
       
-      console.log('Processing assignment:', assignment.role, 'dependencies:', dependencies);
-      
       if (dependencies?.worker_states) {
         // If we have worker_states, use them
-        console.log('Using worker_states:', dependencies.worker_states);
         const workerState = dependencies.worker_states.find((ws: { role: string; status: string }) => 
           ws.role.toLowerCase() === assignment.role.toLowerCase()
         );
         if (workerState) {
           status = workerState.status;
-          console.log('Found worker state for', assignment.role, ':', workerState);
         }
       } else if (dependencies?.current_active_roles) {
         // Fallback to current_active_roles (legacy)
-        console.log('Using current_active_roles:', dependencies.current_active_roles);
         const isActive = dependencies.current_active_roles.includes(assignment.role.toLowerCase());
         status = isActive ? 'active' : 'waiting';
       }
-      
-      console.log('Final status for', assignment.role, ':', status);
       
       return {
         role: assignment.role,
@@ -189,8 +182,6 @@ export class DependencyService {
       allocation_fte: worker.allocation_fte
     }));
     
-    console.log('Saving worker_states:', worker_states);
-
     // Check if dependencies already exist
     const { data: existingDeps } = await this.supabase
       .from('project_role_dependencies')
