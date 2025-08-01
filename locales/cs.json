@@ -15,7 +15,7 @@
   "priority": "Priorita",
   "estimate": "Odhad",
   "mandays": "manday",
-  "deliveryDate": "Termín dodání",
+  "deliveryDate": "Termín dodání (volitelný)",
   "calculatedDelivery": "Spočítaný termín dodání",
   "delay": "Skluz",
   "status": "Stav",

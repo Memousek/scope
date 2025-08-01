@@ -288,22 +288,27 @@ const ProjectProgressChartComponent: React.FC<ProjectProgressChartProps> = ({
 
       {/* Detailní metriky */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
-        <div className="text-center">
-          <div className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-            {deliveryInfo.deliveryDate ? deliveryInfo.deliveryDate.toLocaleDateString() : 'N/A'}
-          </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">{t("plannedDate")}</div>
-        </div>
-        
-        <div className="text-center">
-          <div className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-            {deliveryInfo.calculatedDeliveryDate.toLocaleDateString()}
-          </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">{t("calculatedDate")}</div>
-        </div>
+        {/* Zobrazíme plánovaný a vypočítaný termín pouze pokud je vyplněn delivery_date */}
+        {deliveryInfo.deliveryDate && (
+          <>
+            <div className="text-center">
+              <div className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                {deliveryInfo.deliveryDate.toLocaleDateString()}
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">{t("plannedDate")}</div>
+            </div>
+            
+            <div className="text-center">
+              <div className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                {deliveryInfo.calculatedDeliveryDate.toLocaleDateString()}
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">{t("calculatedDate")}</div>
+            </div>
+          </>
+        )}
         
         {priorityDates && (
-          <div className="text-center">
+          <div className={`text-center ${!deliveryInfo.deliveryDate ? 'col-span-2' : ''}`}>
             <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t("priorityDate")}</div>
             <div className="text-lg font-semibold text-blue-600 dark:text-blue-400">
               Od: {priorityDates.priorityStartDate.toLocaleDateString()}
