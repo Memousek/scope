@@ -90,27 +90,48 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
   }, [loadProjects, loadTeam]);
 
   // Load workflow dependencies for all projects
-  // Initialize workflow dependencies with defaults
-  useEffect(() => {
+  const loadWorkflowDependencies = useCallback(async () => {
     if (projects.length === 0) return;
 
-    const dependencies: Record<string, {
-      workflow_type: string;
-      dependencies: Array<{ from: string; to: string; type: 'blocking' | 'waiting' | 'parallel' }>;
-      active_workers: Array<{ role: string; status: 'active' | 'waiting' | 'blocked' }>;
-    }> = {};
+    try {
+      const { DependencyService } = await import('@/app/services/dependencyService');
+      const dependencies: Record<string, {
+        workflow_type: string;
+        dependencies: Array<{ from: string; to: string; type: 'blocking' | 'waiting' | 'parallel' }>;
+        active_workers: Array<{ role: string; status: 'active' | 'waiting' | 'blocked' }>;
+      }> = {};
 
-    // Use default dependencies for all projects to avoid 406 errors
-    for (const project of projects) {
-      dependencies[project.id] = {
-        workflow_type: 'FE-First',
-        dependencies: [],
-        active_workers: []
-      };
+      for (const project of projects) {
+        try {
+          const projectDeps = await DependencyService.getProjectDependencies(project.id);
+          dependencies[project.id] = projectDeps;
+        } catch (error) {
+          console.warn(`Failed to load dependencies for project ${project.id}:`, error);
+          // Fallback na defaultní hodnoty s přiřazenými rolemi
+          const assignments = projectAssignments[project.id] || [];
+          const activeWorkers = assignments.map(assignment => ({
+            role: assignment.role,
+            status: 'waiting' as const
+          }));
+          
+          dependencies[project.id] = {
+            workflow_type: 'FE-First',
+            dependencies: [],
+            active_workers: activeWorkers
+          };
+        }
+      }
+
+      setWorkflowDependencies(dependencies);
+    } catch (error) {
+      console.error("Chyba při načítání workflow dependencies:", error);
     }
+  }, [projects, projectAssignments]);
 
-    setWorkflowDependencies(dependencies);
-  }, [projects]);
+  // Load workflow dependencies when projects or assignments change
+  useEffect(() => {
+    loadWorkflowDependencies();
+  }, [loadWorkflowDependencies]);
 
   // Oprava duplicitních priorit a zajištění souvislých priorit od 1
   useEffect(() => {
