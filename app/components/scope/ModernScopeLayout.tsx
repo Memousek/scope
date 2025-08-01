@@ -25,6 +25,11 @@ interface ModernScopeLayoutProps {
   team: TeamMember[];
   projects: Project[];
   projectAssignments?: Record<string, ProjectTeamAssignment[]>;
+  workflowDependencies?: Record<string, {
+    workflow_type: string;
+    dependencies: Array<{ from: string; to: string; type: 'blocking' | 'waiting' | 'parallel' }>;
+    active_workers: Array<{ role: string; status: 'active' | 'waiting' | 'blocked' }>;
+  }>;
   onTeamChange: (team: TeamMember[]) => void;
   stats?: {
     projectCount: number;
@@ -57,6 +62,7 @@ export function ModernScopeLayout({
   team,
   projects,
   projectAssignments = {},
+  workflowDependencies = {},
   onTeamChange,
   stats,
   loadingStats,
@@ -382,7 +388,7 @@ export function ModernScopeLayout({
         return (
             <div className="relative">
                 <Badge label={t("experimental")} variant="info" position="top-right" />
-                <BurndownChart projects={projects} team={team} projectAssignments={projectAssignments} scopeId={scopeId} />
+                <BurndownChart projects={projects} team={team} projectAssignments={projectAssignments} workflowDependencies={workflowDependencies} scopeId={scopeId} />
             </div>
         );
 

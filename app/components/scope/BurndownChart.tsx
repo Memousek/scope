@@ -10,7 +10,7 @@
 import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Project, TeamMember } from './types';
-import { calculatePriorityDatesWithAssignments } from '@/app/utils/dateUtils';
+import { calculatePriorityDatesWithAssignments, calculateProjectDeliveryInfoWithWorkflow } from '@/app/utils/dateUtils';
 import { ProjectTeamAssignment } from '@/lib/domain/models/project-team-assignment.model';
 import { Payload } from "recharts/types/component/DefaultLegendContent";
 import { useTranslation } from "@/lib/translation";
@@ -21,6 +21,11 @@ interface BurndownChartProps {
   projects: Project[];
   team: TeamMember[];
   projectAssignments?: Record<string, ProjectTeamAssignment[]>;
+  workflowDependencies?: Record<string, {
+    workflow_type: string;
+    dependencies: Array<{ from: string; to: string; type: 'blocking' | 'waiting' | 'parallel' }>;
+    active_workers: Array<{ role: string; status: 'active' | 'waiting' | 'blocked' }>;
+  }>;
   scopeId: string;
 }
 
@@ -31,7 +36,7 @@ interface ChartDataPoint {
   [key: string]: number | string; // Pro dynamické projekty
 }
 
-export function BurndownChart({ projects, team, projectAssignments = {}, scopeId }: BurndownChartProps) {
+export function BurndownChart({ projects, team, projectAssignments = {}, workflowDependencies = {}, scopeId }: BurndownChartProps) {
   const { t } = useTranslation();
   const { activeRoles } = useScopeRoles(scopeId);
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
@@ -41,7 +46,8 @@ export function BurndownChart({ projects, team, projectAssignments = {}, scopeId
   useEffect(() => {
     if (projects.length === 0 || team.length === 0) return;
 
-    const priorityDates = calculatePriorityDatesWithAssignments(projects, team, projectAssignments);
+    // Use workflow-aware calculation if dependencies are available
+    const priorityDates = calculatePriorityDatesWithAssignments(projects, team, projectAssignments, workflowDependencies);
     const data: ChartDataPoint[] = [];
 
     const bufferDays = 2;

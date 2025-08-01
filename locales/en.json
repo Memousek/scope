@@ -91,6 +91,7 @@
   "invited_and_editors": "Invited and editors",
   "no_invited_or_editors": "No invited users or editors",
   "editor": "editor",
+  "roleDependencies": "Role Dependencies",
   "invited": "invited",
   "remove_rights": "Remove rights",
   "generating_link": "Generating link",

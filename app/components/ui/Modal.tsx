@@ -5,6 +5,7 @@
  * - Click outside to close
  * - Gradient header with icon and title
  * - Consistent styling and animations
+ * - Prevents body scroll when open
  */
 
 import { useEffect, ReactNode } from 'react';
@@ -32,6 +33,20 @@ export function Modal({
   maxWidth = '2xl' 
 }: ModalProps) {
   const { t } = useTranslation();
+
+  // Blokování scrollování stránky když je modal otevřený
+  useEffect(() => {
+    if (isOpen) {
+      // Uložíme původní overflow
+      const originalStyle = window.getComputedStyle(document.body).overflow;
+      document.body.style.overflow = 'hidden';
+      
+      // Cleanup funkce pro obnovení původního overflow
+      return () => {
+        document.body.style.overflow = originalStyle;
+      };
+    }
+  }, [isOpen]);
 
   // ESC key handler
   useEffect(() => {
