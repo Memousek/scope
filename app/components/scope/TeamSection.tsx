@@ -149,7 +149,7 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
   //   const B = f & 0x0000FF;
   //   return `rgb(${Math.round((t - R) * p + R)}, ${Math.round((t - G) * p + G)}, ${Math.round((t - B) * p + B)})`;
   // }
-  
+
 
   return (
     <>
@@ -239,10 +239,11 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                       </span>
                     </button>
                     <button
-                      className={`relative group bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${!isReducedMotion ? 'hover:scale-105 hover:shadow-2xl hover:shadow-green-500/25 active:scale-95' : 'hover:bg-gradient-to-r hover:from-green-600 hover:via-emerald-600 hover:to-teal-600'}`}
+                      className={`relative group bg-gradient-to-r from-pink-500 via-rose-500 to-red-500 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${!isReducedMotion ? 'hover:scale-105 hover:shadow-2xl hover:shadow-pink-500/25 active:scale-95' : 'hover:bg-gradient-to-r hover:from-pink-600 hover:via-rose-600 hover:to-red-600'}`}
                       onClick={() => setRoleManagementModalOpen(true)}
                     >
-                      <div className="absolute inset-0 bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+                      <div className="absolute inset-0 bg-gradient-to-r from-pink-600 via-rose-600 to-red-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                       <span className="relative z-10 flex items-center gap-2">
                         <SettingsIcon className="w-5 h-5" />
                         {t("manageRoles")}
@@ -346,7 +347,7 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                     )}
 
                     <div className="p-4 sm:p-6 relative">
-                      <div  className="text-xs font-bold px-2 py-1 rounded-full shadow-lg z-10 bg-gradient-to-r from-blue-500 to-purple-500 text-white absolute top-2 left-2">
+                      <div className="text-xs font-bold px-2 py-1 rounded-full shadow-lg z-10 bg-gradient-to-r from-blue-500 to-purple-500 text-white absolute top-2 left-2">
                         {member.role}
                       </div>
                       {/* Desktop layout */}
@@ -425,7 +426,7 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                               {!readOnlyMode && (
                                 <>
                                   <input
-                                    className="w-20 bg-gradient-to-r from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 text-center font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                    className="w-20 bg-gradient-to-r from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-3 pr-8 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 text-center font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                     type="number"
                                     min={0.1}
                                     step={0.01}
@@ -439,7 +440,7 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                                     }
                                     disabled={readOnlyMode}
                                   />
-                                  <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-gray-500 dark:text-gray-400">
+                                  <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-gray-500 dark:text-gray-400">
                                     FTE
                                   </span>
                                 </>
