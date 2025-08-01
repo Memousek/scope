@@ -130,6 +130,7 @@ export class SupabaseProjectRepository implements ProjectRepository {
     if (project.status !== undefined) {
       updateData.status = project.status;
     }
+    if (project.startedAt !== undefined) updateData.started_at = project.startedAt ? (project.startedAt instanceof Date ? project.startedAt.toISOString() : project.startedAt) : null;
 
     // Extrahujeme custom role data
     const customRoleData: Record<string, number> = {};
@@ -199,6 +200,7 @@ export class SupabaseProjectRepository implements ProjectRepository {
       dplDone: data.dpl_done,
       deliveryDate: data.delivery_date ? new Date(data.delivery_date as string) : undefined,
       createdAt: new Date(data.created_at as string),
+      startedAt: data.started_at ? new Date(data.started_at as string) : undefined,
       status: (data.status as 'not_started' | 'in_progress' | 'paused' | 'completed' | 'cancelled' | 'archived' | 'suspended') || 'not_started'
     };
 

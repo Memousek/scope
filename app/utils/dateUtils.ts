@@ -298,6 +298,11 @@ export function calculatePriorityDatesWithAssignments(
     return status === 'in_progress' || status === 'not_started' || status === 'paused';
   });
   
+  // Find projects that are currently in progress
+  const inProgressProjects = activeProjects.filter(project => 
+    (project.status || 'not_started') === 'in_progress'
+  );
+  
   // Sort active projects by priority and status-aware ordering
   const sorted = [...activeProjects].sort((a, b) => {
     // First sort by priority
@@ -343,16 +348,15 @@ export function calculatePriorityDatesWithAssignments(
       // Status-aware start date calculation
       const projectStatus = project.status || 'not_started';
       
-      if (i === 0) {
-        // First project - start date depends on status
-        if (projectStatus === 'in_progress') {
-          // Active projects start from today or earlier
-          priorityStartDate = new Date(currentStart);
-        } else {
-          // Other projects start from today
-          priorityStartDate = new Date(currentStart);
-        }
+      if (projectStatus === 'in_progress') {
+        // Active projects start from today, regardless of position
+        priorityStartDate = new Date(currentStart);
+        blockingProjectName = undefined; // No blocking project for active projects
+      } else if (i === 0) {
+        // First non-active project starts from today
+        priorityStartDate = new Date(currentStart);
       } else {
+        // Other projects start after the previous one
         const prev = sorted[i - 1];
         const prevEnd = result[prev.id].priorityEndDate;
         const nextStart = new Date(prevEnd);
@@ -466,16 +470,19 @@ export function calculatePriorityDatesWithAssignments(
     // Status-aware start date calculation
     const projectStatus = project.status || 'not_started';
     
-    if (i === 0) {
-      // First project - start date depends on status
-      if (projectStatus === 'in_progress') {
-        // Active projects start from today or earlier
-        priorityStartDate = new Date(currentStart);
+    if (projectStatus === 'in_progress') {
+      // Active projects start from startedAt if available, otherwise from today
+      if (project.startedAt) {
+        priorityStartDate = new Date(project.startedAt);
       } else {
-        // Other projects start from today
         priorityStartDate = new Date(currentStart);
       }
+      blockingProjectName = undefined; // No blocking project for active projects
+    } else if (i === 0) {
+      // First non-active project starts from today
+      priorityStartDate = new Date(currentStart);
     } else {
+      // Other projects start after the previous one
       const prev = sorted[i - 1];
       const prevEnd = result[prev.id].priorityEndDate;
       const nextStart = new Date(prevEnd);

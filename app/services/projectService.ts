@@ -167,6 +167,17 @@ export class ProjectService {
     if (updates.priority !== undefined) domainUpdates.priority = updates.priority;
     if (updates.delivery_date !== undefined) domainUpdates.deliveryDate = updates.delivery_date ? new Date(updates.delivery_date) : undefined;
     if (updates.status !== undefined) domainUpdates.status = updates.status;
+    // startedAt logika
+    if ((updates.status as string) === 'in_progress') {
+      if (!('startedAt' in updates) || !updates.startedAt) {
+        domainUpdates.startedAt = new Date();
+      } else if (typeof updates.startedAt === 'string') {
+        domainUpdates.startedAt = new Date(updates.startedAt);
+      }
+      // Pokud je null nebo undefined, nenastavuj vůbec
+    } else if (updates.status && (updates.status as string) !== 'in_progress') {
+      domainUpdates.startedAt = undefined;
+    }
     
     // Map standard role data
     if ((updates as Record<string, unknown>).fe_mandays !== undefined) domainUpdates.feMandays = (updates as Record<string, unknown>).fe_mandays as number;
@@ -193,7 +204,18 @@ export class ProjectService {
       domainUpdates.customRoleData = (updates as Record<string, unknown>).custom_role_data;
     }
     
-    const domainProject = await projectRepository.update(projectId, domainUpdates);
+    // Zajisti, že startedAt není null
+    if (domainUpdates.startedAt === null) {
+      domainUpdates.startedAt = undefined;
+    }
+    
+    // Vytvoř nový objekt s správnými typy pro doménový model
+    const domainProjectUpdates: Partial<import('../../lib/domain/models/project.model').Project> = {
+      ...domainUpdates,
+      startedAt: domainUpdates.startedAt instanceof Date ? domainUpdates.startedAt : undefined
+    };
+    
+    const domainProject = await projectRepository.update(projectId, domainProjectUpdates);
     
     // Map domain project to component project
     return {
@@ -280,7 +302,12 @@ export class ProjectService {
     if (Object.keys(projectUpdates).length > 0) {
       // Použijeme repository místo přímého Supabase update, aby se zachovaly custom role data
       const projectRepository = ContainerService.getInstance().get(ProjectRepository);
-      await projectRepository.update(projectId, projectUpdates);
+      // Převedeme projectUpdates na správný typ pro doménový model a odstraníme startedAt
+      const { startedAt, ...projectUpdatesWithoutStartedAt } = projectUpdates;
+      const domainProjectUpdates: Partial<import('../../lib/domain/models/project.model').Project> = {
+        ...projectUpdatesWithoutStartedAt
+      };
+      await projectRepository.update(projectId, domainProjectUpdates);
     }
   }
 

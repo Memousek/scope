@@ -26,6 +26,7 @@ export interface Project {
   priority: number;
   delivery_date: string | null;
   created_at: string;
+  startedAt?: string | null;
   status?: 'not_started' | 'in_progress' | 'paused' | 'completed' | 'cancelled' | 'archived' | 'suspended';
   custom_role_data?: Record<string, number> | null;
   // Dynamické role data - klíče budou generovány z scope_roles

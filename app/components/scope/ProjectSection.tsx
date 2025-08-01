@@ -280,8 +280,12 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
 
   const handleProjectChange = async (updatedProject: Project) => {
     try {
-      // Update the local state using the updateProject function from useProjects hook
-      await updateProject(updatedProject.id, updatedProject);
+      // Pokud je startedAt null, smaž ho z updates
+      const updates = { ...updatedProject };
+      if (updates.startedAt === null) {
+        delete updates.startedAt;
+      }
+      await updateProject(updatedProject.id, updates);
     } catch (error) {
       console.error('Failed to update project:', error);
     }
@@ -1268,7 +1272,6 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
             role: assignment.role
           })) || []}
           onWorkflowChange={(workflow) => {
-            console.log('Workflow změněn pro projekt:', dependenciesModalProject.name, workflow);
             // Reload workflow dependencies after change
             const loadWorkflowDependencies = async () => {
               try {
@@ -1285,7 +1288,6 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
             loadWorkflowDependencies();
           }}
           onWorkersChange={(workers) => {
-            console.log('Stav pracovníků změněn pro projekt:', dependenciesModalProject.name, workers);
             // Reload workflow dependencies after change
             const loadWorkflowDependencies = async () => {
               try {

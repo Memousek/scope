@@ -34,7 +34,6 @@ export class FileUploadService {
         });
         
         // Použít blob URL jako fallback
-        console.log('Using blob URL fallback due to storage error');
         return URL.createObjectURL(file);
       }
 
