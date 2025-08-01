@@ -4,6 +4,7 @@
  * - Podporuje češtinu a angličtinu
  */
 
+import React from 'react';
 import { FiFolder, FiEdit3, FiCheckCircle, FiUsers, FiUserMinus, FiCalendar, FiClipboard } from 'react-icons/fi';
 
 export function formatRelativeTime(date: Date, locale: string = 'cs-CZ'): string {
@@ -33,19 +34,19 @@ export function formatRelativeTime(date: Date, locale: string = 'cs-CZ'): string
 export function getActivityIcon(type: string): React.ReactElement {
   switch (type) {
     case 'project_created':
-      return <FiFolder />;
+      return <FiFolder className="text-2xl" />;
     case 'project_updated':
-      return <FiEdit3 />;
+      return <FiEdit3 className="text-2xl" />;
     case 'project_completed':
-      return <FiCheckCircle />;
+      return <FiCheckCircle className="text-2xl" />;
     case 'member_added':
-      return <FiUsers />;
+      return <FiUsers className="text-2xl" />;
     case 'member_removed':
-      return <FiUserMinus />;
+      return <FiUserMinus className="text-2xl" />;
     case 'delivery_updated':
-      return <FiCalendar />;
+      return <FiCalendar className="text-2xl" />;
     default:
-      return <FiClipboard />;
+      return <FiClipboard className="text-2xl" />;
   }
 }
 

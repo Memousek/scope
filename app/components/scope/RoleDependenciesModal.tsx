@@ -8,6 +8,7 @@ import { Modal } from '@/app/components/ui/Modal';
 import { Badge } from '@/app/components/ui/Badge';
 
 import { DependencyService, DependencyItem, ActiveWorker } from '@/app/services/dependencyService';
+import { FiInfo } from 'react-icons/fi';
 
 interface RoleDependenciesModalProps {
   isOpen: boolean;
@@ -115,6 +116,7 @@ export const RoleDependenciesModal: React.FC<RoleDependenciesModalProps> = ({
       onClose={onClose}
       title="Závislosti rolí"
       description="Spravujte workflow a stav pracovníků na projektu"
+      icon={<FiInfo className="text-2xl" />}
     >
       {loading && (
         <div className="flex items-center justify-center py-8">

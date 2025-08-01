@@ -19,7 +19,7 @@ import { useTranslation } from "@/lib/translation";
 import { ProjectTeamAssignment } from "@/lib/domain/models/project-team-assignment.model";
 import { Badge } from "../ui/Badge";
 import { useScopeRoles } from "@/app/hooks/useScopeRoles";
-import { FiUsers, FiTrendingUp, FiBarChart2, FiClipboard, FiSearch, FiDownload, FiFolder } from 'react-icons/fi';
+import { FiUsers, FiTrendingUp, FiBarChart2, FiSearch, FiDownload, FiFolder } from 'react-icons/fi';
 
 interface ModernScopeLayoutProps {
   scopeId: string;
