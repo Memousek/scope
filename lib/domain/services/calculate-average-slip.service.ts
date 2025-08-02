@@ -1,7 +1,6 @@
 import { injectable, inject } from 'inversify';
 import { ProjectRepository } from '../repositories/project.repository';
 import { TeamMemberRepository } from '../repositories/team-member.repository';
-import { ProjectTeamAssignmentRepository } from '../repositories/project-team-assignment.repository';
 
 export interface AverageSlipResult {
   averageSlip: number;
@@ -15,8 +14,7 @@ export interface AverageSlipResult {
 export class CalculateAverageSlipService {
   constructor(
     @inject(ProjectRepository) private projectRepository: ProjectRepository,
-    @inject(TeamMemberRepository) private teamMemberRepository: TeamMemberRepository,
-    @inject(ProjectTeamAssignmentRepository) private projectTeamAssignmentRepository: ProjectTeamAssignmentRepository
+    @inject(TeamMemberRepository) private teamMemberRepository: TeamMemberRepository
   ) {}
 
   /**
@@ -58,9 +56,9 @@ export class CalculateAverageSlipService {
   /**
    * Calculate priority dates for projects
    */
-  private calculatePriorityDates(projects: any[], team: any[]): Record<string, { priorityStartDate: Date; priorityEndDate: Date }> {
+  private calculatePriorityDates(projects: unknown[], team: unknown[]): Record<string, { priorityStartDate: Date; priorityEndDate: Date }> {
     // Sort projects by priority (ascending), then by created_at
-    const sorted = [...projects].sort((a, b) => {
+    const sorted = [...projects].sort((a: any, b: any) => {
       if (a.priority !== b.priority) return a.priority - b.priority;
       return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     });
@@ -69,7 +67,7 @@ export class CalculateAverageSlipService {
     const currentStart = new Date(); // Start today
     
     for (let i = 0; i < sorted.length; i++) {
-      const project = sorted[i];
+      const project = sorted[i] as any;
       
       // Calculate project duration
       const roleKeys = Object.keys(project)
@@ -78,11 +76,11 @@ export class CalculateAverageSlipService {
 
       let maxDays = 0;
       roleKeys.forEach(roleKey => {
-        const fte = team.filter(m => m.role === roleKey.toUpperCase() || m.role === roleKey)
+        const fte = (team as any[]).filter(m => m.role === roleKey.toUpperCase() || m.role === roleKey)
           .reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
         
-        const mandays = Number((project as unknown as Record<string, unknown>)[`${roleKey}Mandays`]) || 0;
-        const done = Number((project as unknown as Record<string, unknown>)[`${roleKey}Done`]) || 0;
+        const mandays = Number((project as Record<string, unknown>)[`${roleKey}Mandays`]) || 0;
+        const done = Number((project as Record<string, unknown>)[`${roleKey}Done`]) || 0;
         const remainingMandays = mandays * (1 - (done / 100));
         const days = remainingMandays / fte;
 
@@ -95,7 +93,7 @@ export class CalculateAverageSlipService {
       if (i === 0) {
         priorityStartDate = new Date(currentStart);
       } else {
-        const prev = sorted[i - 1];
+        const prev = sorted[i - 1] as any;
         const prevEnd = result[prev.id].priorityEndDate;
         const nextStart = new Date(prevEnd);
         nextStart.setDate(nextStart.getDate() + 1);
@@ -118,10 +116,9 @@ export class CalculateAverageSlipService {
   }
 
   async execute(scopeId: string): Promise<AverageSlipResult> {
-    const [projects, team, projectAssignments] = await Promise.all([
+    const [projects, team] = await Promise.all([
       this.projectRepository.findByScopeId(scopeId),
-      this.teamMemberRepository.findByScopeId(scopeId),
-      this.projectTeamAssignmentRepository.findByScopeId(scopeId)
+      this.teamMemberRepository.findByScopeId(scopeId)
     ]);
 
     if (projects.length === 0) {

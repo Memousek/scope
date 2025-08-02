@@ -121,7 +121,7 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
         // Pokud máme málo bodů, přidáme další dny
         const lastDate = uniqueDates[uniqueDates.length - 1];
         const additionalDates = [];
-        let current = new Date(lastDate);
+        const current = new Date(lastDate);
         let safetyCounter = 0;
         
         while (additionalDates.length < (minPoints - uniqueDates.length) && safetyCounter < 50) {
@@ -188,7 +188,6 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
               );
               const timeProgress = Math.min(daysElapsed / projectDuration, 1);
 
-              const weight = totalMandays || 1;
               const actualProgress = roleCount > 0 ? totalActual / roleCount : 0;
               projectProgressValue = actualProgress * 0.7 + timeProgress * 100 * 0.3;
             } else {

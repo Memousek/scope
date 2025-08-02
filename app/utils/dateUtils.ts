@@ -128,8 +128,6 @@ export function calculatePrioritySlippage(
     .filter(key => key.endsWith('_mandays'))
     .map(key => key.replace(/_mandays$/, ''));
 
-  let totalMandays = 0;
-  let completedMandays = 0;
   let maxRemainingDays = 0;
 
   roleKeys.forEach(roleKey => {
@@ -140,11 +138,8 @@ export function calculatePrioritySlippage(
       ))
       .reduce((sum, m) => sum + (m.fte || 0), 0);
 
-    const mandays = Number(project[`${roleKey}_mandays`]) || 0;
-    const done = Number(project[`${roleKey}_done`]) || 0;
-    
-    totalMandays += mandays;
-    completedMandays += mandays * (done / 100);
+    const mandays = Number((project as Record<string, unknown>)[`${roleKey}_mandays`]) || 0;
+    const done = Number((project as Record<string, unknown>)[`${roleKey}_done`]) || 0;
     
     const remainingMandays = mandays * (1 - (done / 100));
     
