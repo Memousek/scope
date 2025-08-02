@@ -15,5 +15,7 @@ export interface Project {
   dplDone: number;
   deliveryDate?: Date;
   createdAt: Date;
+  startedAt?: Date;
   customRoleData?: Record<string, number>;
+  status?: 'not_started' | 'in_progress' | 'paused' | 'completed' | 'cancelled' | 'archived' | 'suspended';
 }

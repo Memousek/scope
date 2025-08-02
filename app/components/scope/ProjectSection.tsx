@@ -28,7 +28,9 @@ import { calculateRoleProgress, calculateTotalProgress } from '@/lib/utils/dynam
 import { useScopeRoles } from '@/app/hooks/useScopeRoles';
 
 import { Badge } from '@/app/components/ui/Badge';
-import { FiUsers, FiTrendingUp, FiFolder } from 'react-icons/fi';
+import { FiUsers, FiFolder, FiFilter, FiChevronDown } from 'react-icons/fi';
+import { ProjectStatusFilter, ProjectStatus } from './ProjectStatusFilter';
+import { ProjectStatusBadge } from './ProjectStatusBadge';
 
 interface ProjectSectionProps {
   scopeId: string;
@@ -37,18 +39,18 @@ interface ProjectSectionProps {
 
 export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSectionProps) {
   const { t } = useTranslation();
-  const { 
-    projects, 
-    loading: projectsLoading, 
-    addProject, 
-    updateProject, 
+  const {
+    projects,
+    loading: projectsLoading,
+    addProject,
+    updateProject,
     deleteProject,
-    loadProjects 
+    loadProjects
   } = useProjects(scopeId);
-  
-  const { 
-    team, 
-    loadTeam 
+
+  const {
+    team,
+    loadTeam
   } = useTeam(scopeId);
 
   const { activeRoles } = useScopeRoles(scopeId);
@@ -60,22 +62,26 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
   const [teamAssignmentModalProject, setTeamAssignmentModalProject] = useState<Project | null>(null);
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [dependenciesModalProject, setDependenciesModalProject] = useState<Project | null>(null);
-  
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+  const [selectedStatuses, setSelectedStatuses] = useState<ProjectStatus[]>([]);
+
   // Project assignments state
   const [projectAssignments, setProjectAssignments] = useState<Record<string, ProjectTeamAssignment[]>>({});
-  
+
   // Workflow dependencies state
   const [workflowDependencies, setWorkflowDependencies] = useState<Record<string, {
     workflow_type: string;
     dependencies: Array<{ from: string; to: string; type: 'blocking' | 'waiting' | 'parallel' }>;
     active_workers: Array<{ role: string; status: 'active' | 'waiting' | 'blocked' }>;
   }>>({});
-  
+
   // Drag and drop state
   const [draggedProject, setDraggedProject] = useState<Project | null>(null);
   const [dragOverProject, setDragOverProject] = useState<string | null>(null);
   const [isUpdatingPriority, setIsUpdatingPriority] = useState(false);
   const dragRef = useRef<HTMLDivElement>(null);
+
+
 
   // Load data on component mount
   useEffect(() => {
@@ -84,46 +90,57 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
   }, [loadProjects, loadTeam]);
 
   // Load workflow dependencies for all projects
-  useEffect(() => {
-    const loadWorkflowDependencies = async () => {
-      if (projects.length === 0) return;
-      
+  const loadWorkflowDependencies = useCallback(async () => {
+    if (projects.length === 0) return;
+
+    try {
+      const { DependencyService } = await import('@/app/services/dependencyService');
       const dependencies: Record<string, {
         workflow_type: string;
         dependencies: Array<{ from: string; to: string; type: 'blocking' | 'waiting' | 'parallel' }>;
         active_workers: Array<{ role: string; status: 'active' | 'waiting' | 'blocked' }>;
       }> = {};
-      
+
       for (const project of projects) {
         try {
-          const { DependencyService } = await import('@/app/services/dependencyService');
           const projectDeps = await DependencyService.getProjectDependencies(project.id);
           dependencies[project.id] = projectDeps;
         } catch (error) {
           console.warn(`Failed to load dependencies for project ${project.id}:`, error);
-          // Use default dependencies if loading fails
+          // Fallback na defaultní hodnoty s přiřazenými rolemi
+          const assignments = projectAssignments[project.id] || [];
+          const activeWorkers = assignments.map(assignment => ({
+            role: assignment.role,
+            status: 'waiting' as const
+          }));
+          
           dependencies[project.id] = {
             workflow_type: 'FE-First',
             dependencies: [],
-            active_workers: []
+            active_workers: activeWorkers
           };
         }
       }
-      
-      setWorkflowDependencies(dependencies);
-    };
 
+      setWorkflowDependencies(dependencies);
+    } catch (error) {
+      console.error("Chyba při načítání workflow dependencies:", error);
+    }
+  }, [projects, projectAssignments]);
+
+  // Load workflow dependencies when projects or assignments change
+  useEffect(() => {
     loadWorkflowDependencies();
-  }, [projects]);
+  }, [loadWorkflowDependencies]);
 
   // Oprava duplicitních priorit a zajištění souvislých priorit od 1
   useEffect(() => {
     const fixPriorities = async () => {
       if (projects.length === 0) return;
-      
+
       // Seřadíme projekty podle priority
       const sortedProjects = [...projects].sort((a, b) => a.priority - b.priority);
-      
+
       // Zkontrolujeme, zda jsou priority souvislé od 1
       let needsUpdate = false;
       for (let i = 0; i < sortedProjects.length; i++) {
@@ -132,7 +149,7 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
           break;
         }
       }
-      
+
       // Pokud priority nejsou souvislé od 1, přečíslujeme je
       if (needsUpdate) {
         const updatePromises = sortedProjects.map((project, index) => {
@@ -142,19 +159,19 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
           }
           return Promise.resolve();
         });
-        
+
         await Promise.all(updatePromises);
         await loadProjects();
       }
     };
-    
+
     // Spustíme opravu pouze pokud neprobíhá drag and drop operace
     if (!isUpdatingPriority) {
       // Přidáme malé zpoždění pro zajištění, že se drag and drop operace dokončila
       const timeoutId = setTimeout(() => {
         fixPriorities();
       }, 100);
-      
+
       return () => clearTimeout(timeoutId);
     }
   }, [projects, updateProject, loadProjects, isUpdatingPriority]);
@@ -163,12 +180,12 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
     try {
       const manageAssignmentsService = ContainerService.getInstance().get(ManageProjectTeamAssignmentsService, { autobind: true });
       const assignmentsMap: Record<string, ProjectTeamAssignment[]> = {};
-      
+
       for (const project of projects) {
         const assignments = await manageAssignmentsService.getProjectAssignments(project.id);
         assignmentsMap[project.id] = assignments;
       }
-      
+
       setProjectAssignments(assignmentsMap);
     } catch (error) {
       console.error('Failed to load project assignments:', error);
@@ -188,15 +205,15 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
       const existingPriorities = projects.map(p => p.priority);
       const maxPriority = existingPriorities.length > 0 ? Math.max(...existingPriorities) : 0;
       const newPriority = maxPriority + 1;
-      
+
       // Rozdělíme data na standardní a custom role
       const standardRoleKeys = ['fe', 'be', 'qa', 'pm', 'dpl'];
       const standardData: Record<string, unknown> = {};
       const customData: Record<string, number> = {};
-      
+
       activeRoles.forEach(role => {
         let cleanKey: string;
-        
+
         if (standardRoleKeys.includes(role.key)) {
           // Standardní role - klíč je přímo fe, be, atd.
           cleanKey = role.key;
@@ -204,12 +221,12 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
           // Custom role - klíč obsahuje suffix, extrahujeme základní název
           cleanKey = role.key.replace(/_mandays$/, '').replace(/_done$/, '');
         }
-        
+
         const mandaysKey = `${cleanKey}_mandays`;
         const doneKey = `${cleanKey}_done`;
         const mandaysValue = (project as Record<string, unknown>)[mandaysKey] as number || 0;
         const doneValue = (project as Record<string, unknown>)[doneKey] as number || 0;
-        
+
         if (standardRoleKeys.includes(role.key)) {
           // Standardní role - přidáme do standardních sloupců
           standardData[mandaysKey] = mandaysValue;
@@ -220,7 +237,7 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
           customData[doneKey] = doneValue;
         }
       });
-      
+
       // Vytvoříme CreateProjectData objekt
       const projectData: CreateProjectData = {
         name: project.name as string,
@@ -230,9 +247,9 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
         // Přidáme custom role data jako jednotlivé vlastnosti
         ...customData
       };
-      
+
       await addProject(projectData);
-      
+
       // Reload projects to get updated data
       await loadProjects();
     } catch (error) {
@@ -245,10 +262,10 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
       // Najdeme projekt, který se maže
       const projectToDelete = projects.find(p => p.id === projectId);
       if (!projectToDelete) return;
-      
+
       // Smažeme projekt
       await deleteProject(projectId);
-      
+
       // Přečíslujeme priority zbývajících projektů
       const remainingProjects = projects.filter(p => p.id !== projectId);
       const projectsToUpdate = remainingProjects
@@ -257,12 +274,12 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
           ...p,
           priority: p.priority - 1
         }));
-      
+
       // Aktualizujeme priority
       for (const project of projectsToUpdate) {
         await updateProject(project.id, { priority: project.priority });
       }
-      
+
       // Reload projects to get updated order
       await loadProjects();
     } catch (error) {
@@ -284,43 +301,12 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
 
   const handleProjectChange = async (updatedProject: Project) => {
     try {
-      // Rozdělíme data na standardní a custom role
-      const standardRoleKeys = ['fe', 'be', 'qa', 'pm', 'dpl'];
-      const standardData: Record<string, unknown> = {};
-      const customData: Record<string, number> = {};
-      
-      projectRoles.forEach(role => {
-        const mandaysValue = (updatedProject as Record<string, unknown>)[role.mandays] as number || 0;
-        const doneValue = (updatedProject as Record<string, unknown>)[role.done] as number || 0;
-        
-        if (standardRoleKeys.includes(role.key)) {
-          // Standardní role - přidáme do standardních sloupců
-          standardData[role.mandays] = mandaysValue;
-          standardData[role.done] = doneValue;
-        } else {
-          // Custom role - přidáme do custom data
-          customData[role.mandays] = mandaysValue;
-          customData[role.done] = doneValue;
-        }
-      });
-      
-      // Vytvoříme updates objekt
-      const updates: Partial<Project> = {
-        name: updatedProject.name,
-        delivery_date: updatedProject.delivery_date,
-        ...standardData
-      };
-      
-      // Přidáme custom role data pokud existují
-      if (Object.keys(customData).length > 0) {
-        (updates as Record<string, unknown>).custom_role_data = customData;
+      // Pokud je startedAt null, smaž ho z updates
+      const updates = { ...updatedProject };
+      if (updates.startedAt === null) {
+        delete updates.startedAt;
       }
-      
-      // Nevoláme updateProject, protože se už volá z EditProjectModal
-      // await updateProject(updatedProject.id, updates);
-      
-      // Reload projects to get updated data from database
-      await loadProjects();
+      await updateProject(updatedProject.id, updates);
     } catch (error) {
       console.error('Failed to update project:', error);
     }
@@ -331,12 +317,12 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
     setDraggedProject(project);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/html', project.id);
-    
+
     // Add visual feedback
     if (dragRef.current) {
       dragRef.current.style.opacity = '0.5';
     }
-    
+
     // Small delay to ensure drag state is set before visual feedback
     setTimeout(() => {
       // setIsDragging(true); // This line is removed
@@ -347,12 +333,12 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
     setDraggedProject(null);
     setDragOverProject(null);
     // setIsDragging(false); // This line is removed
-    
+
     // Remove visual feedback
     if (dragRef.current) {
       dragRef.current.style.opacity = '1';
     }
-    
+
     // Ensure all drag states are cleared
     setTimeout(() => {
       setDragOverProject(null);
@@ -375,21 +361,21 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     // Check if we're moving to a child element within the same project
     const relatedTarget = e.relatedTarget as Node;
     const currentTarget = e.currentTarget as Node;
-    
+
     if (relatedTarget && currentTarget.contains(relatedTarget)) {
       return; // Don't clear if moving to a child element
     }
-    
+
     setDragOverProject(null);
   };
 
   const handleDrop = async (e: React.DragEvent, targetProject: Project) => {
     e.preventDefault();
-    
+
     if (!draggedProject || draggedProject.id === targetProject.id) {
       setDragOverProject(null);
       return;
@@ -397,17 +383,17 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
 
     try {
       setIsUpdatingPriority(true);
-      
+
       // Získáme aktuální priority obou projektů
       const draggedPriority = draggedProject.priority;
       const targetPriority = targetProject.priority;
-      
+
       // Pokud jsou priority stejné, nic neděláme (už je jen jeden projekt v sekci)
       if (draggedPriority === targetPriority) {
         setDragOverProject(null);
         return;
       }
-      
+
       // Prohodíme priority obou projektů
       const updatePromises = [
         // Přesuneme dragged project na target priority
@@ -415,12 +401,12 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
         // Přesuneme target project na dragged priority
         updateProject(targetProject.id, { priority: draggedPriority })
       ];
-      
+
       await Promise.all(updatePromises);
-      
+
       // Reload projects to get updated order
       await loadProjects();
-      
+
     } catch (error) {
       console.error('Failed to update project priority:', error);
     } finally {
@@ -466,17 +452,17 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
     projects.forEach(project => {
       // Use workflow-aware calculation if dependencies are available
       const projectDeps = workflowDependencies[project.id];
-      const info = projectDeps 
+      const info = projectDeps
         ? calculateProjectDeliveryInfoWithWorkflow(
-            project, 
-            team, 
-            projectAssignments[project.id] || [], 
-            projectDeps
-          )
+          project,
+          team,
+          projectAssignments[project.id] || [],
+          projectDeps
+        )
         : calculateProjectDeliveryInfoWithAssignments(project, team, projectAssignments[project.id] || []);
-      
+
       const totalProgress = calculateTotalProgress(project as unknown as Record<string, unknown>, activeRoles);
-      
+
       calculations[project.id] = {
         info,
         priorityDates: priorityDates[project.id],
@@ -488,9 +474,27 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
     return calculations;
   }, [projects, team, projectAssignments, activeRoles, workflowDependencies]);
 
-  // Skupinování projektů podle priority
+  // Skupinování projektů podle priority s filtrováním podle statusu
   const groupedProjects = useMemo(() => {
-    return projects.reduce((groups, project) => {
+    // Filtrujeme projekty podle vybraných statusů
+    let filteredProjects = projects;
+
+    if (selectedStatuses.length > 0) {
+      // Pokud jsou vybrané statusy, zobrazíme pouze projekty s těmito statusy
+      filteredProjects = projects.filter(project => {
+        const projectStatus = project.status as ProjectStatus || 'not_started';
+        return selectedStatuses.includes(projectStatus);
+      });
+    } else {
+      // Pokud nejsou vybrané žádné statusy, skryjeme dokončené, zrušené, přerušené a archivované projekty úplně
+      filteredProjects = projects.filter(project => {
+        const projectStatus = project.status as ProjectStatus || 'not_started';
+        const shouldHide = projectStatus === 'completed' || projectStatus === 'cancelled' || projectStatus === 'suspended' || projectStatus === 'archived';
+        return !shouldHide;
+      });
+    }
+
+    return filteredProjects.reduce((groups, project) => {
       const priority = project.priority;
       if (!groups[priority]) {
         groups[priority] = [];
@@ -498,13 +502,30 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
       groups[priority].push(project);
       return groups;
     }, {} as Record<number, Project[]>);
-  }, [projects]);
+  }, [projects, selectedStatuses]);
 
-  // Seřadit priority skupiny
+  // Seřadit priority skupiny a přepočítat priority pro zobrazení
   const sortedPriorities = useMemo(() => {
-    return Object.keys(groupedProjects)
+    const priorities = Object.keys(groupedProjects)
       .map(Number)
       .sort((a, b) => a - b);
+    
+    // Vytvořit mapování pro přepočet priority na display priority
+    const priorityMapping = new Map<number, number>();
+    priorities.forEach((priority, index) => {
+      priorityMapping.set(priority, index + 1);
+    });
+    
+    // Uložit mapování do groupedProjects pro použití v renderování
+    Object.keys(groupedProjects).forEach(priorityStr => {
+      const priority = Number(priorityStr);
+      const displayPriority = priorityMapping.get(priority) || priority;
+      groupedProjects[priority].forEach(project => {
+        (project as { displayPriority?: number }).displayPriority = displayPriority;
+      });
+    });
+    
+    return priorities;
   }, [groupedProjects]);
 
   const getRoleProgress = (project: Project, roleKey: string) => {
@@ -532,22 +553,22 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
 
   const isRoleAssigned = (projectId: string, roleKey: string) => {
     const assignments = projectAssignments[projectId] || [];
-    
+
     // Najdeme roli podle key a porovnáme s label
     const role = activeRoles.find(r => {
       const cleanKey = r.key.replace(/_mandays$/, '').replace(/_done$/, '');
       return cleanKey === roleKey;
     });
-    
+
     if (!role) {
       return false;
     }
-    
+
     // Porovnáme label role s role v assignments
-    const isAssigned = assignments.some(assignment => 
+    const isAssigned = assignments.some(assignment =>
       assignment.role.toLowerCase() === role.label.toLowerCase()
     );
-    
+
     return isAssigned;
   };
 
@@ -573,7 +594,7 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 rounded-2xl"></div>
           <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full blur-3xl"></div>
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-br from-purple-400/10 to-pink-400/10 rounded-full blur-2xl"></div>
-          
+
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-4">
@@ -586,28 +607,56 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                   <span>{t('projectsOverviewInScope')}</span>
                 </div>
               </div>
-              {!readOnlyMode && (
+              <div className="flex items-center gap-2">
                 <button
-                  className="relative group bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/25 active:scale-95"
-                  onClick={() => setAddModalOpen(true)}
+                  className={`relative group px-4 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center gap-2
+                    ${filterPanelOpen || selectedStatuses.length > 0
+                      ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white'
+                      : 'bg-white/80 dark:bg-gray-700/80 text-gray-700 dark:text-gray-300 hover:bg-white/90 dark:hover:bg-gray-700/90'}
+                  `}
+                  onClick={() => setFilterPanelOpen((v) => !v)}
+                  aria-pressed={filterPanelOpen}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  <span className="relative z-10 flex items-center gap-2">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    {t('addProject')}
-                  </span>
+                  <FiFilter className="w-5 h-5" />
+                  <span className="hidden sm:inline">{t('filter')}</span>
+                  <FiChevronDown className={`w-4 h-4 transition-transform duration-300 ${filterPanelOpen ? 'rotate-180' : ''}`} />
+                  {selectedStatuses.length > 0 && (
+                    <span className="ml-2 px-2 py-0.5 rounded-full bg-blue-500 text-white text-xs font-bold">{selectedStatuses.length}</span>
+                  )}
                 </button>
-              )}
+                {!readOnlyMode && (
+                  <button
+                    className="relative group bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/25 active:scale-95"
+                    onClick={() => setAddModalOpen(true)}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <span className="relative z-10 flex items-center gap-2">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                      {t('addProject')}
+                    </span>
+                  </button>
+                )}
+              </div>
             </div>
-            
+
+            {/* Filter panel (dropdown) */}
+            {filterPanelOpen && (
+              <div className="p-4 bg-white/80 dark:bg-gray-700/80 backdrop-blur-sm rounded-xl border border-gray-200/50 dark:border-gray-600/50 animate-in slide-in-from-top-4 fade-in duration-500">
+                <ProjectStatusFilter
+                  selectedStatuses={selectedStatuses}
+                  onStatusChange={setSelectedStatuses}
+                />
+              </div>
+            )}
+
             <div className="space-y-6">
               {projects.length === 0 ? (
                 <div className="text-center py-16">
                   <div className="relative mb-6">
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur-xl opacity-20"></div>
-                    <div className="relative text-8xl"><FiTrendingUp /></div>
+                    <div className={`relative text-8xl flex items-center justify-center animate-bounce`} ><FiFolder  /></div>
                   </div>
                   <p className="text-gray-600 dark:text-gray-300 text-xl font-medium mb-2">{t('noProjects')}</p>
                   <p className="text-gray-500 dark:text-gray-400 text-sm">Začněte přidáním prvního projektu</p>
@@ -615,20 +664,20 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
               ) : (
                 sortedPriorities.map((priority) => {
                   const projectsInGroup = groupedProjects[priority];
-                  
+
                   return (
                     <div key={priority} className="space-y-4">
                       {/* Priority Group Header */}
                       <div className="flex items-center gap-3 mb-4">
                         <div className="flex items-center gap-2">
                           <h3 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                            {t('priority')} {priority}
+                            {t('priority')} {(projectsInGroup[0]?.displayPriority as number) || priority}
                           </h3>
                         </div>
                         <div className="flex-1 h-px bg-gradient-to-r from-gray-300 to-transparent dark:from-gray-600"></div>
 
                       </div>
-                      
+
                       {/* Projects in this priority group */}
                       <div className="space-y-4">
                         {projectsInGroup.map((project) => {
@@ -636,14 +685,14 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                           const info = calculations.info;
                           const priorityDates = calculations.priorityDates;
                           const totalProgress = calculations.totalProgress;
-                          
+
                           const isExpanded = expandedProject === project.id;
                           const isDragOver = dragOverProject === project.id;
                           const isBeingDragged = draggedProject?.id === project.id;
-                          
+
                           return (
-                            <div 
-                              key={project.id} 
+                            <div
+                              key={project.id}
                               ref={isBeingDragged ? dragRef : null}
                               onDragOver={!readOnlyMode ? handleDragOver : undefined}
                               onDragEnter={!readOnlyMode ? (e) => handleDragEnter(e, project.id) : undefined}
@@ -659,10 +708,10 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                             >
                               {/* Priority indicator */}
                               <div className={`absolute top-0 left-0 w-1 h-full bg-gradient-to-b ${getPriorityColor(priority)}`}></div>
-                              
+
                               {/* Hover effect overlay */}
                               <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-blue-500/5 group-hover:via-purple-500/5 group-hover:to-pink-500/5 transition-all duration-300 rounded-2xl"></div>
-                              
+
                               {/* Drop zone indicators */}
                               {isDragOver && draggedProject?.id !== project.id && (
                                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-2 border-blue-500 rounded-2xl flex items-center justify-center z-20">
@@ -671,7 +720,7 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                                   </div>
                                 </div>
                               )}
-                              
+
                               {/* Loading overlay during priority update */}
                               {isUpdatingPriority && (
                                 <div className="absolute inset-0 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm flex items-center justify-center rounded-2xl z-30">
@@ -681,7 +730,7 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                                   </div>
                                 </div>
                               )}
-                              
+
                               {/* Hlavní řádek */}
                               <div className="p-4 sm:p-6 relative">
                                 {/* Desktop layout */}
@@ -697,23 +746,26 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                                         title={t('dragToChangePriority')}
                                       >
                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
-                                      </svg>
-                                    </div>
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+                                        </svg>
+                                      </div>
                                     )}
-                                    
+
                                     {/* Project name and priority */}
-                                    
+
                                     <div className="flex items-center gap-3">
                                       <h4 className="text-xl font-bold text-gray-900 dark:text-gray-100">
                                         {project.name}
                                       </h4>
                                       <span className={`bg-gradient-to-r ${getPriorityColor(priority)} text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg`}>
-                                        {t('priority')} {project.priority}
+                                        {t('priority')} {((project as { displayPriority?: number }).displayPriority as number) || project.priority}
                                       </span>
+                                      {project.status && (
+                                        <ProjectStatusBadge status={project.status as ProjectStatus} />
+                                      )}
                                     </div>
                                   </div>
-                                  
+
                                   <div className="flex items-center gap-6">
                                     {/* Workflow status circle */}
                                     <div className="relative">
@@ -742,27 +794,26 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                                         );
                                       })()}
                                     </div>
-                                    
+
                                     {/* Deadline and Slip */}
                                     <div className="text-right">
                                       <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('reserveOrSlip')}</div>
-                                      <div className={`text-lg font-bold ${
-                                        !hasTeamAssignments(project.id) 
-                                          ? 'text-orange-600 dark:text-orange-400' 
-                                          : info.diffWorkdays && info.diffWorkdays >= 0 
-                                            ? 'text-green-600 dark:text-green-400' 
+                                      <div className={`text-lg font-bold ${!hasTeamAssignments(project.id)
+                                          ? 'text-orange-600 dark:text-orange-400'
+                                          : info.diffWorkdays && info.diffWorkdays >= 0
+                                            ? 'text-green-600 dark:text-green-400'
                                             : 'text-red-600 dark:text-red-400'
-                                      }`}>
-                                        {!hasTeamAssignments(project.id) 
-                                          ? t('assignTeamMembers') 
-                                          : info.diffWorkdays === null 
-                                            ? t('notAvailable') 
-                                            : info.diffWorkdays >= 0 
-                                              ? `+${info.diffWorkdays} ${t('days')}` 
+                                        }`}>
+                                        {!hasTeamAssignments(project.id)
+                                          ? t('assignTeamMembers')
+                                          : info.diffWorkdays === null
+                                            ? t('notAvailable')
+                                            : info.diffWorkdays >= 0
+                                              ? `+${info.diffWorkdays} ${t('days')}`
                                               : `${info.diffWorkdays} ${t('days')}`}
                                       </div>
                                     </div>
-                                    
+
                                     {/* Akce */}
                                     <div className="flex items-center gap-1">
                                       <button
@@ -773,7 +824,7 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                         </svg>
                                       </button>
-                                      
+
                                       <div className="flex items-center gap-1">
                                         {!readOnlyMode && (
                                           <button
@@ -784,7 +835,7 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                                             <FiUsers size={18} className="text-green-600" />
                                           </button>
                                         )}
-                                        
+
                                         {!readOnlyMode && (
                                           <button
                                             onClick={() => handleOpenEditModal(project)}
@@ -796,9 +847,9 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                                             </svg>
                                           </button>
                                         )}
-                                        
 
-                                        
+
+
                                         {!readOnlyMode && (
                                           <button
                                             onClick={() => setDependenciesModalProject(project)}
@@ -810,7 +861,7 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                                             </svg>
                                           </button>
                                         )}
-                                        
+
                                         {!readOnlyMode && (
                                           <button
                                             onClick={() => setHistoryModalProject(project)}
@@ -822,7 +873,7 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                                             </svg>
                                           </button>
                                         )}
-                                        
+
                                         {!readOnlyMode && (
                                           <button
                                             onClick={() => handleDeleteProject(project.id)}
@@ -838,7 +889,7 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                                     </div>
                                   </div>
                                 </div>
-                                
+
                                 {/* Mobile layout */}
                                 <div className="md:hidden space-y-4">
                                   {/* Header s názvem a akcemi */}
@@ -854,11 +905,11 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                                           title={t('dragToChangePriority')}
                                         >
                                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
-                                        </svg>
-                                      </div>
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+                                          </svg>
+                                        </div>
                                       )}
-                                      
+
                                       <div className="flex items-center gap-2">
                                         <h4 className="text-lg font-bold text-gray-900 dark:text-gray-100">
                                           {project.name}
@@ -868,7 +919,7 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                                         </span>
                                       </div>
                                     </div>
-                                    
+
                                     {/* Akce */}
                                     <div className="flex items-center gap-1">
                                       <button
@@ -879,7 +930,7 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                         </svg>
                                       </button>
-                                      
+
                                       {!readOnlyMode && (
                                         <button
                                           onClick={() => setDependenciesModalProject(project)}
@@ -891,7 +942,7 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                                           </svg>
                                         </button>
                                       )}
-                                      
+
                                       {!readOnlyMode && (
                                         <button
                                           onClick={() => handleOpenEditModal(project)}
@@ -904,7 +955,7 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                                         </button>
                                       )}
 
-                                      
+
                                       {!readOnlyMode && (
                                         <button
                                           onClick={() => handleDeleteProject(project.id)}
@@ -918,7 +969,7 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                                       )}
                                     </div>
                                   </div>
-                                  
+
                                   {/* Progress a termín */}
                                   <div className="grid grid-cols-2 gap-4">
                                     {/* Progress circle */}
@@ -942,30 +993,29 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                                         </div>
                                       </div>
                                     </div>
-                                    
+
                                     {/* Deadline */}
                                     <div className="text-center">
                                       <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">{t('reserveOrSlip')}</div>
-                                      <div className={`text-sm font-bold ${
-                                        !hasTeamAssignments(project.id) 
-                                          ? 'text-orange-600 dark:text-orange-400' 
-                                          : info.diffWorkdays && info.diffWorkdays >= 0 
-                                            ? 'text-green-600 dark:text-green-400' 
+                                      <div className={`text-sm font-bold ${!hasTeamAssignments(project.id)
+                                          ? 'text-orange-600 dark:text-orange-400'
+                                          : info.diffWorkdays && info.diffWorkdays >= 0
+                                            ? 'text-green-600 dark:text-green-400'
                                             : 'text-red-600 dark:text-red-400'
-                                      }`}>
-                                        {!hasTeamAssignments(project.id) 
-                                          ? t('assignTeamMembers') 
-                                          : info.diffWorkdays === null 
-                                            ? t('notAvailable') 
-                                            : info.diffWorkdays >= 0 
-                                              ? `+${info.diffWorkdays} ${t('days')}` 
+                                        }`}>
+                                        {!hasTeamAssignments(project.id)
+                                          ? t('assignTeamMembers')
+                                          : info.diffWorkdays === null
+                                            ? t('notAvailable')
+                                            : info.diffWorkdays >= 0
+                                              ? `+${info.diffWorkdays} ${t('days')}`
                                               : `${info.diffWorkdays} ${t('days')}`}
                                       </div>
                                     </div>
                                   </div>
                                 </div>
                               </div>
-                              
+
                               {/* Rozbalené detaily */}
                               {isExpanded && (
                                 <div className="animate-in slide-in-from-top-4 duration-300 border-t border-gray-200/50 dark:border-gray-600/50 bg-gradient-to-br from-gray-50/50 via-white/30 to-gray-50/50 dark:from-gray-800/50 dark:via-gray-700/30 dark:to-gray-800/50">
@@ -983,7 +1033,7 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                                           {/* Decorative elements */}
                                           <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-purple-400/10 to-pink-400/10 rounded-full blur-xl"></div>
                                           <div className="absolute bottom-0 left-0 w-12 h-12 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full blur-lg"></div>
-                                          
+
                                           <div className="relative z-10">
                                             <div className="flex items-center gap-3 mb-4">
                                               <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
@@ -1006,23 +1056,23 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                                               // Seřadíme role podle workflow pořadí
                                               const workflowType = workflowDependencies[project.id].workflow_type;
                                               const workers = [...workflowDependencies[project.id].active_workers];
-                                              
+
                                               // Definujeme pořadí rolí podle workflow
                                               const workflowOrder: Record<string, string[]> = {
                                                 'FE-First': ['PM', 'FE', 'BE', 'QA'],
                                                 'BE-First': ['PM', 'BE', 'FE', 'QA'],
                                                 'Parallel': ['PM', 'FE', 'BE', 'QA']
                                               };
-                                              
+
                                               // Rozdělíme role na standardní a custom
                                               const standardRoles = ['PM', 'FE', 'BE', 'QA'];
-                                              const standardWorkers = workers.filter(worker => 
+                                              const standardWorkers = workers.filter(worker =>
                                                 standardRoles.some(role => role.toLowerCase() === worker.role.toLowerCase())
                                               );
-                                              const customWorkers = workers.filter(worker => 
+                                              const customWorkers = workers.filter(worker =>
                                                 !standardRoles.some(role => role.toLowerCase() === worker.role.toLowerCase())
                                               );
-                                              
+
                                               // Seřadíme standardní role podle workflow pořadí
                                               const order = workflowOrder[workflowType] || ['PM', 'FE', 'BE', 'QA'];
                                               standardWorkers.sort((a, b) => {
@@ -1030,11 +1080,11 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                                                 const bIndex = order.findIndex(role => role.toLowerCase() === b.role.toLowerCase());
                                                 return aIndex - bIndex;
                                               });
-                                              
+
                                               // Spojíme standardní a custom role
                                               const allWorkers = [...standardWorkers, ...customWorkers];
                                               const standardCount = standardWorkers.length;
-                                              
+
                                               return allWorkers.map((worker, index) => (
                                                 <React.Fragment key={index}>
                                                   {/* Vertikální čára před custom rolemi */}
@@ -1043,25 +1093,23 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                                                       <div className="text-blue-500 dark:text-blue-400 font-bold">||</div>
                                                     </div>
                                                   )}
-                                                  
-                                                  <div className={`group relative flex items-center gap-3 p-3 rounded-xl border transition-all duration-300 hover:scale-105 ${
-                                                    worker.status === 'active'
+
+                                                  <div className={`group relative flex items-center gap-3 p-3 rounded-xl border transition-all duration-300 hover:scale-105 ${worker.status === 'active'
                                                       ? 'bg-gradient-to-br from-green-50/90 to-green-100/70 dark:from-green-900/20 dark:to-green-800/10 border-green-200/50 dark:border-green-600/30 shadow-lg hover:shadow-green-500/25'
                                                       : worker.status === 'waiting'
-                                                      ? 'bg-gradient-to-br from-yellow-50/90 to-yellow-100/70 dark:from-yellow-900/20 dark:to-yellow-800/10 border-yellow-200/50 dark:border-yellow-600/30 shadow-lg hover:shadow-yellow-500/25'
-                                                      : 'bg-gradient-to-br from-red-50/90 to-red-100/70 dark:from-red-900/20 dark:to-red-800/10 border-red-200/50 dark:border-red-600/30 shadow-lg hover:shadow-red-500/25'
-                                                  }`}>
+                                                        ? 'bg-gradient-to-br from-yellow-50/90 to-yellow-100/70 dark:from-yellow-900/20 dark:to-yellow-800/10 border-yellow-200/50 dark:border-yellow-600/30 shadow-lg hover:shadow-yellow-500/25'
+                                                        : 'bg-gradient-to-br from-red-50/90 to-red-100/70 dark:from-red-900/20 dark:to-red-800/10 border-red-200/50 dark:border-red-600/30 shadow-lg hover:shadow-red-500/25'
+                                                    }`}>
                                                     {/* Status indicator */}
-                                                    <div className={`w-3 h-3 rounded-full ${
-                                                      worker.status === 'active'
+                                                    <div className={`w-3 h-3 rounded-full ${worker.status === 'active'
                                                         ? 'bg-green-500 animate-pulse'
                                                         : worker.status === 'waiting'
-                                                        ? 'bg-yellow-500'
-                                                        : 'bg-red-500'
-                                                    }`}></div>
+                                                          ? 'bg-yellow-500'
+                                                          : 'bg-red-500'
+                                                      }`}></div>
                                                     {worker.role.charAt(0) + worker.role.charAt(1)}
                                                   </div>
-                                                  
+
                                                   {/* Šipka mezi rolemi (ale ne před custom rolemi) */}
                                                   {index < allWorkers.length - 1 && !(index === standardCount - 1 && customWorkers.length > 0) && (
                                                     <div className="flex items-center gap-1">
@@ -1094,17 +1142,17 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                                           .map(role => {
                                             const progress = getRoleProgress(project, role.key);
                                             const isAssigned = isRoleAssigned(project.id, role.key);
-                                            
+
                                             return (
                                               <div key={role.key} className="relative bg-gradient-to-br from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-gray-200/50 dark:border-gray-600/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
                                                 {/* Badge pro nepřiřazené role */}
                                                 {!isAssigned && (
-                                                  <Badge 
-                                                    label={t('noTeamMember')} 
-                                                    variant="warning" 
+                                                  <Badge
+                                                    label={t('noTeamMember')}
+                                                    variant="warning"
                                                   />
                                                 )}
-                                                
+
                                                 <div className="flex items-center justify-between mb-2 sm:mb-3">
                                                   <span className="text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200">{role.label}</span>
                                                   <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-medium">
@@ -1112,9 +1160,9 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                                                   </span>
                                                 </div>
                                                 <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2 sm:h-3 overflow-hidden">
-                                                  <div 
+                                                  <div
                                                     className="h-2 sm:h-3 rounded-full transition-all duration-300 ease-out"
-                                                    style={{ 
+                                                    style={{
                                                       width: `${progress ? progress.percentage : 0}%`,
                                                       background: `linear-gradient(90deg, ${role.color}, ${role.color}dd)`
                                                     }}
@@ -1128,11 +1176,11 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                                           })}
                                       </div>
                                     </div>
-                                    
+
                                     {/* Progress graf - skrytý na mobilu */}
                                     <div className="hidden sm:block">
-                                      <ProjectProgressChart 
-                                        project={project} 
+                                      <ProjectProgressChart
+                                        project={project}
                                         deliveryInfo={info}
                                         scopeId={scopeId}
                                         priorityDates={priorityDates}
@@ -1140,7 +1188,7 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                                         className="mb-6"
                                       />
                                     </div>
-                                    
+
                                     {/* Deadlines */}
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                                       {/* Zobrazíme plánovaný a vypočítaný termín pouze pokud je vyplněn delivery_date */}
@@ -1234,52 +1282,50 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
       )}
 
       {/* Modal pro závislosti rolí */}
-             {!readOnlyMode && dependenciesModalProject && (
-         <RoleDependenciesModal
-           isOpen={!!dependenciesModalProject}
-           onClose={() => setDependenciesModalProject(null)}
-           projectId={dependenciesModalProject.id}
+      {!readOnlyMode && dependenciesModalProject && (
+        <RoleDependenciesModal
+          isOpen={!!dependenciesModalProject}
+          onClose={() => setDependenciesModalProject(null)}
+          projectId={dependenciesModalProject.id}
 
-           projectAssignments={projectAssignments[dependenciesModalProject.id]?.map(assignment => ({
-             teamMemberId: assignment.teamMemberId,
-             role: assignment.role
-           })) || []}
-           onWorkflowChange={(workflow) => {
-             console.log('Workflow změněn pro projekt:', dependenciesModalProject.name, workflow);
-             // Reload workflow dependencies after change
-             const loadWorkflowDependencies = async () => {
-               try {
-                 const { DependencyService } = await import('@/app/services/dependencyService');
-                 const projectDeps = await DependencyService.getProjectDependencies(dependenciesModalProject.id);
-                 setWorkflowDependencies(prev => ({
-                   ...prev,
-                   [dependenciesModalProject.id]: projectDeps
-                 }));
-               } catch (error) {
-                 console.error('Failed to reload dependencies:', error);
-               }
-             };
-             loadWorkflowDependencies();
-           }}
-           onWorkersChange={(workers) => {
-             console.log('Stav pracovníků změněn pro projekt:', dependenciesModalProject.name, workers);
-             // Reload workflow dependencies after change
-             const loadWorkflowDependencies = async () => {
-               try {
-                 const { DependencyService } = await import('@/app/services/dependencyService');
-                 const projectDeps = await DependencyService.getProjectDependencies(dependenciesModalProject.id);
-                 setWorkflowDependencies(prev => ({
-                   ...prev,
-                   [dependenciesModalProject.id]: projectDeps
-                 }));
-               } catch (error) {
-                 console.error('Failed to reload dependencies:', error);
-               }
-             };
-             loadWorkflowDependencies();
-           }}
-         />
-       )}
+          projectAssignments={projectAssignments[dependenciesModalProject.id]?.map(assignment => ({
+            teamMemberId: assignment.teamMemberId,
+            role: assignment.role
+          })) || []}
+          onWorkflowChange={() => {
+            // Reload workflow dependencies after change
+            const loadWorkflowDependencies = async () => {
+              try {
+                const { DependencyService } = await import('@/app/services/dependencyService');
+                const projectDeps = await DependencyService.getProjectDependencies(dependenciesModalProject.id);
+                setWorkflowDependencies(prev => ({
+                  ...prev,
+                  [dependenciesModalProject.id]: projectDeps
+                }));
+              } catch (error) {
+                console.error('Failed to reload dependencies:', error);
+              }
+            };
+            loadWorkflowDependencies();
+          }}
+          onWorkersChange={() => {
+            // Reload workflow dependencies after change
+            const loadWorkflowDependencies = async () => {
+              try {
+                const { DependencyService } = await import('@/app/services/dependencyService');
+                const projectDeps = await DependencyService.getProjectDependencies(dependenciesModalProject.id);
+                setWorkflowDependencies(prev => ({
+                  ...prev,
+                  [dependenciesModalProject.id]: projectDeps
+                }));
+              } catch (error) {
+                console.error('Failed to reload dependencies:', error);
+              }
+            };
+            loadWorkflowDependencies();
+          }}
+        />
+      )}
     </>
   );
 } 

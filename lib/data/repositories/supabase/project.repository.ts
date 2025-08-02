@@ -81,7 +81,8 @@ export class SupabaseProjectRepository implements ProjectRepository {
       qa_done: qaDone,
       pm_done: pmDone,
       dpl_done: dplDone,
-      delivery_date: project.deliveryDate?.toISOString()
+      delivery_date: project.deliveryDate?.toISOString(),
+      status: project.status || 'not_started'
     };
 
     // Přidáme custom role data pokud existují
@@ -126,6 +127,10 @@ export class SupabaseProjectRepository implements ProjectRepository {
     if (project.pmDone !== undefined) updateData.pm_done = project.pmDone;
     if (project.dplDone !== undefined) updateData.dpl_done = project.dplDone;
     if (project.deliveryDate !== undefined) updateData.delivery_date = project.deliveryDate?.toISOString();
+    if (project.status !== undefined) {
+      updateData.status = project.status;
+    }
+    if (project.startedAt !== undefined) updateData.started_at = project.startedAt ? (project.startedAt instanceof Date ? project.startedAt.toISOString() : project.startedAt) : null;
 
     // Extrahujeme custom role data
     const customRoleData: Record<string, number> = {};
@@ -194,12 +199,30 @@ export class SupabaseProjectRepository implements ProjectRepository {
       pmDone: data.pm_done,
       dplDone: data.dpl_done,
       deliveryDate: data.delivery_date ? new Date(data.delivery_date as string) : undefined,
-      createdAt: new Date(data.created_at as string)
+      createdAt: new Date(data.created_at as string),
+      startedAt: data.started_at ? new Date(data.started_at as string) : undefined,
+      status: (data.status as 'not_started' | 'in_progress' | 'paused' | 'completed' | 'cancelled' | 'archived' | 'suspended') || 'not_started'
     };
 
-    // Přidáme custom role data z JSON sloupce
+    // Přidáme custom role data z JSON sloupce, ale pouze ty, které nejsou standardní
     const customRoleData = data.custom_role_data || {};
-    const projectWithCustomRoles = { ...baseProject, ...customRoleData };
+    
+    const standardRoleKeys = ['fe', 'be', 'qa', 'pm', 'dpl'];
+    
+    // Filtrujeme pouze custom role data (ne standardní)
+    const filteredCustomRoleData: Record<string, unknown> = {};
+    Object.entries(customRoleData).forEach(([key, value]) => {
+      const roleKey = key.replace(/_mandays$/, '').replace(/_done$/, '');
+      if (!standardRoleKeys.includes(roleKey)) {
+        filteredCustomRoleData[key] = value;
+      }
+    });
+    
+    const projectWithCustomRoles = { 
+      ...baseProject, 
+      customRoleData: filteredCustomRoleData,
+      ...filteredCustomRoleData 
+    };
     
     return projectWithCustomRoles as Project;
   }

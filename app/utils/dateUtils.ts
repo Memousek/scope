@@ -291,9 +291,33 @@ export function calculatePriorityDatesWithAssignments(
   priorityEndDate: Date; 
   blockingProjectName?: string; 
 }> {
-  // Sort projects by priority (ascending), then by created_at
-  const sorted = [...projects].sort((a, b) => {
+  // Filter out inactive projects and sort by priority and status-aware ordering
+  const activeProjects = projects.filter(project => {
+    const status = project.status || 'not_started';
+    // Only include projects that are actually active or ready to start
+    return status === 'in_progress' || status === 'not_started' || status === 'paused';
+  });
+  
+  // Sort active projects by priority and status-aware ordering
+  const sorted = [...activeProjects].sort((a, b) => {
+    // First sort by priority
     if (a.priority !== b.priority) return a.priority - b.priority;
+    
+    // Then sort by status priority (active projects first)
+    const statusPriority = {
+      'in_progress': 1,    // Nejvyšší priorita - aktivní projekty
+      'not_started': 2,    // Projekty připravené k zahájení
+      'paused': 3,         // Pozastavené projekty
+    };
+    
+    const aStatus = (a.status || 'not_started') as 'in_progress' | 'not_started' | 'paused';
+    const bStatus = (b.status || 'not_started') as 'in_progress' | 'not_started' | 'paused';
+    const aStatusPriority = statusPriority[aStatus];
+    const bStatusPriority = statusPriority[bStatus];
+    
+    if (aStatusPriority !== bStatusPriority) return aStatusPriority - bStatusPriority;
+    
+    // Finally sort by created_at
     return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
   });
   
@@ -316,9 +340,18 @@ export function calculatePriorityDatesWithAssignments(
       let priorityStartDate: Date;
       let blockingProjectName: string | undefined = undefined;
       
-      if (i === 0) {
+      // Status-aware start date calculation
+      const projectStatus = project.status || 'not_started';
+      
+      if (projectStatus === 'in_progress') {
+        // Active projects start from today, regardless of position
+        priorityStartDate = new Date(currentStart);
+        blockingProjectName = undefined; // No blocking project for active projects
+      } else if (i === 0) {
+        // First non-active project starts from today
         priorityStartDate = new Date(currentStart);
       } else {
+        // Other projects start after the previous one
         const prev = sorted[i - 1];
         const prevEnd = result[prev.id].priorityEndDate;
         const nextStart = new Date(prevEnd);
@@ -429,9 +462,22 @@ export function calculatePriorityDatesWithAssignments(
     let priorityStartDate: Date;
     let blockingProjectName: string | undefined = undefined;
     
-    if (i === 0) {
+    // Status-aware start date calculation
+    const projectStatus = project.status || 'not_started';
+    
+    if (projectStatus === 'in_progress') {
+      // Active projects start from startedAt if available, otherwise from today
+      if (project.startedAt) {
+        priorityStartDate = new Date(project.startedAt);
+      } else {
+        priorityStartDate = new Date(currentStart);
+      }
+      blockingProjectName = undefined; // No blocking project for active projects
+    } else if (i === 0) {
+      // First non-active project starts from today
       priorityStartDate = new Date(currentStart);
     } else {
+      // Other projects start after the previous one
       const prev = sorted[i - 1];
       const prevEnd = result[prev.id].priorityEndDate;
       const nextStart = new Date(prevEnd);

@@ -304,7 +304,7 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                 <div className={`text-center py-16 ${!isReducedMotion ? 'animate-in fade-in duration-700' : ''}`}>
                   <div className="relative mb-6">
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur-xl opacity-20"></div>
-                    <div className={`relative text-8xl ${!isReducedMotion ? 'animate-bounce' : ''}`}>
+                    <div className={`relative text-8xl flex items-center justify-center ${!isReducedMotion ? 'animate-bounce' : ''}`}>
                       {team.length === 0 ? <FiUsers /> : <FiSearch />}
                     </div>
                   </div>

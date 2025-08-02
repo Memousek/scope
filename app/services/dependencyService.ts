@@ -44,7 +44,10 @@ export class DependencyService {
       .single();
 
     if (depsError && depsError.code !== 'PGRST116') {
-      console.error('Error fetching dependencies:', depsError);
+      // Only log non-404/406 errors (table doesn't exist or no rows)
+      if (depsError.code !== 'PGRST116' && depsError.code !== '406') {
+        console.error('Error fetching dependencies:', depsError);
+      }
     }
     
     // Get team assignments
