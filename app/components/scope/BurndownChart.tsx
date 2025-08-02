@@ -45,110 +45,185 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
 
   // Generate chart data based on projects and team
   useEffect(() => {
-    if (projects.length === 0 || team.length === 0) return;
+    try {
+      if (projects.length === 0 || team.length === 0) return;
 
-    // Use workflow-aware calculation if dependencies are available
-    const priorityDates = calculatePriorityDatesWithAssignments(projects, team, projectAssignments, workflowDependencies);
-    const data: ChartDataPoint[] = [];
+      // Use workflow-aware calculation if dependencies are available
+      const priorityDates = calculatePriorityDatesWithAssignments(projects, team, projectAssignments, workflowDependencies);
+      const data: ChartDataPoint[] = [];
 
-    const bufferDays = 2;
-    const allDates = Object.values(priorityDates).flatMap(
-      ({ priorityStartDate, priorityEndDate }) => {
-        const dates: Date[] = [];
-        const current = new Date(priorityStartDate);
-        const endWithBuffer = new Date(priorityEndDate);
-        endWithBuffer.setDate(endWithBuffer.getDate() + bufferDays);
-        while (current <= endWithBuffer) {
+      const bufferDays = 2;
+      const allDates = Object.values(priorityDates).flatMap(
+        ({ priorityStartDate, priorityEndDate }) => {
+          const dates: Date[] = [];
+          const current = new Date(priorityStartDate);
+          const endWithBuffer = new Date(priorityEndDate);
+          endWithBuffer.setDate(endWithBuffer.getDate() + bufferDays);
+          while (current <= endWithBuffer) {
+            if (current.getDay() !== 0 && current.getDay() !== 6) {
+              dates.push(new Date(current));
+            }
+            current.setDate(current.getDate() + 1);
+          }
+          return dates;
+        }
+      );
+
+      const uniqueDates = [...new Set(allDates.map((d) => d.toDateString()))]
+        .map((d) => new Date(d))
+        .sort((a, b) => a.getTime() - b.getTime());
+
+      if (uniqueDates.length === 0) {
+        // Pokud nemáme žádná data, vytvoříme minimální dataset pro zobrazení
+        const today = new Date();
+        const futureDate = new Date(today);
+        futureDate.setDate(futureDate.getDate() + 14); // 2 týdny dopředu
+        
+        const fallbackDates = [];
+        const current = new Date(today);
+        let safetyCounter = 0;
+        while (current <= futureDate && safetyCounter < 30) { // Omezení na 30 dní
           if (current.getDay() !== 0 && current.getDay() !== 6) {
-            dates.push(new Date(current));
+            fallbackDates.push(new Date(current));
           }
           current.setDate(current.getDate() + 1);
+          safetyCounter++;
         }
-        return dates;
+        
+        // Generujeme data pro fallback
+        fallbackDates.forEach((date, index) => {
+          const totalDays = fallbackDates.length;
+          const idealProgress = ((totalDays - index) / totalDays) * 100;
+          
+          data.push({
+            date: date.toLocaleDateString("cs-CZ", {
+              day: "2-digit",
+              month: "2-digit",
+            }),
+            totalProgress: 0, // Žádný progress bez projektů
+            idealProgress,
+          });
+        });
+        
+        setChartData(data);
+        return;
       }
-    );
 
-    const uniqueDates = [...new Set(allDates.map((d) => d.toDateString()))]
-      .map((d) => new Date(d))
-      .sort((a, b) => a.getTime() - b.getTime());
+      // Zajistíme minimálně 5 datových bodů pro správné zobrazení
+      const minPoints = 5;
+      const maxPoints = 20;
+      
+      let filteredDates = uniqueDates;
+      if (uniqueDates.length > maxPoints) {
+        const step = Math.max(1, Math.floor(uniqueDates.length / maxPoints));
+        filteredDates = uniqueDates.filter((_, index) => index % step === 0);
+      } else if (uniqueDates.length < minPoints) {
+        // Pokud máme málo bodů, přidáme další dny
+        const lastDate = uniqueDates[uniqueDates.length - 1];
+        const additionalDates = [];
+        let current = new Date(lastDate);
+        let safetyCounter = 0;
+        
+        while (additionalDates.length < (minPoints - uniqueDates.length) && safetyCounter < 50) {
+          current.setDate(current.getDate() + 1);
+          if (current.getDay() !== 0 && current.getDay() !== 6) {
+            additionalDates.push(new Date(current));
+          }
+          safetyCounter++;
+        }
+        
+        filteredDates = [...uniqueDates, ...additionalDates];
+      }
 
-    if (uniqueDates.length === 0) return;
+      let lastValidProgress = 0;
 
-    const maxPoints = 20;
-    const step = Math.max(1, Math.floor(uniqueDates.length / maxPoints));
-    const filteredDates = uniqueDates.filter((_, index) => index % step === 0);
+      filteredDates.forEach((date, index) => {
+        const totalDays = filteredDates.length;
+        const idealProgress = ((totalDays - index) / totalDays) * 100;
 
-    let lastValidProgress = 0;
+        const projectProgress: { [key: string]: number } = {};
+        let weightedProgressSum = 0;
+        let totalWeight = 0;
 
-    filteredDates.forEach((date, index) => {
-      const totalDays = filteredDates.length;
-      const idealProgress = ((totalDays - index) / totalDays) * 100;
+        projects.forEach((project) => {
+          const projectStart = priorityDates[project.id]?.priorityStartDate;
+          const projectEnd = priorityDates[project.id]?.priorityEndDate;
+          if (!projectStart || !projectEnd) return;
 
-      const projectProgress: { [key: string]: number } = {};
-      let weightedProgressSum = 0;
-      let totalWeight = 0;
+          const projectEndExtended = new Date(projectEnd);
+          projectEndExtended.setDate(projectEndExtended.getDate() + bufferDays);
 
-      projects.forEach((project) => {
-        const projectStart = priorityDates[project.id]?.priorityStartDate;
-        const projectEnd = priorityDates[project.id]?.priorityEndDate;
-        if (!projectStart || !projectEnd) return;
-
-        const projectEndExtended = new Date(projectEnd);
-        projectEndExtended.setDate(projectEndExtended.getDate() + bufferDays);
-
-        if (date >= projectStart && date <= projectEndExtended) {
-          const projectDuration = Math.ceil(
-            (projectEnd.getTime() - projectStart.getTime()) /
-              (1000 * 60 * 60 * 24)
-          );
-          const daysElapsed = Math.ceil(
-            (date.getTime() - projectStart.getTime()) / (1000 * 60 * 60 * 24)
-          );
-          const timeProgress = Math.min(daysElapsed / projectDuration, 1);
-
+          // Progress se počítá kumulativně - pokud projekt začal, má nějaký progress
+          let projectProgressValue = 0;
+          
           // Dynamicky počítáme progress pro všechny aktivní role
           let totalActual = 0;
           let totalMandays = 0;
           let roleCount = 0;
 
-          activeRoles.forEach(role => {
-            const doneKey = `${role.key}_done`;
-            const mandaysKey = `${role.key}_mandays`;
-            const actual = Number((project as Record<string, unknown>)[doneKey]) || 0;
-            const mandays = Number((project as Record<string, unknown>)[mandaysKey]) || 0;
+          if (activeRoles && activeRoles.length > 0) {
+            activeRoles.forEach(role => {
+              const doneKey = `${role.key}_done`;
+              const mandaysKey = `${role.key}_mandays`;
+              const actual = Number((project as Record<string, unknown>)[doneKey]) || 0;
+              const mandays = Number((project as Record<string, unknown>)[mandaysKey]) || 0;
+              
+              totalActual += actual;
+              totalMandays += mandays;
+              if (mandays > 0) roleCount++;
+            });
+          }
+          
+          if (date >= projectStart) {
+            // Projekt už začal nebo začíná
+            const projectDuration = Math.ceil(
+              (projectEnd.getTime() - projectStart.getTime()) /
+                (1000 * 60 * 60 * 24)
+            );
             
-            totalActual += actual;
-            totalMandays += mandays;
-            if (mandays > 0) roleCount++;
-          });
+            if (date <= projectEndExtended) {
+              // Projekt je aktivní
+              const daysElapsed = Math.ceil(
+                (date.getTime() - projectStart.getTime()) / (1000 * 60 * 60 * 24)
+              );
+              const timeProgress = Math.min(daysElapsed / projectDuration, 1);
 
-          const weight = totalMandays || 1;
-          const actualProgress = roleCount > 0 ? totalActual / roleCount : 0;
-          const projectProgressValue =
-            actualProgress * 0.7 + timeProgress * 100 * 0.3;
+              const weight = totalMandays || 1;
+              const actualProgress = roleCount > 0 ? totalActual / roleCount : 0;
+              projectProgressValue = actualProgress * 0.7 + timeProgress * 100 * 0.3;
+            } else {
+              // Projekt už skončil - progress je 100%
+              projectProgressValue = 100;
+            }
+          }
 
           projectProgress[`project_${project.id}`] = projectProgressValue;
+          const weight = totalMandays || 1;
           weightedProgressSum += projectProgressValue * weight;
           totalWeight += weight;
-        }
+        });
+
+        const totalProgress =
+          totalWeight > 0 ? weightedProgressSum / totalWeight : lastValidProgress;
+        if (totalWeight > 0) lastValidProgress = totalProgress;
+
+        data.push({
+          date: date.toLocaleDateString("cs-CZ", {
+            day: "2-digit",
+            month: "2-digit",
+          }),
+          totalProgress,
+          idealProgress,
+          ...projectProgress,
+        });
       });
 
-      const totalProgress =
-        totalWeight > 0 ? weightedProgressSum / totalWeight : lastValidProgress;
-      if (totalWeight > 0) lastValidProgress = totalProgress;
-
-      data.push({
-        date: date.toLocaleDateString("cs-CZ", {
-          day: "2-digit",
-          month: "2-digit",
-        }),
-        totalProgress,
-        idealProgress,
-        ...projectProgress,
-      });
-    });
-
-    setChartData(data);
+      setChartData(data);
+    } catch (error) {
+      console.error('Error generating burndown chart data:', error);
+      // Fallback na prázdná data
+      setChartData([]);
+    }
   }, [projects, team, projectAssignments, activeRoles, workflowDependencies]);
 
   const CustomTooltip = ({

@@ -20,7 +20,7 @@ import { ProjectHistoryModal } from './ProjectHistoryModal';
 import { ProjectProgressChart } from './ProjectProgressChart';
 import { ProjectTeamAssignmentModal } from './ProjectTeamAssignmentModal';
 import { RoleDependenciesModal } from './RoleDependenciesModal';
-import { calculateProjectDeliveryInfoWithAssignments, calculateProjectDeliveryInfoWithWorkflow, calculatePriorityDatesWithAssignments } from '@/app/utils/dateUtils';
+import { calculateProjectDeliveryInfoWithAssignments, calculateProjectDeliveryInfoWithWorkflow, calculatePriorityDatesWithAssignments, calculatePrioritySlippage } from '@/app/utils/dateUtils';
 import { ContainerService } from '@/lib/container.service';
 import { ManageProjectTeamAssignmentsService } from '@/lib/domain/services/manage-project-team-assignments.service';
 import { ProjectTeamAssignment } from '@/lib/domain/models/project-team-assignment.model';
@@ -435,6 +435,7 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
       priorityDates: { priorityStartDate: Date; priorityEndDate: Date; blockingProjectName?: string } | undefined;
       totalProgress: number;
       formattedAssignments: Record<string, Array<{ teamMemberId: string; role: string; allocationFte: number }>>;
+      prioritySlippage: number;
     }> = {};
 
     // Převést projectAssignments na správný formát pro calculatePriorityDatesWithAssignments
@@ -462,12 +463,23 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
         : calculateProjectDeliveryInfoWithAssignments(project, team, projectAssignments[project.id] || []);
 
       const totalProgress = calculateTotalProgress(project as unknown as Record<string, unknown>, activeRoles);
+      
+      // Calculate slippage against priority deadline
+      const prioritySlippage = priorityDates[project.id]?.priorityEndDate 
+        ? calculatePrioritySlippage(
+            project, 
+            priorityDates[project.id].priorityEndDate, 
+            team, 
+            projectAssignments[project.id] || []
+          )
+        : 0;
 
       calculations[project.id] = {
         info,
         priorityDates: priorityDates[project.id],
         totalProgress,
-        formattedAssignments
+        formattedAssignments,
+        prioritySlippage
       };
     });
 
@@ -685,6 +697,7 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                           const info = calculations.info;
                           const priorityDates = calculations.priorityDates;
                           const totalProgress = calculations.totalProgress;
+                          const prioritySlippage = calculations.prioritySlippage;
 
                           const isExpanded = expandedProject === project.id;
                           const isDragOver = dragOverProject === project.id;
@@ -800,17 +813,15 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                                       <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('reserveOrSlip')}</div>
                                       <div className={`text-lg font-bold ${!hasTeamAssignments(project.id)
                                           ? 'text-orange-600 dark:text-orange-400'
-                                          : info.diffWorkdays && info.diffWorkdays >= 0
+                                          : prioritySlippage >= 0
                                             ? 'text-green-600 dark:text-green-400'
                                             : 'text-red-600 dark:text-red-400'
                                         }`}>
                                         {!hasTeamAssignments(project.id)
                                           ? t('assignTeamMembers')
-                                          : info.diffWorkdays === null
-                                            ? t('notAvailable')
-                                            : info.diffWorkdays >= 0
-                                              ? `+${info.diffWorkdays} ${t('days')}`
-                                              : `${info.diffWorkdays} ${t('days')}`}
+                                          : prioritySlippage >= 0
+                                            ? `+${prioritySlippage} ${t('days')}`
+                                            : `${prioritySlippage} ${t('days')}`}
                                       </div>
                                     </div>
 
@@ -999,17 +1010,15 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                                       <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">{t('reserveOrSlip')}</div>
                                       <div className={`text-sm font-bold ${!hasTeamAssignments(project.id)
                                           ? 'text-orange-600 dark:text-orange-400'
-                                          : info.diffWorkdays && info.diffWorkdays >= 0
+                                          : prioritySlippage >= 0
                                             ? 'text-green-600 dark:text-green-400'
                                             : 'text-red-600 dark:text-red-400'
                                         }`}>
                                         {!hasTeamAssignments(project.id)
                                           ? t('assignTeamMembers')
-                                          : info.diffWorkdays === null
-                                            ? t('notAvailable')
-                                            : info.diffWorkdays >= 0
-                                              ? `+${info.diffWorkdays} ${t('days')}`
-                                              : `${info.diffWorkdays} ${t('days')}`}
+                                          : prioritySlippage >= 0
+                                            ? `+${prioritySlippage} ${t('days')}`
+                                            : `${prioritySlippage} ${t('days')}`}
                                       </div>
                                     </div>
                                   </div>
@@ -1185,6 +1194,7 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                                         scopeId={scopeId}
                                         priorityDates={priorityDates}
                                         projectAssignments={projectAssignments[project.id] || []}
+                                        prioritySlippage={prioritySlippage}
                                         className="mb-6"
                                       />
                                     </div>

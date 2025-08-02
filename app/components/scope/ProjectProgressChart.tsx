@@ -26,6 +26,7 @@ interface ProjectProgressChartProps {
     priorityEndDate: Date;
   };
   projectAssignments: Array<{ teamMemberId: string; role: string }>;
+  prioritySlippage?: number;
   className?: string;
 }
 
@@ -42,6 +43,7 @@ const ProjectProgressChartComponent: React.FC<ProjectProgressChartProps> = ({
   scopeId,
   priorityDates,
   projectAssignments,
+  prioritySlippage,
   className = ""
 }) => {
   const { t } = useTranslation();
@@ -207,8 +209,8 @@ const ProjectProgressChartComponent: React.FC<ProjectProgressChartProps> = ({
           </div>
           
           <div className="text-center">
-            <div className={`flex items-center gap-2 text-lg font-semibold ${getSlippageColor(deliveryInfo.diffWorkdays || 0)}`}>
-              {getSlippageIcon(deliveryInfo.diffWorkdays || 0)} {deliveryInfo.diffWorkdays || 0} dní
+            <div className={`flex items-center gap-2 text-lg font-semibold ${getSlippageColor(prioritySlippage || 0)}`}>
+              {getSlippageIcon(prioritySlippage || 0)} {prioritySlippage || 0} dní
             </div>
             <div className="text-xs text-gray-500 dark:text-gray-400">Skluz</div>
           </div>

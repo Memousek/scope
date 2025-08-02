@@ -107,6 +107,70 @@ export function calculateProjectDeliveryInfo(
 }
 
 /**
+ * Calculate slippage against priority deadline
+ * Returns positive number for reserve, negative for slippage
+ */
+export function calculatePrioritySlippage(
+  project: Project,
+  priorityEndDate: Date,
+  team: TeamMember[],
+  projectAssignments: Array<{ teamMemberId: string; role: string }> = []
+): number {
+  const today = new Date();
+  
+  // Get assigned team members for this project
+  const assignedTeamMembers = team.filter(member => 
+    projectAssignments.some(assignment => assignment.teamMemberId === member.id)
+  );
+
+  // Calculate total project duration and current progress
+  const roleKeys = Object.keys(project)
+    .filter(key => key.endsWith('_mandays'))
+    .map(key => key.replace(/_mandays$/, ''));
+
+  let totalMandays = 0;
+  let completedMandays = 0;
+  let maxRemainingDays = 0;
+
+  roleKeys.forEach(roleKey => {
+    const fte = assignedTeamMembers
+      .filter(member => projectAssignments.some(assignment => 
+        assignment.teamMemberId === member.id && 
+        (assignment.role === roleKey.toUpperCase() || assignment.role === roleKey)
+      ))
+      .reduce((sum, m) => sum + (m.fte || 0), 0);
+
+    const mandays = Number(project[`${roleKey}_mandays`]) || 0;
+    const done = Number(project[`${roleKey}_done`]) || 0;
+    
+    totalMandays += mandays;
+    completedMandays += mandays * (done / 100);
+    
+    const remainingMandays = mandays * (1 - (done / 100));
+    
+    // Pokud má projekt přiřazené lidi, použijeme jejich skutečné FTE
+    // Pokud ne, použijeme rozumné výchozí FTE 1.0 místo 0.1
+    const effectiveFte = fte > 0 ? fte : 1.0;
+    const days = remainingMandays / effectiveFte;
+
+    if (days > maxRemainingDays) maxRemainingDays = days;
+  });
+
+  // Calculate remaining workdays
+  const remainingWorkdays = Math.ceil(maxRemainingDays);
+  const calculatedDeliveryDate = addWorkdays(today, remainingWorkdays);
+  
+  // Calculate slippage: positive = reserve, negative = slippage
+  if (calculatedDeliveryDate > priorityEndDate) {
+    // Slippage - calculated date is after priority date
+    return -getWorkdaysCount(priorityEndDate, calculatedDeliveryDate);
+  } else {
+    // Reserve - calculated date is before priority date
+    return getWorkdaysCount(calculatedDeliveryDate, priorityEndDate);
+  }
+}
+
+/**
  * Calculate project delivery information using assigned team members
  * This function uses project team assignments instead of the full team
  */
@@ -335,7 +399,25 @@ export function calculatePriorityDatesWithAssignments(
     
     // If no assignments, project cannot be completed - use very long duration
     if (assignments.length === 0) {
-      const projectWorkdays = 365 * 10; // 10 years of workdays
+      // Místo pevné hodnoty 10 let vypočítáme skutečnou dobu s minimálním FTE
+      const roleKeys = Object.keys(project)
+        .filter(key => key.endsWith('_mandays'))
+        .map(key => key.replace(/_mandays$/, ''));
+
+      let maxDays = 0;
+      roleKeys.forEach(roleKey => {
+        const mandays = Number(project[`${roleKey}_mandays`]) || 0;
+        const done = Number(project[`${roleKey}_done`]) || 0;
+        const remainingMandays = mandays * (1 - (done / 100));
+        
+        // Pokud není nikdo přiřazen k roli, použijeme rozumné výchozí FTE 1.0 místo 0.1
+        const effectiveFte = 1.0;
+        const days = remainingMandays / effectiveFte;
+
+        if (days > maxDays) maxDays = days;
+      });
+      
+      const projectWorkdays = Math.ceil(maxDays);
       
       let priorityStartDate: Date;
       let blockingProjectName: string | undefined = undefined;
@@ -366,7 +448,7 @@ export function calculatePriorityDatesWithAssignments(
         blockingProjectName = prev.name;
       }
       
-      // Priority end date = start + very long duration
+      // Priority end date = start + calculated duration
       const priorityEndDate = addWorkdays(priorityStartDate, projectWorkdays);
       
       result[project.id] = { priorityStartDate, priorityEndDate, blockingProjectName };
@@ -394,10 +476,10 @@ export function calculatePriorityDatesWithAssignments(
         const mandays = Number(project[`${roleKey}_mandays`]) || 0;
         const done = Number(project[`${roleKey}_done`]) || 0;
         const remainingMandays = mandays * (1 - (done / 100));
-        const normalDays = fte > 0 ? remainingMandays / fte : 0;
-
-
-
+        
+        // Pokud není nikdo přiřazen k roli, použijeme minimální FTE 0.1 pro výpočet
+        const effectiveFte = fte > 0 ? fte : 1.0;
+        const normalDays = remainingMandays / effectiveFte;
 
         const roleDays = normalDays;
         // Poznámka: Blokace a čekání se přidávají k celkovému termínu později
@@ -417,8 +499,11 @@ export function calculatePriorityDatesWithAssignments(
 
         const mandays = Number(project[`${roleKey}_mandays`]) || 0;
         const done = Number(project[`${roleKey}_done`]) || 0;
-        const rem = fte > 0 ? mandays * (1 - (done / 100)) : 0;
-        const days = fte > 0 ? rem / fte : 0;
+        const remainingMandays = mandays * (1 - (done / 100));
+        
+        // Pokud není nikdo přiřazen k roli, použijeme minimální FTE 0.1 pro výpočet
+        const effectiveFte = fte > 0 ? fte : 1.0;
+        const days = remainingMandays / effectiveFte;
 
         if (days > maxDays) maxDays = days;
       });
