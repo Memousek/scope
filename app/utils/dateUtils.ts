@@ -298,11 +298,6 @@ export function calculatePriorityDatesWithAssignments(
     return status === 'in_progress' || status === 'not_started' || status === 'paused';
   });
   
-  // Find projects that are currently in progress
-  const inProgressProjects = activeProjects.filter(project => 
-    (project.status || 'not_started') === 'in_progress'
-  );
-  
   // Sort active projects by priority and status-aware ordering
   const sorted = [...activeProjects].sort((a, b) => {
     // First sort by priority

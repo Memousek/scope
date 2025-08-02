@@ -148,7 +148,7 @@ export default function ScopePage({
         name: project.name,
         priority: project.priority,
         deliveryDate: project.delivery_date
-          ? new Date(project.delivery_date)
+          ? new Date(project.delivery_date as string)
           : undefined,
         slip: 0, // Default value
       };

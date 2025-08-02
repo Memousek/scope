@@ -167,7 +167,7 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
             <input
               type="date"
               className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
-              value={newProject.delivery_date || ''}
+              value={(newProject.delivery_date as string) || ''}
               onChange={e => setNewProject(p => ({ ...p, delivery_date: e.target.value || null }))}
             />
           </div>

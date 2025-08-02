@@ -28,7 +28,7 @@ import { calculateRoleProgress, calculateTotalProgress } from '@/lib/utils/dynam
 import { useScopeRoles } from '@/app/hooks/useScopeRoles';
 
 import { Badge } from '@/app/components/ui/Badge';
-import { FiUsers, FiFolder, FiFilter, FiChevronDown, FiPlus, FiTrash2, FiClock, FiBarChart2, FiZap } from 'react-icons/fi';
+import { FiUsers, FiFolder, FiFilter, FiChevronDown } from 'react-icons/fi';
 import { ProjectStatusFilter, ProjectStatus } from './ProjectStatusFilter';
 import { ProjectStatusBadge } from './ProjectStatusBadge';
 
@@ -521,7 +521,7 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
       const priority = Number(priorityStr);
       const displayPriority = priorityMapping.get(priority) || priority;
       groupedProjects[priority].forEach(project => {
-        (project as any).displayPriority = displayPriority;
+        (project as { displayPriority?: number }).displayPriority = displayPriority;
       });
     });
     
@@ -758,7 +758,7 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                                         {project.name}
                                       </h4>
                                       <span className={`bg-gradient-to-r ${getPriorityColor(priority)} text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg`}>
-                                        {t('priority')} {((project as any).displayPriority as number) || project.priority}
+                                        {t('priority')} {((project as { displayPriority?: number }).displayPriority as number) || project.priority}
                                       </span>
                                       {project.status && (
                                         <ProjectStatusBadge status={project.status as ProjectStatus} />
@@ -1292,7 +1292,7 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
             teamMemberId: assignment.teamMemberId,
             role: assignment.role
           })) || []}
-          onWorkflowChange={(workflow) => {
+          onWorkflowChange={() => {
             // Reload workflow dependencies after change
             const loadWorkflowDependencies = async () => {
               try {
@@ -1308,7 +1308,7 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
             };
             loadWorkflowDependencies();
           }}
-          onWorkersChange={(workers) => {
+          onWorkersChange={() => {
             // Reload workflow dependencies after change
             const loadWorkflowDependencies = async () => {
               try {
