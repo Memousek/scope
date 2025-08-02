@@ -58,16 +58,18 @@ export class CalculateAverageSlipService {
    */
   private calculatePriorityDates(projects: unknown[], team: unknown[]): Record<string, { priorityStartDate: Date; priorityEndDate: Date }> {
     // Sort projects by priority (ascending), then by created_at
-    const sorted = [...projects].sort((a: any, b: any) => {
-      if (a.priority !== b.priority) return a.priority - b.priority;
-      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    const sorted = [...projects].sort((a: unknown, b: unknown) => {
+      const aProject = a as { priority: number; createdAt: string };
+      const bProject = b as { priority: number; createdAt: string };
+      if (aProject.priority !== bProject.priority) return aProject.priority - bProject.priority;
+      return new Date(aProject.createdAt).getTime() - new Date(bProject.createdAt).getTime();
     });
     
     const result: Record<string, { priorityStartDate: Date; priorityEndDate: Date }> = {};
     const currentStart = new Date(); // Start today
     
     for (let i = 0; i < sorted.length; i++) {
-      const project = sorted[i] as any;
+      const project = sorted[i] as Record<string, unknown>;
       
       // Calculate project duration
       const roleKeys = Object.keys(project)
@@ -76,11 +78,12 @@ export class CalculateAverageSlipService {
 
       let maxDays = 0;
       roleKeys.forEach(roleKey => {
-        const fte = (team as any[]).filter(m => m.role === roleKey.toUpperCase() || m.role === roleKey)
+        const teamMembers = team as Array<{ role: string; fte: number }>;
+        const fte = teamMembers.filter(m => m.role === roleKey.toUpperCase() || m.role === roleKey)
           .reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
         
-        const mandays = Number((project as Record<string, unknown>)[`${roleKey}Mandays`]) || 0;
-        const done = Number((project as Record<string, unknown>)[`${roleKey}Done`]) || 0;
+        const mandays = Number(project[`${roleKey}Mandays`]) || 0;
+        const done = Number(project[`${roleKey}Done`]) || 0;
         const remainingMandays = mandays * (1 - (done / 100));
         const days = remainingMandays / fte;
 
@@ -93,7 +96,7 @@ export class CalculateAverageSlipService {
       if (i === 0) {
         priorityStartDate = new Date(currentStart);
       } else {
-        const prev = sorted[i - 1] as any;
+        const prev = sorted[i - 1] as { id: string };
         const prevEnd = result[prev.id].priorityEndDate;
         const nextStart = new Date(prevEnd);
         nextStart.setDate(nextStart.getDate() + 1);
@@ -109,7 +112,8 @@ export class CalculateAverageSlipService {
       // Priority end date = start + project duration
       const priorityEndDate = this.addWorkdays(priorityStartDate, projectWorkdays);
       
-      result[project.id] = { priorityStartDate, priorityEndDate };
+      const projectWithId = project as { id: string };
+      result[projectWithId.id] = { priorityStartDate, priorityEndDate };
     }
     
     return result;
@@ -146,7 +150,8 @@ export class CalculateAverageSlipService {
 
       let maxDays = 0;
       roleKeys.forEach(roleKey => {
-        const fte = team.filter(m => m.role === roleKey.toUpperCase() || m.role === roleKey)
+        const teamMembers = team as Array<{ role: string; fte: number }>;
+        const fte = teamMembers.filter(m => m.role === roleKey.toUpperCase() || m.role === roleKey)
           .reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
         
         const mandays = Number((project as unknown as Record<string, unknown>)[`${roleKey}Mandays`]) || 0;
