@@ -93,7 +93,7 @@ export default function NewScopePage() {
         >
           <Link 
             href="/" 
-            className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 mb-6 p-2 rounded-lg hover:bg-white/50 dark:hover:bg-gray-800/50 transition-all duration-200"
+            className="flex w-fit gap-2 items-center text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 mb-6 p-2 rounded-lg hover:bg-white/50 dark:hover:bg-gray-800/50 transition-all duration-200"
           >
             <ArrowLeft className="w-5 h-5" />
             <span className="font-medium">{t('back')}</span>

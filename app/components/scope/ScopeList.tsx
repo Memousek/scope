@@ -110,18 +110,18 @@ export const ScopeList: React.FC<ScopeListProps> = ({
           </div>
         ) : scopes.length === 0 ? (
           <motion.div
-            className="flex items-center justify-center py-12"
+            className="flex items-center justify-center"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
           >
-            <div className="relative bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 rounded-2xl p-8 shadow-2xl text-center">
+            <div className="w-full h-full flex items-center justify-center relative bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 rounded-2xl p-8 shadow-2xl text-center">
               {/* Decorative background elements */}
               <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 rounded-2xl"></div>
               <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full blur-3xl"></div>
               <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-br from-purple-400/10 to-pink-400/10 rounded-full blur-2xl"></div>
               
-              <div className="relative z-10">
+              <div className="relative z-10 flex flex-col items-center justify-center">
                 <div className="text-6xl mb-6"><FiClipboard /></div>
                 <h3 className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
                   {t("no_scopes")}
@@ -164,16 +164,13 @@ export const ScopeList: React.FC<ScopeListProps> = ({
                         <h2 className="text-lg sm:text-xl font-bold mb-2 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent truncate">
                           {scopeItem.scope.name}
                         </h2>
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                        <div className="flex flex-col sm:items-center gap-2">
                           <span className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-semibold shadow-lg ${
                             scopeItem.type === ScopeType.OWNED 
                               ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white'
                               : 'bg-gradient-to-r from-green-500 to-emerald-500 text-white'
                           }`}>
                             {scopeItem.type === ScopeType.OWNED ? t("owned_scope") : t("shared_scope")}
-                          </span>
-                          <span className="text-xs text-gray-500 dark:text-gray-400 font-medium truncate" title={`${scopeItem.scope.id}`}>
-                            ID: {scopeItem.scope.id.slice(0, 8)}...
                           </span>
                         </div>
                       </div>
@@ -220,7 +217,7 @@ export const ScopeList: React.FC<ScopeListProps> = ({
                   )}
 
                   {/* Footer with actions */}
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 pt-4 border-t border-gray-200/50 dark:border-gray-600/50">
+                  <div className="flex flex-col sm:items-center sm:justify-between flex-col lg:flex-row gap-3 pt-4 border-t border-gray-200/50 dark:border-gray-600/50">
                     <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                       <span>{t("created")}: {new Date(scopeItem.scope.createdAt).toLocaleDateString()}</span>
                     </div>

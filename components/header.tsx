@@ -8,7 +8,8 @@
 import Link from "next/link";
 import { AuthButton } from "./auth-button";
 import { useTranslation } from "../lib/translation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   Menu,
   X,
@@ -36,6 +37,11 @@ interface HeaderProps {
 export function Header({ user, loading }: HeaderProps) {
   const { t } = useTranslation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <nav className="z-50 w-full flex justify-center border-b border-b-foreground/10 h-16 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
@@ -107,9 +113,9 @@ export function Header({ user, loading }: HeaderProps) {
           <span className="sr-only">{t("open_menu")}</span>
         </button>
         {/* Mobile drawer */}
-        {mobileOpen && (
-          <div className="fixed inset-0 bg-black/40 flex z-50">
-            <div className="dark:bg-gray-800 dark:text-gray-100 bg-white w-4/5 max-w-xs h-full shadow-xl flex flex-col p-6 animate-slide-in-left relative z-50">
+        {mobileOpen && mounted && createPortal(
+          <div className="fixed inset-0 bg-black/50 flex z-[9999]">
+            <div className="dark:bg-gray-800 dark:text-gray-100 bg-white w-4/5 max-w-xs h-full shadow-xl flex flex-col p-6 animate-slide-in-left relative z-[10000]">
               <button
                 className="absolute top-4 right-4 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
                 onClick={() => setMobileOpen(false)}
@@ -126,21 +132,6 @@ export function Header({ user, loading }: HeaderProps) {
                 Scope Burndown
               </Link>
               <div className="flex flex-col gap-4 flex-1">
-                {/* Theme and Language switchers */}
-                <div className="flex flex-col gap-2 mb-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      {t("language")}:
-                    </span>
-                    <LanguageSwitcher />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      {t("theme")}:
-                    </span>
-                    <ThemeSwitcher />
-                  </div>
-                </div>
                 {loading ? (
                   <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
                 ) : user ? (
@@ -185,13 +176,10 @@ export function Header({ user, loading }: HeaderProps) {
             </div>
             {/* Click outside to close */}
             <div className="flex-1" onClick={() => setMobileOpen(false)} />
-          </div>
+          </div>,
+          document.body
         )}
       </div>
     </nav>
   );
 }
-
-// Add this to your global CSS or tailwind.config.js for the animation:
-// .animate-slide-in-left { animation: slide-in-left 0.3s cubic-bezier(0.4,0,0.2,1) both; }
-// @keyframes slide-in-left { from { transform: translateX(-100%); } to { transform: translateX(0); } }
