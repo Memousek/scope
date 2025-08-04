@@ -220,7 +220,7 @@ export function ProjectTeamAssignmentModal({
                   <option value="">{t('select_team_member')}</option>
                   {availableTeamMembers.map((member) => (
                     <option key={member.id} value={member.id}>
-                      {member.name} ({member.role}, {member.fte} FTE)
+                      {member.name} ({member.role}, {member.fte.toFixed(1)} FTE)
                     </option>
                   ))}
                 </select>
