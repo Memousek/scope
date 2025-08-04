@@ -24,10 +24,10 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [currentLang, setCurrentLang] = useState<string>('cs');
   const [currentTheme, setCurrentTheme] = useState<string>('dark');
+  const [search, setSearch] = useState('');
   const router = useRouter();
   const { t } = useTranslation();
   const [showBuildInfo, setShowBuildInfo] = useState(false);
-  const [showWorkInProgressLanguages, setShowWorkInProgressLanguages] = useState(false);
   const [apiKey, setApiKey] = useState('');
   const themes = [
     { code: 'light', labelKey: 'lightMode', icon: Sun },
@@ -62,6 +62,10 @@ export default function SettingsPage() {
     setCurrentLang(langCode);
   };
 
+  const handleLanguageSearch = (search: string) => {
+    setSearch(search);
+  };
+
   const handleThemeChange = (themeCode: "light" | "dark" | "system") => {
     setCurrentTheme(themeCode);
     localStorage.setItem('theme', themeCode);
@@ -82,7 +86,7 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div>
-        <div className="flex items-center justify-center h-full">
+        <div className="flex items-center justify-center h-screen">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
             <p className="text-gray-600 dark:text-gray-400">{t('loadingSettings')}</p>
@@ -137,8 +141,8 @@ export default function SettingsPage() {
                       key={theme.code}
                       onClick={() => handleThemeChange(theme.code as "light" | "dark" | "system")}
                       className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ${currentTheme === theme.code
-                          ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg'
-                          : 'bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600/50'
+                        ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg'
+                        : 'bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600/50'
                         }`}
                     >
                       <IconComponent className="w-5 h-5" />
@@ -169,15 +173,19 @@ export default function SettingsPage() {
                   </p>
                 </div>
               </div>
+              <div className="mb-2">
+                <label htmlFor="searchLanguage-input" id="searchLanguage-label" className="text-sm text-gray-600 dark:text-gray-400 absolute -top-99999 h-0 text-transparent -z-10  opacity-0">{t('searchLanguage')}</label>
+                <input type="search" id="searchLanguage-input" placeholder={t('searchLanguage')} onChange={(e) => handleLanguageSearch(e.target.value)} className="w-full mt-0 h-10 bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200" />
+              </div>
               <div className="space-y-3">
-                <div className="grid grid-cols-3 gap-2">
-                  {languages.filter(lang => !lang.disabled).map((lang) => (
+                <div className="grid grid-cols-1 gap-2 max-h-[120px] overflow-y-auto">
+                  {languages.filter((lang) => lang.label.toLowerCase().includes(search.toLowerCase())).map((lang) => (
                     <button
                       key={lang.code}
                       onClick={() => handleLanguageChange(lang.code)}
                       className={`flex items-center gap-2 p-2 rounded-lg transition-all duration-200 ${currentLang === lang.code
-                          ? 'bg-gradient-to-r from-emerald-600 to-green-700 text-white shadow-lg'
-                          : 'bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600/50'
+                        ? 'bg-gradient-to-r from-emerald-600 to-green-700 text-white shadow-lg'
+                        : 'bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600/50'
                         }`}
                     >
                       <Image
@@ -227,14 +235,14 @@ export default function SettingsPage() {
                   <BuildInfoDisplay />
                 </div>
                 <p className="w-full text-center text-sm text-gray-600 dark:text-gray-400">
-                    &copy; {new Date().getFullYear()} {process.env.NEXT_PUBLIC_COPYRIGHT}
-                  </p>
+                  &copy; {new Date().getFullYear()} {process.env.NEXT_PUBLIC_COPYRIGHT}
+                </p>
               </div>
             </div>
 
             {/* API Key */}
             <div className="relative bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl p-6 border border-white/20 dark:border-gray-700/50 shadow-xl hover:shadow-2xl transition-all duration-300">
-                <Badge label={t("soon")} variant="soon"/>
+              <Badge label={t("soon")} variant="soon" />
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-orange-500 rounded-lg flex items-center justify-center">
                   <Key className="w-5 h-5 text-white" />
@@ -252,11 +260,11 @@ export default function SettingsPage() {
                 <label htmlFor="apiKey" className="text-sm text-gray-600 dark:text-gray-400">
                   {t('openaiApiKey')}
                 </label>
-                <input 
-                  id="apiKey" 
-                  type="text" 
-                  className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200" 
-                  placeholder={t('yourApiKey')} 
+                <input
+                  id="apiKey"
+                  type="text"
+                  className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
+                  placeholder={t('yourApiKey')}
                   value={apiKey}
                   onChange={(e) => handleApiKeyChange(e.target.value)}
                 />

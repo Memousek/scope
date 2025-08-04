@@ -395,5 +395,6 @@
   "yourApiKey": "Váš API klíč",
   "active": "Aktivní",
   "accountPlan": "Plán účtu",
-  "changeAccountPlan": "Změnit plán účtu"
+  "changeAccountPlan": "Změnit plán účtu",
+  "searchLanguage": "Hledat jazyk"
 } 
