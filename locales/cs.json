@@ -365,5 +365,6 @@
   "totalProgress": "Celkový průběh",
   "roles": "Role",
   "createRole": "Vytvořit roli",
-  "color": "Barva"
+  "color": "Barva",
+  "noDataForChartDescription": "Žádná data pro graf pro tento projekt. Vytvořte alespoň jeden projekt."
 } 

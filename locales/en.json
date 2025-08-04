@@ -351,5 +351,6 @@
   "totalProgress": "Total progress",
   "roles": "Roles",
   "createRole": "Create role",
-  "color": "Color"
+  "color": "Color",
+  "noDataForChartDescription": "No data for chart for this project. Create at least one project."
 }
