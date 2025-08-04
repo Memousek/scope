@@ -337,6 +337,8 @@
   "noTeamMember": "Chybí člen",
   "projectChangeHistory": "Historie změn projektu",
   "roleAndProgress": "Role a průběh",
+  "noRolesCreated": "Zatím nebyly vytvořeny žádné role",
+  "createRolesInTeam": "Pro nastavení odhadů je potřeba nejprve vytvořit role v sekci Tým → Správa rolí",
   "change": "Změna",
   "experimental": "Experimentální funkce",
   "filter": "Filtr",

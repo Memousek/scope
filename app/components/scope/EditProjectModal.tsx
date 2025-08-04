@@ -146,61 +146,78 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
         {/* Role a progress */}
         <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
           <h4 className="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200">{t('roleAndProgress')}</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {projectRoles.map(role => (
-              <div key={role.key} className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 border border-gray-200 dark:border-gray-600">
-                <div className="flex items-center gap-2 mb-3">
-                  <div 
-                    className="w-3 h-3 rounded-full" 
-                    style={{ backgroundColor: role.color }}
-                  ></div>
-                  <h5 className="font-medium text-gray-800 dark:text-gray-200">{role.label}</h5>
-                </div>
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
-                      {t('estimate')} (MD)
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      value={(editProject as Record<string, unknown>)[role.mandays] as number || 0}
-                      onChange={e => setEditProject(p => ({ 
-                        ...p, 
-                        [role.mandays]: Number(e.target.value) 
-                      } as Project))}
-                      onFocus={(e) => {
-                        if (e.target.value === '0') {
-                          e.target.value = '';
-                        }
-                      }}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor={`${role.key}-done`} className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
-                      % {t('done')}
-                    </label>
-                    <input
-                      id={`${role.key}-done`}
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="1"
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      value={(editProject as Record<string, unknown>)[role.done] as number || 0}
-                      onChange={e => setEditProject(p => ({ 
-                        ...p, 
-                        [role.done]: Number(e.target.value) 
-                      } as Project))}
-                    />
-                  </div>
-                </div>
+          
+          {projectRoles.length === 0 ? (
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6 text-center">
+              <div className="text-blue-600 dark:text-blue-400 mb-2">
+                <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
               </div>
-            ))}
-          </div>
+              <h5 className="text-lg font-medium text-blue-800 dark:text-blue-300 mb-2">
+                {t('noRolesCreated')}
+              </h5>
+              <p className="text-blue-700 dark:text-blue-400 text-sm">
+                {t('createRolesInTeam')}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {projectRoles.map(role => (
+                <div key={role.key} className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 border border-gray-200 dark:border-gray-600">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: role.color }}
+                    ></div>
+                    <h5 className="font-medium text-gray-800 dark:text-gray-200">{role.label}</h5>
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
+                        {t('estimate')} (MD)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                        value={(editProject as Record<string, unknown>)[role.mandays] as number || 0}
+                        onChange={e => setEditProject(p => ({ 
+                          ...p, 
+                          [role.mandays]: Number(e.target.value) 
+                        } as Project))}
+                        onFocus={(e) => {
+                          if (e.target.value === '0') {
+                            e.target.value = '';
+                          }
+                        }}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor={`${role.key}-done`} className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
+                        % {t('done')}
+                      </label>
+                      <input
+                        id={`${role.key}-done`}
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="1"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                        value={(editProject as Record<string, unknown>)[role.done] as number || 0}
+                        onChange={e => setEditProject(p => ({ 
+                          ...p, 
+                          [role.done]: Number(e.target.value) 
+                        } as Project))}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Action buttons */}

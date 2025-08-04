@@ -322,6 +322,8 @@
   "noTeamMember": "No member",
   "projectChangeHistory": "Project change history",
   "roleAndProgress": "Role and progress",
+  "noRolesCreated": "No roles have been created yet",
+  "createRolesInTeam": "To set estimates, you need to create roles first in Team → Role Management",
   "change": "Change",
   "experimental": "experimental feature",
   "filter": "Filter",
