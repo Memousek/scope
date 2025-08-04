@@ -26,6 +26,7 @@ export default function SettingsPage() {
   const router = useRouter();
   const { t } = useTranslation();
   const [showBuildInfo, setShowBuildInfo] = useState(false);
+  const [showWorkInProgressLanguages, setShowWorkInProgressLanguages] = useState(false);
   const themes = [
     { code: 'light', labelKey: 'lightMode', icon: Sun },
     { code: 'dark', labelKey: 'darkMode', icon: Moon },
@@ -163,7 +164,7 @@ export default function SettingsPage() {
                 </div>
               </div>
               <div className="space-y-3">
-                {languages.map((lang) => (
+                {languages.filter(lang => !lang.disabled).map((lang) => (
                   <button
                     key={lang.code}
                     onClick={() => handleLanguageChange(lang.code)}
@@ -187,6 +188,26 @@ export default function SettingsPage() {
                     )}
                   </button>
                 ))}
+                <div className="w-full text-center text-sm text-gray-600 dark:text-gray-400">
+                  <button className="w-full transition-all duration-200 bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-600/50 rounded-lg p-3 flex items-center justify-between text-sm text-gray-600 dark:text-white" onClick={() => setShowWorkInProgressLanguages(!showWorkInProgressLanguages)}>
+                    <p>{showWorkInProgressLanguages ? `${t('hide')} ${t('workInProgressLanguages')}` : `${t('show')} ${t('workInProgressLanguages')}`}</p>
+                    <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showWorkInProgressLanguages ? 'rotate-180' : ''}`} />
+                  </button>
+                </div>
+                <div className={`grid grid-cols-2 gap-3 ${showWorkInProgressLanguages ? 'opacity-100 block' : 'opacity-0 hidden'}`}>
+                {languages.filter(lang => lang.disabled).map((lang) => (
+                  <div key={lang.code} className="cursor-not-allowed flex items-center gap-3 p-3 rounded-lg transition-all duration-200 bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600/50">
+                     <Image
+                      src={`https://flagcdn.com/w20/${lang.flag}.png`}
+                      alt={lang.label}
+                      width={20}
+                      height={15}
+                      className="rounded-sm"
+                    />
+                    <p>{lang.label}</p>
+                  </div>
+                ))}
+                </div>
               </div>
             </div>
 

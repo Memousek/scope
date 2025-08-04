@@ -364,5 +364,8 @@
   "githubLink": "GitHub",
   "license": "License",
   "showBuildInfo": "Show build info",
-  "hideBuildInfo": "Hide build info"
+  "hideBuildInfo": "Hide build info",
+  "show": "Show",
+  "hide": "Hide",
+  "workInProgressLanguages": "work in progress languages"
 }

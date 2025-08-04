@@ -378,5 +378,8 @@
   "githubLink": "GitHub",
   "license": "Licence",
   "showBuildInfo": "Zobrazit informace o sestavení",
-  "hideBuildInfo": "Skrýt informace o sestavení"
+  "hideBuildInfo": "Skrýt informace o sestavení",
+  "show": "Zobrazit",
+  "hide": "Skrýt",
+  "workInProgressLanguages": "jazyky ve vývoji"
 } 

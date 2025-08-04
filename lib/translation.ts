@@ -35,6 +35,18 @@ export function getLanguages() {
     { code: 'cs', label: 'Čeština', flag: 'cz' },
     { code: 'en', label: 'English', flag: 'gb' },
     { code: 'ru', label: 'Русский', flag: 'ru' },
+    { code: 'de', label: 'Deutsch', flag: 'de', disabled: true },
+    { code: 'fr', label: 'Français', flag: 'fr', disabled: true },
+    { code: 'es', label: 'Español', flag: 'es', disabled: true },
+    { code: 'pt', label: 'Português', flag: 'pt', disabled: true },
+    { code: 'it', label: 'Italiano', flag: 'it', disabled: true },
+    { code: 'pl', label: 'Polski', flag: 'pl', disabled: true },
+    { code: 'sk', label: 'Slovenčina', flag: 'sk', disabled: true },
+    { code: 'hu', label: 'Magyar', flag: 'hu', disabled: true },
+    { code: 'ja', label: '日本語', flag: 'jp', disabled: true },
+    { code: 'kr', label: '한국어', flag: 'kr', disabled: true },
+    { code: 'ch', label: '中文', flag: 'cn', disabled: true },
+    { code: 'ar', label: 'العربية', flag: 'ae', disabled: true },
   ]
 }
 

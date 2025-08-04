@@ -357,5 +357,8 @@
   "githubLink": "GitHub",
   "license": "Лицензия",
   "showBuildInfo": "Показать информацию о сборке",
-  "hideBuildInfo": "Скрыть информацию о сборке"
+  "hideBuildInfo": "Скрыть информацию о сборке",
+  "show": "Показать",
+  "hide": "Скрыть",
+  "workInProgressLanguages": "языки в разработке"
 }

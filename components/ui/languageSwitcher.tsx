@@ -4,7 +4,7 @@
  * Uses dropdown format similar to ThemeSwitcher.
  */
 import React, { useEffect, useState } from 'react';
-import { getCurrentLanguage, setCurrentLanguage } from '../../lib/translation';
+import { getCurrentLanguage, setCurrentLanguage, getLanguages } from '../../lib/translation';
 import Image from 'next/image';
 import { Button } from "@/components/ui/button";
 import {
@@ -16,11 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Globe } from "lucide-react";
 
-const languages = [
-  { code: 'cs', label: 'Čeština', flag: 'cz' },
-  { code: 'en', label: 'English', flag: 'gb' },
-  { code: 'ru', label: 'Русский', flag: 'ru' }
-];
+const languages = getLanguages();
 
 export const LanguageSwitcher: React.FC = () => {
   // Hydration-safe: start with undefined, set after mount
@@ -62,7 +58,7 @@ export const LanguageSwitcher: React.FC = () => {
           value={lang}
           onValueChange={(e) => setLang(e)}
         >
-          {languages.map((l) => (
+          {languages.filter(lang => !lang.disabled).map((l) => (
             <DropdownMenuRadioItem key={l.code} className="flex gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-200 hover:bg-gray-100 cursor-pointer" value={l.code}>
               <Image 
                 src={`https://flagcdn.com/w20/${l.flag}.png`} 
