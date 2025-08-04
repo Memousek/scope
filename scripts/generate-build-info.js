@@ -81,7 +81,7 @@ const generateBuildInfo = () => {
     NEXT_PUBLIC_AUTHOR: existingEnv.NEXT_PUBLIC_AUTHOR || '"Vojtěch Kalný"',
     NEXT_PUBLIC_GITHUB_LINK: existingEnv.NEXT_PUBLIC_GITHUB_LINK || '"https://github.com/Memousek/scope"',
     NEXT_PUBLIC_LICENSE: existingEnv.NEXT_PUBLIC_LICENSE || '"-"',
-    NEXT_PUBLIC_COPYRIGHT: existingEnv.NEXT_PUBLIC_COPYRIGHT || '"Scope Burndown Team"',
+    NEXT_PUBLIC_COPYRIGHT: existingEnv.NEXT_PUBLIC_COPYRIGHT || '"Scope Burndown Team | Vojtěch Kalný"',
   };
 
   // Spojit všechny proměnné
