@@ -6,7 +6,7 @@
  * - Built-in legends and axes
  */
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Project, ProjectDeliveryInfo } from './types';
 import { calculateRoleProgress } from '@/lib/utils/dynamicProjectRoles';
@@ -50,6 +50,21 @@ const ProjectProgressChartComponent: React.FC<ProjectProgressChartProps> = ({
   const { activeRoles } = useScopeRoles(scopeId);
   const [progressData, setProgressData] = React.useState<ProgressData[]>([]);
   const [activeLegend, setActiveLegend] = React.useState<string | null>(null); // Přidáno
+
+  const getCurrentProgress = useCallback((project: Project) => {
+    let totalDone = 0;
+    let totalMandays = 0;
+
+    activeRoles.forEach(role => {
+      const progress = calculateRoleProgress(project as unknown as Record<string, unknown>, role);
+      if (progress) {
+        totalDone += progress.done;
+        totalMandays += progress.mandays;
+      }
+    });
+
+    return totalMandays > 0 ? Math.round((totalDone / totalMandays) * 100) : 0;
+  }, [activeRoles]);
 
   // Generování dat pro graf
   React.useEffect(() => {
@@ -119,22 +134,7 @@ const ProjectProgressChartComponent: React.FC<ProjectProgressChartProps> = ({
     }
     
     setProgressData(data);
-  }, [project, priorityDates, projectAssignments, activeRoles]);
-
-  const getCurrentProgress = (project: Project) => {
-    let totalDone = 0;
-    let totalMandays = 0;
-
-    activeRoles.forEach(role => {
-      const progress = calculateRoleProgress(project as unknown as Record<string, unknown>, role);
-      if (progress) {
-        totalDone += progress.done;
-        totalMandays += progress.mandays;
-      }
-    });
-
-    return totalMandays > 0 ? Math.round((totalDone / totalMandays) * 100) : 0;
-  };
+  }, [project, priorityDates, projectAssignments, activeRoles, getCurrentProgress]);
 
   const getSlippageColor = (slippage: number) => {
     if (slippage >= 0) return 'text-green-600 dark:text-green-400';

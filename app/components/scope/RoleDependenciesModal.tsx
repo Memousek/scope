@@ -3,7 +3,7 @@
  * Zaměřeno na workflow šablony a stav pracovníků s reálnými daty
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Modal } from '@/app/components/ui/Modal';
 import { Badge } from '@/app/components/ui/Badge';
 
@@ -34,14 +34,7 @@ export const RoleDependenciesModal: React.FC<RoleDependenciesModalProps> = ({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load dependencies when modal opens
-  useEffect(() => {
-    if (isOpen && projectId) {
-      loadDependencies();
-    }
-  }, [isOpen, projectId]);
-
-  const loadDependencies = async () => {
+  const loadDependencies = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -56,7 +49,14 @@ export const RoleDependenciesModal: React.FC<RoleDependenciesModalProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [projectId, projectAssignments]);
+
+  // Load dependencies when modal opens
+  useEffect(() => {
+    if (isOpen && projectId) {
+      loadDependencies();
+    }
+  }, [isOpen, projectId, loadDependencies]);
 
   const handleWorkflowSelect = (workflowId: string) => {
     setSelectedWorkflow(workflowId);

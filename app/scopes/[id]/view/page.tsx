@@ -278,7 +278,7 @@ export default function ScopePage({
     } catch (error) {
       console.error("Chyba při kontrole vlastnictví:", error);
     }
-  }, [userId]);
+  }, [userId, id]);
 
   // Načítání dat při mount
   useEffect(() => {
