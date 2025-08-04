@@ -78,9 +78,9 @@ const generateBuildInfo = () => {
 
   // Statické informace (tyto se nebudou přepisovat, pokud už existují)
   const staticInfo = {
-    NEXT_PUBLIC_AUTHOR: existingEnv.NEXT_PUBLIC_AUTHOR || '"Váš název"',
-    NEXT_PUBLIC_GITHUB_LINK: existingEnv.NEXT_PUBLIC_GITHUB_LINK || '"https://github.com/váš-username/scope-burndown"',
-    NEXT_PUBLIC_LICENSE: existingEnv.NEXT_PUBLIC_LICENSE || '"MIT"',
+    NEXT_PUBLIC_AUTHOR: existingEnv.NEXT_PUBLIC_AUTHOR || '"Vojtěch Kalný"',
+    NEXT_PUBLIC_GITHUB_LINK: existingEnv.NEXT_PUBLIC_GITHUB_LINK || '"https://github.com/Memousek/scope"',
+    NEXT_PUBLIC_LICENSE: existingEnv.NEXT_PUBLIC_LICENSE || '"-"',
     NEXT_PUBLIC_COPYRIGHT: existingEnv.NEXT_PUBLIC_COPYRIGHT || '"Scope Burndown Team"',
   };
 
