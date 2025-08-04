@@ -271,14 +271,14 @@ export default function ScopePage({
   }, [id]);
 
   const checkOwnership = useCallback(async () => {
-    if (!userId) return;
-
+    if (!userId || !id) return;
+    
     try {
       //setIsOwner(isOwnerResult);
     } catch (error) {
       console.error("Chyba při kontrole vlastnictví:", error);
     }
-  }, [userId, id]);
+  }, [userId]);
 
   // Načítání dat při mount
   useEffect(() => {
@@ -338,7 +338,7 @@ export default function ScopePage({
       <div className="container mx-auto px-4 py-8 relative">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-4 relative">
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-lg">
                 <span className="text-white text-2xl font-bold">

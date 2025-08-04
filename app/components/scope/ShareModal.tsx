@@ -5,6 +5,7 @@ import { ContainerService } from '@/lib/container.service';
 import { GetScopeEditorsWithUsersService, ScopeEditorWithUser } from '@/lib/domain/services/get-scope-editors-with-users.service';
 import { ScopeEditorService } from '@/app/services/scopeEditorService';
 import { Modal } from '@/app/components/ui/Modal';
+import Image from 'next/image';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -318,7 +319,13 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
                   <div className="flex items-center gap-3">
                     {/* Avatar */}
                     {editor.user?.avatarUrl ? (
-                      <img src={editor.user?.avatarUrl} alt={editor.user?.fullName} className="w-10 h-10 rounded-full" />
+                      <Image 
+                        src={editor.user?.avatarUrl} 
+                        alt={editor.user?.fullName || ''} 
+                        width={40}
+                        height={40}
+                        className="w-10 h-10 rounded-full" 
+                      />
                     ) : (
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold border-2 border-gray-200 dark:border-gray-600">
                         {editor.user?.fullName 

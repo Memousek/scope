@@ -11,9 +11,10 @@ import { ContainerService } from "@/lib/container.service";
 import { UserRepository } from "@/lib/domain/repositories/user.repository";
 import { User } from "@/lib/domain/models/user.model";
 import { useTranslation } from "@/lib/translation";
-import { Settings, Palette, Globe, Sun, Moon, Monitor } from "lucide-react";
+import { Settings, Palette, Globe, Sun, Moon, Monitor, Info } from "lucide-react";
 import { getCurrentLanguage, setCurrentLanguage } from "@/lib/translation";
 import Image from "next/image";
+import { BuildInfoDisplay } from '../components/ui/BuildInfoDisplay';
 
 const languages = [
   { code: 'cs', label: 'Čeština', flag: 'cz' },
@@ -42,10 +43,10 @@ export default function SettingsPage() {
         router.push("/auth/login");
       }
     });
-    
+
     // Nastavit aktuální jazyk
     setCurrentLang(getCurrentLanguage());
-    
+
     // Nastavit aktuální téma
     const savedTheme = localStorage.getItem('theme') as "light" | "dark" | "system" | null;
     if (savedTheme === "dark" || savedTheme === "light" || savedTheme === "system") {
@@ -64,7 +65,7 @@ export default function SettingsPage() {
   const handleThemeChange = (themeCode: "light" | "dark" | "system") => {
     setCurrentTheme(themeCode);
     localStorage.setItem('theme', themeCode);
-    
+
     // Aplikovat téma na documentElement (html tag)
     if (themeCode === 'system') {
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -86,12 +87,12 @@ export default function SettingsPage() {
       </div>
     );
   }
-  
+
   if (!user) return null;
 
   return (
     <div>
-      
+
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
@@ -131,11 +132,10 @@ export default function SettingsPage() {
                     <button
                       key={theme.code}
                       onClick={() => handleThemeChange(theme.code as "light" | "dark" | "system")}
-                      className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ${
-                        currentTheme === theme.code
+                      className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ${currentTheme === theme.code
                           ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg'
                           : 'bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600/50'
-                      }`}
+                        }`}
                     >
                       <IconComponent className="w-5 h-5" />
                       <span className="font-medium">{t(theme.labelKey)}</span>
@@ -170,17 +170,16 @@ export default function SettingsPage() {
                   <button
                     key={lang.code}
                     onClick={() => handleLanguageChange(lang.code)}
-                    className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ${
-                      currentLang === lang.code
+                    className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ${currentLang === lang.code
                         ? 'bg-gradient-to-r from-emerald-600 to-green-700 text-white shadow-lg'
                         : 'bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600/50'
-                    }`}
+                      }`}
                   >
-                    <Image 
-                      src={`https://flagcdn.com/w20/${lang.flag}.png`} 
-                      alt={lang.label} 
-                      width={20} 
-                      height={15} 
+                    <Image
+                      src={`https://flagcdn.com/w20/${lang.flag}.png`}
+                      alt={lang.label}
+                      width={20}
+                      height={15}
                       className="rounded-sm"
                     />
                     <span className="font-medium">{lang.label}</span>
@@ -191,6 +190,29 @@ export default function SettingsPage() {
                     )}
                   </button>
                 ))}
+              </div>
+            </div>
+
+            {/* About App */}
+            <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl p-6 border border-white/20 dark:border-gray-700/50 shadow-xl hover:shadow-2xl transition-all duration-300">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
+                  <Info className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                    {t("aboutApp")}
+                  </h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {t('aboutAppDescription')}
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {t('aboutAppDescriptionLong')}
+                </p>
+                <BuildInfoDisplay />
               </div>
             </div>
           </div>

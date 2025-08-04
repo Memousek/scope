@@ -352,5 +352,6 @@
   "roles": "Roles",
   "createRole": "Create role",
   "color": "Color",
-  "noDataForChartDescription": "No data for chart for this project. Create at least one project."
+  "noDataForChartDescription": "No data for chart for this project. Create at least one project.",
+  "copied": "Coppied"
 }

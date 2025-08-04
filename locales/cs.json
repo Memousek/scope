@@ -366,5 +366,15 @@
   "roles": "Role",
   "createRole": "Vytvořit roli",
   "color": "Barva",
-  "noDataForChartDescription": "Žádná data pro graf pro tento projekt. Vytvořte alespoň jeden projekt."
+  "noDataForChartDescription": "Žádná data pro graf pro tento projekt. Vytvořte alespoň jeden projekt.",
+  "copied": "Zkopírováno",
+  "aboutApp": "O aplikaci",
+  "aboutAppDescription": "Aplikace pro správu scopů a projektů",
+  "aboutAppDescriptionLong": "Aplikace pro správu scopů a projektů",
+  "version": "Verze",
+  "buildDate": "Datum sestavení",
+  "buildNumber": "Číslo sestavení",
+  "author": "Autor",
+  "githubLink": "GitHub",
+  "license": "Licence"
 } 
