@@ -122,7 +122,7 @@ export function ProjectTeamAssignmentModal({
     if (teamMember) {
       setSelectedRole(teamMember.role);
       // Automatically set FTE based on team member's FTE
-      setAllocationFte(teamMember.fte);
+      setAllocationFte(Number(teamMember.fte.toFixed(1)));
     }
   };
 
