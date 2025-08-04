@@ -346,5 +346,16 @@
   "createRole": "Создать роль",
   "color": "Цвет",
   "noDataForChartDescription": "Нет данных для диаграммы для этого проекта. Создайте хотя бы один проект.",
-  "copied": "Скопировано"
+  "copied": "Скопировано",
+  "aboutApp": "О приложении",
+  "aboutAppDescription": "Приложение для управления областями и проектами",
+  "aboutAppDescriptionLong": "Приложение для управления областями и проектами",
+  "version": "Версия",
+  "buildDate": "Дата сборки",
+  "buildNumber": "Номер сборки",
+  "author": "Автор",
+  "githubLink": "GitHub",
+  "license": "Лицензия",
+  "showBuildInfo": "Показать информацию о сборке",
+  "hideBuildInfo": "Скрыть информацию о сборке"
 }

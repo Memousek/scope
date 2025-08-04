@@ -11,15 +11,12 @@ import { ContainerService } from "@/lib/container.service";
 import { UserRepository } from "@/lib/domain/repositories/user.repository";
 import { User } from "@/lib/domain/models/user.model";
 import { useTranslation } from "@/lib/translation";
-import { Settings, Palette, Globe, Sun, Moon, Monitor, Info } from "lucide-react";
-import { getCurrentLanguage, setCurrentLanguage } from "@/lib/translation";
+import { Settings, Palette, Globe, Sun, Moon, Monitor, Info, ChevronDown } from "lucide-react";
+import { getCurrentLanguage, setCurrentLanguage, getLanguages } from "@/lib/translation";
 import Image from "next/image";
 import { BuildInfoDisplay } from '../components/ui/BuildInfoDisplay';
 
-const languages = [
-  { code: 'cs', label: 'Čeština', flag: 'cz' },
-  { code: 'en', label: 'English', flag: 'gb' },
-];
+const languages = getLanguages();
 
 export default function SettingsPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -28,7 +25,7 @@ export default function SettingsPage() {
   const [currentTheme, setCurrentTheme] = useState<string>('dark');
   const router = useRouter();
   const { t } = useTranslation();
-
+  const [showBuildInfo, setShowBuildInfo] = useState(false);
   const themes = [
     { code: 'light', labelKey: 'lightMode', icon: Sun },
     { code: 'dark', labelKey: 'darkMode', icon: Moon },
@@ -212,7 +209,17 @@ export default function SettingsPage() {
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   {t('aboutAppDescriptionLong')}
                 </p>
-                <BuildInfoDisplay />
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  <button className="w-full transition-all duration-200 bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-600/50 rounded-lg p-3 flex items-center justify-between text-sm text-gray-600 dark:text-white" onClick={() => setShowBuildInfo(!showBuildInfo)}>
+                    {showBuildInfo ? t('hideBuildInfo') : t('showBuildInfo')} <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showBuildInfo ? 'rotate-180' : ''}`} />
+                  </button>
+                </div>
+                <div className={`mt-4 transition-all duration-200 ${showBuildInfo ? 'opacity-100 block' : 'opacity-0 hidden'}`}>
+                  <BuildInfoDisplay />
+                </div>
+                <p className="w-full text-center text-sm text-gray-600 dark:text-gray-400">
+                    &copy; {new Date().getFullYear()} {process.env.NEXT_PUBLIC_COPYRIGHT}
+                  </p>
               </div>
             </div>
           </div>

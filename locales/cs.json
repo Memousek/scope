@@ -376,5 +376,7 @@
   "buildNumber": "Číslo sestavení",
   "author": "Autor",
   "githubLink": "GitHub",
-  "license": "Licence"
+  "license": "Licence",
+  "showBuildInfo": "Zobrazit informace o sestavení",
+  "hideBuildInfo": "Skrýt informace o sestavení"
 } 

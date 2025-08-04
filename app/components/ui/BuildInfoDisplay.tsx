@@ -19,6 +19,7 @@ interface BuildInfoItemProps {
 
 function BuildInfoItem({ icon, label, value, isLink, href }: BuildInfoItemProps) {
   const [copied, setCopied] = useState(false);
+  const { t } = useTranslation();
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(value);
@@ -27,7 +28,7 @@ function BuildInfoItem({ icon, label, value, isLink, href }: BuildInfoItemProps)
   };
 
   return (
-    <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+    <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-600/50 rounded-lg transition-all duration-200">
       <div className="flex items-center gap-3">
         <div className="text-gray-500 dark:text-gray-400">
           {icon}
@@ -42,15 +43,15 @@ function BuildInfoItem({ icon, label, value, isLink, href }: BuildInfoItemProps)
           href={href} 
           target="_blank" 
           rel="noopener noreferrer"
-          className="text-blue-600 hover:text-blue-700 transition-colors"
+          className="text-gray-400 hover:text-gray-600 transition-colors hover:text-gray-900 dark:hover:text-white dark:hover:bg-gray-400 rounded-lg p-1"
         >
           <ExternalLink size={16} />
         </a>
       ) : (
         <button
           onClick={handleCopy}
-          className="text-gray-400 hover:text-gray-600 transition-colors"
-          title="Kopírovat"
+          className="text-gray-400 hover:text-gray-600 transition-colors hover:text-gray-900 dark:hover:text-white dark:hover:bg-gray-400 rounded-lg p-1"
+          title={t('copy')}
         >
           {copied ? <Check size={16} className="text-green-600" /> : <Copy size={16} />}
         </button>
@@ -94,9 +95,6 @@ export function BuildInfoDisplay() {
         isLink
         href={buildInfo.githubLink}
       />
-      <div className="text-center text-sm text-gray-500 dark:text-gray-400 pt-2">
-        © {new Date().getFullYear()} {buildInfo.copyright}
-      </div>
     </div>
   );
 } 

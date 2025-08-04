@@ -353,5 +353,16 @@
   "createRole": "Create role",
   "color": "Color",
   "noDataForChartDescription": "No data for chart for this project. Create at least one project.",
-  "copied": "Coppied"
+  "copied": "Copied",
+  "aboutApp": "About app",
+  "aboutAppDescription": "Application for managing scopes and projects",
+  "aboutAppDescriptionLong": "Application for managing scopes and projects",
+  "version": "Version",
+  "buildDate": "Build date",
+  "buildNumber": "Build number",
+  "author": "Author",
+  "githubLink": "GitHub",
+  "license": "License",
+  "showBuildInfo": "Show build info",
+  "hideBuildInfo": "Hide build info"
 }

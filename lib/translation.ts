@@ -30,6 +30,14 @@ export function setCurrentLanguage(lang: string) {
   }
 }
 
+export function getLanguages() {
+  return [
+    { code: 'cs', label: 'Čeština', flag: 'cz' },
+    { code: 'en', label: 'English', flag: 'gb' },
+    { code: 'ru', label: 'Русский', flag: 'ru' },
+  ]
+}
+
 export function useTranslation() {
   const [lang] = useState(getCurrentLanguage());
   const [dict, setDict] = useState<Record<string, string>>({});
