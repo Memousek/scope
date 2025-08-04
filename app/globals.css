@@ -92,3 +92,124 @@
   from { transform: translateX(-100%); } 
   to { transform: translateX(0); } 
 }
+
+/* RTL (Right-to-Left) Support */
+.rtl {
+  direction: rtl;
+  text-align: right;
+}
+
+/* RTL-specific animations */
+.rtl .animate-slide-in-left {
+  animation: slide-in-right 0.3s cubic-bezier(0.4,0,0.2,1) both;
+}
+
+@keyframes slide-in-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+/* RTL-specific flex directions */
+.rtl .flex-row {
+  flex-direction: row-reverse;
+}
+
+.rtl .flex-row-reverse {
+  flex-direction: row;
+}
+
+/* RTL-specific margins and paddings */
+.rtl .ml-auto {
+  margin-left: unset !important;
+  margin-right: auto !important;
+}
+
+.rtl .mr-auto {
+  margin-right: unset !important;
+  margin-left: auto !important;
+}
+
+.rtl .pl-4 {
+  padding-left: unset !important;
+  padding-right: 1rem !important;
+}
+
+.rtl .pr-4 {
+  padding-right: unset !important;
+  padding-left: 1rem !important;
+}
+
+/* RTL-specific text alignment */
+.rtl .text-left {
+  text-align: right !important;
+}
+
+.rtl .text-right {
+  text-align: left !important;
+}
+
+/* RTL-specific dropdown positioning */
+.rtl [data-radix-popper-content-wrapper] {
+  direction: rtl;
+}
+
+/* RTL-specific icons and buttons */
+.rtl .lucide {
+  transform: scaleX(-1);
+}
+
+/* RTL-specific form elements */
+.rtl input,
+.rtl textarea,
+.rtl select {
+  text-align: right;
+}
+
+/* RTL-specific navigation */
+.rtl .nav-item {
+  margin-left: 0;
+  margin-right: 1rem;
+}
+
+/* RTL-specific cards and containers */
+.rtl .card-header {
+  flex-direction: row-reverse;
+}
+
+.rtl .card-footer {
+  flex-direction: row-reverse;
+}
+
+/* RTL-specific tables */
+.rtl table {
+  direction: rtl;
+}
+
+.rtl th,
+.rtl td {
+  text-align: right;
+}
+
+/* RTL-specific modals */
+.rtl .modal-header {
+  flex-direction: row-reverse;
+}
+
+.rtl .modal-footer {
+  flex-direction: row-reverse;
+}
+
+/* RTL-specific buttons with icons */
+.rtl .btn-with-icon {
+  flex-direction: row-reverse;
+}
+
+/* RTL-specific badges and labels */
+.rtl .badge {
+  direction: rtl;
+}
+
+/* RTL-specific tooltips */
+.rtl [data-tooltip] {
+  direction: rtl;
+}

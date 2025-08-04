@@ -7,8 +7,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-
-import { UserIcon, Mail, Calendar, Shield, LogOut, Trash2, Edit  } from "lucide-react";
+import { UserIcon, Mail, Calendar, Shield, LogOut, Trash2, Edit, CreditCard  } from "lucide-react";
 import Image from "next/image";
 import { ContainerService } from "@/lib/container.service";
 import { UserRepository } from "@/lib/domain/repositories/user.repository";
@@ -114,10 +113,10 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                    Osobní údaje
+                    {t('personalInformation')}
                   </h2>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Základní informace o vašem účtu
+                    {t('basicAccountInformation')}
                   </p>
                 </div>
               </div>
@@ -125,26 +124,44 @@ export default function ProfilePage() {
                 <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                   <Mail className="w-4 h-4 text-gray-500" />
                   <div className="flex-1">
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Email</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('email')}</p>
                     <p className="text-sm font-medium text-gray-900 dark:text-white">{user.email}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                   <UserIcon className="w-4 h-4 text-gray-500" />
                   <div className="flex-1">
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Jméno</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('name')}</p>
                     <p className="text-sm font-medium text-gray-900 dark:text-white">
-                      {user.fullName || 'Není nastaveno'}
+                      {user.fullName || t('notSet')}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                   <Calendar className="w-4 h-4 text-gray-500" />
                   <div className="flex-1">
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Člen od</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('memberSince')}</p>
                     <p className="text-sm font-medium text-gray-900 dark:text-white">
                       {new Date(user.createdAt).toLocaleDateString('cs-CZ')}
                     </p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg relative">
+                  <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 p-[1px]">
+                    <div className="h-full w-full bg-white/70 dark:bg-gray-800/70 rounded-lg"></div>
+                  </div>
+                  <div className="relative flex items-center justify-between gap-3 w-full">
+                    <CreditCard className="w-4 h-4 text-gray-500" />
+                    <div className="flex-1">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{t('accountPlan')}</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">Enterprise</p>
+                    </div>
+                    <button 
+                      disabled={true}
+                      className="disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-lg text-sm font-medium hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+                    >
+                      {t('change')}
+                    </button>
                   </div>
                 </div>
               </div>
@@ -158,24 +175,24 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                    Bezpečnost účtu
+                    {t('accountSecurity')}
                   </h2>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Nastavení zabezpečení účtu
+                    {t('accountSecurityDescription')}
                   </p>
                 </div>
               </div>
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                   <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">Změna hesla</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Aktualizujte své heslo</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">{t('changePassword')}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('changePasswordDescription')}</p>
                   </div>
                   <button 
                     onClick={() => setIsEditModalOpen(true)}
                     className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-lg text-sm font-medium hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
                   >
-                    Změnit
+                    {t('change')}
                   </button>
                 </div>
               </div>
@@ -185,26 +202,26 @@ export default function ProfilePage() {
           {/* Account Statistics */}
           <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl p-6 border border-white/20 dark:border-gray-700/50 shadow-xl mb-8">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-              Statistiky účtu
+              {t('accountStatistics')}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="text-center p-4 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-xl">
                 <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
                   {Math.floor((Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24))}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Dní v aplikaci</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">{t('daysInApplication')}</div>
               </div>
               <div className="text-center p-4 bg-gradient-to-br from-emerald-600/10 to-green-700/10 rounded-xl">
                 <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-                  {user.updatedAt ? 'Aktivní' : 'Nový'}
+                  {user.updatedAt ? t('active') : t('new')}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Status účtu</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">{t('accountStatus')}</div>
               </div>
               <div className="text-center p-4 bg-gradient-to-br from-orange-500/10 to-red-500/10 rounded-xl">
                 <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
                   {user.id.slice(0, 8)}...
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">ID uživatele</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">{t('userId')}</div>
               </div>
             </div>
           </div>

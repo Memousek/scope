@@ -5,6 +5,7 @@
  */
 import React, { useEffect, useState } from 'react';
 import { getCurrentLanguage, setCurrentLanguage, getLanguages } from '../../lib/translation';
+import { isRTL } from '@/lib/utils/rtlUtils';
 import Image from 'next/image';
 import { Button } from "@/components/ui/button";
 import {
@@ -14,7 +15,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Globe } from "lucide-react";
+import { Globe, Languages } from "lucide-react";
 
 const languages = getLanguages();
 
@@ -43,14 +44,23 @@ export const LanguageSwitcher: React.FC = () => {
 
   const ICON_SIZE = 16;
 
+  const currentLanguage = languages.find(l => l.code === lang);
+  const isCurrentRTL = currentLanguage ? isRTL(currentLanguage.code) : false;
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size={"sm"}>
+        <Button variant="ghost" size={"sm"} className="relative">
           <Globe
             size={ICON_SIZE}
             className={"text-muted-foreground"}
           />
+          {isCurrentRTL && (
+            <Languages
+              size={12}
+              className="absolute -top-1 -right-1 text-blue-500"
+            />
+          )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-content" align="start">
@@ -58,18 +68,33 @@ export const LanguageSwitcher: React.FC = () => {
           value={lang}
           onValueChange={(e) => setLang(e)}
         >
-          {languages.filter(lang => !lang.disabled).map((l) => (
-            <DropdownMenuRadioItem key={l.code} className="flex gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-200 hover:bg-gray-100 cursor-pointer" value={l.code}>
-              <Image 
-                src={`https://flagcdn.com/w20/${l.flag}.png`} 
-                alt={l.label} 
-                width={20} 
-                height={10} 
-                className="rounded-sm"
-              />
-              <span>{l.label}</span>
-            </DropdownMenuRadioItem>
-          ))}
+          {languages.filter(lang => !lang.disabled).map((l) => {
+            const isLanguageRTL = isRTL(l.code);
+            return (
+              <DropdownMenuRadioItem 
+                key={l.code} 
+                className="flex gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-200 hover:bg-gray-100 cursor-pointer" 
+                value={l.code}
+              >
+                <div className="flex items-center gap-2">
+                  <Image 
+                    src={`https://flagcdn.com/w20/${l.flag}.png`} 
+                    alt={l.label} 
+                    width={20} 
+                    height={10} 
+                    className="rounded-sm"
+                  />
+                  <span>{l.label}</span>
+                  {isLanguageRTL && (
+                    <Languages
+                      size={12}
+                      className="text-blue-500"
+                    />
+                  )}
+                </div>
+              </DropdownMenuRadioItem>
+            );
+          })}
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>

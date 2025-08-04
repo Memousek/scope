@@ -11,10 +11,11 @@ import { ContainerService } from "@/lib/container.service";
 import { UserRepository } from "@/lib/domain/repositories/user.repository";
 import { User } from "@/lib/domain/models/user.model";
 import { useTranslation } from "@/lib/translation";
-import { Settings, Palette, Globe, Sun, Moon, Monitor, Info, ChevronDown } from "lucide-react";
+import { Settings, Palette, Globe, Sun, Moon, Monitor, Info, ChevronDown, Key } from "lucide-react";
 import { getCurrentLanguage, setCurrentLanguage, getLanguages } from "@/lib/translation";
 import Image from "next/image";
 import { BuildInfoDisplay } from '../components/ui/BuildInfoDisplay';
+import { Badge } from "../components/ui/Badge";
 
 const languages = getLanguages();
 
@@ -27,6 +28,7 @@ export default function SettingsPage() {
   const { t } = useTranslation();
   const [showBuildInfo, setShowBuildInfo] = useState(false);
   const [showWorkInProgressLanguages, setShowWorkInProgressLanguages] = useState(false);
+  const [apiKey, setApiKey] = useState('');
   const themes = [
     { code: 'light', labelKey: 'lightMode', icon: Sun },
     { code: 'dark', labelKey: 'darkMode', icon: Moon },
@@ -71,6 +73,10 @@ export default function SettingsPage() {
     } else {
       document.documentElement.classList.toggle('dark', themeCode === 'dark');
     }
+  };
+
+  const handleApiKeyChange = (value: string) => {
+    setApiKey(value);
   };
 
   if (loading) {
@@ -164,47 +170,49 @@ export default function SettingsPage() {
                 </div>
               </div>
               <div className="space-y-3">
-                {languages.filter(lang => !lang.disabled).map((lang) => (
-                  <button
-                    key={lang.code}
-                    onClick={() => handleLanguageChange(lang.code)}
-                    className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ${currentLang === lang.code
-                        ? 'bg-gradient-to-r from-emerald-600 to-green-700 text-white shadow-lg'
-                        : 'bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600/50'
-                      }`}
-                  >
-                    <Image
-                      src={`https://flagcdn.com/w20/${lang.flag}.png`}
-                      alt={lang.label}
-                      width={20}
-                      height={15}
-                      className="rounded-sm"
-                    />
-                    <span className="font-medium">{lang.label}</span>
-                    {currentLang === lang.code && (
-                      <div className="ml-auto">
-                        <div className="w-2 h-2 bg-white rounded-full"></div>
-                      </div>
-                    )}
-                  </button>
-                ))}
+                <div className="grid grid-cols-2 gap-2">
+                  {languages.filter(lang => !lang.disabled).map((lang) => (
+                    <button
+                      key={lang.code}
+                      onClick={() => handleLanguageChange(lang.code)}
+                      className={`flex items-center gap-2 p-2 rounded-lg transition-all duration-200 ${currentLang === lang.code
+                          ? 'bg-gradient-to-r from-emerald-600 to-green-700 text-white shadow-lg'
+                          : 'bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600/50'
+                        }`}
+                    >
+                      <Image
+                        src={`https://flagcdn.com/w20/${lang.flag}.png`}
+                        alt={lang.label}
+                        width={16}
+                        height={12}
+                        className="rounded-sm"
+                      />
+                      <span className="text-sm font-medium truncate">{lang.label}</span>
+                      {currentLang === lang.code && (
+                        <div className="ml-auto">
+                          <div className="w-2 h-2 bg-white rounded-full"></div>
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
                 <div className="w-full text-center text-sm text-gray-600 dark:text-gray-400">
-                  <button className="w-full transition-all duration-200 bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-600/50 rounded-lg p-3 flex items-center justify-between text-sm text-gray-600 dark:text-white" onClick={() => setShowWorkInProgressLanguages(!showWorkInProgressLanguages)}>
+                  <button className="w-full transition-all duration-200 bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-600/50 rounded-lg p-2 flex items-center justify-between text-sm text-gray-600 dark:text-white" onClick={() => setShowWorkInProgressLanguages(!showWorkInProgressLanguages)}>
                     <p>{showWorkInProgressLanguages ? `${t('hide')} ${t('workInProgressLanguages')}` : `${t('show')} ${t('workInProgressLanguages')}`}</p>
                     <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showWorkInProgressLanguages ? 'rotate-180' : ''}`} />
                   </button>
                 </div>
-                <div className={`grid grid-cols-2 gap-3 ${showWorkInProgressLanguages ? 'opacity-100 block' : 'opacity-0 hidden'}`}>
+                <div className={`grid grid-cols-2 gap-2 ${showWorkInProgressLanguages ? 'opacity-100 block' : 'opacity-0 hidden'}`}>
                 {languages.filter(lang => lang.disabled).map((lang) => (
-                  <div key={lang.code} className="cursor-not-allowed flex items-center gap-3 p-3 rounded-lg transition-all duration-200 bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600/50">
+                  <div key={lang.code} className="cursor-not-allowed flex items-center gap-2 p-2 rounded-lg transition-all duration-200 bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600/50">
                      <Image
                       src={`https://flagcdn.com/w20/${lang.flag}.png`}
                       alt={lang.label}
-                      width={20}
-                      height={15}
+                      width={16}
+                      height={12}
                       className="rounded-sm"
                     />
-                    <p>{lang.label}</p>
+                    <p className="text-sm truncate">{lang.label}</p>
                   </div>
                 ))}
                 </div>
@@ -241,6 +249,37 @@ export default function SettingsPage() {
                 <p className="w-full text-center text-sm text-gray-600 dark:text-gray-400">
                     &copy; {new Date().getFullYear()} {process.env.NEXT_PUBLIC_COPYRIGHT}
                   </p>
+              </div>
+            </div>
+
+            {/* API Key */}
+            <div className="relative bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl p-6 border border-white/20 dark:border-gray-700/50 shadow-xl hover:shadow-2xl transition-all duration-300">
+                <Badge label={t("soon")} variant="soon"/>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-orange-500 rounded-lg flex items-center justify-center">
+                  <Key className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                    {t("apiKey")}
+                  </h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {t('apiKeyDescription')}
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <label htmlFor="apiKey" className="text-sm text-gray-600 dark:text-gray-400">
+                  {t('openaiApiKey')}
+                </label>
+                <input 
+                  id="apiKey" 
+                  type="text" 
+                  className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200" 
+                  placeholder={t('yourApiKey')} 
+                  value={apiKey}
+                  onChange={(e) => handleApiKeyChange(e.target.value)}
+                />
               </div>
             </div>
           </div>
