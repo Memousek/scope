@@ -129,7 +129,7 @@ export function Header({ user, loading }: HeaderProps) {
                 className="text-xl font-bold mb-8 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
                 onClick={() => setMobileOpen(false)}
               >
-                Scope Burndown
+                Scope Burndown 
               </Link>
               <div className="flex flex-col gap-4 flex-1">
                 {loading ? (
