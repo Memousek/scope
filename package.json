@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "scope-burndown",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "scripts": {
     "dev": "next dev",
     "build": "node scripts/generate-build-info.js && next build",
