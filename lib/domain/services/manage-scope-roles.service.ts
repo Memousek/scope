@@ -74,9 +74,21 @@ export class ManageScopeRolesService {
   /**
    * Inicializuje výchozí role pro scope
    */
-  async initializeDefaultRoles(scopeId: string): Promise<ScopeRole[]> {
-    const defaultRoles: CreateScopeRoleData[] = [
-      {
+  async initializeDefaultRoles(scopeId: string): Promise<{ roles: ScopeRole[], createdKeys: string[] }> {
+    // Kontrola, které výchozí role chybí
+    const existingRoles = await this.getScopeRoles(scopeId);
+    const defaultRoleKeys = ['fe', 'be', 'qa', 'pm', 'dpl'];
+    const existingDefaultKeys = existingRoles
+      .filter(role => defaultRoleKeys.includes(role.key))
+      .map(role => role.key);
+    const missingDefaultKeys = defaultRoleKeys.filter(key => !existingDefaultKeys.includes(key));
+
+    if (missingDefaultKeys.length === 0) {
+      throw new Error('Default roles have already been initialized');
+    }
+
+    const defaultRolesData: Record<string, CreateScopeRoleData> = {
+      fe: {
         scopeId,
         key: 'fe',
         label: 'FE',
@@ -85,7 +97,7 @@ export class ManageScopeRolesService {
         isActive: true,
         order: 1
       },
-      {
+      be: {
         scopeId,
         key: 'be',
         label: 'BE',
@@ -94,7 +106,7 @@ export class ManageScopeRolesService {
         isActive: true,
         order: 2
       },
-      {
+      qa: {
         scopeId,
         key: 'qa',
         label: 'QA',
@@ -103,7 +115,7 @@ export class ManageScopeRolesService {
         isActive: true,
         order: 3
       },
-      {
+      pm: {
         scopeId,
         key: 'pm',
         label: 'PM',
@@ -112,7 +124,7 @@ export class ManageScopeRolesService {
         isActive: true,
         order: 4
       },
-      {
+      dpl: {
         scopeId,
         key: 'dpl',
         label: 'DPL',
@@ -121,14 +133,15 @@ export class ManageScopeRolesService {
         isActive: true,
         order: 5
       }
-    ];
+    };
 
     const createdRoles: ScopeRole[] = [];
-    for (const roleData of defaultRoles) {
+    for (const missingKey of missingDefaultKeys) {
+      const roleData = defaultRolesData[missingKey];
       const role = await this.scopeRoleRepository.create(roleData);
       createdRoles.push(role);
     }
 
-    return createdRoles;
+    return { roles: createdRoles, createdKeys: missingDefaultKeys };
   }
 } 

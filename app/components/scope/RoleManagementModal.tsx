@@ -22,7 +22,7 @@ export const RoleManagementModal: React.FC<RoleManagementModalProps> = ({
   scopeId
 }) => {
   const { t } = useTranslation();
-  const { roles, createRole, updateRole, deleteRole, initializeDefaultRoles, loading } = useScopeRoles(scopeId);
+  const { roles, createRole, updateRole, deleteRole, initializeDefaultRoles, loading, error } = useScopeRoles(scopeId);
   
   const [editingRole, setEditingRole] = useState<ScopeRole | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -107,11 +107,23 @@ export const RoleManagementModal: React.FC<RoleManagementModalProps> = ({
     if (!confirm(t('confirmInitializeDefaults'))) return;
 
     try {
-      await initializeDefaultRoles();
+      const result = await initializeDefaultRoles();
+      if (result && result.createdKeys && result.createdKeys.length > 0) {
+        const createdRolesText = result.createdKeys.join(', ').toUpperCase();
+        alert(`${t('rolesCreatedSuccessfully')}: ${createdRolesText}`);
+      }
     } catch (error) {
       console.error('Failed to initialize defaults:', error);
     }
   };
+
+  // Kontrola, zda už byly výchozí role inicializovány
+  const defaultRoleKeys = ['fe', 'be', 'qa', 'pm', 'dpl'];
+  const existingDefaultKeys = roles
+    .filter(role => defaultRoleKeys.includes(role.key))
+    .map(role => role.key);
+  const hasAllDefaultRoles = defaultRoleKeys.every(key => existingDefaultKeys.includes(key));
+  const missingDefaultRoles = defaultRoleKeys.filter(key => !existingDefaultKeys.includes(key));
 
   return (
     <Modal
@@ -128,12 +140,52 @@ export const RoleManagementModal: React.FC<RoleManagementModalProps> = ({
           </h3>
           <button
             onClick={handleInitializeDefaults}
-            disabled={loading}
-            className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all duration-200 disabled:opacity-50"
+            disabled={loading || hasAllDefaultRoles}
+            className={`px-4 py-2 rounded-lg transition-all duration-200 ${
+              hasAllDefaultRoles 
+                ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
+                : 'bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-600 hover:to-purple-600'
+            } disabled:opacity-50`}
+            title={hasAllDefaultRoles ? t('defaultRolesAlreadyInitialized') : ''}
           >
-            {t('initializeDefaults')}
+            {hasAllDefaultRoles 
+              ? t('defaultRolesAlreadyInitialized') 
+              : missingDefaultRoles.length > 0 && missingDefaultRoles.length < 5
+                ? t('initializeMissingRoles')
+                : t('initializeDefaults')
+            }
           </button>
         </div>
+
+        {/* Show missing roles info */}
+        {missingDefaultRoles.length > 0 && missingDefaultRoles.length < 5 && (
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+            <div className="flex items-center gap-2 text-blue-800 dark:text-blue-300">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-sm">
+                {t('missingRoles')}: {missingDefaultRoles.join(', ').toUpperCase()}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Error message */}
+        {error && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+            <div className="flex items-center gap-2 text-red-800 dark:text-red-300">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-sm font-medium">
+                {error === 'Default roles have already been initialized' 
+                  ? t('defaultRolesAlreadyInitialized') 
+                  : error}
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Create new role button */}
         <button

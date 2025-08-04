@@ -143,15 +143,16 @@ export function useScopeRoles(scopeId: string) {
     
     try {
       const manageRolesService = ContainerService.getInstance().get(ManageScopeRolesService);
-      const defaultRoles = await manageRolesService.initializeDefaultRoles(scopeId);
+      const result = await manageRolesService.initializeDefaultRoles(scopeId);
       
-      setRoles(defaultRoles);
-      setActiveRoles(defaultRoles.filter(role => role.isActive));
+      setRoles(prev => [...prev, ...result.roles]);
+      setActiveRoles(prev => [...prev, ...result.roles.filter(role => role.isActive)]);
       setLastUpdate(Date.now());
       
-      return defaultRoles;
+      return result;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to initialize default roles');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to initialize default roles';
+      setError(errorMessage);
       throw err;
     } finally {
       setLoading(false);
