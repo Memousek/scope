@@ -67,6 +67,7 @@ export const LanguageSwitcher: React.FC = () => {
         <DropdownMenuRadioGroup
           value={lang}
           onValueChange={(e) => setLang(e)}
+          className="overflow-y-auto max-h-[250px]"
         >
           {languages.filter(lang => !lang.disabled).map((l) => {
             const isLanguageRTL = isRTL(l.code);

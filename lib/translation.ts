@@ -34,19 +34,32 @@ export function getLanguages() {
   return [
     { code: 'cs', label: 'Čeština', flag: 'cz' },
     { code: 'en', label: 'English', flag: 'gb' },
-    { code: 'ru', label: 'Русский', flag: 'ru' },
-    { code: 'de', label: 'Deutsch', flag: 'de', disabled: true },
-    { code: 'fr', label: 'Français', flag: 'fr', disabled: true },
-    { code: 'es', label: 'Español', flag: 'es', disabled: true },
-    { code: 'pt', label: 'Português', flag: 'pt', disabled: true },
-    { code: 'it', label: 'Italiano', flag: 'it', disabled: true },
-    { code: 'pl', label: 'Polski', flag: 'pl', disabled: true },
+
+    // Střední Evropa
     { code: 'sk', label: 'Slovenčina', flag: 'sk' },
-    { code: 'hu', label: 'Magyar', flag: 'hu', disabled: true },
+    { code: 'pl', label: 'Polski', flag: 'pl'},
+    { code: 'hu', label: 'Magyar', flag: 'hu'},
+    
+    // Východní Evropa
+    { code: 'ua', label: 'Українська', flag: 'ua' },
+    { code: 'ru', label: 'Русский', flag: 'ru' },
+    
+    // Západní Evropa
+    { code: 'de', label: 'Deutsch', flag: 'de' },
+    { code: 'fr', label: 'Français', flag: 'fr' },
+    { code: 'es', label: 'Español', flag: 'es' },
+    { code: 'pt', label: 'Português', flag: 'pt' },
+    { code: 'it', label: 'Italiano', flag: 'it' },
+    
+    // Blízký východ
+    { code: 'tr', label: 'Türkçe', flag: 'tr' },
+    { code: 'ar', label: 'العربية', flag: 'ae' },
+    
+    // Asie
     { code: 'jp', label: '日本語', flag: 'jp'},
-    { code: 'kr', label: '한국어', flag: 'kr', disabled: true },
-    { code: 'ch', label: '中文', flag: 'cn', disabled: true },
-    { code: 'ar', label: 'العربية', flag: 'ae' }
+    { code: 'kr', label: '한국어', flag: 'kr'},
+    { code: 'ch', label: '中文', flag: 'cn'}
+    
   ]
 }
 

@@ -170,7 +170,7 @@ export default function SettingsPage() {
                 </div>
               </div>
               <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   {languages.filter(lang => !lang.disabled).map((lang) => (
                     <button
                       key={lang.code}
@@ -195,26 +195,6 @@ export default function SettingsPage() {
                       )}
                     </button>
                   ))}
-                </div>
-                <div className="w-full text-center text-sm text-gray-600 dark:text-gray-400">
-                  <button className="w-full transition-all duration-200 bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-600/50 rounded-lg p-2 flex items-center justify-between text-sm text-gray-600 dark:text-white" onClick={() => setShowWorkInProgressLanguages(!showWorkInProgressLanguages)}>
-                    <p>{showWorkInProgressLanguages ? `${t('hide')} ${t('workInProgressLanguages')}` : `${t('show')} ${t('workInProgressLanguages')}`}</p>
-                    <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showWorkInProgressLanguages ? 'rotate-180' : ''}`} />
-                  </button>
-                </div>
-                <div className={`grid grid-cols-2 gap-2 ${showWorkInProgressLanguages ? 'opacity-100 block' : 'opacity-0 hidden'}`}>
-                {languages.filter(lang => lang.disabled).map((lang) => (
-                  <div key={lang.code} className="cursor-not-allowed flex items-center gap-2 p-2 rounded-lg transition-all duration-200 bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600/50">
-                     <Image
-                      src={`https://flagcdn.com/w20/${lang.flag}.png`}
-                      alt={lang.label}
-                      width={16}
-                      height={12}
-                      className="rounded-sm"
-                    />
-                    <p className="text-sm truncate">{lang.label}</p>
-                  </div>
-                ))}
                 </div>
               </div>
             </div>

@@ -7,6 +7,7 @@
     "build": "node scripts/generate-build-info.js && next build",
     "start": "next start",
     "lint": "next lint",
+    "translate": "node scripts/translate.js",
     "version:patch": "npm version patch && npm run build",
     "version:minor": "npm version minor && npm run build",
     "version:major": "npm version major && npm run build"
