@@ -1,3 +1,22 @@
+/**
+ * User model representing a user in the application
+ * Contains user profile information, authentication data, and preferences
+ */
+
+export interface UserMetadata {
+  name?: string;
+  [key: string]: unknown;
+}
+
+export interface UserSettings {
+  theme?: 'light' | 'dark' | 'system';
+  notifications?: { 
+    email?: boolean;
+    push?: boolean;
+  };
+  [key: string]: unknown;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -16,7 +35,6 @@ export interface User {
   isVerified?: boolean;
   status?: string;
   
-  // eslint-disable-next-line
-  settings?: Record<string, any> | null;
-  additional: Record<string, any>;
+  settings?: UserSettings | null;
+  additional: UserMetadata;
 }
