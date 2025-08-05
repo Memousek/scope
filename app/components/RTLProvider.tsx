@@ -15,7 +15,6 @@ interface RTLProviderProps {
 
 export function RTLProvider({ children }: RTLProviderProps) {
   const [currentLang, setCurrentLang] = useState<string>('cs');
-  const [isHydrated, setIsHydrated] = useState(false);
   const { isLoading } = useTranslation();
 
   useEffect(() => {
@@ -35,9 +34,6 @@ export function RTLProvider({ children }: RTLProviderProps) {
     } else {
       document.body.classList.remove('rtl');
     }
-
-    // Mark as hydrated after initial setup
-    setIsHydrated(true);
   }, []);
 
   // Listen for language changes
