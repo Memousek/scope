@@ -8,7 +8,7 @@
 
 import React, { useState, useEffect } from "react";
 import {AnimatePresence, motion} from "framer-motion";
-import { useTranslation } from "@/lib/translation";
+import {useTranslation } from "../../../lib/translation";
 import {Scope, ScopeType} from "@/lib/domain/models/scope.model";
 import {User} from "@/lib/domain/models/user.model";
 import {ScopeRepository} from "@/lib/domain/repositories/scope.repository";
@@ -164,7 +164,7 @@ export const ScopeList: React.FC<ScopeListProps> = ({
                         <h2 className="text-lg sm:text-xl font-bold mb-2 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent truncate">
                           {scopeItem.scope.name}
                         </h2>
-                        <div className="flex flex-col sm:items-center gap-2">
+                        <div className="flex flex-col sm:items-center md:items-start gap-2">
                           <span className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-semibold shadow-lg ${
                             scopeItem.type === ScopeType.OWNED 
                               ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white'
