@@ -208,15 +208,15 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
 
         {/* Generated Link Section */}
         {selectedLinkType !== 'default' && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
+          <div className="space-y-3 relative">
               {linkLoading && (
+            <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
                   {t('generating')}
                 </div>
-              )}
             </div>
+            )}
             
             {currentLink ? (
               <div className="flex gap-2">
