@@ -174,7 +174,7 @@ export default function SettingsPage() {
                 </div>
               </div>
               <div className="mb-2">
-                <label htmlFor="searchLanguage-input" id="searchLanguage-label" className="text-sm text-gray-600 dark:text-gray-400 absolute -top-99999 h-0 text-transparent -z-10  opacity-0">{t('searchLanguage')}</label>
+                <label htmlFor="searchLanguage-input" id="searchLanguage-label" className="sr-only">{t('searchLanguage')}</label>
                 <input type="search" id="searchLanguage-input" placeholder={t('searchLanguage')} onChange={(e) => handleLanguageSearch(e.target.value)} className="w-full mt-0 h-10 bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200" />
               </div>
               <div className="space-y-3">
