@@ -15,8 +15,8 @@ export interface User {
   language?: string;
   isVerified?: boolean;
   status?: string;
-  settings?: Record<string, any> | null;
-
+  
   // eslint-disable-next-line
+  settings?: Record<string, any> | null;
   additional: Record<string, any>;
 }
