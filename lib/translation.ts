@@ -3,8 +3,9 @@
 /**
  * Translation helper and React hook for multilanguage support.
  * Loads translation JSONs and provides t(key) for UI components.
+ * Optimized to prevent unnecessary loading states during hydration.
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
 const translations: Record<string, Record<string, string>> = {};
 
@@ -66,22 +67,38 @@ export function getLanguages() {
 export function useTranslation() {
   const [lang] = useState(getCurrentLanguage());
   const [dict, setDict] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false); // Start as false to prevent initial loading state
 
   useEffect(() => {
-    loadTranslations(lang).then(setDict);
-  }, [lang]);
-
-  function t(key: string, params?: Record<string, string | number>): string {
-    let text = dict[key] || key;
-    
-    if (params) {
-      Object.entries(params).forEach(([param, value]) => {
-        text = text.replace(new RegExp(`{${param}}`, 'g'), String(value));
-      });
+    // Only set loading to true if we don't have translations yet
+    if (!translations[lang]) {
+      setIsLoading(true);
     }
     
-    return text;
-  }
+    loadTranslations(lang).then((translations) => {
+      setDict(translations);
+      setIsLoading(false);
+    }).catch(() => {
+      // Fallback to empty dict if loading fails
+      setDict({});
+      setIsLoading(false);
+    });
+  }, [lang]);
 
-  return { t, lang, setLang: setCurrentLanguage };
+  // Memoize the translation function to prevent unnecessary re-renders
+  const t = useMemo(() => {
+    return (key: string, params?: Record<string, string | number>): string => {
+      let text = dict[key] || key;
+      
+      if (params) {
+        Object.entries(params).forEach(([param, value]) => {
+          text = text.replace(new RegExp(`{${param}}`, 'g'), String(value));
+        });
+      }
+      
+      return text;
+    };
+  }, [dict]);
+
+  return { t, lang, setLang: setCurrentLanguage, isLoading };
 } 

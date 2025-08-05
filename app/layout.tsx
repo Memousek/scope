@@ -83,7 +83,7 @@ export default function RootLayout({
   });
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="cs" suppressHydrationWarning>
       <head>
         <SchemaOrgScript data={organizationSchema} id="organization-schema" />
         <SchemaOrgScript data={webApplicationSchema} id="webapp-schema" />

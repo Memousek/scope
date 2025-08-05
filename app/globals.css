@@ -99,6 +99,30 @@
   text-align: right;
 }
 
+/* Prevent layout shift and flickering during hydration */
+html {
+  /* Prevent layout shift during hydration */
+  scroll-behavior: smooth;
+}
+
+body {
+  /* Prevent flash of unstyled content */
+  opacity: 1;
+  transition: opacity 0.1s ease-in-out;
+}
+
+/* Smooth transitions for RTL changes */
+[dir="rtl"], [dir="ltr"] {
+  transition: all 0.1s ease-in-out;
+}
+
+/* Prevent content flash during language loading */
+.rtl-provider {
+  min-height: 100vh;
+  opacity: 1;
+  transition: opacity 0.1s ease-in-out;
+}
+
 /* RTL-specific animations */
 .rtl .animate-slide-in-left {
   animation: slide-in-right 0.3s cubic-bezier(0.4,0,0.2,1) both;
