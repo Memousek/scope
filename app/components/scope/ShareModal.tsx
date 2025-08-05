@@ -132,17 +132,12 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
     }
   }, [selectedLinkType, generateShareLink]);
 
-  // Nastav výchozí typ odkazu podle role uživatele
+  // Nastav výchozí typ odkazu
   useEffect(() => {
     if (isOpen) {
-      if (isEditor && !isOwner) {
-        // Editor může sdílet pouze v view módu
-        setSelectedLinkType('view');
-      } else {
-        setSelectedLinkType('default');
-      }
+      setSelectedLinkType('default');
     }
-  }, [isOpen, isEditor, isOwner]);
+  }, [isOpen]);
 
   // Refresh editorů po vytvoření nového odkazu
   useEffect(() => {
@@ -174,25 +169,23 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
             <h3 className="font-semibold text-gray-900 dark:text-white">{t('share_link_type')}</h3>
           </div>
           
-          <div className={`grid gap-3 ${isOwner ? 'grid-cols-2' : 'grid-cols-1'}`}>
-            {isOwner && (
-              <button
-                onClick={() => setSelectedLinkType('accept')}
-                className={`p-4 rounded-xl border-2 transition-all duration-200 ${
-                  selectedLinkType === 'accept'
-                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                    : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <FiEdit size={20} />
-                  <div className="text-left">
-                    <div className="font-semibold">{t('share_link_edit')}</div>
-                    <div className="text-sm opacity-75">{t('fullAccess')}</div>
-                  </div>
+          <div className="grid gap-3 grid-cols-2">
+            <button
+              onClick={() => setSelectedLinkType('accept')}
+              className={`p-4 rounded-xl border-2 transition-all duration-200 ${
+                selectedLinkType === 'accept'
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                  : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <FiEdit size={20} />
+                <div className="text-left">
+                  <div className="font-semibold">{t('share_link_edit')}</div>
+                  <div className="text-sm opacity-75">{t('fullAccess')}</div>
                 </div>
-              </button>
-            )}
+              </div>
+            </button>
             
             <button
               onClick={() => setSelectedLinkType('view')}
