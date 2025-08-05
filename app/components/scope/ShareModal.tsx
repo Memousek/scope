@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { FiCopy, FiMail, FiUsers, FiLink, FiEdit, FiEye, FiPlus, FiTrash2 } from 'react-icons/fi';
-import { useTranslation } from '@/lib/translation';
+import { useTranslation } from '../../../lib/translation';
 import { ContainerService } from '@/lib/container.service';
 import { GetScopeEditorsWithUsersService, ScopeEditorWithUser } from '@/lib/domain/services/get-scope-editors-with-users.service';
 import { ScopeEditorService } from '@/app/services/scopeEditorService';
@@ -25,7 +25,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
   const [editorsLoading, setEditorsLoading] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteError, setInviteError] = useState('');
-  const [selectedLinkType, setSelectedLinkType] = useState<'default' | 'edit' | 'view'>('default');
+  const [selectedLinkType, setSelectedLinkType] = useState<'default' | 'accept' | 'view'>('default');
   const [copiedLink, setCopiedLink] = useState(false);
   const [currentLink, setCurrentLink] = useState<string>('');
   const [linkLoading, setLinkLoading] = useState(false);
@@ -102,7 +102,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
     try {
       const token = await ScopeEditorService.createInviteLink({ scopeId });
       const baseUrl = window.location.origin;
-      const shareUrl = `${baseUrl}/scopes/${scopeId}/${selectedLinkType === 'edit' ? 'edit' : 'view'}?token=${token}`;
+      const shareUrl = `${baseUrl}/scopes/${scopeId}/${selectedLinkType === 'accept' ? 'accept' : 'view'}?token=${token}`;
       setCurrentLink(shareUrl);
     } catch (error) {
       console.error('Chyba při generování odkazu:', error);
@@ -177,9 +177,9 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
           <div className={`grid gap-3 ${isOwner ? 'grid-cols-2' : 'grid-cols-1'}`}>
             {isOwner && (
               <button
-                onClick={() => setSelectedLinkType('edit')}
+                onClick={() => setSelectedLinkType('accept')}
                 className={`p-4 rounded-xl border-2 transition-all duration-200 ${
-                  selectedLinkType === 'edit'
+                  selectedLinkType === 'accept'
                     ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
                     : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
                 }`}
@@ -217,7 +217,6 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
         {selectedLinkType !== 'default' && (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-gray-900 dark:text-white">{t('generated_link')}</h3>
               {linkLoading && (
                 <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
