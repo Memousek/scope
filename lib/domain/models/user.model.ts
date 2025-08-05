@@ -7,6 +7,15 @@ export interface User {
   updatedAt: Date;
   emailConfirmedAt?: Date | null;
   invitedAt?: Date | null;
+  openApiKey?: string | null;
+  bio?: string | null;
+  timezone?: string | null;
+  username?: string | null;
+  role?: string;
+  language?: string;
+  isVerified?: boolean;
+  status?: string;
+  settings?: Record<string, any> | null;
 
   // eslint-disable-next-line
   additional: Record<string, any>;
