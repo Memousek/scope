@@ -6,8 +6,8 @@
  * Optimized to prevent page flickering during hydration
  */
 import { useEffect, useState } from 'react';
-import { getCurrentLanguage, useTranslation } from '../../lib/translation';
-import { getTextDirection, getRTLClasses } from '../../lib/utils/rtlUtils';
+import { getCurrentLanguage, useTranslation } from '@/lib/translation';
+import { getTextDirection, getRTLClasses } from '@/lib/utils/rtlUtils';
 
 interface RTLProviderProps {
   children: React.ReactNode;

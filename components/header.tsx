@@ -7,7 +7,7 @@
  */
 import Link from "next/link";
 import { AuthButton } from "./auth-button";
-import { useTranslation } from "../lib/translation";
+import { useTranslation } from "@/lib/translation";
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import {

@@ -4,7 +4,7 @@
  * Uses dropdown format similar to ThemeSwitcher.
  */
 import React, { useEffect, useState } from 'react';
-import { getCurrentLanguage, setCurrentLanguage, getLanguages } from '../../lib/translation';
+import { getCurrentLanguage, setCurrentLanguage, getLanguages } from '@/lib/translation';
 import { isRTL } from '@/lib/utils/rtlUtils';
 import Image from 'next/image';
 import { Button } from "@/components/ui/button";

@@ -8,7 +8,7 @@
 
 import React, { useState, useEffect } from "react";
 import {AnimatePresence, motion} from "framer-motion";
-import {useTranslation } from "../../../lib/translation";
+import { useTranslation } from '@/lib/translation';
 import {Scope, ScopeType} from "@/lib/domain/models/scope.model";
 import {User} from "@/lib/domain/models/user.model";
 import {ScopeRepository} from "@/lib/domain/repositories/scope.repository";

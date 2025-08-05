@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { FiCopy, FiMail, FiUsers, FiLink, FiEdit, FiEye, FiPlus, FiTrash2 } from 'react-icons/fi';
-import { useTranslation } from '../../../lib/translation';
+import { useTranslation } from '@/lib/translation';
 import { ContainerService } from '@/lib/container.service';
 import { GetScopeEditorsWithUsersService, ScopeEditorWithUser } from '@/lib/domain/services/get-scope-editors-with-users.service';
 import { ScopeEditorService } from '@/app/services/scopeEditorService';
