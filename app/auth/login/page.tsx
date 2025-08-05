@@ -20,7 +20,7 @@ export default function Page() {
   }, [router]);
 
   return (
-    <div className="flex items-center justify-center p-6 min-h-screen">
+    <div className="flex items-center justify-center p-6 min-h-[90vh]">
       {/* Subtle background decorative elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-400/10 to-indigo-400/10 rounded-full blur-3xl"></div>

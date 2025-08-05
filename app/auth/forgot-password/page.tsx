@@ -6,7 +6,7 @@ export default function Page() {
   const { t } = useTranslation();
 
   return (
-    <div className="flex items-center justify-center p-6 min-h-screen">
+    <div className="flex items-center justify-center p-6 min-h-[90vh]">
       {/* Background decorative elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-orange-400/20 to-red-400/20 rounded-full blur-3xl"></div>
