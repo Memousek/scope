@@ -682,7 +682,7 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                       {/* Priority Group Header */}
                       <div className="flex items-center gap-3 mb-4">
                         <div className="flex items-center gap-2">
-                          <h3 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                          <h3 className="text-lg font-bold">
                             {t('priority')} {(projectsInGroup[0]?.displayPriority as number) || priority}
                           </h3>
                         </div>
@@ -770,9 +770,6 @@ export function ProjectSection({ scopeId, readOnlyMode = false }: ProjectSection
                                       <h4 className="text-xl font-bold text-gray-900 dark:text-gray-100">
                                         {project.name}
                                       </h4>
-                                      <span className={`bg-gradient-to-r ${getPriorityColor(priority)} text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg`}>
-                                        {t('priority')} {((project as { displayPriority?: number }).displayPriority as number) || project.priority}
-                                      </span>
                                       {project.status && (
                                         <ProjectStatusBadge status={project.status as ProjectStatus} />
                                       )}
