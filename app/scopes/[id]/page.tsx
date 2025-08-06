@@ -383,20 +383,7 @@ export default function ScopePage({
       checkOwnership();
       checkEditorStatus();
     }
-  }, [
-    loading,
-    user,
-    id,
-    fetchScope,
-    fetchTeam,
-    fetchProjects,
-    fetchProjectAssignments,
-    fetchWorkflowDependencies,
-    fetchStats,
-    fetchAverageSlip,
-    checkOwnership,
-    checkEditorStatus,
-  ]);
+  }, [loading, user, id]); // Remove function dependencies to prevent infinite loops
 
   // Redirect pokud není přihlášen
   useEffect(() => {

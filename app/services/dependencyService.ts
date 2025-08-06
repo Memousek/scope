@@ -36,18 +36,15 @@ export class DependencyService {
    * Get project dependencies with team assignments
    */
   static async getProjectDependencies(projectId: string): Promise<ProjectDependencyData> {
-    // Get role dependencies
+    // Get role dependencies - don't use .single() to avoid 406 errors
     const { data: dependencies, error: depsError } = await this.supabase
       .from('project_role_dependencies')
       .select('*')
       .eq('project_id', projectId)
-      .single();
+      .maybeSingle(); // Use maybeSingle() instead of single() to handle no records gracefully
 
-    if (depsError && depsError.code !== 'PGRST116') {
-      // Only log non-404/406 errors (table doesn't exist or no rows)
-      if (depsError.code !== 'PGRST116' && depsError.code !== '406') {
-        console.error('Error fetching dependencies:', depsError);
-      }
+    if (depsError) {
+      console.error('Error fetching dependencies:', depsError);
     }
     
     // Get team assignments
@@ -118,41 +115,62 @@ export class DependencyService {
     } else {
       // Default dependencies for FE-First
       dependencies_list = [
-        { from: 'PM', to: 'FE', type: 'blocking', description: 'PM definuje požadavky pro FE' },
-        { from: 'FE', to: 'BE', type: 'waiting', description: 'FE čeká na BE API' },
-        { from: 'BE', to: 'QA', type: 'blocking', description: 'QA nemůže testovat bez BE' },
-        { from: 'FE', to: 'QA', type: 'waiting', description: 'QA testuje FE po dokončení' }
+        {
+          from: 'FE',
+          to: 'BE',
+          type: 'waiting',
+          description: 'FE čeká na BE API'
+        },
+        {
+          from: 'BE',
+          to: 'QA',
+          type: 'blocking',
+          description: 'QA nemůže testovat bez BE'
+        }
       ];
     }
 
-    // Convert team assignments to active workers with proper status mapping
-    const active_workers: ActiveWorker[] = (teamAssignments || []).map(assignment => {
-      // Try to get status from worker_states if available, otherwise use current_active_roles
-      let status: 'active' | 'waiting' | 'blocked' = 'waiting';
-      
-      if (dependencies?.worker_states) {
-        // If we have worker_states, use them
-        const workerState = dependencies.worker_states.find((ws: { role: string; status: string }) => 
-          ws.role.toLowerCase() === assignment.role.toLowerCase()
-        );
-        if (workerState) {
-          status = workerState.status;
+    // Convert team assignments to active workers format
+    const active_workers: ActiveWorker[] = [];
+    if (teamAssignments) {
+      for (const assignment of teamAssignments) {
+        const teamMember = assignment.team_members;
+        if (teamMember) {
+          // Determine status based on dependencies and workflow
+          let status: 'active' | 'waiting' | 'blocked' = 'waiting';
+          
+          if (dependencies) {
+            // Check if this role is in current_active_roles
+            const isActive = dependencies.current_active_roles?.includes(assignment.role.toLowerCase());
+            if (isActive) {
+              status = 'active';
+            } else {
+              // Check worker_states for more detailed status
+              const workerState = dependencies.worker_states?.find(
+                (ws: any) => ws.role === assignment.role && ws.team_member_id === assignment.team_member_id
+              );
+              if (workerState) {
+                status = workerState.status;
+              }
+            }
+          } else {
+            // Default: first role is active, others are waiting
+            if (active_workers.length === 0) {
+              status = 'active';
+            }
+          }
+
+          active_workers.push({
+            role: assignment.role,
+            name: teamMember.name,
+            avatar: '', // No avatar in current data
+            status,
+            team_member_id: assignment.team_member_id,
+            allocation_fte: assignment.allocation_fte
+          });
         }
-      } else if (dependencies?.current_active_roles) {
-        // Fallback to current_active_roles (legacy)
-        const isActive = dependencies.current_active_roles.includes(assignment.role.toLowerCase());
-        status = isActive ? 'active' : 'waiting';
       }
-      
-      return {
-        role: assignment.role,
-        name: `${assignment.role} tým (${assignment.team_members?.name || assignment.team_member_id})`,
-        avatar: 'users',
-        status,
-        team_member_id: assignment.team_member_id,
-        allocation_fte: assignment.allocation_fte
-      };
-    });
+    }
 
     return {
       workflow_type,

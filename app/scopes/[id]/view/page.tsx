@@ -295,18 +295,7 @@ export default function ScopePage({
     if (!loading && user) {
       checkOwnership();
     }
-  }, [
-    loading,
-    fetchScope,
-    fetchTeam,
-    fetchProjects,
-    fetchProjectAssignments,
-    fetchWorkflowDependencies,
-    fetchStats,
-    fetchAverageSlip,
-    checkOwnership,
-    user,
-  ]);
+  }, [loading, user, id]); // Remove function dependencies to prevent infinite loops
 
   // Nepřihlášení uživatelé mohou vidět stránku v read-only módu
 
