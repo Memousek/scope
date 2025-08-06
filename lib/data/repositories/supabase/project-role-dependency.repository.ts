@@ -26,7 +26,7 @@ export class SupabaseProjectRoleDependencyRepository implements ProjectRoleDepen
       .from('project_role_dependencies')
       .select('*')
       .eq('project_id', projectId)
-      .single();
+      .maybeSingle();
 
     if (error || !data) {
       return null;

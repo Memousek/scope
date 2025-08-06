@@ -147,7 +147,7 @@ export class DependencyService {
             } else {
               // Check worker_states for more detailed status
               const workerState = dependencies.worker_states?.find(
-                (ws: any) => ws.role === assignment.role && ws.team_member_id === assignment.team_member_id
+                (ws: { role: string; status: string; team_member_id?: string }) => ws.role === assignment.role && ws.team_member_id === assignment.team_member_id
               );
               if (workerState) {
                 status = workerState.status;
@@ -208,7 +208,7 @@ export class DependencyService {
       .from('project_role_dependencies')
       .select('id')
       .eq('project_id', data.projectId)
-      .single();
+      .maybeSingle();
 
     if (existingDeps) {
       // Update existing dependencies
@@ -226,7 +226,7 @@ export class DependencyService {
         })
         .eq('id', existingDeps.id)
         .select()
-        .single();
+        .maybeSingle();
 
       if (updateError) {
         throw new Error(`Failed to update project role dependency: ${updateError.message}`);
@@ -248,7 +248,7 @@ export class DependencyService {
           worker_states
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (createError) {
         throw new Error(`Failed to create project role dependency: ${createError.message}`);

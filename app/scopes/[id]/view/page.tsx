@@ -7,7 +7,7 @@
  * - Příprava na napojení na Supabase
  */
 
-import { useEffect, useState, use, useCallback } from "react";
+import { useEffect, useState, use, useCallback, useRef } from "react";
 
 import { ModernScopeLayout } from "@/app/components/scope/ModernScopeLayout";
 import { TeamMember, Project } from "@/app/components/scope/types";
@@ -280,9 +280,46 @@ export default function ScopePage({
     }
   }, [userId, id]);
 
+  // Store functions in refs to prevent infinite loops
+  const fetchFunctionsRef = useRef({
+    fetchScope,
+    fetchTeam,
+    fetchProjects,
+    fetchProjectAssignments,
+    fetchWorkflowDependencies,
+    fetchStats,
+    fetchAverageSlip,
+    checkOwnership
+  });
+
+  // Update refs when functions change
+  useEffect(() => {
+    fetchFunctionsRef.current = {
+      fetchScope,
+      fetchTeam,
+      fetchProjects,
+      fetchProjectAssignments,
+      fetchWorkflowDependencies,
+      fetchStats,
+      fetchAverageSlip,
+      checkOwnership
+    };
+  });
+
   // Načítání dat při mount
   useEffect(() => {
     // Data načítáme vždy, bez ohledu na přihlášení
+    const {
+      fetchScope,
+      fetchTeam,
+      fetchProjects,
+      fetchProjectAssignments,
+      fetchWorkflowDependencies,
+      fetchStats,
+      fetchAverageSlip,
+      checkOwnership
+    } = fetchFunctionsRef.current;
+    
     fetchScope();
     fetchTeam();
     fetchProjects();
@@ -295,7 +332,7 @@ export default function ScopePage({
     if (!loading && user) {
       checkOwnership();
     }
-  }, [loading, user, id]); // Remove function dependencies to prevent infinite loops
+  }, [loading, user, id]);
 
   // Nepřihlášení uživatelé mohou vidět stránku v read-only módu
 
