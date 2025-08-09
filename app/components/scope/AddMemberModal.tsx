@@ -70,17 +70,24 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
         <div>
           <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">{t('role')}</label>
           <select
-            className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
-            value={newMember.role}
+            className={`${
+              activeRoles.length === 0 ? 'opacity-50 cursor-not-allowed text-red-400 dark:text-red-400' : ''
+            } w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200`}
+            value={activeRoles.length > 0 ? newMember.role : t('noActiveRolesAddRolesInRoleSettings')}
             onChange={e => setNewMember(m => ({ ...m, role: e.target.value }))}
-            disabled={savingMember}
+            disabled={activeRoles.length === 0 || savingMember}
           >
             {activeRoles.map(role => (
               <option key={role.key} value={role.label}>{role.label}</option>
             ))}
+            {activeRoles.length === 0 && (
+              <option disabled defaultChecked>{t('noActiveRolesAddRolesInRoleSettings')}</option>
+            )}
           </select>
         </div>
+
         
+
         {/* FTE */}
         <div>
           <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">{t('fte')}</label>
@@ -109,7 +116,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
           </button>
           <button
             type="submit"
-            disabled={savingMember || !newMember.name.trim()}
+            disabled={activeRoles.length === 0 || savingMember || !newMember.name.trim()}
             className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-xl transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
           >
             {savingMember ? t('adding') : t('addMember')}

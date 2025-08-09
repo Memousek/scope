@@ -71,9 +71,11 @@ export class DependencyService {
 
     if (dependencies) {
       // Determine workflow type based on existing dependencies
-      if (dependencies.parallel_mode) {
+      if (dependencies.performance_qa_mode === true) {
+        workflow_type = 'BE-FE-QA-PerformanceQA';
+      } else if (dependencies.parallel_mode === true) {
         workflow_type = 'Parallel';
-      } else if (dependencies.fe_depends_on_be) {
+      } else if (dependencies.fe_depends_on_be === true) {
         workflow_type = 'BE-First';
       } else {
         workflow_type = 'FE-First';
@@ -110,6 +112,15 @@ export class DependencyService {
           to: 'QA',
           type: 'waiting',
           description: 'QA testuje FE po dokončení'
+        });
+      }
+      // Pokud je performance_qa_mode, přidej závislost QA -> Performance QA
+      if (dependencies.performance_qa_mode) {
+        dependencies_list.push({
+          from: 'QA',
+          to: 'Performance QA',
+          type: 'blocking',
+          description: 'Performance QA testuje po QA'
         });
       }
     } else {
@@ -183,12 +194,13 @@ export class DependencyService {
    * Save project dependencies
    */
   static async saveProjectDependencies(data: CreateProjectRoleDependencyData): Promise<unknown> {
-    // Convert workflow type and dependencies to boolean flags
-    const be_depends_on_fe = data.dependencies.some(d => d.from === 'FE' && d.to === 'BE');
-    const fe_depends_on_be = data.dependencies.some(d => d.from === 'BE' && d.to === 'FE');
-    const qa_depends_on_be = data.dependencies.some(d => d.from === 'BE' && d.to === 'QA');
-    const qa_depends_on_fe = data.dependencies.some(d => d.from === 'FE' && d.to === 'QA');
-    const parallel_mode = data.workflowType === 'Parallel';
+  // Convert workflow type and dependencies to boolean flags
+  const be_depends_on_fe = data.dependencies.some(d => d.from === 'FE' && d.to === 'BE');
+  const fe_depends_on_be = data.dependencies.some(d => d.from === 'BE' && d.to === 'FE');
+  const qa_depends_on_be = data.dependencies.some(d => d.from === 'BE' && d.to === 'QA');
+  const qa_depends_on_fe = data.dependencies.some(d => d.from === 'FE' && d.to === 'QA');
+  const performance_qa_mode = data.workflowType === 'BE-FE-QA-PerformanceQA';
+  const parallel_mode = data.workflowType === 'Parallel';
 
     // Get current active roles from active_workers (for backward compatibility)
     const current_active_roles = data.activeWorkers
@@ -220,6 +232,7 @@ export class DependencyService {
           qa_depends_on_be,
           qa_depends_on_fe,
           parallel_mode,
+          performance_qa_mode,
           current_active_roles,
           worker_states,
           updated_at: new Date().toISOString()
@@ -244,6 +257,7 @@ export class DependencyService {
           qa_depends_on_be,
           qa_depends_on_fe,
           parallel_mode,
+          performance_qa_mode,
           current_active_roles,
           worker_states
         })
@@ -300,6 +314,19 @@ export class DependencyService {
           { from: 'PM', to: 'BE', type: 'blocking' as const, description: 'PM definuje požadavky pro BE' },
           { from: 'FE', to: 'QA', type: 'waiting' as const, description: 'QA testuje FE po dokončení' },
           { from: 'BE', to: 'QA', type: 'waiting' as const, description: 'QA testuje BE po dokončení' }
+        ]
+      },
+      {
+        id: 'BE-FE-QA-PerformanceQA',
+        name: 'BE-FE-QA-Performance QA',
+        desc: 'Backend → Frontend → QA → Performance QA',
+        flow: 'BE → FE → QA → Performance QA',
+        description: 'Backend, frontend, QA a následně Performance QA',
+        dependencies: [
+          { from: 'PM', to: 'BE', type: 'blocking' as const, description: 'PM definuje požadavky pro BE' },
+          { from: 'BE', to: 'FE', type: 'waiting' as const, description: 'FE čeká na BE' },
+          { from: 'FE', to: 'QA', type: 'waiting' as const, description: 'QA testuje FE po dokončení' },
+          { from: 'QA', to: 'Performance QA', type: 'blocking' as const, description: 'Performance QA testuje po QA' }
         ]
       }
     ];

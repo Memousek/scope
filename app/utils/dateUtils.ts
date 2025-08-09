@@ -1,9 +1,51 @@
+import { Project, TeamMember, ProjectDeliveryInfo } from '@/app/components/scope/types';
+
+/**
+ * Calculate project delivery date based on workflow dependencies (sequentially)
+ * @param workflowDependencies - pole závislostí (např. [{from: 'BE', to: 'FE', ...}])
+ * @param project - projekt s mandays a done
+ * @param team - pole členů týmu
+ * @param assignments - pole přiřazení (teamMemberId, role)
+ * @param startDate - datum zahájení (default: dnes)
+ */
+
+export function calculateDeliveryDateByWorkflow(
+  workflowDependencies: Array<{ from: string; to: string }>,
+  project: Project,
+  team: TeamMember[],
+  assignments: Array<{ teamMemberId: string; role: string }> = [],
+  startDate: Date = new Date()
+): Date {
+  // Získáme unikátní pořadí rolí podle workflow (od začátku do konce)
+  const orderedRoles: string[] = [];
+  workflowDependencies.forEach(dep => {
+    if (!orderedRoles.includes(dep.from)) orderedRoles.push(dep.from);
+    if (!orderedRoles.includes(dep.to)) orderedRoles.push(dep.to);
+  });
+
+  let currentDate = new Date(startDate);
+
+  orderedRoles.forEach(role => {
+    // Najdi assignmenty pro roli
+    const assignedMembers = team.filter(member =>
+      assignments.some(a => a.teamMemberId === member.id && (a.role === role || a.role === role.toUpperCase()))
+    );
+    const fte = assignedMembers.reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
+    const mandays = Number(project[`${role}_mandays`]) || 0;
+    const done = Number(project[`${role}_done`]) || 0;
+    const remainingMandays = mandays * (1 - (done / 100));
+    const days = remainingMandays / fte;
+    const workdays = Math.ceil(days);
+    currentDate = addWorkdays(currentDate, workdays);
+  });
+
+  return currentDate;
+}
 /**
  * Utility functions for date calculations and workday operations
  * Extracted from ProjectSection component for reusability
  */
 
-import { Project, TeamMember, ProjectDeliveryInfo } from '@/app/components/scope/types';
 
 
 /**

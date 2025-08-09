@@ -396,5 +396,7 @@
   "active": "Aktivní",
   "accountPlan": "Plán účtu",
   "changeAccountPlan": "Změnit plán účtu",
-  "searchLanguage": "Hledat jazyk"
+  "searchLanguage": "Hledat jazyk",
+  "noActiveRolesAddRolesInRoleSettings": "Žádné aktivní role. Přidejte role v správě rolí.",
+  "createNewRole": "Vytvořit novou roli"
 } 
