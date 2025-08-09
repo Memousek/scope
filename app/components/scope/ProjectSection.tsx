@@ -48,7 +48,6 @@ import { Badge } from "@/app/components/ui/Badge";
 import { FiUsers, FiFolder, FiFilter, FiChevronDown } from "react-icons/fi";
 import { ProjectStatusFilter, ProjectStatus } from "./ProjectStatusFilter";
 import { ProjectStatusBadge } from "./ProjectStatusBadge";
-import { Button } from "@/components/ui/button";
 
 interface ProjectSectionProps {
   scopeId: string;
