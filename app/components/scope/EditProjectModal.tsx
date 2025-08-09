@@ -54,7 +54,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
       key: role.mandays,
       label: role.label
     }));
-    const missing = projectMandays.filter(r => Number((editProject as Record<string, unknown>)[r.key]) > 0 && Number((editProject as Record<string, unknown>)[r.key]) === 0);
+  const missing = projectMandays.filter(r => Number((editProject as unknown as Record<string, unknown>)[r.key]) > 0 && Number((editProject as unknown as Record<string, unknown>)[r.key]) === 0);
     if (missing.length > 0) {
       alert(t('estimateRequired'));
       return;
@@ -67,8 +67,8 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
       const customData: Record<string, number> = {};
       
       projectRoles.forEach(role => {
-        const mandaysValue = (editProject as Record<string, unknown>)[role.mandays] as number || 0;
-        const doneValue = (editProject as Record<string, unknown>)[role.done] as number || 0;
+  const mandaysValue = (editProject as unknown as Record<string, unknown>)[role.mandays] as number || 0;
+  const doneValue = (editProject as unknown as Record<string, unknown>)[role.done] as number || 0;
         
         if (standardRoleKeys.includes(role.key)) {
           // Standardní role - přidáme do standardních sloupců
@@ -182,7 +182,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
                         min="0"
                         step="0.01"
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                        value={(editProject as Record<string, unknown>)[role.mandays] as number || 0}
+                        value={(editProject as unknown as Record<string, unknown>)[role.mandays] as number || 0}
                         onChange={e => setEditProject(p => ({ 
                           ...p, 
                           [role.mandays]: Number(e.target.value) 
@@ -206,7 +206,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
                         max="100"
                         step="1"
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                        value={(editProject as Record<string, unknown>)[role.done] as number || 0}
+                        value={(editProject as unknown as Record<string, unknown>)[role.done] as number || 0}
                         onChange={e => setEditProject(p => ({ 
                           ...p, 
                           [role.done]: Number(e.target.value) 
