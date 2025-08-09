@@ -101,7 +101,7 @@ export function ModernScopeLayout({
       roleHeaderMap[`${role.key}_done`] = `${role.label} ${t('done')}`;
     });
     
-    const projectColumns: (keyof Project)[] = [
+    const projectColumns: string[] = [
       "name",
       "priority",
       ...roleColumns,
@@ -118,7 +118,7 @@ export function ModernScopeLayout({
     downloadCSV(
       `projects-export-${scopeId}.csv`,
       projects,
-      projectColumns,
+      projectColumns as (keyof Project)[],
       projectHeaderMap
     );
   };

@@ -650,17 +650,13 @@ export function ProjectSection({
       priorityMapping.set(priority, index + 1);
     });
 
-    // Uložit mapování do groupedProjects pro použití v renderování
-    Object.keys(groupedProjects).forEach((priorityStr) => {
-      const priority = Number(priorityStr);
-      const displayPriority = priorityMapping.get(priority) || priority;
-      groupedProjects[priority].forEach((project) => {
-        (project as { displayPriority?: number }).displayPriority =
-          displayPriority;
-      });
+    // Vytvořit mapu priority -> displayPriority pro použití v renderování
+    const displayPriorityMap: Record<number, number> = {};
+    priorities.forEach((priority) => {
+      displayPriorityMap[priority] = priorityMapping.get(priority) || priority;
     });
 
-    return priorities;
+    return { priorities, displayPriorityMap };
   }, [groupedProjects]);
 
   const getRoleProgress = (project: Project, roleKey: string) => {
@@ -828,7 +824,7 @@ export function ProjectSection({
                   </p>
                 </div>
               ) : (
-                sortedPriorities.map((priority) => {
+                sortedPriorities.priorities.map((priority: number) => {
                   const projectsInGroup = groupedProjects[priority];
 
                   return (
@@ -837,9 +833,8 @@ export function ProjectSection({
                       <div className="flex items-center gap-3 mb-4">
                         <div className="flex items-center gap-2">
                           <h3 className="text-lg font-bold">
-                            {t("priority")}{" "}
-                            {(projectsInGroup[0]?.displayPriority as number) ||
-                              priority}
+                            {t("priority")} {" "}
+                            {sortedPriorities.displayPriorityMap[priority] || priority}
                           </h3>
                         </div>
                         <div className="flex-1 h-px bg-gradient-to-r from-gray-300 to-transparent dark:from-gray-600"></div>
