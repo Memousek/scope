@@ -400,5 +400,8 @@
   "noActiveRolesAddRolesInRoleSettings": "Žádné aktivní role. Přidejte role v správě rolí.",
   "createNewRole": "Vytvořit novou roli",
   "noPlan": "Žádný plán",
-  "defaultPlan": "Základní"
+  "defaultPlan": "Základní",
+  "createdAt": "Vytvořeno",
+  "addNote": "Přidat poznámku"
+
 }

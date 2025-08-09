@@ -54,6 +54,7 @@ interface ModernScopeLayoutProps {
     project: Omit<Project, "id" | "scope_id" | "created_at">
   ) => Promise<void>;
   readOnlyMode?: boolean;
+  user?: import("@/lib/domain/models/user.model").User;
 }
 
 type TabType = "overview" | "team" | "projects" | "burndown";
@@ -71,6 +72,7 @@ export function ModernScopeLayout({
   onAddMember,
   onAddProject,
   readOnlyMode = false,
+  user,
 }: ModernScopeLayoutProps) {
   const { t } = useTranslation();
   const { activeRoles } = useScopeRoles(scopeId);
@@ -381,6 +383,7 @@ export function ModernScopeLayout({
         return (
             <ProjectSection
               scopeId={scopeId}
+              user={user}
               readOnlyMode={readOnlyMode}
             />
         );

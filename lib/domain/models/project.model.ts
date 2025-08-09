@@ -1,3 +1,14 @@
+import { User } from "./user.model";
+
+// Note type for notes fetched from ProjectNoteService
+export interface ProjectNote {
+  id: string;
+  text: string;
+  author: User;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Project {
   id: string;
   scopeId: string;
@@ -17,5 +28,6 @@ export interface Project {
   createdAt: Date;
   startedAt?: Date;
   customRoleData?: Record<string, number>;
+  notes?: ProjectNote[];
   status?: 'not_started' | 'in_progress' | 'paused' | 'completed' | 'cancelled' | 'archived' | 'suspended';
 }

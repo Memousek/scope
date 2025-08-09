@@ -25,8 +25,12 @@ export class ProjectService {
   static async loadProjects(scopeId: string): Promise<Project[]> {
     const projectRepository = ContainerService.getInstance().get(ProjectRepository);
     const domainProjects = await projectRepository.findByScopeId(scopeId);
-    
-    const componentProjects = domainProjects.map(domainProject => {
+
+    // Načteme poznámky pro všechny projekty
+    const { ProjectNoteService } = await import('@/app/services/projectNoteService');
+
+    // Pro každý projekt stáhneme poznámky a připojíme je do pole notes
+    const componentProjects = await Promise.all(domainProjects.map(async domainProject => {
       const componentProject = {
         id: domainProject.id,
         name: domainProject.name,
@@ -48,7 +52,7 @@ export class ProjectService {
         // Map custom role data from top-level properties
         ...(domainProject as unknown as Record<string, unknown>)
       } as Project;
-      
+
       // Odstraníme standardní vlastnosti, které už jsme explicitně namapovali
       delete (componentProject as Record<string, unknown>).feMandays;
       delete (componentProject as Record<string, unknown>).beMandays;
@@ -64,10 +68,19 @@ export class ProjectService {
       delete (componentProject as Record<string, unknown>).deliveryDate;
       delete (componentProject as Record<string, unknown>).createdAt;
       // Keep status - don't delete it
-      
+
+      // Načteme poznámky pro tento projekt
+      try {
+        const notes = await ProjectNoteService.getNotes(domainProject.id);
+        componentProject.notes = notes || [];
+      } catch (e) {
+        console.log(e)
+        componentProject.notes = [];
+      }
+
       return componentProject;
-    });
-    
+    }));
+
     return componentProjects;
   }
 

@@ -19,7 +19,8 @@ export interface ScopeRole {
   updated_at: string;
 }
 
-// Dynamický Project interface - role data budou uložena jako Record
+import { User } from "@/lib/domain/models/user.model";
+
 export interface Project {
   id: string;
   name: string;
@@ -29,8 +30,15 @@ export interface Project {
   startedAt?: string | null;
   status?: 'not_started' | 'in_progress' | 'paused' | 'completed' | 'cancelled' | 'archived' | 'suspended';
   custom_role_data?: Record<string, number> | null;
-  // Dynamické role data - klíče budou generovány z scope_roles
-  [key: string]: string | number | null | undefined | Record<string, number> | null; // Pro role sloupce jako fe_mandays, be_done, atd.
+  notes?: ProjectNote[];
+}
+
+export interface ProjectNote {
+  id?: string;
+  text: string;
+  author: User;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Dynamický ProjectProgress interface
