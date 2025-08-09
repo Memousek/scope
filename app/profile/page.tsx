@@ -82,7 +82,7 @@ export default function ProfilePage() {
                     alt="Avatar"
                     width={96}
                     height={96}
-                    className="w-24 h-24 rounded-full object-cover"
+                    className="w-24 h-24 rounded-full object-scale-down"
                   />
                 ) : (
                   <UserIcon className="w-12 h-12 text-white" />
