@@ -101,9 +101,9 @@ const ProjectProgressChartComponent: React.FC<ProjectProgressChartProps> = ({
       // Dynamický progress pro role v čase
       const roleData: Record<string, number> = {};
       activeRoles.forEach(role => {
-        const doneKey = `${role.key}_done`;
-        const currentDone = Number((project as Record<string, unknown>)[doneKey]) || 0;
-        roleData[role.key] = Math.min(currentDone, actualProgress * 0.7 + currentDone * 0.3);
+  const doneKey = `${role.key}_done`;
+  const currentDone = Number((project as unknown as Record<string, unknown>)[doneKey]) || 0;
+  roleData[role.key] = Math.min(currentDone, actualProgress * 0.7 + currentDone * 0.3);
       });
       
       data.push({
@@ -154,8 +154,8 @@ const ProjectProgressChartComponent: React.FC<ProjectProgressChartProps> = ({
       key: role.key,
       label: role.label,
       color: role.color,
-      done: (project as Record<string, unknown>)[`${role.key}_done`] as number || 0,
-      mandays: (project as Record<string, unknown>)[`${role.key}_mandays`] as number || 0
+      done: (project as unknown as Record<string, unknown>)[`${role.key}_done`] as number || 0,
+      mandays: (project as unknown as Record<string, unknown>)[`${role.key}_mandays`] as number || 0
     }))
     .filter(role => Number(role.mandays) > 0);
 
