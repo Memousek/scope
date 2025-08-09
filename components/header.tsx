@@ -20,13 +20,14 @@ import { LogoutButton } from "./logout-button";
 import Image from "next/image";
 import { ThemeSwitcher } from "./theme-switcher";
 import { LanguageSwitcher } from "./ui/languageSwitcher";
-import { User } from "@supabase/supabase-js";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { User } from "@/lib/domain/models/user.model";
+
 
 
 interface HeaderProps {
@@ -78,7 +79,7 @@ export function Header({ user, loading }: HeaderProps) {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-content" align="start">
                   <p className="px-2 py-1 text-gray-500 dark:text-gray-400">
-                    {user.user_metadata?.full_name || user.email}
+                    {typeof user.additional?.full_name === "string" ? user.additional.full_name : user.email}
                   </p>
                     <Link
                       href="/profile"
@@ -136,9 +137,9 @@ export function Header({ user, loading }: HeaderProps) {
                   <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
                 ) : user ? (
                   <>
-                    {user.user_metadata?.avatar_url ? (
+                    {user.additional?.avatar_url ? (
                       <Image
-                        src={user.user_metadata.avatar_url}
+                        src={typeof user.additional.avatar_url === "string" ? user.additional.avatar_url : ""}
                         alt={t("user_avatar")}
                         width={40}
                         height={40}

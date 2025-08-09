@@ -11,11 +11,20 @@ export class SupabaseUserRepository extends UserRepository {
       return null;
     }
 
-    return this.mapToModel(data.user);
+      // Načtení user_meta dat
+      const userId = data.user.id;
+      const { data: metaData } = await supabase
+        .from('user_meta')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      // Spojení dat do modelu
+      return this.mapToModel(data.user, metaData);
   }
 
   // eslint-disable-next-line
-  private mapToModel(data: any): User {
+  private mapToModel(data: any, metaData?: any): User {
     return {
       id: data.id,
       email: data.email,
@@ -23,7 +32,10 @@ export class SupabaseUserRepository extends UserRepository {
       avatarUrl: data.user_metadata?.avatar_url || null,
       emailConfirmedAt: data.email_confirmed_at ? new Date(data.email_confirmed_at) : null,
       invitedAt: data.invited_at ? new Date(data.invited_at) : null,
-      additional: data.user_metadata || {},
+      additional: {
+        ...data.user_metadata,
+        ...(metaData || {})
+      },
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at)
     };

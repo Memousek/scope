@@ -7,8 +7,9 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Header } from "./header";
-import { createClient } from "@/lib/supabase/client";
-import { User } from "@supabase/supabase-js";
+import { User } from "@/lib/domain/models/user.model";
+import { ContainerService } from "@/lib/container.service";
+import { UserRepository } from "@/lib/domain/repositories/user.repository";
 
 export function ConditionalHeader() {
   const [user, setUser] = useState<User | null>(null);
@@ -16,16 +17,12 @@ export function ConditionalHeader() {
   const pathname = usePathname();
 
   useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user);
-      setLoading(false);
-    });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user || null);
-      setLoading(false);
-    });
-    return () => subscription.unsubscribe();
+     const userRepository = ContainerService.getInstance().get(UserRepository);
+  
+      userRepository.getLoggedInUser().then((user) => {
+        setUser(user);
+        setLoading(false);
+      });
   }, []);
 
   // Nezobrazovat header na auth stránkách

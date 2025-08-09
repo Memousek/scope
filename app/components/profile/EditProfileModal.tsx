@@ -27,9 +27,17 @@ export function EditProfileModal({ user, isOpen, onClose, onUpdate }: EditProfil
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   
-  const [formData, setFormData] = useState({
-    fullName: user.fullName || "",
-    avatarUrl: user.avatarUrl || "",
+  interface FormData {
+    fullName: string;
+    avatarUrl: string;
+    currentPassword: string;
+    newPassword: string;
+    confirmPassword: string;
+  }
+
+  const [formData, setFormData] = useState<FormData>({
+    fullName: typeof user.additional?.full_name === "string" ? user.additional.full_name : "",
+    avatarUrl: typeof user.additional?.avatar_url === "string" ? user.additional.avatar_url : "",
     currentPassword: "",
     newPassword: "",
     confirmPassword: ""
@@ -92,18 +100,46 @@ export function EditProfileModal({ user, isOpen, onClose, onUpdate }: EditProfil
         await fileUploadService.deleteAvatar(user.avatarUrl);
       }
 
-      const userRepository = ContainerService.getInstance().get(UserRepository);
-      const updatedUser = await userRepository.updateUserProfile(user.id, {
-        fullName: formData.fullName,
-        avatarUrl: formData.avatarUrl
-      });
+      // Aktualizace user_meta přes Supabase
+      const { createClient } = await import("@/lib/supabase/client");
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("user_meta")
+        .update({
+          full_name: formData.fullName,
+          avatar_url: formData.avatarUrl
+        })
+        .eq("user_id", user.id);
 
-      if (updatedUser) {
-        onUpdate(updatedUser);
-        setSuccess(t("profileUpdatedSuccessfully"));
-      } else {
+      if (error) {
         setError(t("failedToUpdateProfile"));
+        return;
       }
+
+      // Načtení nových dat z user_meta
+      const { data: metaData, error: fetchError } = await supabase
+        .from("user_meta")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+
+      if (fetchError || !metaData) {
+        setError(t("failedToUpdateProfile"));
+        return;
+      }
+
+      // Aktualizace uživatele v UI
+      const updatedUser = {
+        ...user,
+        additional: {
+          ...user.additional,
+          ...metaData
+        },
+        avatarUrl: typeof metaData.avatar_url === "string" ? metaData.avatar_url : user.avatarUrl,
+        fullName: typeof metaData.full_name === "string" ? metaData.full_name : user.fullName
+      };
+      onUpdate(updatedUser);
+      setSuccess(t("profileUpdatedSuccessfully"));
     } catch {
       setError(t("errorUpdatingProfile"));
     } finally {

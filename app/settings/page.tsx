@@ -29,6 +29,9 @@ export default function SettingsPage() {
   const { t } = useTranslation();
   const [showBuildInfo, setShowBuildInfo] = useState(false);
   const [apiKey, setApiKey] = useState('');
+  const [savingApiKey, setSavingApiKey] = useState(false);
+  const [apiKeySuccess, setApiKeySuccess] = useState<string | null>(null);
+  const [apiKeyError, setApiKeyError] = useState<string | null>(null);
   const themes = [
     { code: 'light', labelKey: 'lightMode', icon: Sun },
     { code: 'dark', labelKey: 'darkMode', icon: Moon },
@@ -41,6 +44,14 @@ export default function SettingsPage() {
       setLoading(false);
       if (user === null) {
         router.push("/auth/login");
+      }
+      // Dekódování klíče z Base64
+      if (user?.additional?.open_api_key && typeof user.additional.open_api_key === 'string') {
+        try {
+          setApiKey(atob(user.additional.open_api_key));
+        } catch {
+          setApiKey('');
+        }
       }
     });
 
@@ -81,6 +92,40 @@ export default function SettingsPage() {
 
   const handleApiKeyChange = (value: string) => {
     setApiKey(value);
+    setApiKeySuccess(null);
+    setApiKeyError(null);
+  };
+
+  const handleApiKeySave = async () => {
+    if (!user) return;
+    setSavingApiKey(true);
+    setApiKeySuccess(null);
+    setApiKeyError(null);
+    try {
+      const { createClient } = await import("@/lib/supabase/client");
+      const supabase = createClient();
+      const encodedKey = btoa(apiKey);
+      const { error } = await supabase
+        .from("user_meta")
+        .update({ open_api_key: encodedKey })
+        .eq("user_id", user.id);
+      if (error) {
+        setApiKeyError("Nepodařilo se uložit klíč.");
+      } else {
+        setApiKeySuccess("Klíč byl úspěšně uložen.");
+        setUser({
+          ...user,
+          additional: {
+            ...user.additional,
+            open_api_key: encodedKey
+          }
+        });
+      }
+    } catch {
+      setApiKeyError("Chyba při ukládání klíče.");
+    } finally {
+      setSavingApiKey(false);
+    }
   };
 
   if (loading) {
@@ -255,14 +300,30 @@ export default function SettingsPage() {
                 <label htmlFor="apiKey" className="text-sm text-gray-600 dark:text-gray-400">
                   {t('openaiApiKey')}
                 </label>
-                <input
-                  id="apiKey"
-                  type="text"
-                  className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
-                  placeholder={t('yourApiKey')}
+                <div className="flex items-center align-center gap-2">
+                  <input
+                    id="apiKey"
+                    type="text"
+                    className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
+                    placeholder={t('yourApiKey')}
                   value={apiKey}
                   onChange={(e) => handleApiKeyChange(e.target.value)}
                 />
+                <button
+                  onClick={handleApiKeySave}
+                  disabled={savingApiKey || !apiKey}
+                  className="mt-0 h-12 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg text-sm font-medium hover:from-blue-600 hover:to-purple-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {savingApiKey ? t('saving') : t('save')}
+                </button>
+              </div>
+              
+                {apiKeySuccess && (
+                  <div className="mt-2 text-green-600 text-sm">{apiKeySuccess}</div>
+                )}
+                {apiKeyError && (
+                  <div className="mt-2 text-red-600 text-sm">{apiKeyError}</div>
+                )}
               </div>
             </div>
           </div>
