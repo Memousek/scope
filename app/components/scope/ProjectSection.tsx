@@ -45,7 +45,7 @@ import { useScopeRoles } from "@/app/hooks/useScopeRoles";
 import { User } from "@/lib/domain/models/user.model";
 
 import { Badge } from "@/app/components/ui/Badge";
-import { FiUsers, FiFolder, FiFilter, FiChevronDown } from "react-icons/fi";
+import { FiUsers, FiFolder, FiFilter, FiChevronDown, FiDelete, FiEdit } from "react-icons/fi";
 import { ProjectStatusFilter, ProjectStatus } from "./ProjectStatusFilter";
 import { ProjectStatusBadge } from "./ProjectStatusBadge";
 
@@ -1691,19 +1691,7 @@ export function ProjectSection({
                                                           }
                                                           title="Upravit poznámku"
                                                         >
-                                                          <svg
-                                                            className="w-4 h-4"
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            viewBox="0 0 24 24"
-                                                          >
-                                                            <path
-                                                              strokeLinecap="round"
-                                                              strokeLinejoin="round"
-                                                              strokeWidth={2}
-                                                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                                            />
-                                                          </svg>
+                                                          <FiEdit className="w-4 h-4" />
                                                         </button>
                                                         <button
                                                           className="text-red-500 hover:text-red-700 px-2 py-1 rounded transition"
@@ -1714,19 +1702,7 @@ export function ProjectSection({
                                                           }
                                                           title="Smazat poznámku"
                                                         >
-                                                          <svg
-                                                            className="w-4 h-4"
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            viewBox="0 0 24 24"
-                                                          >
-                                                            <path
-                                                              strokeLinecap="round"
-                                                              strokeLinejoin="round"
-                                                              strokeWidth={2}
-                                                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                                            />
-                                                          </svg>
+                                                          <FiDelete className="w-4 h-4" />
                                                         </button>
                                                       </>
                                                     )}
@@ -1741,19 +1717,7 @@ export function ProjectSection({
                                                           }
                                                           title="Smazat poznámku"
                                                         >
-                                                          <svg
-                                                            className="w-4 h-4"
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            viewBox="0 0 24 24"
-                                                          >
-                                                            <path
-                                                              strokeLinecap="round"
-                                                              strokeLinejoin="round"
-                                                              strokeWidth={2}
-                                                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                                            />
-                                                          </svg>
+                                                          <FiDelete className="w-4 h-4" />
                                                         </button>
                                                       )}
                                                   </div>
@@ -1775,7 +1739,7 @@ export function ProjectSection({
                                       )}
 
                                       {!readOnlyMode && (
-                                        <div className="absolute top-0 right-0">
+                                        <div className="absolute right-0 -top-10">
                                           <div className="flex justify-center">
                                             <button
                                               className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white px-6 py-2 rounded-xl font-semibold shadow-md transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/25 active:scale-95"

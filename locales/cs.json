@@ -402,6 +402,9 @@
   "noPlan": "Žádný plán",
   "defaultPlan": "Základní",
   "createdAt": "Vytvořeno",
-  "addNote": "Přidat poznámku"
+  "addNote": "Přidat poznámku",
+  "writeNote": "Napište poznámku...",
+  "editNote": "Upravit poznámku",
+  "editNotePlaceholder": "Upravte poznámku..."
 
 }

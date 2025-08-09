@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/app/components/ui/Modal";
+import { FiEdit } from "react-icons/fi";
+import { useTranslation } from "@/lib/translation";
 
 interface EditNoteModalProps {
   isOpen: boolean;
@@ -11,6 +13,7 @@ interface EditNoteModalProps {
 
 export const EditNoteModal: React.FC<EditNoteModalProps> = ({ isOpen, onClose, onSave, initialText }) => {
   const [noteText, setNoteText] = useState(initialText);
+  const { t } = useTranslation();
 
   const handleSave = () => {
     if (noteText.trim()) {
@@ -23,8 +26,9 @@ export const EditNoteModal: React.FC<EditNoteModalProps> = ({ isOpen, onClose, o
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Upravit poznámku"
+      title={t("editNote")}
       maxWidth="sm"
+      icon={<FiEdit />}
     >
       <div className="flex flex-col gap-4">
         <textarea
@@ -32,11 +36,11 @@ export const EditNoteModal: React.FC<EditNoteModalProps> = ({ isOpen, onClose, o
           rows={4}
           value={noteText}
           onChange={e => setNoteText(e.target.value)}
-          placeholder="Upravte poznámku..."
+          placeholder={t("editNotePlaceholder")}
         />
         <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={onClose}>Zrušit</Button>
-          <Button onClick={handleSave}>Uložit</Button>
+          <Button variant="secondary" onClick={onClose}>{t("cancel")}</Button>
+          <Button onClick={handleSave}>{t("save")}</Button>
         </div>
       </div>
     </Modal>
