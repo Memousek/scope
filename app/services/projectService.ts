@@ -54,19 +54,19 @@ export class ProjectService {
       } as Project;
 
       // Odstraníme standardní vlastnosti, které už jsme explicitně namapovali
-      delete (componentProject as Record<string, unknown>).feMandays;
-      delete (componentProject as Record<string, unknown>).beMandays;
-      delete (componentProject as Record<string, unknown>).qaMandays;
-      delete (componentProject as Record<string, unknown>).pmMandays;
-      delete (componentProject as Record<string, unknown>).dplMandays;
-      delete (componentProject as Record<string, unknown>).feDone;
-      delete (componentProject as Record<string, unknown>).beDone;
-      delete (componentProject as Record<string, unknown>).qaDone;
-      delete (componentProject as Record<string, unknown>).pmDone;
-      delete (componentProject as Record<string, unknown>).dplDone;
-      delete (componentProject as Record<string, unknown>).scopeId;
-      delete (componentProject as Record<string, unknown>).deliveryDate;
-      delete (componentProject as Record<string, unknown>).createdAt;
+  delete (componentProject as unknown as Record<string, unknown>).feMandays;
+  delete (componentProject as unknown as Record<string, unknown>).beMandays;
+  delete (componentProject as unknown as Record<string, unknown>).qaMandays;
+  delete (componentProject as unknown as Record<string, unknown>).pmMandays;
+  delete (componentProject as unknown as Record<string, unknown>).dplMandays;
+  delete (componentProject as unknown as Record<string, unknown>).feDone;
+  delete (componentProject as unknown as Record<string, unknown>).beDone;
+  delete (componentProject as unknown as Record<string, unknown>).qaDone;
+  delete (componentProject as unknown as Record<string, unknown>).pmDone;
+  delete (componentProject as unknown as Record<string, unknown>).dplDone;
+  delete (componentProject as unknown as Record<string, unknown>).scopeId;
+  delete (componentProject as unknown as Record<string, unknown>).deliveryDate;
+  delete (componentProject as unknown as Record<string, unknown>).createdAt;
       // Keep status - don't delete it
 
       // Načteme poznámky pro tento projekt
@@ -297,11 +297,11 @@ export class ProjectService {
 
     // Also update the current project values
     const projectUpdates: Partial<Project> = {};
-    if (progressData.fe_done !== undefined && progressData.fe_done !== null) projectUpdates.fe_done = progressData.fe_done;
-    if (progressData.be_done !== undefined && progressData.be_done !== null) projectUpdates.be_done = progressData.be_done;
-    if (progressData.qa_done !== undefined && progressData.qa_done !== null) projectUpdates.qa_done = progressData.qa_done;
-    if (progressData.pm_done !== undefined && progressData.pm_done !== null) projectUpdates.pm_done = progressData.pm_done;
-    if (progressData.dpl_done !== undefined && progressData.dpl_done !== null) projectUpdates.dpl_done = progressData.dpl_done;
+  if (progressData.fe_done !== undefined && progressData.fe_done !== null) projectUpdates["fe_done"] = progressData.fe_done;
+  if (progressData.be_done !== undefined && progressData.be_done !== null) projectUpdates["be_done"] = progressData.be_done;
+  if (progressData.qa_done !== undefined && progressData.qa_done !== null) projectUpdates["qa_done"] = progressData.qa_done;
+  if (progressData.pm_done !== undefined && progressData.pm_done !== null) projectUpdates["pm_done"] = progressData.pm_done;
+  if (progressData.dpl_done !== undefined && progressData.dpl_done !== null) projectUpdates["dpl_done"] = progressData.dpl_done;
     
     // For NOT NULL columns, only update if we have a valid number
     if (progressData.fe_mandays !== undefined && progressData.fe_mandays !== null) projectUpdates.fe_mandays = progressData.fe_mandays;

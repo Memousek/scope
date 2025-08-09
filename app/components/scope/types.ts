@@ -31,10 +31,11 @@ export interface Project {
   status?: 'not_started' | 'in_progress' | 'paused' | 'completed' | 'cancelled' | 'archived' | 'suspended';
   custom_role_data?: Record<string, number> | null;
   notes?: ProjectNote[];
+  [key: string]: string | number | null | undefined | ProjectNote[] | Record<string, number>;
 }
 
 export interface ProjectNote {
-  id?: string;
+  id: string;
   text: string;
   author: User;
   createdAt: string;

@@ -91,12 +91,12 @@ export function ModernScopeLayout({
 
   const handleExportProjects = () => {
     // Dynamicky vytvoříme sloupce pro každou roli
-    const roleColumns: (keyof Project)[] = [];
+  const roleColumns: string[] = [];
     const roleHeaderMap: Record<string, string> = {};
     
     activeRoles.forEach(role => {
-      roleColumns.push(`${role.key}_mandays` as keyof Project);
-      roleColumns.push(`${role.key}_done` as keyof Project);
+  roleColumns.push(`${role.key}_mandays`);
+  roleColumns.push(`${role.key}_done`);
       roleHeaderMap[`${role.key}_mandays`] = `${role.label} MD`;
       roleHeaderMap[`${role.key}_done`] = `${role.label} ${t('done')}`;
     });
