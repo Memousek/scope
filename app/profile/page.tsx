@@ -16,30 +16,32 @@ import {
   Trash2,
   Edit,
   CreditCard,
+  Star,
+  Zap,
+  Building2,
+  FileText,
 } from "lucide-react";
 import Image from "next/image";
-import { ContainerService } from "@/lib/container.service";
-import { UserRepository } from "@/lib/domain/repositories/user.repository";
-import { User } from "@/lib/domain/models/user.model";
 import { useTranslation } from "@/lib/translation";
 import { EditProfileModal } from "@/app/components/profile/EditProfileModal";
+import { ChangePlanModal } from "@/app/components/profile/ChangePlanModal";
+import { Plan } from "@/lib/domain/models/plan.model";
+import { useSWRConfig } from "swr";
+import { PlanUsageStrip } from "@/app/components/billing/PlanUsageStrip";
+import { useUser, useUserPlan } from "@/app/hooks/useData";
 
 export default function ProfilePage() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { mutate } = useSWRConfig();
+  const { data: me, isLoading: userLoading } = useUser();
+  const user = me;
+  const { data: cachedPlan } = useUserPlan(user?.id);
+  const [userPlan, setUserPlan] = useState<Plan | null>(null);
+  useEffect(() => { if (cachedPlan) setUserPlan(cachedPlan); }, [cachedPlan]);
+  const loading = userLoading;
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isPlanChangeModalOpen, setIsPlanChangeModalOpen] = useState(false);
   const router = useRouter();
   const { t } = useTranslation();
-
-  useEffect(() => {
-    const userRepository = ContainerService.getInstance().get(UserRepository);
-
-    userRepository.getLoggedInUser().then((user) => {
-      setUser(user);
-      setLoading(false);
-      if (!user) router.push("/auth/login");
-    });
-  }, [router]);
 
   const handleLogout = async () => {
     const supabase = createClient();
@@ -56,6 +58,16 @@ export default function ProfilePage() {
     } else {
       console.log("User deleted");
     }
+  };
+
+  const handleChangePlan = async () => {
+    setIsPlanChangeModalOpen(true);
+  };
+
+  const handlePlanChanged = async () => {
+    if (!user) return;
+    // Revalidate SWR cache for the user's plan so all consumers update
+    await mutate(["userPlan", user.id]);
   };
 
   if (loading) {
@@ -169,13 +181,50 @@ export default function ProfilePage() {
                       <p className="text-xs text-gray-500 dark:text-gray-400">
                         {t("accountPlan")}
                       </p>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
-                        {typeof user.additional?.plan === "string" ? user.additional.plan : t("defaultPlan")}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          {userPlan ? userPlan.displayName : t("defaultPlan")}
+                        </p>
+                        {userPlan && (
+                          <span className="px-2 py-1 text-xs bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30 text-blue-700 dark:text-blue-400 rounded-full flex items-center gap-1">
+                            {userPlan.name === "premium" ? (
+                              <>
+                                <Star className="w-3 h-3" />
+                                {userPlan.displayName}
+                              </>
+                            ) : userPlan.name === "pro" ? (
+                              <>
+                                <Zap className="w-3 h-3" />
+                                {userPlan.displayName}
+                              </>
+                            ) : userPlan.name === "enterprise" ? (
+                              <>
+                                <Building2 className="w-3 h-3" />
+                                {userPlan.displayName}
+                              </>
+                            ) : (
+                              <>
+                                <FileText className="w-3 h-3" />
+                                {userPlan.displayName}
+                              </>
+                            )}
+                          </span>
+                        )}
+                      </div>
+                      {userPlan && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {userPlan.description || "Základní funkce"}
+                        </p>
+                      )}
+                      {userPlan && (
+                        <div className="mt-3">
+                          <PlanUsageStrip userId={user.id} />
+                        </div>
+                      )}
                     </div>
                     <button
-                      disabled={true}
-                      className="disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-lg text-sm font-medium hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+                      onClick={handleChangePlan}
+                      className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-lg text-sm font-medium hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
                     >
                       {t("change")}
                     </button>
@@ -283,10 +332,20 @@ export default function ProfilePage() {
           user={user}
           isOpen={isEditModalOpen}
           onClose={() => setIsEditModalOpen(false)}
-          onUpdate={(updatedUser) => {
-            setUser(updatedUser);
+          onUpdate={() => {
             setIsEditModalOpen(false);
           }}
+        />
+      )}
+
+      {/* Change Plan Modal */}
+      {user && (
+        <ChangePlanModal
+          isOpen={isPlanChangeModalOpen}
+          onClose={() => setIsPlanChangeModalOpen(false)}
+          currentPlan={userPlan}
+          userId={user.id}
+          onPlanChanged={handlePlanChanged}
         />
       )}
     </div>

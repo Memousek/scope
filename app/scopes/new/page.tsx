@@ -17,6 +17,7 @@ import { ArrowLeft, Plus, Sparkles } from 'lucide-react';
 import { useTranslation } from '@/lib/translation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { ManageUserPlansService } from "@/lib/domain/services/manage-user-plans.service";
 
 const useAuth = () => {
   const [loading, setLoading] = useState(true);
@@ -38,6 +39,8 @@ export default function NewScopePage() {
   const [newScope, setNewScope] = useState({name: '', description: ''});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [limitError, setLimitError] = useState<string>('');
+  const [limitInfo, setLimitInfo] = useState<{ used: number; max: number } | null>(null);
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -46,13 +49,35 @@ export default function NewScopePage() {
     }
   }, [loading, user, router]);
 
+  useEffect(() => {
+    const load = async () => {
+      if (!user) return;
+      const svc = ContainerService.getInstance().get(ManageUserPlansService);
+      const [plan, usage] = await Promise.all([
+        svc.getUserCurrentPlan(user.id),
+        svc.getUsage(user.id),
+      ]);
+      if (plan) setLimitInfo({ used: usage.scopes, max: plan.maxScopes });
+    };
+    load();
+  }, [user]);
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     setError('');
+    setLimitError('');
     const scopeRepository = ContainerService.getInstance().get(ScopeRepository);
 
     try {
+      // Check plan limit
+      const planService = ContainerService.getInstance().get(ManageUserPlansService);
+      const allowed = await planService.canCreateScope(user!.id);
+      if (!allowed) {
+        setLimitError('Dosáhli jste limitu počtu scopů pro váš plán.');
+        return;
+      }
+
       const scope = await scopeRepository.create({
         name: newScope.name,
         description: newScope.description,
@@ -124,6 +149,20 @@ export default function NewScopePage() {
               </p>
             </div>
 
+            {limitInfo && (
+              <div className="mb-6 flex items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 p-3 bg-gray-50 dark:bg-gray-800/50">
+                <div className="text-sm text-gray-700 dark:text-gray-300">
+                  Scopy: <span className="font-semibold">{limitInfo.used}</span> z <span className="font-semibold">{limitInfo.max}</span>
+                </div>
+                <div className="flex-1 mx-3 h-2 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                  <div className={`h-full rounded-full ${limitInfo.used >= limitInfo.max ? 'bg-red-500' : 'bg-blue-500'}`} style={{ width: `${Math.min(100, (limitInfo.used / Math.max(1, limitInfo.max)) * 100)}%` }} />
+                </div>
+                <div className={`text-xs ${limitInfo.used >= limitInfo.max ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400'}`}>
+                  {limitInfo.used >= limitInfo.max ? 'Limit vyčerpán' : `Zbývá: ${Math.max(0, limitInfo.max - limitInfo.used)}`}
+                </div>
+              </div>
+            )}
+
             {/* Form */}
             <form className="space-y-6" onSubmit={handleCreate}>
               <motion.div
@@ -166,9 +205,19 @@ export default function NewScopePage() {
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4"
+                  className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-4"
                 >
                   <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
+                </motion.div>
+              )}
+
+              {limitError && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-2xl p-4"
+                >
+                  <p className="text-yellow-800 dark:text-yellow-300 text-sm">{limitError}</p>
                 </motion.div>
               )}
 

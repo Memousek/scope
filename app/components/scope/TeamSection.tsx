@@ -16,6 +16,7 @@ import { RoleManagementModal } from "./RoleManagementModal";
 import { useTranslation } from "@/lib/translation";
 import { TeamService } from "@/app/services/teamService";
 import { SettingsIcon, FilterIcon, XIcon, ChevronDownIcon } from "lucide-react";
+import { useSWRConfig } from "swr";
 import { FiUsers, FiSearch } from 'react-icons/fi';
 
 interface TeamSectionProps {
@@ -27,6 +28,7 @@ interface TeamSectionProps {
 
 export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false }: TeamSectionProps) {
   const { t } = useTranslation();
+  const { mutate } = useSWRConfig();
   const { activeRoles } = useScopeRoles(scopeId);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [roleManagementModalOpen, setRoleManagementModalOpen] = useState(false);
@@ -72,6 +74,7 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
     try {
       const newMember = await TeamService.createTeamMember(scopeId, member);
       onTeamChange([...team, newMember]);
+      try { await mutate(["scopeUsage", scopeId]); } catch {}
     } catch (error) {
       console.error('Chyba při přidávání člena týmu:', error);
     } finally {
@@ -132,6 +135,7 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
     onTeamChange(team.filter((m) => m.id !== memberId));
     try {
       await TeamService.deleteTeamMember(memberId);
+      try { await mutate(["scopeUsage", scopeId]); } catch {}
     } catch (error) {
       console.error('Chyba při mazání člena týmu:', error);
       // Vraťte člena zpět do seznamu při chybě

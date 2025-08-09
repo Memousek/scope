@@ -14,6 +14,10 @@ import { FiPlus } from 'react-icons/fi';
 import { useScopeRoles } from '@/app/hooks/useScopeRoles';
 import { ProjectStatusSelector } from './ProjectStatusSelector';
 import { ProjectStatus } from './ProjectStatusBadge';
+import { ContainerService } from "@/lib/container.service";
+import { ManageUserPlansService } from "@/lib/domain/services/manage-user-plans.service";
+import { useScopeUsage } from "@/app/hooks/useData";
+import { useSWRConfig } from "swr";
 
 interface AddProjectModalProps {
   isOpen: boolean;
@@ -34,6 +38,22 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
 }) => {
   const { t } = useTranslation();
   const { activeRoles } = useScopeRoles(scopeId);
+  const { data: usage } = useScopeUsage(scopeId);
+  const { mutate } = useSWRConfig();
+  const [limits, setLimits] = useState<{ maxProjects: number } | null>(null);
+
+  useEffect(() => {
+    const load = async () => {
+      if (!isOpen) return;
+      try {
+        const container = ContainerService.getInstance();
+        const svc = container.get(ManageUserPlansService);
+        const plan = await svc.getPlanForScope(scopeId);
+        if (plan) setLimits({ maxProjects: plan.maxProjects });
+      } catch {}
+    };
+    load();
+  }, [isOpen, scopeId]);
   
   // Vypočítáme automaticky priority na základě existujících projektů
   const calculateNextPriority = useCallback(() => {
@@ -137,6 +157,7 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
     });
     
     await onAddProject(projectToSubmit);
+    try { await mutate(["scopeUsage", scopeId]); } catch {}
     setNewProject(createInitialProjectData());
     onClose();
   };
@@ -148,6 +169,20 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
       title={t('addNewProject')}
       icon={<FiPlus size={24} className="text-white" />}
     >
+      {/* Plan usage chip */}
+      {usage && limits && (
+        <div className="mb-4 flex items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 p-3 bg-gray-50 dark:bg-gray-800/50">
+          <div className="text-sm text-gray-700 dark:text-gray-300">
+            {t('projectsLimit')}: <span className="font-semibold">{usage.projects}</span> {t('of')} <span className="font-semibold">{limits.maxProjects}</span>
+          </div>
+          <div className="flex-1 mx-3 h-2 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+            <div className={`h-full rounded-full ${usage.projects >= limits.maxProjects ? 'bg-red-500' : 'bg-blue-500'}`} style={{ width: `${Math.min(100, (usage.projects / Math.max(1, limits.maxProjects)) * 100)}%` }} />
+          </div>
+          <div className={`text-xs ${usage.projects >= limits.maxProjects ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400'}`}>
+            {usage.projects >= limits.maxProjects ? t('limitReached') : `${t('remaining')}: ${Math.max(0, limits.maxProjects - usage.projects)}`}
+          </div>
+        </div>
+      )}
       <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
         {/* Základní informace */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -253,8 +288,9 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
           </button>
           <button
             type="submit"
-            disabled={savingProject || !(newProject.name as string)?.trim()}
+            disabled={savingProject || !(newProject.name as string)?.trim() || !!(limits && usage && usage.projects >= limits.maxProjects)}
             className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-xl transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+            title={limits && usage && usage.projects >= limits.maxProjects ? t('upgradeToIncreaseLimits') : undefined}
           >
             {savingProject ? t('adding') : t('addProject')}
           </button>

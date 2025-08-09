@@ -43,6 +43,7 @@ import {
 } from "@/lib/utils/dynamicProjectRoles";
 import { useScopeRoles } from "@/app/hooks/useScopeRoles";
 import { User } from "@/lib/domain/models/user.model";
+import { useSWRConfig } from "swr";
 
 import { Badge } from "@/app/components/ui/Badge";
 import { FiUsers, FiFolder, FiFilter, FiChevronDown, FiDelete, FiEdit } from "react-icons/fi";
@@ -60,6 +61,8 @@ export function ProjectSection({
   readOnlyMode = false,
   user,
 }: ProjectSectionProps) {
+  // SWR cache invalidation for usage after mutations
+  const { mutate } = useSWRConfig();
   const [editNoteModalOpen, setEditNoteModalOpen] = useState(false);
   const [noteToEdit, setNoteToEdit] = useState<ProjectNote | null>(null);
   // Funkce pro editaci a mazání poznámek
@@ -332,7 +335,8 @@ export function ProjectSection({
       };
 
       await addProject(projectData);
-
+      // Refresh usage cache for this scope
+      try { await mutate(["scopeUsage", scopeId]); } catch {}
       // Reload projects to get updated data
       await loadProjects();
     } catch (error) {
@@ -363,6 +367,8 @@ export function ProjectSection({
         await updateProject(project.id, { priority: project.priority });
       }
 
+      // Refresh usage cache for this scope
+      try { await mutate(["scopeUsage", scopeId]); } catch {}
       // Reload projects to get updated order
       await loadProjects();
     } catch (error) {
