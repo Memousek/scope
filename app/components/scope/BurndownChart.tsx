@@ -165,8 +165,8 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
             activeRoles.forEach(role => {
               const doneKey = `${role.key}_done`;
               const mandaysKey = `${role.key}_mandays`;
-              const actual = Number((project as Record<string, unknown>)[doneKey]) || 0;
-              const mandays = Number((project as Record<string, unknown>)[mandaysKey]) || 0;
+              const actual = Number((project as unknown as Record<string, unknown>)[doneKey]) || 0;
+              const mandays = Number((project as unknown as Record<string, unknown>)[mandaysKey]) || 0;
               
               totalActual += actual;
               totalMandays += mandays;
