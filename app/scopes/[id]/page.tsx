@@ -17,6 +17,7 @@ import { AiChatButton } from "@/app/components/scope/AiChatButton";
 import { TeamMember, Project } from "@/app/components/scope/types";
 import { useAuth } from "@/lib/auth";
 import { useTranslation } from "@/lib/translation";
+import { useRouter } from "next/navigation";
 
 import { ContainerService } from "@/lib/container.service";
 import { GetScopeStatsService } from "@/lib/domain/services/get-scope-stats.service";
@@ -33,6 +34,8 @@ import { ScopeService } from "@/app/services/scopeService";
 import { ScopeEditorService } from "@/app/services/scopeEditorService";
 import { Badge } from "@/app/components/ui/Badge";
 import { FiCheck, FiEdit2, FiMessageCircle, FiShare2, FiX } from "react-icons/fi";
+import { UserRepository } from "@/lib/domain/repositories/user.repository";
+import { User } from "@/lib/domain/models/user.model";
 
 export default function ScopePage({
   params,
@@ -40,7 +43,10 @@ export default function ScopePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const { loading, user, userId } = useAuth();
+  const { userId } = useAuth();
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
   const { t } = useTranslation();
   const [scope, setScope] = useState<{
     id: string;
@@ -370,6 +376,16 @@ export default function ScopePage({
     }
   }, [userId, id]);
 
+  useEffect(() => {
+    const userRepository = ContainerService.getInstance().get(UserRepository);
+
+    userRepository.getLoggedInUser().then((user) => {
+      setUser(user);
+      setLoading(false);
+      if (!user) router.push("/auth/login");
+    });
+  }, [router]);
+
   // Store functions in refs to prevent infinite loops
   const fetchFunctionsRef = useRef({
     fetchScope,
@@ -424,13 +440,6 @@ export default function ScopePage({
       checkEditorStatus();
     }
   }, [loading, user, id]);
-
-  // Redirect pokud není přihlášen
-  useEffect(() => {
-    if (!loading && !user) {
-      window.location.href = "/auth/login";
-    }
-  }, [loading, user]);
 
   const handleSaveDescription = async () => {
     if (!userId) return;
@@ -571,14 +580,14 @@ export default function ScopePage({
                   <FiShare2 className="text-sm" /> {t('share')}
                 </button>
               )}
-              <button
-                onClick={() => setAiChatOpen(true)}
-                className="flex items-center gap-2 relative bg-gradient-to-r from-gray-500 to-gray-600 text-white px-4 py-2 rounded-lg hover:from-gray-600 hover:to-gray-700 transition-all duration-200 shadow-lg opacity-50 cursor-not-allowed"
-                disabled={true}
-              >
-                <Badge label={t('soon')} variant="soon" />
+              {typeof user.additional?.open_api_key == "string" && (
+                <button
+                  onClick={() => setAiChatOpen(true)}
+                  className="flex items-center gap-2 relative bg-gradient-to-r from-purple-800 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-gray-600 hover:to-gray-700 transition-all duration-200 shadow-lg"
+                >
                  <FiMessageCircle className="text-sm" /> Ai Chat
               </button>
+              )}
             </div>
           </div>
 
