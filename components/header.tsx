@@ -72,8 +72,19 @@ export function Header({ user, loading }: HeaderProps) {
                     variant={"ghost"}
                     size={"sm"}
                     aria-label={t("profile")}
+                    className="rounded-full w-18 h-15"
                   >
-                    <UserIcon size={18} className="text-muted-foreground" />
+                    {user.additional?.avatar_url ? (
+                      <Image
+                        src={typeof user.additional.avatar_url === "string" ? user.additional.avatar_url : ""}
+                        alt={t("profile")}
+                        width={18}
+                        height={15}
+                        className=""
+                      />
+                    ) : (
+                      <UserIcon size={18} className="text-muted-foreground" />
+                    )}
                     <span className="sr-only">{t("profile")}</span>
                   </Button>
                 </DropdownMenuTrigger>

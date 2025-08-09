@@ -55,6 +55,15 @@ export const LanguageSwitcher: React.FC = () => {
             size={ICON_SIZE}
             className={"text-muted-foreground"}
           />
+          {currentLanguage && (
+            <Image
+              src={`https://flagcdn.com/w20/${currentLanguage.flag}.png`}
+              alt={currentLanguage.label}
+              width={20}
+              height={10}
+              className="rounded-full absolute top-0 right-0"
+            />
+          )}
           {isCurrentRTL && (
             <Languages
               size={12}
