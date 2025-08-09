@@ -574,7 +574,7 @@ export default function ScopePage({
               {(isOwner || isEditor) && (
                 <button
                   onClick={() => setShareModalOpen(true)}
-                  className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all duration-200 shadow-lg"
+                  className="flex items-center gap-2 relative group bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white px-4 py-2 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/25 active:scale-95"
                 >
                   <FiShare2 className="text-sm" /> {t('share')}
                 </button>
@@ -582,7 +582,7 @@ export default function ScopePage({
               {typeof user.additional?.open_api_key == "string" && (
                 <button
                   onClick={() => setAiChatOpen(true)}
-                  className="flex items-center gap-2 relative bg-gradient-to-r from-purple-800 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-gray-600 hover:to-gray-700 transition-all duration-200 shadow-lg"
+                  className="flex items-center gap-2 relative  group bg-gradient-to-r from-pink-500 via-rose-500 to-red-500 text-white px-4 py-2 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-pink-500/25 active:scale-95"
                 >
                  <FiMessageCircle className="text-sm" /> Ai Chat
               </button>
