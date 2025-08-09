@@ -312,8 +312,8 @@ export default function SettingsPage() {
                 />
                 <button
                   onClick={handleApiKeySave}
-                  disabled={savingApiKey || !apiKey}
-                  className="mt-0 h-12 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg text-sm font-medium hover:from-blue-600 hover:to-purple-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={true || savingApiKey || !apiKey}
+                  className="disabled:cursor-not-allowed mt-0 h-12 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg text-sm font-medium hover:from-blue-600 hover:to-purple-600 transition-all duration-200 disabled:opacity-50"
                 >
                   {savingApiKey ? t('saving') : t('save')}
                 </button>
