@@ -32,7 +32,6 @@ import { TeamService } from "@/app/services/teamService";
 import { ProjectService } from "@/app/services/projectService";
 import { ScopeService } from "@/app/services/scopeService";
 import { ScopeEditorService } from "@/app/services/scopeEditorService";
-import { Badge } from "@/app/components/ui/Badge";
 import { FiCheck, FiEdit2, FiMessageCircle, FiShare2, FiX } from "react-icons/fi";
 import { UserRepository } from "@/lib/domain/repositories/user.repository";
 import { User } from "@/lib/domain/models/user.model";
