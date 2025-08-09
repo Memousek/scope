@@ -304,8 +304,9 @@ export default function SettingsPage() {
                   <input
                     id="apiKey"
                     type="text"
-                    className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
+                    className="disabled:opacity-50 disabled:cursor-not-allowed w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
                     placeholder={t('yourApiKey')}
+                    disabled={true}
                   value={apiKey}
                   onChange={(e) => handleApiKeyChange(e.target.value)}
                 />
