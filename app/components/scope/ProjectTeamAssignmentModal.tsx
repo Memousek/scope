@@ -8,6 +8,7 @@ import { FiPlus, FiUser, FiUsers, FiTrash2, FiUserPlus } from "react-icons/fi";
 import { TeamMember, Project } from "./types";
 import { useTranslation } from "@/lib/translation";
 import { useTeam } from "@/app/hooks/useTeam";
+import { useScopeRoles } from "@/app/hooks/useScopeRoles";
 import { ContainerService } from "@/lib/container.service";
 import { ManageProjectTeamAssignmentsService } from "@/lib/domain/services/manage-project-team-assignments.service";
 import { Modal } from "@/app/components/ui/Modal";
@@ -42,6 +43,7 @@ export function ProjectTeamAssignmentModal({
   const [allocationFte, setAllocationFte] = useState<number>(0);
   const { t } = useTranslation();
   const { team, loadTeam } = useTeam(scopeId);
+  const { activeRoles } = useScopeRoles(scopeId);
 
   const manageAssignmentsService = ContainerService.getInstance().get(
     ManageProjectTeamAssignmentsService,
@@ -120,7 +122,9 @@ export function ProjectTeamAssignmentModal({
     // Automatically set role based on team member's role
     const teamMember = team.find(tm => tm.id === teamMemberId);
     if (teamMember) {
-      setSelectedRole(teamMember.role);
+      // Prefer the team member's role; if missing, fall back to the first active scope role
+      const fallbackRole = activeRoles[0]?.label ?? '';
+      setSelectedRole(teamMember.role && teamMember.role.trim() !== '' ? teamMember.role : fallbackRole);
       // Automatically set FTE based on team member's FTE
       setAllocationFte(Number(teamMember.fte.toFixed(1)));
     }

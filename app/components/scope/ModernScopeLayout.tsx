@@ -20,7 +20,6 @@ import { ProjectTeamAssignment } from "@/lib/domain/models/project-team-assignme
 import { Badge } from "../ui/Badge";
 import { useScopeRoles } from "@/app/hooks/useScopeRoles";
 import { FiUsers, FiTrendingUp, FiBarChart2, FiSearch, FiDownload, FiFolder } from 'react-icons/fi';
-import { useScopeUsage, useHasExportForScope } from "@/app/hooks/useData";
 
 interface ModernScopeLayoutProps {
   scopeId: string;
@@ -78,13 +77,7 @@ export function ModernScopeLayout({
   const { t } = useTranslation();
   const { activeRoles } = useScopeRoles(scopeId);
   const [activeTab, setActiveTab] = useState<TabType>("overview");
-  const { data: usage } = useScopeUsage(scopeId);
-  const { data: exportAllowed } = useHasExportForScope(scopeId);
-  const canExport = exportAllowed ?? true;
-  const scopeUsage = usage ?? null;
-  // scopeLimits removed; usage rendered below
 
-  // Export functions
   const handleExportTeam = () => {
     const teamColumns: (keyof TeamMember)[] = ["name", "role", "fte"];
     const teamHeaderMap = {
@@ -321,7 +314,6 @@ export function ModernScopeLayout({
                   )}
 
                   {/* Export Team */}
-                  {canExport && (
                   <button
                     onClick={handleExportTeam}
                     className="relative group bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 text-white rounded-xl p-4 hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-orange-500/25 active:scale-95 flex flex-col items-center gap-3 motion-reduce:scale-100 motion-reduce:transition-none"
@@ -332,10 +324,8 @@ export function ModernScopeLayout({
                       {t("exportTeam")}
                     </span>
                   </button>
-                  )}
 
                   {/* Export Projects */}
-                  {canExport && (
                   <button
                     onClick={handleExportProjects}
                     className="relative group bg-gradient-to-br from-teal-500 via-cyan-500 to-blue-500 text-white rounded-xl p-4 hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-teal-500/25 active:scale-95 flex flex-col items-center gap-3 motion-reduce:scale-100 motion-reduce:transition-none"
@@ -346,7 +336,6 @@ export function ModernScopeLayout({
                       {t("exportProjects")}
                     </span>
                   </button>
-                  )}
 
                   {/* Import Team - Soon */}
                   {!readOnlyMode && (
@@ -449,14 +438,6 @@ export function ModernScopeLayout({
             </button>
           ))}
         </div>
-      </div>
-      <div className="pl-4 pr-4 flex justify-end">
-        {scopeUsage && (
-          <div className="text-xs text-gray-600 dark:text-gray-400 flex gap-4">
-            <span>Projekty: {scopeUsage.projects}</span>
-            <span>Členové: {scopeUsage.teamMembers}</span>
-          </div>
-        )}
       </div>
 
       {/* Tab Content - automatická výška */}

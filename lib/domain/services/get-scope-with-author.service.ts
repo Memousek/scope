@@ -26,7 +26,7 @@ export class GetScopeWithAuthorService {
     // Získat autora (vlastníka) přímo z Supabase
     const supabase = createClient();
     const { data: author } = await supabase
-      .from('users')
+  .from('users_meta')
       .select('email')
       .eq('id', scope.ownerId)
       .single();

@@ -36,11 +36,11 @@ export class ScopeEditorService {
   static async findUserByEmail(email: string): Promise<string | null> {
     const supabase = createClient();
     const { data } = await supabase
-      .from('auth.users')
-      .select('id')
+  .from('users_meta')
+      .select('user_id')
       .eq('email', email);
-    
-    return data && data.length > 0 ? data[0].id : null;
+
+    return data && data.length > 0 ? data[0].user_id : null;
   }
 
   /**

@@ -57,6 +57,14 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
     load();
   }, [isOpen, scopeId]);
 
+  // Ensure default role is preselected once roles are available
+  useEffect(() => {
+    if (!isOpen) return;
+    if (activeRoles.length > 0 && (!newMember.role || newMember.role.trim() === '')) {
+      setNewMember((m) => ({ ...m, role: activeRoles[0].label }));
+    }
+  }, [isOpen, activeRoles, newMember.role]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMember.name.trim()) return;
