@@ -32,7 +32,7 @@ import { TeamService } from "@/app/services/teamService";
 import { ProjectService } from "@/app/services/projectService";
 import { ScopeService } from "@/app/services/scopeService";
 import { ScopeEditorService } from "@/app/services/scopeEditorService";
-import { FiCheck, FiEdit2, FiMessageCircle, FiShare2, FiX } from "react-icons/fi";
+import { FiCheck, FiEdit2, FiShare2, FiX } from "react-icons/fi";
 import { UserRepository } from "@/lib/domain/repositories/user.repository";
 import { User } from "@/lib/domain/models/user.model";
 
@@ -579,14 +579,6 @@ export default function ScopePage({
                   <FiShare2 className="text-sm" /> {t('share')}
                 </button>
               )}
-              {typeof user.additional?.open_api_key == "string" && (
-                <button
-                  onClick={() => setAiChatOpen(true)}
-                  className="flex items-center gap-2 relative  group bg-gradient-to-r from-pink-500 via-rose-500 to-red-500 text-white px-4 py-2 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-pink-500/25 active:scale-95"
-                >
-                 <FiMessageCircle className="text-sm" /> Ai Chat
-              </button>
-              )}
             </div>
           </div>
 
@@ -664,13 +656,16 @@ export default function ScopePage({
         isEditor={isEditor}
       />
 
-      <AiChatModal
-        isOpen={aiChatOpen}
-        onClose={() => setAiChatOpen(false)}
-        scopeId={id}
-      />
+      {aiChatOpen && (
+        <AiChatModal
+          onClose={() => setAiChatOpen(false)}
+          scopeId={id}
+        />
+      )}
 
-      <AiChatButton onClick={() => setAiChatOpen(true)} />
+      {!aiChatOpen && (
+        <AiChatButton onClick={() => setAiChatOpen(true)} />
+      )}
     </div>
   );
 }

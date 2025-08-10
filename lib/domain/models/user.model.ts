@@ -27,6 +27,8 @@ export interface User {
   emailConfirmedAt?: Date | null;
   invitedAt?: Date | null;
   openApiKey?: string | null;
+  geminiApiKey?: string | null;
+  aiProvider?: 'openai' | 'gemini';
   bio?: string | null;
   timezone?: string | null;
   username?: string | null;
