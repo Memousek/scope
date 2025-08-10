@@ -7,16 +7,16 @@
  * - Burndown chart showing remaining work over time
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Project, TeamMember } from './types';
 import { calculatePriorityDatesWithAssignments } from '@/app/utils/dateUtils';
 import { ProjectTeamAssignment } from '@/lib/domain/models/project-team-assignment.model';
 import { Payload } from "recharts/types/component/DefaultLegendContent";
 import { useTranslation } from "@/lib/translation";
-import { Badge } from "../ui/Badge";
 import { useScopeRoles } from '@/app/hooks/useScopeRoles';
 import { FiBarChart2 } from 'react-icons/fi';
+import { downloadCSV } from '@/app/utils/csvUtils';
 
 interface BurndownChartProps {
   projects: Project[];
@@ -41,7 +41,64 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
   const { t } = useTranslation();
   const { activeRoles } = useScopeRoles(scopeId);
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
-  const [activeLegend, setActiveLegend] = useState<string | null>(null); // Přidáno
+  const [activeLegend, setActiveLegend] = useState<string | null>(null);
+  const chartRef = useRef<HTMLDivElement>(null);
+
+  // Export PNG functionality
+  const handleExportPNG = async () => {
+    if (!chartRef.current) return;
+    try {
+      const htmlToImage = await import('html-to-image');
+      // Najdeme chart container uvnitř ref elementu
+      const chartContainer = chartRef.current.querySelector('.recharts-wrapper');
+      if (!chartContainer) {
+        console.error('Chart container not found');
+        return;
+      }
+      
+      // Získáme skutečné rozměry chart containeru
+      const rect = chartContainer.getBoundingClientRect();
+      const scale = 2; // Zvýšíme kvalitu pro lepší export
+      
+      const dataUrl = await htmlToImage.toPng(chartContainer as HTMLElement, { 
+        backgroundColor: 'transparent',
+        quality: 1.0,
+        width: rect.width * scale,
+        height: rect.height * scale,
+        style: {
+          transform: `scale(${scale})`,
+          transformOrigin: 'top left'
+        }
+      });
+      const link = document.createElement('a');
+      link.download = `burndown-chart-${scopeId}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (error) {
+      console.error('Error exporting PNG:', error);
+    }
+  };
+
+  // Export CSV functionality
+  const handleExportCSV = () => {
+    if (chartData.length === 0) return;
+    
+    const columns: (keyof ChartDataPoint)[] = ['date', 'totalProgress', 'idealProgress'];
+    const headerMap: Record<string, string> = {
+      date: t('date'),
+      totalProgress: t('totalPercentDone'),
+      idealProgress: t('idealProgress'),
+    };
+
+    // Add project columns dynamically
+    projects.forEach((project) => {
+      const projectKey = `project_${project.id}` as keyof ChartDataPoint;
+      columns.push(projectKey);
+      headerMap[projectKey] = project.name;
+    });
+
+    downloadCSV(`burndown-data-${scopeId}.csv`, chartData, columns, headerMap);
+  };
 
   // Generate chart data based on projects and team
   useEffect(() => {
@@ -109,14 +166,30 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
         return;
       }
 
-      // Zajistíme minimálně 5 datových bodů pro správné zobrazení
+      // Zajistíme správné zobrazení všech datových bodů
       const minPoints = 5;
-      const maxPoints = 20;
+      const maxPoints = 30; // Zvýšeno pro lepší zobrazení
       
       let filteredDates = uniqueDates;
       if (uniqueDates.length > maxPoints) {
+        // Použijeme inteligentní filtrování - zachováme první, poslední a rovnoměrně rozložené body
         const step = Math.max(1, Math.floor(uniqueDates.length / maxPoints));
-        filteredDates = uniqueDates.filter((_, index) => index % step === 0);
+        const filtered = [];
+        
+        // Vždy zachováme první a poslední bod
+        filtered.push(uniqueDates[0]);
+        
+        // Přidáme rovnoměrně rozložené body
+        for (let i = step; i < uniqueDates.length - 1; i += step) {
+          filtered.push(uniqueDates[i]);
+        }
+        
+        // Vždy zachováme poslední bod
+        if (uniqueDates.length > 1) {
+          filtered.push(uniqueDates[uniqueDates.length - 1]);
+        }
+        
+        filteredDates = filtered;
       } else if (uniqueDates.length < minPoints) {
         // Pokud máme málo bodů, přidáme další dny
         const lastDate = uniqueDates[uniqueDates.length - 1];
@@ -319,7 +392,7 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
   };
 
   return (
-    <div className="relative bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 rounded-2xl p-8 shadow-2xl">
+    <div ref={chartRef} className="relative bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 rounded-2xl p-8 shadow-2xl">
       {/* Decorative background elements */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 rounded-2xl"></div>
       <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full blur-3xl"></div>
@@ -388,7 +461,10 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
         {/* Chart Container */}
         <div className="h-80 mb-6">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData}>
+            <LineChart 
+              data={chartData}
+              margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
+            >
               <CartesianGrid
                 strokeDasharray="3 3"
                 stroke="#374151"
@@ -397,8 +473,13 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
               <XAxis
                 dataKey="date"
                 stroke="#6b7280"
-                fontSize={12}
+                fontSize={11}
                 tick={{ fill: "#6b7280" }}
+                angle={-45}
+                textAnchor="end"
+                height={80}
+                interval={0}
+                minTickGap={20}
               />
               <YAxis
                 stroke="#6b7280"
@@ -491,8 +572,10 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
           </div>
 
           <div className="flex gap-2">
-            <button disabled={true} className="disabled:opacity-50 relative group/btn bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 text-white px-4 py-2 rounded-xl hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/25 active:scale-95 shadow-lg text-sm font-semibold flex items-center gap-2">
-              <Badge label={t("soon")} variant="soon" />
+            <button 
+              onClick={handleExportPNG}
+              className="relative group/btn bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 text-white px-4 py-2 rounded-xl hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/25 active:scale-95 shadow-lg text-sm font-semibold flex items-center gap-2"
+            >
               <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300"></div>
               <svg
                 className="relative z-10 w-4 h-4"
@@ -507,10 +590,12 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
                   d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
                 />
               </svg>
-              <span className="relative z-10">Export PNG</span>
+              <span className="relative z-10">{t("exportPng")}</span>
             </button>
-            <button disabled={true} className="disabled:opacity-50 relative group/btn bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 text-white px-4 py-2 rounded-xl hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-green-500/25 active:scale-95 shadow-lg text-sm font-semibold flex items-center gap-2">
-              <Badge label={t("soon")} variant="soon" />
+            <button 
+              onClick={handleExportCSV}
+              className="relative group/btn bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 text-white px-4 py-2 rounded-xl hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-green-500/25 active:scale-95 shadow-lg text-sm font-semibold flex items-center gap-2"
+            >
               <div className="absolute inset-0 bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 rounded-xl opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300"></div>
               <svg
                 className="relative z-10 w-4 h-4"
@@ -525,7 +610,7 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
                   d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                 />
               </svg>
-              <span className="relative z-10">Export CSV</span>
+              <span className="relative z-10">{t("exportCsv")}</span>
             </button>
           </div>
         </div>
