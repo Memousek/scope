@@ -19,18 +19,38 @@ import { useTranslation } from "@/lib/translation";
 import { ProjectTeamAssignment } from "@/lib/domain/models/project-team-assignment.model";
 import { Badge } from "../ui/Badge";
 import { useScopeRoles } from "@/app/hooks/useScopeRoles";
-import { FiUsers, FiTrendingUp, FiBarChart2, FiSearch, FiDownload, FiFolder } from 'react-icons/fi';
+import {
+  FiUsers,
+  FiTrendingUp,
+  FiBarChart2,
+  FiSearch,
+  FiFolder,
+  FiUpload,
+} from "react-icons/fi";
+import TeamImportModal from "../TeamImportModal";
+import { mutate } from "swr";
+import { TeamService } from "@/app/services/teamService";
 
 interface ModernScopeLayoutProps {
   scopeId: string;
   team: TeamMember[];
   projects: Project[];
   projectAssignments?: Record<string, ProjectTeamAssignment[]>;
-  workflowDependencies?: Record<string, {
-    workflow_type: string;
-    dependencies: Array<{ from: string; to: string; type: 'blocking' | 'waiting' | 'parallel' }>;
-    active_workers: Array<{ role: string; status: 'active' | 'waiting' | 'blocked' }>;
-  }>;
+  workflowDependencies?: Record<
+    string,
+    {
+      workflow_type: string;
+      dependencies: Array<{
+        from: string;
+        to: string;
+        type: "blocking" | "waiting" | "parallel";
+      }>;
+      active_workers: Array<{
+        role: string;
+        status: "active" | "waiting" | "blocked";
+      }>;
+    }
+  >;
   onTeamChange: (team: TeamMember[]) => void;
   stats?: {
     projectCount: number;
@@ -77,6 +97,7 @@ export function ModernScopeLayout({
   const { t } = useTranslation();
   const { activeRoles } = useScopeRoles(scopeId);
   const [activeTab, setActiveTab] = useState<TabType>("overview");
+  const [importModalOpen, setImportModalOpen] = useState(false);
 
   const handleExportTeam = () => {
     const teamColumns: (keyof TeamMember)[] = ["name", "role", "fte"];
@@ -90,16 +111,16 @@ export function ModernScopeLayout({
 
   const handleExportProjects = () => {
     // Dynamicky vytvoříme sloupce pro každou roli
-  const roleColumns: string[] = [];
+    const roleColumns: string[] = [];
     const roleHeaderMap: Record<string, string> = {};
-    
-    activeRoles.forEach(role => {
-  roleColumns.push(`${role.key}_mandays`);
-  roleColumns.push(`${role.key}_done`);
+
+    activeRoles.forEach((role) => {
+      roleColumns.push(`${role.key}_mandays`);
+      roleColumns.push(`${role.key}_done`);
       roleHeaderMap[`${role.key}_mandays`] = `${role.label} MD`;
-      roleHeaderMap[`${role.key}_done`] = `${role.label} ${t('done')}`;
+      roleHeaderMap[`${role.key}_done`] = `${role.label} ${t("done")}`;
     });
-    
+
     const projectColumns: string[] = [
       "name",
       "priority",
@@ -152,7 +173,8 @@ export function ModernScopeLayout({
                 <div className="flex items-center gap-4 mb-6">
                   <div className="relative">
                     <h2 className="text-2xl font-bold dark:text-white text-gray-900">
-                      <FiSearch className="inline mr-2" /> <span className="">{t("scopeOverview")}</span>
+                      <FiSearch className="inline mr-2" />{" "}
+                      <span className="">{t("scopeOverview")}</span>
                     </h2>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 bg-white/50 dark:bg-gray-700/50 px-3 py-1 rounded-full backdrop-blur-sm">
@@ -283,7 +305,6 @@ export function ModernScopeLayout({
                   </div>
                 </div>
 
-
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                   {/* Add Member */}
                   {!readOnlyMode && (
@@ -339,28 +360,30 @@ export function ModernScopeLayout({
 
                   {/* Import Team - Soon */}
                   {!readOnlyMode && (
-                  <button
-                    onClick={() => {}}
-                    className="relative cursor-not-allowed opacity-50 bg-gradient-to-br from-teal-500 via-purple-500 to-pink-500 text-white rounded-xl p-4 hover:scale-105 transition-all duration-300 flex flex-col items-center gap-3 group motion-reduce:scale-100 motion-reduce:transition-none"
-                    disabled={true}
-                  >
-                    <Badge label={t("soon")} variant="soon" />
-                    <FiDownload className="text-2xl" />
-                    <span className="text-sm font-semibold">{t("importTeam")}</span>
-                  </button>
+                    <button
+                      onClick={() => setImportModalOpen(true)}
+                      className="relative bg-gradient-to-br from-teal-500 via-purple-500 to-pink-500 text-white rounded-xl p-4 hover:scale-105 transition-all duration-300 flex flex-col items-center gap-3 group motion-reduce:scale-100 motion-reduce:transition-none"
+                    >
+                      <FiUpload className="text-2xl" />
+                      <span className="text-sm font-semibold">
+                        {t("importTeam")}
+                      </span>
+                    </button>
                   )}
 
                   {/* Import Projects - Soon */}
                   {!readOnlyMode && (
-                  <button
-                    onClick={() => {}}
-                    className="relative cursor-not-allowed opacity-50 bg-gradient-to-br from-red-500 via-pink-500 to-purple-500 text-white rounded-xl p-4 hover:scale-105 transition-all duration-300 flex flex-col items-center gap-3 group motion-reduce:scale-100 motion-reduce:transition-none"
-                    disabled={true}
-                  >
-                    <Badge label={t("soon")} variant="soon" />
-                    <FiDownload className="text-2xl" />
-                    <span className="text-sm font-semibold">{t("importProjects")}</span>
-                  </button>
+                    <button
+                      onClick={() => {}}
+                      className="relative cursor-not-allowed opacity-50 bg-gradient-to-br from-red-500 via-pink-500 to-purple-500 text-white rounded-xl p-4 hover:scale-105 transition-all duration-300 flex flex-col items-center gap-3 group motion-reduce:scale-100 motion-reduce:transition-none"
+                      disabled={true}
+                    >
+                      <Badge label={t("soon")} variant="soon" />
+                      <FiUpload className="text-2xl" />
+                      <span className="text-sm font-semibold">
+                        {t("importProjects")}
+                      </span>
+                    </button>
                   )}
                 </div>
               </div>
@@ -370,29 +393,39 @@ export function ModernScopeLayout({
 
       case "team":
         return (
-            <TeamSection
-              scopeId={scopeId}
-              team={team}
-              onTeamChange={onTeamChange}
-              readOnlyMode={readOnlyMode}
-            />
+          <TeamSection
+            scopeId={scopeId}
+            team={team}
+            onTeamChange={onTeamChange}
+            readOnlyMode={readOnlyMode}
+          />
         );
 
       case "projects":
         return (
-            <ProjectSection
-              scopeId={scopeId}
-              user={user}
-              readOnlyMode={readOnlyMode}
-            />
+          <ProjectSection
+            scopeId={scopeId}
+            user={user}
+            readOnlyMode={readOnlyMode}
+          />
         );
 
       case "burndown":
         return (
-            <div className="relative">
-                <Badge label={t("experimental")} variant="info" position="top-right" />
-                <BurndownChart projects={projects} team={team} projectAssignments={projectAssignments} workflowDependencies={workflowDependencies} scopeId={scopeId} />
-            </div>
+          <div className="relative">
+            <Badge
+              label={t("experimental")}
+              variant="info"
+              position="top-right"
+            />
+            <BurndownChart
+              projects={projects}
+              team={team}
+              projectAssignments={projectAssignments}
+              workflowDependencies={workflowDependencies}
+              scopeId={scopeId}
+            />
+          </div>
         );
 
       default:
@@ -488,6 +521,32 @@ export function ModernScopeLayout({
           scopeId={scopeId}
         />
       )}
+
+      <TeamImportModal
+        isOpen={importModalOpen}
+        onClose={() => setImportModalOpen(false)}
+        onImport={async (members) => {
+          setSavingMember(true);
+          try {
+            const promises = members.map((m) =>
+              TeamService.createTeamMember(scopeId, {
+                name: m.name,
+                role: m.role,
+                fte: Number(m.fte),
+              })
+            );
+            const newMembers = await Promise.all(promises);
+            onTeamChange([...team, ...newMembers]);
+            try {
+              await mutate(["scopeUsage", scopeId]);
+            } catch {}
+          } catch (error) {
+            console.error("Chyba při importu členů týmu:", error);
+          } finally {
+            setSavingMember(false);
+          }
+        }}
+      />
     </div>
   );
 }
