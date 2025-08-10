@@ -48,7 +48,7 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
   const handleExportPNG = async () => {
     if (!chartRef.current) return;
     try {
-      const htmlToImage = await import('html-to-image');
+      const htmlToImage = await import('html-to-image');      
       // Najdeme chart container uvnitř ref elementu
       const chartContainer = chartRef.current.querySelector('.recharts-wrapper');
       if (!chartContainer) {
@@ -147,11 +147,10 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
           safetyCounter++;
         }
         
-        // Generujeme data pro fallback
+        // Generujeme data pro fallback (burndown: 100 % -> 0 %)
         fallbackDates.forEach((date, index) => {
           const totalDays = fallbackDates.length;
-          const idealProgress = ((totalDays - index) / totalDays) * 100;
-          
+          const idealProgress = ((totalDays - index - 1) / (totalDays - 1)) * 100;
           data.push({
             date: date.toLocaleDateString("cs-CZ", {
               day: "2-digit",
@@ -211,12 +210,13 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
       let lastValidProgress = 0;
 
       filteredDates.forEach((date, index) => {
-        const totalDays = filteredDates.length;
-        const idealProgress = ((totalDays - index) / totalDays) * 100;
+  const totalPoints = filteredDates.length;
+  // Ideální burndown: první bod 100 %, poslední bod 0 %
+  const idealProgress = totalPoints === 1 ? 100 : 100 * (1 - index / (totalPoints - 1));
 
-        const projectProgress: { [key: string]: number } = {};
-        let weightedProgressSum = 0;
-        let totalWeight = 0;
+  const projectProgress: { [key: string]: number } = {};
+  let weightedProgressSum = 0;
+  let totalWeight = 0;
 
         projects.forEach((project) => {
           const projectStart = priorityDates[project.id]?.priorityStartDate;
@@ -290,7 +290,13 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
         });
       });
 
-      setChartData(data);
+      // Seřadíme data podle data (od nejstaršího k nejnovějšímu)
+      const sortedData = [...data].sort((a, b) => {
+        const da = a.date.split('.').reverse().join('-');
+        const db = b.date.split('.').reverse().join('-');
+        return new Date(da).getTime() - new Date(db).getTime();
+      });
+      setChartData(sortedData);
     } catch (error) {
       console.error('Error generating burndown chart data:', error);
       // Fallback na prázdná data
@@ -346,17 +352,14 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
   // Calculate statistics
   const totalProjects = projects.length;
 
-  const avgProgress =
-    chartData.length > 0
-      ? Math.round(chartData[chartData.length - 1]?.totalProgress || 0)
-      : 0;
-
-  const idealProgress =
-    chartData.length > 0
-      ? Math.round(chartData[chartData.length - 1]?.idealProgress || 0)
-      : 0;
-
-  const progressDiff = avgProgress - idealProgress;
+  // Zbývající práce: 100 % - hotovo
+  const remainingWork = chartData.length > 0
+    ? Math.round(100 - (chartData[chartData.length - 1]?.totalProgress || 0))
+    : 100;
+  const idealRemaining = chartData.length > 0
+    ? Math.round(chartData[chartData.length - 1]?.idealProgress || 0)
+    : 100;
+  const progressDiff = idealRemaining - remainingWork;
 
   // Get project names for title
   const projectNames = projects.map((p) => p.name).join(", ");
@@ -452,7 +455,7 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
                 </span>
               </div>
               <div className="text-lg font-bold text-gray-900 dark:text-white">
-                {avgProgress}%
+                {remainingWork}%
               </div>
             </div>
           </div>
@@ -482,12 +485,13 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
                 minTickGap={20}
               />
               <YAxis
-                stroke="#6b7280"
-                fontSize={12}
-                domain={[0, 100]}
-                tickFormatter={(value) => `${value}%`}
-                tick={{ fill: "#6b7280" }}
-              />
+                  stroke="#6b7280"
+                  fontSize={12}
+                  domain={[100, 0]} 
+                  reversed={true}
+                  tickFormatter={(value) => `${value}%`}
+                  tick={{ fill: "#6b7280" }}
+                />
               <Tooltip content={<CustomTooltip />} />
               <Legend
                 wrapperStyle={{ paddingTop: "20px" }}
@@ -495,20 +499,6 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
                 iconSize={12}
                 onMouseEnter={handleLegendMouseEnter}
                 onMouseLeave={handleLegendMouseLeave}
-              />
-
-              {/* Ideální průběh (burndown) */}
-              <Line
-                type="monotone"
-                dataKey="idealProgress"
-                stroke="#9ca3af"
-                strokeWidth={2}
-                strokeDasharray="5 5"
-                name={t("idealProgress")}
-                dot={false}
-                opacity={
-                  !activeLegend || activeLegend === "idealProgress" ? 0.7 : 0.2
-                }
               />
 
               {/* Project progress */}
@@ -548,25 +538,25 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
           <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-              <span>{t("total")}: {avgProgress}%</span>
+              <span>Zbývá: {remainingWork}%</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-              <span>Ideál: {idealProgress}%</span>
+              <span>Ideál: {idealRemaining}%</span>
             </div>
             <div className="flex items-center gap-2">
               <div
-                className={`w-3 h-3 rounded-full ${progressDiff >= 0 ? "bg-green-500" : "bg-red-500"}`}
+                className={`w-3 h-3 rounded-full ${progressDiff <= 0 ? "bg-green-500" : "bg-red-500"}`}
               ></div>
               <span
                 className={
-                  progressDiff >= 0
+                  progressDiff <= 0
                     ? "text-green-600 dark:text-green-400"
                     : "text-red-600 dark:text-red-400"
                 }
               >
-                {progressDiff >= 0 ? "+" : ""}
-                {progressDiff}%
+                {progressDiff <= 0 ? "-" : "+"}
+                {Math.abs(progressDiff)}%
               </span>
             </div>
           </div>
