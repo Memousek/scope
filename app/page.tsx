@@ -26,6 +26,9 @@ import Link from "next/link";
 import { SchemaOrgScript } from "../components/schema-org-script";
 import { generateFAQSchema } from "@/lib/utils/schemaOrg";
 
+import { CarouselDemo } from "./components/CarouselDemo";
+
+
 export default function Home() {
   // Generate FAQ schema for better SEO
   const faqSchema = generateFAQSchema([
@@ -217,19 +220,18 @@ export default function Home() {
                 <span className="text-white text-3xl font-bold">S</span>
               </motion.div>
 
-              <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-5xl md:text-7xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 {t("scope_burndown")}
               </h1>
-
+              <div className="text-2xl font-semibold text-blue-600 mb-6">{t("hero_claim")}</div>
               <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.8, delay: 0.4 }}
                 className="text-xl text-gray-600 dark:text-gray-400 mb-8 max-w-2xl mx-auto leading-relaxed"
               >
-                {t("track_progress_and_manage_resources")}
+                {t("hero_subheadline")}
               </motion.p>
-
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -243,12 +245,12 @@ export default function Home() {
                   {t("login")}
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" />
                 </Link>
-
                 <Link
                   href="/auth/sign-up"
                   className="group bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 px-8 py-4 rounded-xl text-lg font-semibold hover:bg-white dark:hover:bg-gray-700 transition-all duration-300 hover:scale-105 shadow-lg inline-flex items-center gap-2"
                 >
-                  {t("create_account")}
+                  {t("register")}
+                  <span className="ml-2 text-blue-600 font-semibold text-base">{t("cta_free_trial")}</span>
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" />
                 </Link>
               </motion.div>
@@ -265,10 +267,10 @@ export default function Home() {
               className="text-center mb-16"
             >
               <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Proč Scope Burndown?
+                {t("why_scope_burndown")}
               </h2>
               <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
-                Moderní nástroj pro projektový management s pokročilými analytickými funkcemi
+                {t("why_scope_burndown_sub")}
               </p>
             </motion.div>
 
@@ -278,17 +280,19 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.1 }}
                 viewport={{ once: true }}
-                className="group bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border border-white/20 dark:border-gray-700/30 rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
+                className="group bg-gradient-to-br from-blue-600 to-purple-600 text-white rounded-3xl p-10 shadow-2xl hover:shadow-2xl transition-all duration-300 hover:scale-105 border-2 border-blue-400 dark:border-purple-700 col-span-1 md:col-span-2 lg:col-span-1"
+                style={{ minHeight: '320px' }}
               >
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <BarChart3 className="w-8 h-8 text-white" />
+                <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <BarChart3 className="w-12 h-12 text-white" />
                 </div>
-                <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <h3 className="text-3xl font-bold mb-4 bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
                   {t("progress_tracking")}
                 </h3>
-                <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                  {t("visual_overview_of_projects")}
+                <p className="text-lg leading-relaxed">
+                  {t("progress_tracking_desc")}
                 </p>
+                <div className="mt-4 text-base font-semibold text-blue-100">{t("progress_tracking_example")}</div>
               </motion.div>
 
               <motion.div
@@ -305,7 +309,7 @@ export default function Home() {
                   {t("team_sharing")}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                  {t("collaborate_and_share")}
+                  {t("team_sharing_desc")}
                 </p>
               </motion.div>
 
@@ -323,7 +327,7 @@ export default function Home() {
                   {t("data_export")}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                  {t("export_data_to_csv")}
+                  {t("data_export_desc")}
                 </p>
               </motion.div>
 
@@ -338,11 +342,12 @@ export default function Home() {
                   <Zap className="w-8 h-8 text-white" />
                 </div>
                 <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                  Rychlé nasazení
+                  {t("fast_onboarding")}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                  Začněte používat během několika minut. Jednoduchá registrace a okamžitý přístup ke všem funkcím.
+                  {t("fast_onboarding_desc")}
                 </p>
+                <div className="mt-2 text-base font-semibold text-green-600">{t("fast_onboarding_example")}</div>
               </motion.div>
 
               <motion.div
@@ -356,10 +361,10 @@ export default function Home() {
                   <Shield className="w-8 h-8 text-white" />
                 </div>
                 <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent">
-                  Bezpečnost
+                  {t("security")}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                  Vaše data jsou v bezpečí. Moderní šifrování a bezpečnostní standardy pro ochranu vašich projektů.
+                  {t("security_desc")}
                 </p>
               </motion.div>
 
@@ -377,7 +382,7 @@ export default function Home() {
                   {t("accessibility")}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                  {t("cross_device_access")}. {t("responsive_design")}.
+                  {t("accessibility_desc")}
                 </p>
               </motion.div>
             </div>
@@ -472,6 +477,57 @@ export default function Home() {
                 </div>
               </div>
             </motion.div>
+          </section>
+          {/* Reference sekce */}
+          {/* Reference sekce je dočasně skrytá */}
+          {/* Ukázkový burndown chart */}
+          <section className="py-20 px-4">
+            <CarouselDemo />
+          </section>
+          {/* Jak začít sekce */}
+          <section className="py-20 px-4">
+            <div className="max-w-3xl mx-auto text-center">
+              <h2 className="text-3xl font-bold mb-8 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{t("how_to_start")}</h2>
+              <div className="flex flex-col items-center mb-6">
+                <div className="flex items-center justify-center gap-8 w-full">
+                  <div className="flex flex-col items-center">
+                    <div className="bg-blue-600 text-white rounded-full w-14 h-14 flex items-center justify-center text-3xl mb-2 shadow-lg">1</div>
+                    <div className="font-bold mb-1">{t("step_register")}</div>
+                    <div className="text-gray-600 dark:text-gray-400 text-sm">{t("step_register_desc")}</div>
+                  </div>
+                  <div className="flex-1 h-1 bg-gradient-to-r from-blue-400 to-purple-400 mx-2" />
+                  <div className="flex flex-col items-center">
+                    <div className="bg-purple-600 text-white rounded-full w-14 h-14 flex items-center justify-center text-3xl mb-2 shadow-lg">2</div>
+                    <div className="font-bold mb-1">{t("step_create_project")}</div>
+                    <div className="text-gray-600 dark:text-gray-400 text-sm">{t("step_create_project_desc")}</div>
+                  </div>
+                  <div className="flex-1 h-1 bg-gradient-to-r from-purple-400 to-blue-400 mx-2" />
+                  <div className="flex flex-col items-center">
+                    <div className="bg-green-600 text-white rounded-full w-14 h-14 flex items-center justify-center text-3xl mb-2 shadow-lg">3</div>
+                    <div className="font-bold mb-1">{t("step_track_progress")}</div>
+                    <div className="text-gray-600 dark:text-gray-400 text-sm">{t("step_track_progress_desc")}</div>
+                  </div>
+                </div>
+                <div className="mt-6 text-base text-blue-600 font-semibold">{t("how_to_start_time_estimate")}</div>
+              </div>
+            </div>
+          </section>
+
+          {/* CTA opakování na konci */}
+          <section className="py-20 px-4">
+            <div className="max-w-2xl mx-auto text-center">
+              <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl p-10 shadow-2xl">
+                <h2 className="text-3xl font-bold text-white mb-4">{t("cta_final_title")}</h2>
+                <p className="text-lg text-blue-100 mb-6">{t("cta_final_benefits")}</p>
+                <Link
+                  href="/auth/sign-up"
+                  className="group bg-white text-blue-600 px-8 py-4 rounded-xl text-lg font-semibold hover:bg-gray-50 transition-all duration-300 hover:scale-105 shadow-lg inline-flex items-center gap-2"
+                >
+                  {t("cta_final_button")}
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" />
+                </Link>
+              </div>
+            </div>
           </section>
         </div>
       </div>
