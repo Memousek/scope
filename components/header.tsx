@@ -72,15 +72,15 @@ export function Header({ user, loading }: HeaderProps) {
                     variant={"ghost"}
                     size={"sm"}
                     aria-label={t("profile")}
-                    className="rounded-full w-18 h-15"
+                    className="rounded-full w-auto"
                   >
                     {user.additional?.avatar_url ? (
                       <Image
                         src={typeof user.additional.avatar_url === "string" ? user.additional.avatar_url : ""}
                         alt={t("profile")}
-                        width={18}
-                        height={15}
-                        className=""
+                        width={40}
+                        height={40}
+                        className="object-cover rounded-full"
                       />
                     ) : (
                       <UserIcon size={18} className="text-muted-foreground" />

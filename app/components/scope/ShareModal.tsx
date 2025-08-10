@@ -37,6 +37,15 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
   // Filtrovat pouze skutečné editory (s přiřazenými uživateli nebo přijaté pozvánky)
   const filteredEditors = editors.filter(editor => editor.user || editor.acceptedAt);
 
+  // Helper pro získání jména a avataru z user_meta
+  const getUserMeta = (editor: ScopeEditorWithUser) => {
+    const meta = editor.user?.user_meta || {};
+    return {
+      fullName: meta.full_name || editor.user?.fullName || editor.email?.split('@')[0] || 'Unknown User',
+      avatarUrl: meta.avatar_url || editor.user?.avatarUrl || '',
+    };
+  };
+
   const loadEditors = useCallback(async () => {
     if (!isOpen || !canShare) return;
     
@@ -310,18 +319,18 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
                 >
                   <div className="flex items-center gap-3">
                     {/* Avatar */}
-                    {editor.user?.avatarUrl ? (
+                    {getUserMeta(editor).avatarUrl ? (
                       <Image 
-                        src={editor.user?.avatarUrl} 
-                        alt={editor.user?.fullName || ''} 
+                        src={getUserMeta(editor).avatarUrl} 
+                        alt={getUserMeta(editor).fullName} 
                         width={40}
                         height={40}
-                        className="w-10 h-10 rounded-full" 
+                        className="w-10 h-10 rounded-full object-cover" 
                       />
                     ) : (
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold border-2 border-gray-200 dark:border-gray-600">
-                        {editor.user?.fullName 
-                          ? editor.user.fullName.split(' ').map(word => word.charAt(0)).join('').toUpperCase().slice(0, 2)
+                        {getUserMeta(editor).fullName
+                          ? getUserMeta(editor).fullName.split(' ').map((word: string) => word.charAt(0)).join('').toUpperCase().slice(0, 2)
                           : editor.email?.charAt(0).toUpperCase() || '?'
                         }
                       </div>
@@ -329,7 +338,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
                     {/* Name */}
                     <div>
                       <p className="font-medium text-gray-900 dark:text-white">
-                        {editor.user?.fullName || editor.email?.split('@')[0] || 'Unknown User'}
+                        {getUserMeta(editor).fullName}
                       </p>
                     </div>
                   </div>

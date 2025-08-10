@@ -4,7 +4,7 @@
  * Shows different states based on API key availability
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from '@/lib/translation';
 import { AiService } from '@/app/services/aiService';
 
@@ -17,13 +17,11 @@ export function AiChatButton({ onClick }: AiChatButtonProps) {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const { t } = useTranslation();
 
-  const aiService = new AiService();
+  const aiService = useMemo(() => new AiService(), []);
 
-  useEffect(() => {
-    checkApiKey();
-  }, []);
+  // případné další hooky nebo logika
 
-  const checkApiKey = async () => {
+  const checkApiKey = useCallback(async () => {
     try {
       setIsLoading(true);
       const hasKey = await aiService.hasApiKey();
@@ -34,7 +32,11 @@ export function AiChatButton({ onClick }: AiChatButtonProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [aiService]);
+
+  useEffect(() => {
+    checkApiKey();
+  }, [checkApiKey]);
 
   if (isLoading) {
     return (

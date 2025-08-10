@@ -212,7 +212,7 @@ export function EditProfileModal({ user, isOpen, onClose, onUpdate }: EditProfil
                   alt="Avatar" 
                   width={80}
                   height={80}
-                  className="w-20 h-20 rounded-full object-scale-down" 
+                  className="w-20 h-20 rounded-full object-cover"
                 />
               ) : (
                 <Camera className="w-10 h-10 text-white" />
