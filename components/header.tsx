@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { User } from "@/lib/domain/models/user.model";
+import { NotifyCentrum } from "./notifycentrum";
 
 
 
@@ -59,6 +60,7 @@ export function Header({ user, loading }: HeaderProps) {
         <div className="hidden md:flex items-center gap-4 min-w-[120px] justify-end">
           <LanguageSwitcher />
           <ThemeSwitcher />
+          {user && user.additional?.role === "god" ? <NotifyCentrum /> : null}
           {loading ? (
             <div
               className="w-30 h-8 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse"

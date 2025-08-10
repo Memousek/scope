@@ -37,7 +37,7 @@ const ThemeSwitcher = () => {
       <Button variant="ghost" size={"sm"}>
         <Laptop
           size={ICON_SIZE}
-          className={"text-muted-foreground"}
+          className={""}
         />
       </Button>
     );
@@ -51,13 +51,13 @@ const ThemeSwitcher = () => {
             <Sun
               key="light"
               size={ICON_SIZE}
-              className={"text-muted-foreground"}
+              className={""}
             />
           ) : theme === "dark" ? (
             <Moon
               key="dark"
               size={ICON_SIZE}
-              className={"text-muted-foreground"}
+              className={""}
             />
           ) : (
             <Laptop

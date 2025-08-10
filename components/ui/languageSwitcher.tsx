@@ -36,7 +36,7 @@ export const LanguageSwitcher: React.FC = () => {
       <Button variant="ghost" size={"sm"}>
         <Globe
           size={16}
-          className={"text-muted-foreground"}
+          className={""}
         />
       </Button>
     );
@@ -53,7 +53,7 @@ export const LanguageSwitcher: React.FC = () => {
         <Button variant="ghost" size={"sm"} className="relative">
           <Globe
             size={ICON_SIZE}
-            className={"text-muted-foreground"}
+            className={""}
           />
           {currentLanguage && (
             <Image
