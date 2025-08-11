@@ -137,7 +137,7 @@
   "progressAnalysis": "Analýza progresu",
   "riskIdentification": "Identifikace rizik",
   "send": "Odeslat",
-  "askAboutScope": "Zeptej se mě na cokoliv o tvém scope...",
+  "askAboutScope": "Zeptej se mě ohledně tvého scopu...",
   "setApiKeyFirst": "Nejprve nastav OpenAI API klíč...",
   "aiError": "Omlouvám se, ale došlo k chybě při komunikaci s AI. Zkontrolujte prosím svůj OpenAI API klíč.",
   "aiSuggestions": "AI Doporučení",

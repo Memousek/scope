@@ -197,7 +197,7 @@ export function AiChatModal({ onClose, scopeId, isOpen = true }: AiChatModalProp
       {/* Chat Panel */}
       {panelOpen && (
   <div
-    className="fixed bottom-8 right-20 w-[400px] h-[500px] bg-white/80 dark:bg-gray-900/80 rounded-3xl shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] backdrop-blur-xl flex flex-col border border-purple-300 dark:border-blue-900 z-50 animate-fade-in ai-chat-panel"
+    className="fixed bottom-8 right-20 w-[400px] h-[55vh] min-h-[500px] max-h-[80vh] overflow-y-auto rounded-3xl shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] backdrop-blur-xl flex flex-col border border-purple-300 dark:border-blue-900 z-50 animate-fade-in ai-chat-panel"
     role="dialog"
     aria-modal="true"
     aria-label="AI Chat Panel"
@@ -236,7 +236,7 @@ export function AiChatModal({ onClose, scopeId, isOpen = true }: AiChatModalProp
           {/* Close warning dialog */}
           {showCloseWarning && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6 max-w-xs w-full border border-pink-300 dark:border-blue-900">
+              <div className=" rounded-2xl shadow-2xl p-6 max-w-xs w-full border border-pink-300 dark:border-blue-900">
                 <h2 className="text-lg font-bold mb-2 text-pink-600 dark:text-pink-400">{t("closeChatWarningTitle") || "Opravdu zavřít chat?"}</h2>
                 <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">{t("closeChatWarningText") || "Při zavření chatu bude konverzace nenávratně smazána."}</p>
                 <div className="flex gap-2 justify-end">
@@ -324,7 +324,7 @@ export function AiChatModal({ onClose, scopeId, isOpen = true }: AiChatModalProp
                 }}
                 placeholder={hasApiKey ? t("askAboutScope") : t("setApiKeyFirst")}
                 disabled={!hasApiKey || isAiTyping}
-                className="flex-1 p-3 border border-purple-300 dark:border-blue-900 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-pink-400 dark:bg-gray-800 dark:text-white disabled:opacity-50 bg-white/80 dark:bg-gray-900/80 shadow-md"
+                className="h-[50px] flex-1 p-3 border border-purple-300 dark:border-blue-900 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-pink-400 dark:text-white disabled:opacity-50 shadow-md"
                 rows={2}
                 aria-label="Napiš zprávu AI"
                 tabIndex={0}
