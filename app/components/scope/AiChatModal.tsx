@@ -294,6 +294,20 @@ export function AiChatModal({ onClose, scopeId, isOpen = true }: AiChatModalProp
               </div>
             ))}
             <div ref={messagesEndRef} />
+            {isAiTyping && (
+              <div className="flex items-start gap-3 justify-start">
+                <div className="w-8 h-8 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg">
+                  <FiMessageCircle className="w-4 h-4 text-white animate-pulse" />
+                </div>
+                <div className="bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 rounded-xl p-4 text-white shadow-lg">
+                  <div className="flex items-center space-x-1 mt-2">
+                    <span className="inline-block w-2 h-2 bg-white rounded-full animate-bounce delay-75"></span>
+                    <span className="inline-block w-2 h-2 bg-white rounded-full animate-bounce delay-150"></span>
+                    <span className="inline-block w-2 h-2 bg-white rounded-full animate-bounce delay-225"></span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Input */}

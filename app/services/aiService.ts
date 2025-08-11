@@ -95,11 +95,11 @@ export class AiService {
    */
   private createContext(scope: Scope, projects: Project[]): string {
     const projectDetails = projects.map(project => {
-      const totalMandays = (project.feMandays || 0) + (project.beMandays || 0) + 
-                          (project.qaMandays || 0) + (project.pmMandays || 0) + 
-                          (project.dplMandays || 0);
-      const totalDone = project.feDone + project.beDone + project.qaDone + 
-                       project.pmDone + project.dplDone;
+      const totalMandays = (project.feMandays || 0) + (project.beMandays || 0) +
+        (project.qaMandays || 0) + (project.pmMandays || 0) +
+        (project.dplMandays || 0);
+      const totalDone = project.feDone + project.beDone + project.qaDone +
+        project.pmDone + project.dplDone;
       const progress = totalMandays > 0 ? Math.round((totalDone / totalMandays) * 100) : 0;
 
       return `
@@ -129,7 +129,7 @@ export class AiService {
    * Send message to OpenAI API
    */
   private async sendOpenAiMessage(
-    apiKey: string, 
+    apiKey: string,
     messages: ChatMessage[]
   ): Promise<string> {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -190,7 +190,7 @@ export class AiService {
       body: JSON.stringify({
         contents: geminiMessages,
         generationConfig: {
-          maxOutputTokens: 1500,
+          maxOutputTokens: 2500,
           temperature: 0.7
         }
       })
@@ -202,16 +202,19 @@ export class AiService {
     }
 
     const data = await response.json();
-      if (!data.candidates || !Array.isArray(data.candidates) || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts || !data.candidates[0].content.parts[0] || !data.candidates[0].content.parts[0].text) {
-        throw new Error(`Gemini API response malformed: ${JSON.stringify(data, null, 2)}`);
-      }
-      return data.candidates[0].content.parts[0].text;
+    const candidate = data.candidates?.[0];
+    const parts = candidate?.content?.parts;
+    if (!parts || !Array.isArray(parts) || !parts[0]?.text) {
+      return 'Odpověď od Gemini neobsahuje žádný text. Zkuste prosím zadat kratší nebo jinak formulovaný dotaz.';
+    }
+    return parts[0].text;
   }
 
   /**
    * Send message to selected AI provider
    */
-  async sendMessage(scopeId: string, userMessage: string, chatHistory: ChatMessage[] = []): Promise<AiAnalysisResult> {
+  async sendMessage(scopeId: string, userMessage: string, chatHistory: ChatMessage[] = [], onTyping?: (isTyping: boolean) => void): Promise<AiAnalysisResult> {
+    if (onTyping) onTyping(true);
     const aiSettings = await this.getUserAiSettings();
     const { provider, openaiKey, geminiKey } = aiSettings;
 
@@ -230,6 +233,17 @@ export class AiService {
 
     const context = this.createContext(scopeData.scope, scopeData.projects);
 
+    const MAX_CONTEXT_LENGTH = 3500;
+    const MAX_USER_MESSAGE_LENGTH = 1000;
+
+    const safeContext = context.length > MAX_CONTEXT_LENGTH
+      ? context.slice(0, MAX_CONTEXT_LENGTH) + '\n...'
+      : context;
+
+    const safeUserMessage = userMessage.length > MAX_USER_MESSAGE_LENGTH
+      ? userMessage.slice(0, MAX_USER_MESSAGE_LENGTH) + '\n...'
+      : userMessage;
+
     const systemPrompt = `You are an AI project management assistant for a software development team. You have access to scope and project information.
 
 Your role is to:
@@ -244,14 +258,17 @@ Always keep your answers short, concise, and summarized. Focus only on the most 
 Be helpful, professional, and provide actionable advice. Use Czech language for responses.
 
 Current scope context:
-${context}`;
+${safeContext}`;
 
-    const messages: ChatMessage[] = [
-      { role: 'system', content: systemPrompt },
-      ...chatHistory,
-      { role: 'user', content: userMessage }
-    ];
-
+    const messages: ChatMessage[] = chatHistory.length === 0
+      ? [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: safeUserMessage }
+      ]
+      : [
+        ...chatHistory.slice(-10),
+        { role: 'user', content: safeUserMessage }
+      ];
     try {
       let aiResponse: string;
 
@@ -260,6 +277,8 @@ ${context}`;
       } else {
         aiResponse = await this.sendGeminiMessage(geminiKey!, messages);
       }
+
+      console.log(chatHistory)
 
       return {
         message: aiResponse,
@@ -274,6 +293,8 @@ ${context}`;
       } else {
         throw new Error(`Chyba při komunikaci s Gemini: ${errorMessage}`);
       }
+    } finally {
+      if (onTyping) onTyping(false);
     }
   }
 
@@ -283,7 +304,7 @@ ${context}`;
   private extractSuggestions(response: string): string[] {
     const suggestions: string[] = [];
     const lines = response.split('\n');
-    
+
     for (const line of lines) {
       if (line.includes('•') || line.includes('-') || line.includes('Suggestion:') || line.includes('Doporučení:')) {
         const suggestion = line.replace(/^[•\-]\s*/, '').replace(/^(Suggestion|Doporučení):\s*/, '').trim();
@@ -292,7 +313,7 @@ ${context}`;
         }
       }
     }
-    
+
     return suggestions;
   }
 
@@ -302,7 +323,7 @@ ${context}`;
   private extractInsights(response: string): string[] {
     const insights: string[] = [];
     const lines = response.split('\n');
-    
+
     for (const line of lines) {
       if (line.includes('Insight:') || line.includes('Poznatky:') || line.includes('Analýza:')) {
         const insight = line.replace(/^(Insight|Poznatky|Analýza):\s*/, '').trim();
@@ -311,36 +332,8 @@ ${context}`;
         }
       }
     }
-    
+
     return insights;
-  }
-
-  /**
-   * Generate PM documentation suggestions
-   */
-  async generatePmDocumentation(scopeId: string): Promise<string> {
-    const scopeData = await this.getScopeData(scopeId);
-    if (!scopeData) {
-      throw new Error('Scope not found');
-    }
-
-    const context = this.createContext(scopeData.scope, scopeData.projects);
-
-    const prompt = `Based on the following scope and project information, suggest what PM documentation would be useful to create or improve. Focus on practical, actionable suggestions.
-
-${context}
-
-Please provide specific recommendations for:
-1. Project documentation that's missing
-2. Process improvements
-3. Communication plans
-4. Risk management documentation
-5. Resource planning documents
-
-Format your response in Czech with clear, actionable items.`;
-
-    const result = await this.sendMessage(scopeId, prompt);
-    return result.message;
   }
 
   /**
@@ -358,7 +351,7 @@ Format your response in Czech with clear, actionable items.`;
     try {
       const aiSettings = await this.getUserAiSettings();
       const { provider, openaiKey, geminiKey } = aiSettings;
-      
+
       if (provider === 'openai') {
         return !!openaiKey;
       } else {
