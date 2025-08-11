@@ -118,7 +118,7 @@ export class DependencyService {
       if (dependencies.performance_qa_mode) {
         dependencies_list.push({
           from: 'QA',
-          to: 'Performance QA',
+          to: 'PerformanceQA',
           type: 'blocking',
           description: 'Performance QA testuje po QA'
         });
@@ -326,7 +326,7 @@ export class DependencyService {
           { from: 'PM', to: 'BE', type: 'blocking' as const, description: 'PM definuje požadavky pro BE' },
           { from: 'BE', to: 'FE', type: 'waiting' as const, description: 'FE čeká na BE' },
           { from: 'FE', to: 'QA', type: 'waiting' as const, description: 'QA testuje FE po dokončení' },
-          { from: 'QA', to: 'Performance QA', type: 'blocking' as const, description: 'Performance QA testuje po QA' }
+          { from: 'QA', to: 'PerformanceQA', type: 'blocking' as const, description: 'Performance QA testuje po QA' }
         ]
       }
     ];
