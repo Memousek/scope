@@ -176,12 +176,13 @@ export const RoleDependenciesModal: React.FC<RoleDependenciesModalProps> = ({
               ))}
 
               {/* Custom Workflow Option */}
-              <div
+              <button
                 onClick={() => handleWorkflowSelect('Custom')}
                 className={`relative p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 hover:shadow-lg ${selectedWorkflow === 'Custom'
-                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                    : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 disabled:opacity-50 disabled:cursor-not-allowed'
+                    : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 disabled:opacity-50 disabled:cursor-not-allowed'
                   }`}
+                disabled={true}  // Custom workflow is not yet implemented
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -189,7 +190,7 @@ export const RoleDependenciesModal: React.FC<RoleDependenciesModalProps> = ({
                       <h4 className="font-semibold text-gray-900 dark:text-gray-100">
                         Vlastní workflow
                       </h4>
-                      <Badge label="Experimental" variant="warning" className="text-xs" />
+                      <Badge label={"Brzy"} variant="soon" className="text-xs" />
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                       Definujte si vlastní flow
@@ -204,7 +205,7 @@ export const RoleDependenciesModal: React.FC<RoleDependenciesModalProps> = ({
                     </div>
                   )}
                 </div>
-              </div>
+              </button>
             </div>
           </div>
 

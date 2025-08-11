@@ -1450,7 +1450,6 @@ export function ProjectSection({
                                                   "QA",
                                                   "PerformanceQA",
                                                 ],
-                                                "Custom": [],
                                                 Parallel: [
                                                   "PM",
                                                   "FE",
@@ -1464,9 +1463,12 @@ export function ProjectSection({
                                                 "PM",
                                                 "FE",
                                                 "BE",
-                                                "QA",
-                                                "PerformanceQA"
+                                                "QA"
+                                               
                                               ];
+                                              if(workflowType === "BE-FE-QA-PerformanceQA") {
+                                                standardRoles.push("PerformanceQA");
+                                              }
                                               const standardWorkers =
                                                 workers.filter((worker) =>
                                                   standardRoles.some(
@@ -1488,7 +1490,7 @@ export function ProjectSection({
                                               // Seřadíme standardní role podle workflow pořadí
                                               const order = workflowOrder[
                                                 workflowType
-                                              ] || ["PM", "FE", "BE", "QA", "Custom"];
+                                              ] || ["PM", "FE", "BE", "QA", "PerformanceQA"];
                                               standardWorkers.sort((a, b) => {
                                                 const aIndex = order.findIndex(
                                                   (role) =>
