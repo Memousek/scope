@@ -1443,6 +1443,14 @@ export function ProjectSection({
                                                   "FE",
                                                   "QA",
                                                 ],
+                                                "BE-FE-QA-PerformanceQA": [
+                                                  "PM",
+                                                  "BE",
+                                                  "FE",
+                                                  "QA",
+                                                  "PerformanceQA",
+                                                ],
+                                                "Custom": [],
                                                 Parallel: [
                                                   "PM",
                                                   "FE",
@@ -1457,6 +1465,7 @@ export function ProjectSection({
                                                 "FE",
                                                 "BE",
                                                 "QA",
+                                                "PerformanceQA"
                                               ];
                                               const standardWorkers =
                                                 workers.filter((worker) =>
@@ -1479,7 +1488,7 @@ export function ProjectSection({
                                               // Seřadíme standardní role podle workflow pořadí
                                               const order = workflowOrder[
                                                 workflowType
-                                              ] || ["PM", "FE", "BE", "QA"];
+                                              ] || ["PM", "FE", "BE", "QA", "Custom"];
                                               standardWorkers.sort((a, b) => {
                                                 const aIndex = order.findIndex(
                                                   (role) =>
