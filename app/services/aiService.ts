@@ -233,17 +233,6 @@ export class AiService {
 
     const context = this.createContext(scopeData.scope, scopeData.projects);
 
-    const MAX_CONTEXT_LENGTH = 3500;
-    const MAX_USER_MESSAGE_LENGTH = 1000;
-
-    const safeContext = context.length > MAX_CONTEXT_LENGTH
-      ? context.slice(0, MAX_CONTEXT_LENGTH) + '\n...'
-      : context;
-
-    const safeUserMessage = userMessage.length > MAX_USER_MESSAGE_LENGTH
-      ? userMessage.slice(0, MAX_USER_MESSAGE_LENGTH) + '\n...'
-      : userMessage;
-
     const systemPrompt = `You are an AI project management assistant for a software development team. You have access to scope and project information.
 
 Your role is to:
@@ -258,16 +247,16 @@ Always keep your answers short, concise, and summarized. Focus only on the most 
 Be helpful, professional, and provide actionable advice. Use Czech language for responses.
 
 Current scope context:
-${safeContext}`;
+${context}`;
 
     const messages: ChatMessage[] = chatHistory.length === 0
       ? [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: safeUserMessage }
+        { role: 'user', content: userMessage }
       ]
       : [
-        ...chatHistory.slice(-10),
-        { role: 'user', content: safeUserMessage }
+        ...chatHistory,
+        { role: 'user', content: userMessage }
       ];
     try {
       let aiResponse: string;
