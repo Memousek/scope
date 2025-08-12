@@ -716,7 +716,7 @@ function calculateWithWorkflowDependencies(
         roleEndDates[roleKey] = endDate;
         processedAny = true;
       } else if (isBlocked) {
-        const blockedDays = 30;
+        const blockedDays = 10;
         const startDate = role.dependsOn.length > 0 
           ? new Date(Math.max(...role.dependsOn.map(depRole => {
               const depRoleKey = roleKeys.find(key => 
@@ -729,7 +729,7 @@ function calculateWithWorkflowDependencies(
         roleEndDates[roleKey] = endDate;
         processedAny = true;
       } else if (activeWorker?.status === 'waiting') {
-        const waitingDays = 10;
+        const waitingDays = 5;
         const startDate = role.dependsOn.length > 0 
           ? new Date(Math.max(...role.dependsOn.map(depRole => {
               const depRoleKey = roleKeys.find(key => 
