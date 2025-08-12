@@ -36,6 +36,41 @@ export class CalculateAverageSlipService {
   }
 
   /**
+   * Workday predicate
+   */
+  private isWorkday(d: Date): boolean {
+    const day = d.getDay();
+    return day !== 0 && day !== 6;
+  }
+
+  /**
+   * Signed workdays difference excluding the start day.
+   * Positive = reserve (end after start), Negative = slip (end before start).
+   * Returns 0 when same calendar day.
+   */
+  private getWorkdaysDiff(start: Date, end: Date): number {
+    const a = new Date(start);
+    a.setHours(0, 0, 0, 0);
+    const b = new Date(end);
+    b.setHours(0, 0, 0, 0);
+    if (a.getTime() === b.getTime()) return 0;
+
+    const sign = b > a ? 1 : -1;
+    const from = sign === 1 ? a : b;
+    const to = sign === 1 ? b : a;
+
+    const d = new Date(from);
+    d.setDate(d.getDate() + 1); // do not count the start day itself
+
+    let count = 0;
+    while (d <= to) {
+      if (this.isWorkday(d)) count++;
+      d.setDate(d.getDate() + 1);
+    }
+    return sign * count;
+  }
+
+  /**
    * Get number of workdays between two dates (excluding weekends)
    */
   private getWorkdaysCount(start: Date, end: Date): number {
@@ -80,7 +115,7 @@ export class CalculateAverageSlipService {
       roleKeys.forEach(roleKey => {
         const teamMembers = team as Array<{ role: string; fte: number }>;
         const fte = teamMembers.filter(m => m.role === roleKey.toUpperCase() || m.role === roleKey)
-          .reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
+          .reduce((sum, m) => sum + (m.fte || 0), 0) || 1; // default to 1.0 if no FTE
         
         const mandays = Number(project[`${roleKey}Mandays`]) || 0;
         const done = Number(project[`${roleKey}Done`]) || 0;
@@ -152,7 +187,7 @@ export class CalculateAverageSlipService {
       roleKeys.forEach(roleKey => {
         const teamMembers = team as Array<{ role: string; fte: number }>;
         const fte = teamMembers.filter(m => m.role === roleKey.toUpperCase() || m.role === roleKey)
-          .reduce((sum, m) => sum + (m.fte || 0), 0) || 1;
+          .reduce((sum, m) => sum + (m.fte || 0), 0) || 1; // default to 1.0 if no FTE
         
         const mandays = Number((project as unknown as Record<string, unknown>)[`${roleKey}Mandays`]) || 0;
         const done = Number((project as unknown as Record<string, unknown>)[`${roleKey}Done`]) || 0;
@@ -166,15 +201,8 @@ export class CalculateAverageSlipService {
       const today = new Date();
       const calculatedDeliveryDate = this.addWorkdays(today, remainingWorkdays);
       
-      // Calculate slip against priority date
-      let finalSlip: number;
-      if (calculatedDeliveryDate > priorityDate.priorityEndDate) {
-        // Slippage - calculated date is after priority date
-        finalSlip = -this.getWorkdaysCount(priorityDate.priorityEndDate, calculatedDeliveryDate);
-      } else {
-        // Reserve - calculated date is before priority date
-        finalSlip = this.getWorkdaysCount(calculatedDeliveryDate, priorityDate.priorityEndDate);
-      }
+      // Calculate slip against priority date using signed workday diff (positive = reserve, negative = slip)
+      const finalSlip = this.getWorkdaysDiff(calculatedDeliveryDate, priorityDate.priorityEndDate);
 
       return {
         ...project,
@@ -209,4 +237,4 @@ export class CalculateAverageSlipService {
       aheadProjects
     };
   }
-} 
+}

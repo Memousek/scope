@@ -262,9 +262,9 @@ export function ModernScopeLayout({
                               <span
                                 className={
                                   averageSlip.averageSlip > 0
-                                    ? "text-red-600 dark:text-red-400"
+                                    ? "text-green-600 dark:text-green-400"
                                     : averageSlip.averageSlip < 0
-                                      ? "text-green-600 dark:text-green-400"
+                                      ? "text-red-600 dark:text-red-400"
                                       : "text-blue-600 dark:text-blue-400"
                                 }
                               >

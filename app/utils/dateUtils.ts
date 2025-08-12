@@ -66,6 +66,39 @@ export function addWorkdays(date: Date, workdays: number): Date {
   return result;
 }
 
+// Helper: workday predicate and signed difference without off-by-one
+function isWorkday(d: Date): boolean {
+  const day = d.getDay();
+  return day !== 0 && day !== 6;
+}
+
+/**
+ * Signed workdays difference excluding the start day.
+ * Positive = rezervA (end po startu), Negative = skluz (end před startem).
+ * Returns 0 when same calendar day.
+ */
+export function getWorkdaysDiff(start: Date, end: Date): number {
+  const a = new Date(start);
+  a.setHours(0, 0, 0, 0);
+  const b = new Date(end);
+  b.setHours(0, 0, 0, 0);
+  if (a.getTime() === b.getTime()) return 0;
+
+  const sign = b > a ? 1 : -1;
+  const from = sign === 1 ? a : b;
+  const to = sign === 1 ? b : a;
+
+  const d = new Date(from);
+  d.setDate(d.getDate() + 1); // start day itself se nepočítá
+
+  let count = 0;
+  while (d <= to) {
+    if (isWorkday(d)) count++;
+    d.setDate(d.getDate() + 1);
+  }
+  return sign * count;
+}
+
 /**
  * Get array of workdays between two dates (excluding weekends)
  */
@@ -129,16 +162,8 @@ export function calculateProjectDeliveryInfo(
   
   let diffWorkdays: number | null = null;
   if (deliveryDate) {
-    // Rozdíl = počet pracovních dnů mezi plánovaným a vypočítaným termínem
-    // Pozitivní = máme rezervu (vypočítaný termín je před plánovaným)
-    // Negativní = máme skluz (vypočítaný termín je po plánovaném)
-    if (calculatedDeliveryDate > deliveryDate) {
-      // Skluz - vypočítaný termín je později než plánovaný
-      diffWorkdays = -getWorkdaysCount(deliveryDate, calculatedDeliveryDate);
-    } else {
-      // Rezerva - vypočítaný termín je dříve než plánovaný
-      diffWorkdays = getWorkdaysCount(calculatedDeliveryDate, deliveryDate);
-    }
+    // Pozitivní = rezerva, Negativní = skluz
+    diffWorkdays = getWorkdaysDiff(calculatedDeliveryDate, deliveryDate);
   }
   
   return {
@@ -197,14 +222,8 @@ export function calculatePrioritySlippage(
   const remainingWorkdays = Math.ceil(maxRemainingDays);
   const calculatedDeliveryDate = addWorkdays(today, remainingWorkdays);
   
-  // Calculate slippage: positive = reserve, negative = slippage
-  if (calculatedDeliveryDate > priorityEndDate) {
-    // Slippage - calculated date is after priority date
-    return -getWorkdaysCount(priorityEndDate, calculatedDeliveryDate);
-  } else {
-    // Reserve - calculated date is before priority date
-    return getWorkdaysCount(calculatedDeliveryDate, priorityEndDate);
-  }
+  // Positive = reserve, Negative = slippage
+  return getWorkdaysDiff(calculatedDeliveryDate, priorityEndDate);
 }
 
 /**
@@ -220,21 +239,6 @@ export function calculateProjectDeliveryInfoWithAssignments(
   const assignedTeamMembers = team.filter(member => 
     projectAssignments.some(assignment => assignment.teamMemberId === member.id)
   );
-
-  // If no assignments, project cannot be completed - return large slip
-  if (assignedTeamMembers.length === 0) {
-    const deliveryDate = project.delivery_date ? new Date(project.delivery_date) : null;
-    
-    // Return a date far in the future to indicate project cannot be completed
-    const farFutureDate = new Date();
-    farFutureDate.setFullYear(farFutureDate.getFullYear() + 10); // 10 years in the future
-    
-    return {
-      calculatedDeliveryDate: farFutureDate,
-      diffWorkdays: deliveryDate ? getWorkdaysCount(deliveryDate, farFutureDate) : null,
-      deliveryDate,
-    };
-  }
 
   // Získáme všechny role (standardní i custom) podle klíčů v projektu
   const roleKeys = Object.keys(project)
@@ -254,8 +258,11 @@ export function calculateProjectDeliveryInfoWithAssignments(
 
     const mandays = Number(project[`${roleKey}_mandays`]) || 0;
     const done = Number(project[`${roleKey}_done`]) || 0;
-    const rem = fte > 0 ? mandays * (1 - (done / 100)) : 0;
-    const days = fte > 0 ? rem / fte : 0;
+    const rem = mandays * (1 - (done / 100));
+
+    // Fallback: když není FTE přiřazeno, počítej s 1.0, ať nevznikají extrémní termíny
+    const effectiveFte = fte > 0 ? fte : 1.0;
+    const days = rem / effectiveFte;
 
     if (days > maxDays) maxDays = days;
   });
@@ -270,15 +277,11 @@ export function calculateProjectDeliveryInfoWithAssignments(
   
   let diffWorkdays: number | null = null;
   if (deliveryDate) {
-    // Rozdíl = počet pracovních dnů mezi plánovaným a vypočítaným termínem
-    // Pozitivní = máme rezervu (vypočítaný termín je před plánovaným)
-    // Negativní = máme skluz (vypočítaný termín je po plánovaném)
-    diffWorkdays = getWorkdaysCount(deliveryDate, calculatedDeliveryDate);
+    // Pozitivní = rezerva, Negativní = skluz
+    diffWorkdays = getWorkdaysDiff(calculatedDeliveryDate, deliveryDate);
   } else {
-    // Pokud není nastaven delivery_date, počítáme rozdíl mezi calculatedDeliveryDate a dnešním datem
-    // Pozitivní = projekt bude hotový v budoucnosti
-    // Negativní = projekt měl být hotový v minulosti
-    diffWorkdays = getWorkdaysCount(today, calculatedDeliveryDate);
+    // Pokud není nastaven delivery_date, srovnávejme s dneškem
+    diffWorkdays = getWorkdaysDiff(today, calculatedDeliveryDate);
   }
   
   return {
@@ -325,20 +328,16 @@ export function calculatePriorityDates(
     let maxDays = 0;
 
     roleKeys.forEach(roleKey => {
-      // Najdeme FTE pro tuto roli - použijeme skutečné FTE z týmu místo pevné hodnoty 1
+      // Najdeme FTE pro tuto roli
       const fte = team.filter(m => m.role === roleKey.toUpperCase() || m.role === roleKey)
         .reduce((sum, m) => sum + (m.fte || 0), 0);
-      
-      // Pokud není nikdo přiřazen k roli, projekt nelze dokončit
-      if (fte === 0) {
-        maxDays = Math.max(maxDays, 365 * 10); // 10 let práce
-        return;
-      }
       
       const mandays = Number(project[`${roleKey}_mandays`]) || 0;
       const done = Number(project[`${roleKey}_done`]) || 0;
       const rem = mandays * (1 - (done / 100));
-      const days = rem / fte;
+
+      const effectiveFte = fte > 0 ? fte : 1.0;
+      const days = rem / effectiveFte;
 
       if (days > maxDays) maxDays = days;
     });
@@ -409,7 +408,7 @@ export function calculatePriorityDatesWithAssignments(
       'in_progress': 1,    // Nejvyšší priorita - aktivní projekty
       'not_started': 2,    // Projekty připravené k zahájení
       'paused': 3,         // Pozastavené projekty
-    };
+    } as const;
     
     const aStatus = (a.status || 'not_started') as 'in_progress' | 'not_started' | 'paused';
     const bStatus = (b.status || 'not_started') as 'in_progress' | 'not_started' | 'paused';
@@ -434,9 +433,8 @@ export function calculatePriorityDatesWithAssignments(
     const project = sorted[i];
     const assignments = projectAssignments[project.id] || [];
     
-    // If no assignments, project cannot be completed - use very long duration
+    // If no assignments, still estimate using default FTE 1.0 to avoid insane numbers
     if (assignments.length === 0) {
-      // Místo pevné hodnoty 10 let vypočítáme skutečnou dobu s minimálním FTE
       const roleKeys = Object.keys(project)
         .filter(key => key.endsWith('_mandays'))
         .map(key => key.replace(/_mandays$/, ''));
@@ -446,11 +444,8 @@ export function calculatePriorityDatesWithAssignments(
         const mandays = Number(project[`${roleKey}_mandays`]) || 0;
         const done = Number(project[`${roleKey}_done`]) || 0;
         const remainingMandays = mandays * (1 - (done / 100));
-        
-        // Pokud není nikdo přiřazen k roli, použijeme rozumné výchozí FTE 1.0 místo 0.1
         const effectiveFte = 1.0;
         const days = remainingMandays / effectiveFte;
-
         if (days > maxDays) maxDays = days;
       });
       
@@ -459,35 +454,25 @@ export function calculatePriorityDatesWithAssignments(
       let priorityStartDate: Date;
       let blockingProjectName: string | undefined = undefined;
       
-      // Status-aware start date calculation
       const projectStatus = project.status || 'not_started';
       
       if (projectStatus === 'in_progress') {
-        // Active projects start from today, regardless of position
-        priorityStartDate = new Date(currentStart);
-        blockingProjectName = undefined; // No blocking project for active projects
+        priorityStartDate = project.startedAt ? new Date(project.startedAt) : new Date(currentStart);
       } else if (i === 0) {
-        // First non-active project starts from today
         priorityStartDate = new Date(currentStart);
       } else {
-        // Other projects start after the previous one
         const prev = sorted[i - 1];
         const prevEnd = result[prev.id].priorityEndDate;
         const nextStart = new Date(prevEnd);
         nextStart.setDate(nextStart.getDate() + 1);
-        
-        // Skip weekends
         while (nextStart.getDay() === 0 || nextStart.getDay() === 6) {
           nextStart.setDate(nextStart.getDate() + 1);
         }
-        
         priorityStartDate = nextStart;
         blockingProjectName = prev.name;
       }
       
-      // Priority end date = start + calculated duration
       const priorityEndDate = addWorkdays(priorityStartDate, projectWorkdays);
-      
       result[project.id] = { priorityStartDate, priorityEndDate, blockingProjectName };
       continue;
     }
@@ -514,13 +499,10 @@ export function calculatePriorityDatesWithAssignments(
         const done = Number(project[`${roleKey}_done`]) || 0;
         const remainingMandays = mandays * (1 - (done / 100));
         
-        // Pokud není nikdo přiřazen k roli, použijeme minimální FTE 0.1 pro výpočet
         const effectiveFte = fte > 0 ? fte : 1.0;
         const normalDays = remainingMandays / effectiveFte;
 
         const roleDays = normalDays;
-        // Poznámka: Blokace a čekání se přidávají k celkovému termínu později
-        // Zde počítáme pouze normální čas práce
 
         roleTimings[roleKey] = Math.ceil(roleDays);
       });
@@ -538,7 +520,6 @@ export function calculatePriorityDatesWithAssignments(
         const done = Number(project[`${roleKey}_done`]) || 0;
         const remainingMandays = mandays * (1 - (done / 100));
         
-        // Pokud není nikdo přiřazen k roli, použijeme minimální FTE 0.1 pro výpočet
         const effectiveFte = fte > 0 ? fte : 1.0;
         const days = remainingMandays / effectiveFte;
 
@@ -554,7 +535,6 @@ export function calculatePriorityDatesWithAssignments(
       let additionalWaitingDays = 0;
       
       projectWorkflow.active_workers.forEach(worker => {
-        // Najdeme roli v projektu podle názvu
         const roleKey = roleKeys.find(key => 
           key.toUpperCase() === worker.role.toUpperCase() || key === worker.role
         );
@@ -566,13 +546,12 @@ export function calculatePriorityDatesWithAssignments(
           const mandays = Number(project[`${roleKey}_mandays`]) || 0;
           const done = Number(project[`${roleKey}_done`]) || 0;
           const remainingMandays = mandays * (1 - (done / 100));
-          const normalDays = fte > 0 ? remainingMandays / fte : 0;
+          const effectiveFte = fte > 0 ? fte : 1.0;
+          const normalDays = remainingMandays / effectiveFte;
           
           if (worker.status === 'blocked') {
-            // Blokace = 50% z normálního času práce
             additionalBlockedDays += Math.ceil(normalDays * 0.5);
           } else if (worker.status === 'waiting') {
-            // Čekání = 20% z normálního času práce
             additionalWaitingDays += Math.ceil(normalDays * 0.2);
           }
         }
@@ -584,28 +563,19 @@ export function calculatePriorityDatesWithAssignments(
     let priorityStartDate: Date;
     let blockingProjectName: string | undefined = undefined;
     
-    // Status-aware start date calculation
     const projectStatus = project.status || 'not_started';
     
     if (projectStatus === 'in_progress') {
-      // Active projects start from startedAt if available, otherwise from today
-      if (project.startedAt) {
-        priorityStartDate = new Date(project.startedAt);
-      } else {
-        priorityStartDate = new Date(currentStart);
-      }
-      blockingProjectName = undefined; // No blocking project for active projects
+      priorityStartDate = project.startedAt ? new Date(project.startedAt) : new Date(currentStart);
+      blockingProjectName = undefined;
     } else if (i === 0) {
-      // First non-active project starts from today
       priorityStartDate = new Date(currentStart);
     } else {
-      // Other projects start after the previous one
       const prev = sorted[i - 1];
       const prevEnd = result[prev.id].priorityEndDate;
       const nextStart = new Date(prevEnd);
       nextStart.setDate(nextStart.getDate() + 1);
       
-      // Skip weekends
       while (nextStart.getDay() === 0 || nextStart.getDay() === 6) {
         nextStart.setDate(nextStart.getDate() + 1);
       }
@@ -614,7 +584,6 @@ export function calculatePriorityDatesWithAssignments(
       blockingProjectName = prev.name;
     }
     
-    // Priority end date = start + project duration in workdays
     const priorityEndDate = addWorkdays(priorityStartDate, projectWorkdays);
     
     result[project.id] = { priorityStartDate, priorityEndDate, blockingProjectName };
@@ -642,21 +611,6 @@ export function calculateProjectDeliveryInfoWithWorkflow(
     projectAssignments.some(assignment => assignment.teamMemberId === member.id)
   );
 
-  // If no assignments, project cannot be completed - return large slip
-  if (assignedTeamMembers.length === 0) {
-    const deliveryDate = project.delivery_date ? new Date(project.delivery_date) : null;
-    
-    // Return a date far in the future to indicate project cannot be completed
-    const farFutureDate = new Date();
-    farFutureDate.setFullYear(farFutureDate.getFullYear() + 10); // 10 years in the future
-    
-    return {
-      calculatedDeliveryDate: farFutureDate,
-      diffWorkdays: deliveryDate ? getWorkdaysCount(deliveryDate, farFutureDate) : null,
-      deliveryDate,
-    };
-  }
-
   // Získáme všechny role (standardní i custom) podle klíčů v projektu
   const roleKeys = Object.keys(project)
     .filter(key => key.endsWith('_mandays'))
@@ -673,7 +627,7 @@ export function calculateProjectDeliveryInfoWithWorkflow(
     );
   }
 
-  // Fallback na původní výpočet bez workflow
+  // Fallback na výpočet bez workflow
   return calculateProjectDeliveryInfoWithAssignments(project, team, projectAssignments);
 }
 
@@ -705,19 +659,18 @@ function calculateWithWorkflowDependencies(
 
   // Inicializace časů pro všechny role
   roleKeys.forEach(roleKey => {
-    const fte = getRoleFTE(roleKey, team, projectAssignments);
+    const fteRaw = getRoleFTE(roleKey, team, projectAssignments);
+    const effectiveFte = fteRaw > 0 ? fteRaw : 1.0;
     const mandays = Number(project[`${roleKey}_mandays`]) || 0;
     const done = Number(project[`${roleKey}_done`]) || 0;
     const remainingMandays = mandays * (1 - (done / 100));
-    const days = fte > 0 ? remainingMandays / fte : 0;
+    const days = remainingMandays / effectiveFte;
 
-    // Zjistíme, zda je role aktivní
     const activeWorker = workflowDependencies.active_workers.find(w => 
       w.role.toUpperCase() === roleKey.toUpperCase() || w.role === roleKey
     );
     const isActive = activeWorker?.status === 'active';
 
-    // Najdeme závislosti pro tuto roli
     const dependsOn = workflowDependencies.dependencies
       .filter(d => d.to.toUpperCase() === roleKey.toUpperCase() || d.to === roleKey)
       .map(d => d.from);
@@ -731,23 +684,16 @@ function calculateWithWorkflowDependencies(
     };
   });
 
-  // Vypočítáme celkový čas s ohledem na workflow
   const currentDate = new Date(today);
-
-  // Pro každou roli vypočítáme, kdy může začít a skončit
   const roleEndDates: Record<string, Date> = {};
 
-  // První fáze: role bez závislostí nebo s aktivními závislostmi
   const processRoles = () => {
     let processedAny = false;
 
     roleKeys.forEach(roleKey => {
       const role = roleTimings[roleKey];
-      
-      // Pokud už máme datum pro tuto roli, přeskočíme
       if (roleEndDates[roleKey]) return;
 
-      // Zkontrolujeme, zda jsou všechny závislosti splněny
       const dependenciesMet = role.dependsOn.every(depRole => {
         const depRoleKey = roleKeys.find(key => 
           key.toUpperCase() === depRole.toUpperCase() || key === depRole
@@ -755,14 +701,12 @@ function calculateWithWorkflowDependencies(
         return depRoleKey && roleEndDates[depRoleKey];
       });
 
-      // Zkontrolujeme, zda není role blokována
       const activeWorker = workflowDependencies.active_workers.find(w => 
         w.role.toUpperCase() === roleKey.toUpperCase() || w.role === roleKey
       );
       const isBlocked = activeWorker?.status === 'blocked';
 
       if ((role.canStart || dependenciesMet) && !isBlocked) {
-        // Role může začít (není blokována)
         const startDate = role.dependsOn.length > 0 
           ? new Date(Math.max(...role.dependsOn.map(depRole => {
               const depRoleKey = roleKeys.find(key => 
@@ -776,7 +720,6 @@ function calculateWithWorkflowDependencies(
         roleEndDates[roleKey] = endDate;
         processedAny = true;
       } else if (isBlocked) {
-        // Role je blokována - přidáme extra čas pro blokaci k normálnímu času
         const blockedDays = 30;
         const startDate = role.dependsOn.length > 0 
           ? new Date(Math.max(...role.dependsOn.map(depRole => {
@@ -790,7 +733,6 @@ function calculateWithWorkflowDependencies(
         roleEndDates[roleKey] = endDate;
         processedAny = true;
       } else if (activeWorker?.status === 'waiting') {
-        // Role čeká - přidáme menší čas pro čekání k normálnímu času
         const waitingDays = 10;
         const startDate = role.dependsOn.length > 0 
           ? new Date(Math.max(...role.dependsOn.map(depRole => {
@@ -828,29 +770,26 @@ function calculateWithWorkflowDependencies(
   let additionalWaitingDays = 0;
   
   workflowDependencies.active_workers.forEach(worker => {
-    // Najdeme roli v projektu podle názvu
     const roleKey = roleKeys.find(key => 
       key.toUpperCase() === worker.role.toUpperCase() || key === worker.role
     );
     
     if (roleKey) {
-      const fte = getRoleFTE(roleKey, team, projectAssignments);
+      const fteRaw = getRoleFTE(roleKey, team, projectAssignments);
+      const effectiveFte = fteRaw > 0 ? fteRaw : 1.0;
       const mandays = Number(project[`${roleKey}_mandays`]) || 0;
       const done = Number(project[`${roleKey}_done`]) || 0;
       const remainingMandays = mandays * (1 - (done / 100));
-      const normalDays = fte > 0 ? remainingMandays / fte : 0;
+      const normalDays = remainingMandays / effectiveFte;
       
       if (worker.status === 'blocked') {
-        // Blokace = 50% z normálního času práce
         additionalBlockedDays += Math.ceil(normalDays * 0.5);
       } else if (worker.status === 'waiting') {
-        // Čekání = 20% z normálního času práce
         additionalWaitingDays += Math.ceil(normalDays * 0.2);
       }
     }
   });
   
-  // Přidáme dodatečný čas k nejpozdějšímu datu
   if (additionalBlockedDays > 0 || additionalWaitingDays > 0) {
     const totalAdditionalDays = additionalBlockedDays + additionalWaitingDays;
     latestEndDate = addWorkdays(latestEndDate, totalAdditionalDays);
@@ -858,18 +797,9 @@ function calculateWithWorkflowDependencies(
   
   let diffWorkdays: number | null = null;
   if (deliveryDate) {
-    // Rozdíl = počet pracovních dnů mezi plánovaným a vypočítaným termínem
-    // Pozitivní = máme rezervu (vypočítaný termín je před plánovaným)
-    // Negativní = máme skluz (vypočítaný termín je po plánovaném)
-    if (latestEndDate > deliveryDate) {
-      // Skluz - vypočítaný termín je později než plánovaný
-      diffWorkdays = -getWorkdaysCount(deliveryDate, latestEndDate);
-    } else {
-      // Rezerva - vypočítaný termín je dříve než plánovaný
-      diffWorkdays = getWorkdaysCount(latestEndDate, deliveryDate);
-    }
+    diffWorkdays = getWorkdaysDiff(latestEndDate, deliveryDate);
   } else {
-    diffWorkdays = getWorkdaysCount(today, latestEndDate);
+    diffWorkdays = getWorkdaysDiff(today, latestEndDate);
   }
 
   return {
@@ -917,4 +847,4 @@ export function formatDateTime(date: Date): string {
     hour: '2-digit',
     minute: '2-digit',
   });
-} 
+}
