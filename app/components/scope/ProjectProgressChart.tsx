@@ -136,7 +136,7 @@ const ProjectProgressChartComponent: React.FC<ProjectProgressChartProps> = ({
 
   const getSlippageColor = (slippage: number) => {
     if (slippage >= 0) return 'text-green-600 dark:text-green-400';
-    if (slippage >= -10) return 'text-yellow-600 dark:text-yellow-400';
+    if (slippage >= -10) return 'text-red-400 dark:text-red-400';
     return 'text-red-600 dark:text-red-400';
   };
 
