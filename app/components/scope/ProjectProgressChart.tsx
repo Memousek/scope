@@ -10,7 +10,6 @@ import React, { useCallback } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Project, ProjectDeliveryInfo } from './types';
 import { calculateRoleProgress } from '@/lib/utils/dynamicProjectRoles';
-import { getWorkdaysDiff } from '@/app/utils/dateUtils';
 import { Payload } from "recharts/types/component/DefaultLegendContent";
 import { useTranslation } from "@/lib/translation";
 import { useScopeRoles } from '@/app/hooks/useScopeRoles';
@@ -39,7 +38,6 @@ interface ProgressData {
 
 const ProjectProgressChartComponent: React.FC<ProjectProgressChartProps> = ({
   project,
-  deliveryInfo,
   scopeId,
   priorityDates,
   projectAssignments,

@@ -606,10 +606,6 @@ export function calculateProjectDeliveryInfoWithWorkflow(
     active_workers: Array<{ role: string; status: 'active' | 'waiting' | 'blocked' }>;
   }
 ): ProjectDeliveryInfo {
-  // Get assigned team members for this project
-  const assignedTeamMembers = team.filter(member => 
-    projectAssignments.some(assignment => assignment.teamMemberId === member.id)
-  );
 
   // Získáme všechny role (standardní i custom) podle klíčů v projektu
   const roleKeys = Object.keys(project)
