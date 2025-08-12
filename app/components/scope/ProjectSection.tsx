@@ -922,7 +922,7 @@ export function ProjectSection({
                               {/* Hlavní řádek */}
                               <div className="p-4 sm:p-6 relative">
                                 {/* Desktop layout */}
-                                <div className="hidden md:flex items-center justify-between">
+                                <div className="hidden md:flex items-center justify-between gap-6 overflow-auto">
                                   <div className="flex items-center gap-4">
                                     {/* Drag handle */}
                                     {!readOnlyMode && (
@@ -973,24 +973,8 @@ export function ProjectSection({
                                       {(() => {
                                         return (
                                           <>
-                                            <svg
-                                              className="w-16 h-16 transform -rotate-90"
-                                              viewBox="0 0 36 36"
-                                            >
-                                              <path
-                                                className="text-gray-200 dark:text-gray-600"
-                                                fill="currentColor"
-                                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                              />
-                                              <path
-                                                className="text-blue-500"
-                                                fill="currentColor"
-                                                strokeDasharray={`${totalProgress}, 100`}
-                                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                              />
-                                            </svg>
-                                            <div className="absolute inset-0 flex items-center justify-center">
-                                              <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
+                                            <div className={`flex items-center justify-center rounded-full w-14 h-14 ${totalProgress === 100 ? 'bg-green-500' : totalProgress === 0 ? 'bg-red-500' : 'bg-blue-500'}`}>
+                                              <span className={`text-sm font-bold text-white`}>
                                                 {totalProgress}%
                                               </span>
                                             </div>
