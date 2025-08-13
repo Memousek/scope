@@ -48,13 +48,13 @@ export function VacationModal({ isOpen, member, scopeId, onClose, readOnly = fal
       const dbMember = await TeamService.getTeamMemberById(member.id);
       if (dbMember && Array.isArray(dbMember.vacations)) {
         setRanges(dbMember.vacations || []);
-      } else {
-        try {
-          const raw = localStorage.getItem(storageKey) || localStorage.getItem(`scope:${member.id}:vacations`);
-          setRanges(raw ? (JSON.parse(raw) as VacationRange[]) : []);
-        } catch {
-          setRanges([]);
-        }
+        return;
+      }
+      try {
+        const raw = localStorage.getItem(storageKey) || localStorage.getItem(`scope:${member.id}:vacations`);
+        setRanges(raw ? (JSON.parse(raw) as VacationRange[]) : []);
+      } catch {
+        setRanges([]);
       }
     };
     void load();

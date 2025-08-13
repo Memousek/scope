@@ -26,14 +26,13 @@ export default function TeamImportModal({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [members, setMembers] = useState<TeamImportMember[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
-  const [fileName, setFileName] = useState<string>("");
+  const [url, setUrl] = useState<string>("");
 
   const { t } = useTranslation();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setFileName(file.name);
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
@@ -125,7 +124,7 @@ export default function TeamImportModal({
       onClose();
       setMembers([]);
       setErrors([]);
-      setFileName("");
+      setUrl("");
     }
   };
 
@@ -136,7 +135,7 @@ export default function TeamImportModal({
       title={t("importTeamMembers")}
       icon={<FiUpload />}
     >
-      <div className="mb-6 flex items-center gap-2 justify-center">
+      <div className="mb-6 flex items-center gap-2 justify-center flex-col">
         <input
           type="file"
           accept=".csv"
@@ -151,9 +150,14 @@ export default function TeamImportModal({
         >
           {t("selectCSVFile")}
         </button>
-        {fileName && (
-          <span className="ml-4 text-base text-gray-400">{fileName}</span>
-        )}
+        <span className="text-sm text-gray-400 relative">
+          {t("or")}
+        </span>
+        <label htmlFor="url" className="text-sm text-gray-400">{t("insertCSVFromURL")}:</label>
+        <input id="url" type="text" value={url} onChange={(e) => setUrl(e.target.value)} className="text-base text-gray-400 w-full p-2 rounded-xl border border-gray-700" disabled={true} placeholder={t("insertCSVFromURLPlaceholder")} />
+        <button type="button" onClick={() => setUrl(url)} disabled={true} className={`disabled:bg-gray-500 disabled:text-gray-400 disabled:cursor-not-allowed disabled:opacity-50 bg-blue-500 text-white px-4 py-2 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/25 active:scale-95 ${url ? "cursor-pointer" : "cursor-not-allowed"}`}>
+          {t("updateFromURL")}
+        </button>
       </div>
       <span className="text-sm text-gray-400">{t("importTeamMembersDescription")}</span>
       {errors.length > 0 && (

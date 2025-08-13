@@ -109,7 +109,8 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
       const priorityDates = calculatePriorityDatesWithAssignments(
         projects,
         projectAssignments,
-        workflowDependencies
+        workflowDependencies,
+        team
       );
       const data: ChartDataPoint[] = [];
 

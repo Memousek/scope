@@ -561,8 +561,10 @@
   "dateFromAfterTo": "Datum od nemůže být po datu do",
   "dateRangesOverlap": "Období se překrývá s jiným obdobím",
   "importTeamMembers": "Importovat členy týmu",
-  "importTeamMembersDescription": "Importujte členy týmu z CSV. Povinné sloupce: Jméno, Role, FTE. Volitelně Dovolená: položky oddělte ;, každá položka ve formátu DD.MM.RRRR..DD.MM.RRRR|Poznámka (poznámka je nepovinná).",
+  "importTeamMembersDescription": "Importujte členy týmu z CSV. Povinné sloupce: Jméno, Role, FTE. Volitelně Dovolená: položky oddělte ;, každá položka ve formátu DD.MM.RRRR..DD.MM.RRRR|Poznámka (poznámka i dovolená jsou nepovinný).",
   "selectCSVFile": "Vyberte soubor ve formátu CSV",
   "import": "Importovat",
-  "previewImportedMembers": "Náhled importovaných členů"
+  "previewImportedMembers": "Náhled importovaných členů",
+  "insertCSVFromURL": "Importovat CSV z URL",
+  "insertCSVFromURLPlaceholder": "https://example.com/csv.csv"
 }

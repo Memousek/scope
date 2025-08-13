@@ -9,7 +9,7 @@
  */
 
 import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
-import { TeamMember, VacationRange } from "./types";
+import { TeamMember } from "./types";
 import { AddMemberModal } from "./AddMemberModal";
 import TeamImportModal from "../TeamImportModal";
 import { RoleManagementModal } from "./RoleManagementModal";
@@ -50,9 +50,10 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
 
 
   const isOnVacationToday = useCallback((member: TeamMember): boolean => {
-    const iso = new Date().toISOString().slice(0, 10);
+    const now = new Date();
+    const localIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     if (!Array.isArray(member.vacations)) return false;
-    return member.vacations.some((r) => r.start <= iso && iso <= r.end);
+    return member.vacations.some((r) => r.start <= localIso && localIso <= r.end);
   }, []);
 
   // Detekce prefers-reduced-motion
@@ -278,13 +279,13 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
                     <button
                       type="button"
                       onClick={() => setImportModalOpen(true)}
-                      className=" group bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/25 active:scale-95"
+                      className=" group bg-gradient-to-r from-red-600 via-pink-600 to-orange-600 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/25 active:scale-95"
                     >
                       <span className="relative z-10 flex items-center gap-2">
                         <FiUpload className="w-5 h-5" />
-                        {t("importTeam")} (Experimental)
+                        {t("importTeam")}
                       </span>
-                      <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="absolute inset-0 bg-gradient-to-r from-red-600 via-pink-600 to-orange-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     </button>
                     <TeamImportModal
                       isOpen={importModalOpen}

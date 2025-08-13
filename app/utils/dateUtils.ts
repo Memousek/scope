@@ -369,13 +369,14 @@ export function calculatePriorityDates(
  * Calculate priority dates with assignments & workflow (řetězení na sebe)
  */
 export function calculatePriorityDatesWithAssignments(
-  projects: Project[], 
+  projects: Project[],
   projectAssignments: Record<string, Array<{ teamMemberId: string; role: string; allocationFte: number }>>,
   workflowDependencies?: Record<string, {
     workflow_type: string;
     dependencies: Array<{ from: string; to: string; type: 'blocking' | 'waiting' | 'parallel' }>;
     active_workers: Array<{ role: string; status: 'active' | 'waiting' | 'blocked' }>;
-  }>
+  }>,
+  team?: TeamMember[]
 ): Record<string, { 
   priorityStartDate: Date; 
   priorityEndDate: Date; 
@@ -404,6 +405,39 @@ export function calculatePriorityDatesWithAssignments(
   let chainCursor = new Date(); // dnes
   let lastProjectName: string | undefined = undefined;
 
+  // Helper: is member on vacation on given ISO date
+  const isOnVacation = (member: TeamMember | undefined, date: Date): boolean => {
+    if (!member || !Array.isArray(member.vacations) || member.vacations.length === 0) return false;
+    const iso = date.toISOString().slice(0, 10);
+    return member.vacations.some((r) => r.start <= iso && iso <= r.end);
+  };
+
+  // Helper: simulate remaining mandays burn-down with per-day available FTE (considering vacations)
+  const simulateEndDate = (
+    start: Date,
+    remainingMandays: number,
+    assignees: Array<{ member: TeamMember | undefined; allocationFte: number }>
+  ): Date => {
+    const cursor = new Date(start);
+    let remaining = remainingMandays;
+    // Safety guard to avoid infinite loop
+    let safety = 0;
+    while (remaining > 0 && safety < 5000) {
+      safety++;
+      // move to next day (including start day as a working chunk)
+      if (cursor.getDay() !== 0 && cursor.getDay() !== 6) {
+        const dailyFte = assignees.reduce((sum, a) => sum + (isOnVacation(a.member, cursor) ? 0 : a.allocationFte), 0);
+        // if no capacity this workday, time passes but remaining stays
+        if (dailyFte > 0) {
+          remaining -= dailyFte;
+        }
+      }
+      if (remaining <= 0) break;
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return new Date(cursor);
+  };
+
   for (const project of sorted) {
     const assignments = projectAssignments[project.id] || [];
     const roleKeys = Object.keys(project)
@@ -421,13 +455,15 @@ export function calculatePriorityDatesWithAssignments(
       // 1) Dny pro jednotlivé role dle přiřazení (allocationFte)
       const roleDays: Record<string, number> = {};
       roleKeys.forEach(roleKey => {
-        const fte = assignments
+        const roleAssignees = assignments
           .filter(a => a.role === roleKey || a.role === roleKey.toUpperCase())
-          .reduce((s, a) => s + a.allocationFte, 0);
+          .map(a => ({ member: team?.find(m => m.id === a.teamMemberId), allocationFte: a.allocationFte }));
         const mandays = Number(project[`${roleKey}_mandays`]) || 0;
         const done = Number(project[`${roleKey}_done`]) || 0;
         const remaining = mandays * (1 - done / 100);
-        const effectiveFte = fte > 0 ? fte : 1.0;
+        // If we have team/assignees, simulate later when start date is known
+        const baseFte = roleAssignees.reduce((s, a) => s + a.allocationFte, 0);
+        const effectiveFte = baseFte > 0 ? baseFte : 1.0;
         roleDays[roleKey] = Math.ceil(remaining / effectiveFte);
       });
 
@@ -462,7 +498,16 @@ export function calculatePriorityDatesWithAssignments(
           const startDate = deps.length > 0
             ? new Date(Math.max(...deps.map(dep => roleEndDates[dep]?.getTime() || 0)))
             : priorityStartDate;
-          const endDate = addWorkdays(startDate, roleDays[roleKey] || 0);
+          // If we have team and assignments, simulate with vacations; else fallback to constant days
+          const roleAssignees = assignments
+            .filter(a => a.role === roleKey || a.role === roleKey.toUpperCase())
+            .map(a => ({ member: team?.find(m => m.id === a.teamMemberId), allocationFte: a.allocationFte }));
+          const mandays = Number(project[`${roleKey}_mandays`]) || 0;
+          const done = Number(project[`${roleKey}_done`]) || 0;
+          const remaining = mandays * (1 - done / 100);
+          const endDate = roleAssignees.length > 0 && team
+            ? simulateEndDate(startDate, remaining, roleAssignees)
+            : addWorkdays(startDate, roleDays[roleKey] || 0);
           roleEndDates[roleKey] = endDate;
           scheduled.add(roleKey);
           progressed = true;
@@ -512,17 +557,30 @@ export function calculatePriorityDatesWithAssignments(
         if (days > maxDays) maxDays = days;
       });
     } else {
+      // Bez workflow: simuluj per roli od startu projektu a vezmi nejpozdější konec
+      const projectStart = new Date(chainCursor);
+      let latestEnd: Date | null = null;
       roleKeys.forEach(roleKey => {
-        const fte = assignments
+        const roleAssignees = assignments
           .filter(a => a.role === roleKey || a.role === roleKey.toUpperCase())
-          .reduce((s, a) => s + a.allocationFte, 0);
+          .map(a => ({ member: team?.find(m => m.id === a.teamMemberId), allocationFte: a.allocationFte }));
         const mandays = Number(project[`${roleKey}_mandays`]) || 0;
         const done = Number(project[`${roleKey}_done`]) || 0;
         const remaining = mandays * (1 - done / 100);
-        const effectiveFte = fte > 0 ? fte : 1.0;
-        const days = remaining / effectiveFte;
-        if (days > maxDays) maxDays = days;
+        let roleEnd: Date;
+        if (roleAssignees.length > 0 && team) {
+          roleEnd = simulateEndDate(projectStart, remaining, roleAssignees);
+        } else {
+          const baseFte = roleAssignees.reduce((s, a) => s + a.allocationFte, 0);
+          const effectiveFte = baseFte > 0 ? baseFte : 1.0;
+          roleEnd = addWorkdays(projectStart, Math.ceil(remaining / effectiveFte));
+        }
+        latestEnd = latestEnd ? new Date(Math.max(latestEnd.getTime(), roleEnd.getTime())) : roleEnd;
       });
+      if (latestEnd) {
+        maxDays = getWorkdaysDiff(projectStart, latestEnd);
+        if (maxDays < 0) maxDays = 0;
+      }
     }
 
     const projectWorkdays = Math.ceil(maxDays);

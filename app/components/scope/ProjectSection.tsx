@@ -142,7 +142,15 @@ export function ProjectSection({
   // Load data on component mount
   useEffect(() => {
     const fetchProjectsAndNotes = async () => {
-      await loadProjects();
+      // Načteme projekty i tým, aby vizualizace workflow a výpočty (včetně dovolených) měly kompletní data
+      try {
+        await Promise.all([
+          loadProjects(),
+          loadTeam(),
+        ]);
+      } catch {
+        // noop – chyby se již logují v jednotlivých loader funkcích
+      }
     };
     fetchProjectsAndNotes();
   }, [loadProjects, loadTeam]);
@@ -558,7 +566,8 @@ export function ProjectSection({
     const priorityDates = calculatePriorityDatesWithAssignments(
       projects,
       formattedAssignments,
-      workflowDependencies
+      workflowDependencies,
+      team
     );
 
     projects.forEach((project) => {
@@ -1496,6 +1505,44 @@ export function ProjectSection({
                                               );
 
                                               const standardGroupsMap = groupByRole(standardWorkers);
+                                              // helper: je někdo z role dnes na dovolené?
+                                              const isRoleOnVacationToday = (roleLabel: string): boolean => {
+                                                const assigned = (projectAssignments[project.id] || []).filter(
+                                                  (a) => a.role.toUpperCase() === roleLabel.toUpperCase() || a.role === roleLabel
+                                                );
+                                                if (assigned.length === 0) return false;
+                                                const now = new Date();
+                                                const iso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                                                return assigned.some((a) =>
+                                                  team.some(
+                                                    (m) =>
+                                                      m.id === a.teamMemberId &&
+                                                      Array.isArray(m.vacations) &&
+                                                      m.vacations.some((v) => v.start <= iso && iso <= v.end)
+                                                  )
+                                                );
+                                              };
+
+                                              const getRoleVacationersToday = (roleLabel: string): string[] => {
+                                                const assigned = (projectAssignments[project.id] || []).filter(
+                                                  (a) => a.role.toUpperCase() === roleLabel.toUpperCase() || a.role === roleLabel
+                                                );
+                                                if (assigned.length === 0) return [];
+                                                const now = new Date();
+                                                const iso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                                                const names: string[] = [];
+                                                for (const a of assigned) {
+                                                  const member = team.find((m) => m.id === a.teamMemberId);
+                                                  if (
+                                                    member &&
+                                                    Array.isArray(member.vacations) &&
+                                                    member.vacations.some((v) => v.start <= iso && iso <= v.end)
+                                                  ) {
+                                                    names.push(member.name);
+                                                  }
+                                                }
+                                                return names;
+                                              };
                                               const customGroupsMap = groupByRole(customWorkers);
 
                                               const order =
@@ -1558,6 +1605,19 @@ export function ProjectSection({
                                                         }`}
                                                       ></div>
                                                       <span className="whitespace-nowrap">{group.role}</span>
+                                                      {(() => {
+                                                        const vacationers = getRoleVacationersToday(group.role);
+                                                        if (vacationers.length === 0) return null;
+                                                        return (
+                                                          <span
+                                                            title={`${t("onVacation")}: ${vacationers.join(", ")}`}
+                                                            className="ml-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+                                                          >
+                                                          <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v2h20V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zM22 10H2v9a2 2 0 002 2h16a2 2 0 002-2v-9z"/></svg>
+                                                          {t("onVacation")}
+                                                          </span>
+                                                        );
+                                                      })()}
                                                       {group.workers.length > 1 && (
                                                         <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-full bg-black/10 dark:bg-white/10">
                                                           {group.workers.length}
