@@ -106,7 +106,11 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
       if (projects.length === 0 || team.length === 0) return;
 
       // Use workflow-aware calculation if dependencies are available
-      const priorityDates = calculatePriorityDatesWithAssignments(projects, team, projectAssignments, workflowDependencies);
+      const priorityDates = calculatePriorityDatesWithAssignments(
+        projects,
+        projectAssignments,
+        workflowDependencies
+      );
       const data: ChartDataPoint[] = [];
 
       const bufferDays = 2;

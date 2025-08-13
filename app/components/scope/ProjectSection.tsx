@@ -557,7 +557,6 @@ export function ProjectSection({
 
     const priorityDates = calculatePriorityDatesWithAssignments(
       projects,
-      team,
       formattedAssignments,
       workflowDependencies
     );
