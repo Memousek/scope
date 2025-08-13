@@ -380,7 +380,8 @@ export function calculatePriorityDatesWithAssignments(
 ): Record<string, { 
   priorityStartDate: Date; 
   priorityEndDate: Date; 
-  blockingProjectName?: string; 
+  blockingProjectName?: string;
+  lostWorkdaysDueToVacations?: number; 
 }> {
   const activeProjects = projects.filter(p => {
     const s = p.status || 'not_started';
@@ -400,6 +401,7 @@ export function calculatePriorityDatesWithAssignments(
     priorityStartDate: Date; 
     priorityEndDate: Date; 
     blockingProjectName?: string; 
+    lostWorkdaysDueToVacations?: number;
   }> = {};
 
   let chainCursor = new Date(); // dnes
@@ -428,6 +430,29 @@ export function calculatePriorityDatesWithAssignments(
       if (cursor.getDay() !== 0 && cursor.getDay() !== 6) {
         const dailyFte = assignees.reduce((sum, a) => sum + (isOnVacation(a.member, cursor) ? 0 : a.allocationFte), 0);
         // if no capacity this workday, time passes but remaining stays
+        if (dailyFte > 0) {
+          remaining -= dailyFte;
+        }
+      }
+      if (remaining <= 0) break;
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return new Date(cursor);
+  };
+
+  // Helper: simulate without vacations (always full allocation FTE on workdays)
+  const simulateEndDateNoVacations = (
+    start: Date,
+    remainingMandays: number,
+    assignees: Array<{ member: TeamMember | undefined; allocationFte: number }>
+  ): Date => {
+    const cursor = new Date(start);
+    let remaining = remainingMandays;
+    let safety = 0;
+    while (remaining > 0 && safety < 5000) {
+      safety++;
+      if (cursor.getDay() !== 0 && cursor.getDay() !== 6) {
+        const dailyFte = assignees.reduce((sum, a) => sum + a.allocationFte, 0);
         if (dailyFte > 0) {
           remaining -= dailyFte;
         }
@@ -525,6 +550,41 @@ export function calculatePriorityDatesWithAssignments(
       // 3) Základní konec projektu je max z dokončení rolí
       let projectEndDate = new Date(Math.max(...Object.values(roleEndDates).map(d => d.getTime())));
 
+      // Vypočítáme také hypotetický konec BEZ zohlednění dovolených (stejné závislosti)
+      const roleEndDatesNoVac: Record<string, Date> = {};
+      {
+        const scheduled2 = new Set<string>();
+        let iterations2 = 0;
+        const maxIterations2 = roleKeys.length * 3;
+        while (scheduled2.size < roleKeys.length && iterations2 < maxIterations2) {
+          iterations2++;
+          let progressed2 = false;
+          for (const roleKey of roleKeys) {
+            if (scheduled2.has(roleKey)) continue;
+            const deps = dependsOnMap[roleKey] || [];
+            const depsMet = deps.every(dep => scheduled2.has(dep));
+            if (!depsMet && deps.length > 0) continue;
+            const startDate = deps.length > 0
+              ? new Date(Math.max(...deps.map(dep => roleEndDatesNoVac[dep]?.getTime() || 0)))
+              : priorityStartDate;
+            const roleAssignees = assignments
+              .filter(a => a.role === roleKey || a.role === roleKey.toUpperCase())
+              .map(a => ({ member: team?.find(m => m.id === a.teamMemberId), allocationFte: a.allocationFte }));
+            const mandays = Number(project[`${roleKey}_mandays`]) || 0;
+            const done = Number(project[`${roleKey}_done`]) || 0;
+            const remaining = mandays * (1 - done / 100);
+            const endNoVac = roleAssignees.length > 0 && team
+              ? simulateEndDateNoVacations(startDate, remaining, roleAssignees)
+              : addWorkdays(startDate, roleDays[roleKey] || 0);
+            roleEndDatesNoVac[roleKey] = endNoVac;
+            scheduled2.add(roleKey);
+            progressed2 = true;
+          }
+          if (!progressed2) break;
+        }
+      }
+      let projectEndDateNoVac = new Date(Math.max(...Object.values(roleEndDatesNoVac).map(d => d.getTime())));
+
       // 4) Posun kvůli blokacím/čekání – pouze posunout, ne násobně navyšovat
       const BLOCKED_SHIFT_DAYS = 5;
       const WAITING_SHIFT_DAYS = 2;
@@ -537,12 +597,14 @@ export function calculatePriorityDatesWithAssignments(
       });
       if (shiftDays > 0) {
         projectEndDate = addWorkdays(projectEndDate, shiftDays);
+        projectEndDateNoVac = addWorkdays(projectEndDateNoVac, shiftDays);
       }
 
       result[project.id] = {
         priorityStartDate,
         priorityEndDate: projectEndDate,
         blockingProjectName: lastProjectName,
+        lostWorkdaysDueToVacations: Math.max(0, getWorkdaysDiff(projectEndDateNoVac, projectEndDate)),
       };
 
       chainCursor = nextWorkday(projectEndDate);
@@ -560,6 +622,7 @@ export function calculatePriorityDatesWithAssignments(
       // Bez workflow: simuluj per roli od startu projektu a vezmi nejpozdější konec
       const projectStart = new Date(chainCursor);
       let latestEnd: Date | null = null;
+      let latestEndNoVac: Date | null = null;
       roleKeys.forEach(roleKey => {
         const roleAssignees = assignments
           .filter(a => a.role === roleKey || a.role === roleKey.toUpperCase())
@@ -568,18 +631,27 @@ export function calculatePriorityDatesWithAssignments(
         const done = Number(project[`${roleKey}_done`]) || 0;
         const remaining = mandays * (1 - done / 100);
         let roleEnd: Date;
+        let roleEndNoVac: Date;
         if (roleAssignees.length > 0 && team) {
           roleEnd = simulateEndDate(projectStart, remaining, roleAssignees);
+          roleEndNoVac = simulateEndDateNoVacations(projectStart, remaining, roleAssignees);
         } else {
           const baseFte = roleAssignees.reduce((s, a) => s + a.allocationFte, 0);
           const effectiveFte = baseFte > 0 ? baseFte : 1.0;
           roleEnd = addWorkdays(projectStart, Math.ceil(remaining / effectiveFte));
+          roleEndNoVac = addWorkdays(projectStart, Math.ceil(remaining / effectiveFte));
         }
         latestEnd = latestEnd ? new Date(Math.max(latestEnd.getTime(), roleEnd.getTime())) : roleEnd;
+        latestEndNoVac = latestEndNoVac ? new Date(Math.max(latestEndNoVac.getTime(), roleEndNoVac.getTime())) : roleEndNoVac;
       });
       if (latestEnd) {
         maxDays = getWorkdaysDiff(projectStart, latestEnd);
         if (maxDays < 0) maxDays = 0;
+        // uložíme hypotetické bez dovolených
+        (result as Record<string, { __baselineNoVac?: Date }>)[project.id] = {
+          ...(result[project.id] || ({} as any)),
+          __baselineNoVac: latestEndNoVac || undefined,
+        } as any;
       }
     }
 
@@ -589,10 +661,12 @@ export function calculatePriorityDatesWithAssignments(
     const priorityStartDate = new Date(chainCursor);
     const priorityEndDate = addWorkdays(priorityStartDate, projectWorkdays);
 
+    const baselineNoVac = (result as Record<string, { __baselineNoVac?: Date }>)[project.id]?.__baselineNoVac;
     result[project.id] = {
       priorityStartDate,
       priorityEndDate,
       blockingProjectName: lastProjectName,
+      lostWorkdaysDueToVacations: baselineNoVac ? Math.max(0, getWorkdaysDiff(baselineNoVac, priorityEndDate)) : 0,
     };
 
     // posuň kurzor na další pracovní den po konci

@@ -566,5 +566,8 @@
   "import": "Importovat",
   "previewImportedMembers": "Náhled importovaných členů",
   "insertCSVFromURL": "Importovat CSV z URL",
-  "insertCSVFromURLPlaceholder": "https://example.com/csv.csv"
+  "insertCSVFromURLPlaceholder": "https://example.com/csv.csv",
+  "lostWorkdaysDueToVacations": "Ztracené pracovní dny kvůli dovoleným",
+  "availabilityWeek": "Dostupnost (2 týdny)",
+  "available": "Dostupný"
 }

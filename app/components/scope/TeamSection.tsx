@@ -604,6 +604,51 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
                               )}
                             </div>
                           </div>
+
+                          {/* Weekly availability heatmap (2 weeks, Mon-Fri) */}
+                          <div className="hidden lg:flex items-center gap-2 ml-6" title={t("availabilityWeek")}>
+                            {(() => {
+                              const today = new Date();
+                              const dow = today.getDay();
+                              const monday = new Date(today);
+                              const diffToMonday = ((dow + 6) % 7);
+                              monday.setDate(today.getDate() - diffToMonday);
+                              const days: Date[] = [];
+                              for (let i = 0; i < 10; i++) {
+                                const d = new Date(monday);
+                                d.setDate(monday.getDate() + i);
+                                days.push(d);
+                              }
+                              const isVac = (d: Date) => {
+                                const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                                return Array.isArray(member.vacations) && member.vacations.some(v => v.start <= iso && iso <= v.end);
+                              };
+                              const fteVal = member.fte || 0;
+                              return (
+                                <div className="flex items-center gap-2">
+                                  {days.map((d, idx) => {
+                                    const vac = isVac(d);
+                                    const style = vac
+                                      ? 'bg-amber-400'
+                                      : fteVal >= 1
+                                        ? 'bg-emerald-500'
+                                        : fteVal >= 0.5
+                                          ? 'bg-emerald-400'
+                                          : fteVal > 0
+                                            ? 'bg-emerald-300'
+                                            : 'bg-gray-300 dark:bg-gray-700';
+                                    const isSeparator = idx === 5;
+                                    return (
+                                      <>
+                                        {isSeparator && <div className="w-2 h-3" />}
+                                        <div key={idx} className={`w-3 h-3 rounded ${style}`} title={`${d.toLocaleDateString('cs-CZ')} • ${vac ? t('onVacation') : t('available')}`}></div>
+                                      </>
+                                    );
+                                  })}
+                                </div>
+                              );
+                            })()}
+                          </div>
                         </div>
 
                         {/* Akce */}
