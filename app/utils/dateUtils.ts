@@ -414,16 +414,12 @@ export function calculatePriorityDatesWithAssignments(
     let maxDays = 0;
     const wf = workflowDependencies?.[project.id];
 
-    if (assignments.length === 0) {
-      roleKeys.forEach(roleKey => {
-        const mandays = Number(project[`${roleKey}_mandays`]) || 0;
-        const done = Number(project[`${roleKey}_done`]) || 0;
-        const remaining = mandays * (1 - done / 100);
-        const days = remaining / 1.0;
-        if (days > maxDays) maxDays = days;
-      });
-    } else if (wf) {
-      const roleTimings: Record<string, number> = {};
+    // Pokud máme workflow závislosti, použijeme sekvenční plánování rolí
+    if (wf) {
+      const priorityStartDate = new Date(chainCursor);
+
+      // 1) Dny pro jednotlivé role dle přiřazení (allocationFte)
+      const roleDays: Record<string, number> = {};
       roleKeys.forEach(roleKey => {
         const fte = assignments
           .filter(a => a.role === roleKey || a.role === roleKey.toUpperCase())
@@ -432,9 +428,89 @@ export function calculatePriorityDatesWithAssignments(
         const done = Number(project[`${roleKey}_done`]) || 0;
         const remaining = mandays * (1 - done / 100);
         const effectiveFte = fte > 0 ? fte : 1.0;
-        roleTimings[roleKey] = Math.ceil(remaining / effectiveFte);
+        roleDays[roleKey] = Math.ceil(remaining / effectiveFte);
       });
-      maxDays = Math.max(...Object.values(roleTimings));
+
+      // 2) Naplánujeme role podle závislostí (sekvenčně přes pracovní dny)
+      const findRoleKey = (name: string): string | undefined =>
+        roleKeys.find(k => k === name || k.toUpperCase() === name.toUpperCase());
+
+      const dependsOnMap: Record<string, string[]> = {};
+      roleKeys.forEach(roleKey => {
+        const dependsOn = wf.dependencies
+          .filter(d => d.to.toUpperCase() === roleKey.toUpperCase() || d.to === roleKey)
+          .map(d => findRoleKey(d.from))
+          .filter((v): v is string => Boolean(v));
+        dependsOnMap[roleKey] = dependsOn;
+      });
+
+      const roleEndDates: Record<string, Date> = {};
+      const scheduled = new Set<string>();
+      const maxIterations = roleKeys.length * 3;
+      let iterations = 0;
+
+      while (scheduled.size < roleKeys.length && iterations < maxIterations) {
+        iterations++;
+        let progressed = false;
+
+        for (const roleKey of roleKeys) {
+          if (scheduled.has(roleKey)) continue;
+          const deps = dependsOnMap[roleKey] || [];
+          const depsMet = deps.every(dep => scheduled.has(dep));
+          if (!depsMet && deps.length > 0) continue;
+
+          const startDate = deps.length > 0
+            ? new Date(Math.max(...deps.map(dep => roleEndDates[dep]?.getTime() || 0)))
+            : priorityStartDate;
+          const endDate = addWorkdays(startDate, roleDays[roleKey] || 0);
+          roleEndDates[roleKey] = endDate;
+          scheduled.add(roleKey);
+          progressed = true;
+        }
+
+        if (!progressed) {
+          // Cyklická závislost nebo nekonzistence – fallback: použij max trvání paralelně
+          const fallbackDays = Math.max(...Object.values(roleDays));
+          const fallbackEnd = addWorkdays(priorityStartDate, isFinite(fallbackDays) ? fallbackDays : 0);
+          roleEndDates['__fallback__'] = fallbackEnd;
+          break;
+        }
+      }
+
+      // 3) Základní konec projektu je max z dokončení rolí
+      let projectEndDate = new Date(Math.max(...Object.values(roleEndDates).map(d => d.getTime())));
+
+      // 4) Posun kvůli blokacím/čekání – pouze posunout, ne násobně navyšovat
+      const BLOCKED_SHIFT_DAYS = 10;
+      const WAITING_SHIFT_DAYS = 5;
+      let shiftDays = 0;
+      wf.active_workers.forEach(w => {
+        const roleKey = findRoleKey(w.role);
+        if (!roleKey) return;
+        if (w.status === 'blocked') shiftDays += BLOCKED_SHIFT_DAYS;
+        else if (w.status === 'waiting') shiftDays += WAITING_SHIFT_DAYS;
+      });
+      if (shiftDays > 0) {
+        projectEndDate = addWorkdays(projectEndDate, shiftDays);
+      }
+
+      result[project.id] = {
+        priorityStartDate,
+        priorityEndDate: projectEndDate,
+        blockingProjectName: lastProjectName,
+      };
+
+      chainCursor = nextWorkday(projectEndDate);
+      lastProjectName = project.name;
+      continue;
+    } else if (assignments.length === 0) {
+      roleKeys.forEach(roleKey => {
+        const mandays = Number(project[`${roleKey}_mandays`]) || 0;
+        const done = Number(project[`${roleKey}_done`]) || 0;
+        const remaining = mandays * (1 - done / 100);
+        const days = remaining / 1.0;
+        if (days > maxDays) maxDays = days;
+      });
     } else {
       roleKeys.forEach(roleKey => {
         const fte = assignments
@@ -450,27 +526,6 @@ export function calculatePriorityDatesWithAssignments(
     }
 
     let projectWorkdays = Math.ceil(maxDays);
-
-    // penalizace za blocked/waiting (zůstává)
-    if (wf) {
-      let addBlocked = 0;
-      let addWaiting = 0;
-      wf.active_workers.forEach(w => {
-        const roleKey = roleKeys.find(k => k === w.role || k.toUpperCase() === w.role.toUpperCase());
-        if (!roleKey) return;
-        const fte = assignments
-          .filter(a => a.role === roleKey || a.role === roleKey.toUpperCase())
-          .reduce((s, a) => s + a.allocationFte, 0);
-        const mandays = Number(project[`${roleKey}_mandays`]) || 0;
-        const done = Number(project[`${roleKey}_done`]) || 0;
-        const remaining = mandays * (1 - done / 100);
-        const effectiveFte = fte > 0 ? fte : 1.0;
-        const normalDays = remaining / effectiveFte;
-        if (w.status === 'blocked') addBlocked += Math.ceil(normalDays * 0.5);
-        else if (w.status === 'waiting') addWaiting += Math.ceil(normalDays * 0.2);
-      });
-      projectWorkdays += addBlocked + addWaiting;
-    }
 
     // --- ŘETĚZENÝ START: vždy z chainCursor
     const priorityStartDate = new Date(chainCursor);
