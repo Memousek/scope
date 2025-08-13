@@ -17,9 +17,10 @@ interface VacationModalProps {
   member: TeamMember | null;
   scopeId: string;
   onClose: () => void;
+  readOnly?: boolean;
 }
 
-export function VacationModal({ isOpen, member, scopeId, onClose }: VacationModalProps) {
+export function VacationModal({ isOpen, member, scopeId, onClose, readOnly = false }: VacationModalProps) {
   const { t } = useTranslation();
   const storageKey = useMemo(
     () => (member ? `scope:${scopeId}:member:${member.id}:vacations` : ""),
@@ -99,6 +100,20 @@ export function VacationModal({ isOpen, member, scopeId, onClose }: VacationModa
           {t("manageVacations")}
         </h3>
 
+        {readOnly && (
+          <div className="flex items-center justify-between text-sm text-gray-700 dark:text-gray-300 px-1">
+            <div>
+              {t("total")}: {ranges.length}
+            </div>
+            <div>
+              {(() => {
+                const totalDays = ranges.reduce((sum, r) => sum + (getInclusiveDays(r.start, r.end) ?? 0), 0);
+                return `${totalDays} ${totalDays === 1 ? t("day") : t("days")}`;
+              })()}
+            </div>
+          </div>
+        )}
+
         <ul role="list" className="space-y-4">
           {ranges.map((r, i) => {
             const startId = `vac-start-${i}-${member.id}`;
@@ -125,37 +140,51 @@ export function VacationModal({ isOpen, member, scopeId, onClose }: VacationModa
                         <label htmlFor={startId} className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">
                           {t("from")}
                         </label>
-                        <input
-                          id={startId}
-                          type="date"
-                          className="w-full rounded-xl px-3 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          value={r.start}
-                          onChange={(e) => updateRange(i, { start: e.target.value })}
-                          aria-describedby={helpId}
-                        />
+                        {readOnly ? (
+                          <div id={startId} aria-readonly className="w-full rounded-xl px-3 py-2 bg-white/60 dark:bg-gray-900/60 border border-gray-300/50 dark:border-gray-700/50">
+                            {r.start}
+                          </div>
+                        ) : (
+                          <input
+                            id={startId}
+                            type="date"
+                            className="w-full rounded-xl px-3 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            value={r.start}
+                            onChange={(e) => updateRange(i, { start: e.target.value })}
+                            aria-describedby={helpId}
+                          />
+                        )}
                       </div>
                       <div className="sm:col-span-5">
                         <label htmlFor={endId} className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">
                           {t("to")}
                         </label>
-                        <input
-                          id={endId}
-                          type="date"
-                          className="w-full rounded-xl px-3 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          value={r.end}
-                          onChange={(e) => updateRange(i, { end: e.target.value })}
-                          aria-describedby={helpId}
-                        />
+                        {readOnly ? (
+                          <div id={endId} aria-readonly className="w-full rounded-xl px-3 py-2 bg-white/60 dark:bg-gray-900/60 border border-gray-300/50 dark:border-gray-700/50">
+                            {r.end}
+                          </div>
+                        ) : (
+                          <input
+                            id={endId}
+                            type="date"
+                            className="w-full rounded-xl px-3 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            value={r.end}
+                            onChange={(e) => updateRange(i, { end: e.target.value })}
+                            aria-describedby={helpId}
+                          />
+                        )}
                       </div>
                       <div className="sm:col-span-2 flex items-end justify-end gap-2">
-                        <button
-                          type="button"
-                          className="px-3 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 flex items-center gap-1"
-                          onClick={() => removeRange(i)}
-                          aria-label={`${t("remove")} #${i + 1}`}
-                        >
-                          <FiTrash2 className="w-4 h-4" /> {t("remove")}
-                        </button>
+                        {!readOnly && (
+                          <button
+                            type="button"
+                            className="px-3 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 flex items-center gap-1"
+                            onClick={() => removeRange(i)}
+                            aria-label={`${t("remove")} #${i + 1}`}
+                          >
+                            <FiTrash2 className="w-4 h-4" /> {t("remove")}
+                          </button>
+                        )}
                       </div>
                     </div>
 
@@ -163,15 +192,23 @@ export function VacationModal({ isOpen, member, scopeId, onClose }: VacationModa
                       <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 text-white flex items-center justify-center" aria-hidden="true">
                         <FiTag className="w-4 h-4" />
                       </div>
-                      <label htmlFor={noteId} className="sr-only">{t("note")}</label>
-                      <input
-                        id={noteId}
-                        type="text"
-                        className="flex-1 rounded-xl px-3 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        placeholder={t("note")}
-                        value={r.note || ""}
-                        onChange={(e) => updateRange(i, { note: e.target.value })}
-                      />
+                      {readOnly ? (
+                        <div id={noteId} aria-readonly className="flex-1 rounded-xl px-3 py-2 bg-white/60 dark:bg-gray-900/60 border border-gray-300/50 dark:border-gray-700/50">
+                          {r.note || "—"}
+                        </div>
+                      ) : (
+                        <>
+                          <label htmlFor={noteId} className="sr-only">{t("note")}</label>
+                          <input
+                            id={noteId}
+                            type="text"
+                            className="flex-1 rounded-xl px-3 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            placeholder={t("note")}
+                            value={r.note || ""}
+                            onChange={(e) => updateRange(i, { note: e.target.value })}
+                          />
+                        </>
+                      )}
                     </div>
 
                     <p id={helpId} className="text-[11px] text-gray-500 dark:text-gray-400">
@@ -188,29 +225,33 @@ export function VacationModal({ isOpen, member, scopeId, onClose }: VacationModa
         </ul>
 
         <div className="flex justify-between items-center">
-          <button
-            type="button"
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700 flex items-center gap-2"
-            onClick={addRange}
-            aria-label={t("addRange")}
-          >
-            <FiPlus className="w-4 h-4" /> {t("addRange")}
-          </button>
+          {!readOnly && (
+            <button
+              type="button"
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700 flex items-center gap-2"
+              onClick={addRange}
+              aria-label={t("addRange")}
+            >
+              <FiPlus className="w-4 h-4" /> {t("addRange")}
+            </button>
+          )}
           <div className="flex gap-2">
             <button
               type="button"
               className="px-4 py-2 rounded-xl bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 flex items-center gap-2"
               onClick={onClose}
             >
-              <FiX className="w-4 h-4" /> {t("cancel")}
+              <FiX className="w-4 h-4" /> {t("close")}
             </button>
-            <button
-              type="button"
-              className="px-5 py-2 rounded-xl bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white flex items-center gap-2"
-              onClick={handleSave}
-            >
-              <FiSave className="w-4 h-4" /> {t("save")}
-            </button>
+            {!readOnly && (
+              <button
+                type="button"
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white flex items-center gap-2"
+                onClick={handleSave}
+              >
+                <FiSave className="w-4 h-4" /> {t("save")}
+              </button>
+            )}
           </div>
         </div>
       </div>

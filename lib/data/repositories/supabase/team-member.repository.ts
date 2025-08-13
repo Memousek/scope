@@ -57,7 +57,7 @@ export class SupabaseTeamMemberRepository implements TeamMemberRepository {
         name: teamMember.name,
         role: teamMember.role,
         fte: teamMember.fte,
-        vacations: (teamMember as any).vacations ?? undefined,
+        vacations: teamMember.vacations,
       })
       .eq('id', id)
       .select()

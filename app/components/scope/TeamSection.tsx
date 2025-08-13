@@ -46,23 +46,12 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
   const [roleFilter, setRoleFilter] = useState<string>("");
   const [isReducedMotion, setIsReducedMotion] = useState(false);
   const debounceTimeouts = useRef<Record<string, NodeJS.Timeout>>({});
-  const [vacationModal, setVacationModal] = useState<{ open: boolean; member: TeamMember | null }>({ open: false, member: null });
+  const [vacationModal, setVacationModal] = useState<{ open: boolean; member: TeamMember | null; readOnly?: boolean }>({ open: false, member: null });
 
-  const getMemberVacations = useCallback((memberId: string): VacationRange[] => {
-    try {
-      const key = `scope:${memberId}:vacations`;
-      const raw = localStorage.getItem(key);
-      console.log(raw);
-      return raw ? (JSON.parse(raw) as VacationRange[]) : [];
-    } catch {
-      return [];
-    }
-  }, []);
 
   const isOnVacationToday = useCallback((memberId: string): boolean => {
     const today = new Date();
     const iso = today.toISOString().slice(0, 10);
-    // Try read from inline dataset injected by server (if any)
     const inline = document.querySelector(`[data-member-vacations="${memberId}"]`) as HTMLElement | null;
     if (inline?.dataset.v) {
       try {
@@ -806,7 +795,7 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
                                     <button
                                       type="button"
                                       className="ml-1 px-2 py-1 text-[10px] rounded-md bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700"
-                                      onClick={() => setVacationModal({ open: true, member })}
+                                      onClick={() => setVacationModal({ open: true, member, readOnly: false })}
                                     >
                                       {t("vacations")}
                                     </button>
