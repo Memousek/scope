@@ -549,5 +549,6 @@
   "defineMemberVacations": "Definujte dovolené člena týmu",
   "note": "Poznámka",
   "addRange": "Přidat období",
-  "user's": "uživatele"
+  "user's": "uživatele",
+  "noVacations": "Žádné dovolené"
 }

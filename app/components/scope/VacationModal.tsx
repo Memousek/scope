@@ -78,7 +78,6 @@ export function VacationModal({ isOpen, member, scopeId, onClose }: VacationModa
       icon={<FiCalendar className="w-4 h-4" />}
     >
       <div className="space-y-4">
-        <div className="text-sm font-semibold text-gray-800 dark:text-gray-100">{member.name}</div>
         <div className="space-y-3">
           {ranges.map((r, i) => (
             <div
@@ -125,6 +124,9 @@ export function VacationModal({ isOpen, member, scopeId, onClose }: VacationModa
               </div>
             </div>
           ))}
+          {ranges.length === 0 && (
+            <div className="text-sm text-center font-semibold text-gray-800 dark:text-gray-100">{t("noVacations")}</div>
+          )}
         </div>
         <div className="flex justify-between items-center">
           <button
