@@ -41,96 +41,35 @@ export class AiService {
 
     const { data: userData } = await this.supabase
       .from('user_meta')
-      .select('ai_provider, open_api_key, gemini_api_key')
+      .select('ai_provider')
       .eq('user_id', user.id)
       .single();
 
     return {
       provider: (userData?.ai_provider as AiProvider) || 'openai',
-      openaiKey: userData?.open_api_key ? atob(userData.open_api_key) : null,
-      geminiKey: userData?.gemini_api_key ? atob(userData.gemini_api_key) : null
+      openaiKey: null,
+      geminiKey: null
     };
   }
 
   /**
    * Get scope data with projects
    */
-  private async getScopeData(scopeId: string): Promise<{
-    scope: Scope;
-    projects: Project[];
-  } | null> {
-    // Get scope
-    const { data: scope } = await this.supabase
-      .from('scopes')
-      .select('*')
-      .eq('id', scopeId)
-      .single();
-
-    if (!scope) return null;
-
-    // Get projects
-    const { data: projects } = await this.supabase
-      .from('projects')
-      .select(`
-        *,
-        project_notes (
-          id,
-          text,
-          author:user_meta (id, full_name, email),
-          created_at,
-          updated_at
-        )
-      `)
-      .eq('scope_id', scopeId)
-      .order('priority', { ascending: true });
-
-    return {
-      scope,
-      projects: projects || []
-    };
-  }
+  // Klient už nenačítá detailní data; vše sestaví serverový endpoint.
+  private async getScopeData(_scopeId: string): Promise<null> { return null; }
 
   /**
    * Create context for AI analysis
    */
-  private createContext(scope: Scope, projects: Project[]): string {
-    const projectDetails = projects.map(project => {
-      const totalMandays = (project.feMandays || 0) + (project.beMandays || 0) +
-        (project.qaMandays || 0) + (project.pmMandays || 0) +
-        (project.dplMandays || 0);
-      const totalDone = project.feDone + project.beDone + project.qaDone +
-        project.pmDone + project.dplDone;
-      const progress = totalMandays > 0 ? Math.round((totalDone / totalMandays) * 100) : 0;
-
-      return `
-        Project: ${project.name}
-        Priority: ${project.priority}
-        Status: ${project.status || 'not_started'}
-        Progress: ${progress}%
-        Mandays: FE(${project.feMandays || 0}), BE(${project.beMandays || 0}), QA(${project.qaMandays || 0}), PM(${project.pmMandays || 0}), DPL(${project.dplMandays || 0})
-        Done: FE(${project.feDone}), BE(${project.beDone}), QA(${project.qaDone}), PM(${project.pmDone}), DPL(${project.dplDone})
-        Delivery Date: ${project.deliveryDate || 'Not set'}
-        Notes: ${project.notes?.map(note => note.text).join('; ') || 'No notes'}
-      `;
-    }).join('\n');
-
-    return `
-      SCOPE INFORMATION:
-      Name: ${scope.name}
-      Description: ${scope.description || 'No description'}
-      Created: ${scope.createdAt}
-      
-      PROJECTS:
-      ${projectDetails}
-    `;
-  }
+  private createContext(): string { return ''; }
 
   /**
    * Send message to OpenAI API
    */
   private async sendOpenAiMessage(
     apiKey: string,
-    messages: ChatMessage[]
+    messages: ChatMessage[],
+    onDelta?: (delta: string) => void
   ): Promise<string> {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -155,7 +94,9 @@ export class AiService {
     }
 
     const data = await response.json();
-    return data.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
+    const content = data.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
+    if (onDelta) onDelta(content);
+    return content;
   }
 
   /**
@@ -163,7 +104,8 @@ export class AiService {
    */
   private async sendGeminiMessage(
     apiKey: string,
-    messages: ChatMessage[]
+    messages: ChatMessage[],
+    onDelta?: (delta: string) => void
   ): Promise<string> {
     // Oddělit system a ostatní zprávy
     const systemMessages = messages.filter(msg => msg.role === 'system');
@@ -207,67 +149,45 @@ export class AiService {
     if (!parts || !Array.isArray(parts) || !parts[0]?.text) {
       return 'Odpověď od Gemini neobsahuje žádný text. Zkuste prosím zadat kratší nebo jinak formulovaný dotaz.';
     }
-    return parts[0].text;
+    const content = parts[0].text;
+    if (onDelta) onDelta(content);
+    return content;
   }
 
   /**
    * Send message to selected AI provider
    */
-  async sendMessage(scopeId: string, userMessage: string, chatHistory: ChatMessage[] = [], onTyping?: (isTyping: boolean) => void): Promise<AiAnalysisResult> {
+  async sendMessage(
+    scopeId: string,
+    userMessage: string,
+    chatHistory: ChatMessage[] = [],
+    onTyping?: (isTyping: boolean) => void,
+    onDelta?: (delta: string) => void
+  ): Promise<AiAnalysisResult> {
     if (onTyping) onTyping(true);
     const aiSettings = await this.getUserAiSettings();
-    const { provider, openaiKey, geminiKey } = aiSettings;
+    const { provider } = aiSettings;
 
     // Check if API key is available for selected provider
-    if (provider === 'openai' && !openaiKey) {
-      throw new Error('OpenAI API klíč nebyl nalezen. Přidejte prosím svůj API klíč v nastavení profilu.');
-    }
-    if (provider === 'gemini' && !geminiKey) {
-      throw new Error('Gemini API klíč nebyl nalezen. Přidejte prosím svůj API klíč v nastavení profilu.');
-    }
+    // Klíče řeší server
 
-    const scopeData = await this.getScopeData(scopeId);
-    if (!scopeData) {
-      throw new Error('Scope not found');
-    }
-
-    const context = this.createContext(scopeData.scope, scopeData.projects);
-
-    const systemPrompt = `You are an AI project management assistant for a software development team. You have access to scope and project information.
-
-Your role is to:
-1. Analyze project progress and provide insights
-2. Suggest improvements and optimizations
-3. Help with resource allocation and timeline planning
-4. Identify potential risks and bottlenecks
-5. Answer questions about the scope and projects
-
-Always keep your answers short, concise, and summarized. Focus only on the most important points. If the user requests more details, you can provide longer explanations.
-
-Be helpful, professional, and provide actionable advice. Use Czech language for responses.
-
-Current scope context:
-${context}`;
-
+    // Server sestaví kontext i systémový prompt. Na klientu posíláme jen historii a uživatelskou zprávu.
     const messages: ChatMessage[] = chatHistory.length === 0
-      ? [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userMessage }
-      ]
-      : [
-        ...chatHistory,
-        { role: 'user', content: userMessage }
-      ];
+      ? [{ role: 'user', content: userMessage }]
+      : [...chatHistory, { role: 'user', content: userMessage }];
     try {
-      let aiResponse: string;
-
-      if (provider === 'openai') {
-        aiResponse = await this.sendOpenAiMessage(openaiKey!, messages);
-      } else {
-        aiResponse = await this.sendGeminiMessage(geminiKey!, messages);
+      // Proxy volání přes serverový endpoint
+      const res = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider, scopeId, userMessage, chatHistory: messages })
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || 'AI server error');
       }
-
-      console.log(chatHistory)
+      const json = await res.json();
+      const aiResponse: string = json.message as string;
 
       return {
         message: aiResponse,
@@ -277,11 +197,7 @@ ${context}`;
     } catch (error) {
       console.error('AI Service error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      if (provider === 'openai') {
-        throw new Error(`Chyba při komunikaci s OpenAI: ${errorMessage}`);
-      } else {
-        throw new Error(`Chyba při komunikaci s Gemini: ${errorMessage}`);
-      }
+      throw new Error(`Chyba při komunikaci se serverovým AI endpointem: ${errorMessage}`);
     } finally {
       if (onTyping) onTyping(false);
     }
@@ -339,13 +255,8 @@ ${context}`;
   async hasApiKey(): Promise<boolean> {
     try {
       const aiSettings = await this.getUserAiSettings();
-      const { provider, openaiKey, geminiKey } = aiSettings;
-
-      if (provider === 'openai') {
-        return !!openaiKey;
-      } else {
-        return !!geminiKey;
-      }
+      // Klíč ověří server – klient vždy true, pokud je vybraný provider
+      return !!aiSettings.provider;
     } catch {
       return false;
     }

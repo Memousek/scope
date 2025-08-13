@@ -134,7 +134,7 @@ export function AiChatModal({ onClose, scopeId, isOpen = true }: AiChatModalProp
 
     setMessages(prev => [...prev, userMessageDisplay]);
 
-    // Prepare chat history for AI
+    // Prepare chat history for AI (user/assistant only)
     const chatHistory: ChatMessage[] = messages.map(msg => ({
       role: msg.role,
       content: msg.content
@@ -143,23 +143,26 @@ export function AiChatModal({ onClose, scopeId, isOpen = true }: AiChatModalProp
     setIsAiTyping(true);
 
     try {
-      // Kontextová data serializujeme do userMessage
-      const contextInfo = JSON.stringify({ projects, roles, activeRoles, team, scopeUsage });
-      const fullUserMessage = `${userMessage}\n\n[CONTEXT]\n${contextInfo}`;
+      // Přidáme prázdný placeholder pro streaming/inkrementální update
+      const assistantId = (Date.now() + 1).toString();
+      // Placeholder bublina s "..." pro vizuální indikaci, místo separátního typing bubble
+      setMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: '...', timestamp: new Date() }]);
+
       const result: AiAnalysisResult = await aiService.sendMessage(
         scopeId,
-        fullUserMessage,
-        chatHistory
+        userMessage,
+        chatHistory,
+        undefined,
+        // onDelta: průběžné doplňování textu
+            (delta) => {
+          setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: ((m.content || '') === '...' ? '' : (m.content || '')) + delta } : m));
+        }
       );
 
-      const aiMessageDisplay: ChatMessageDisplay = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: result.message,
-        timestamp: new Date()
-      };
-
-      setMessages(prev => [...prev, aiMessageDisplay]);
+      // Finální obsah (pokud přišel jako celek)
+      if (result.message) {
+        setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: result.message } : m));
+      }
     } catch (error) {
       console.error('AI Chat error:', error);
       const errorMessageDisplay: ChatMessageDisplay = {
@@ -286,7 +289,17 @@ export function AiChatModal({ onClose, scopeId, isOpen = true }: AiChatModalProp
                   </div>
                 )}
                 <div className={`max-w-[70%] rounded-xl p-4 ${message.role === 'assistant' ? 'bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-white' : 'bg-blue-500 text-white'} shadow-lg whitespace-pre-line font-medium`}>
-                  <ReactMarkdown>{message.content}</ReactMarkdown>
+                  {message.content === '...'
+                    ? (
+                      <div className="flex items-center space-x-1" aria-live="polite" aria-label="AI píše">
+                        <span className="inline-block w-2 h-2 bg-white rounded-full animate-bounce"></span>
+                        <span className="inline-block w-2 h-2 bg-white rounded-full animate-bounce delay-150"></span>
+                        <span className="inline-block w-2 h-2 bg-white rounded-full animate-bounce delay-300"></span>
+                      </div>
+                    )
+                    : (
+                      <ReactMarkdown>{message.content}</ReactMarkdown>
+                    )}
                   {message.error && (
                     <div className="text-xs text-red-500 mt-2">{message.error}</div>
                   )}
@@ -294,7 +307,7 @@ export function AiChatModal({ onClose, scopeId, isOpen = true }: AiChatModalProp
               </div>
             ))}
             <div ref={messagesEndRef} />
-            {isAiTyping && (
+            {isAiTyping && !messages.some(m => m.role === 'assistant' && m.content === '...') && (
               <div className="flex items-start gap-3 justify-start">
                 <div className="w-8 h-8 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg">
                   <FiMessageCircle className="w-4 h-4 text-white animate-pulse" />
@@ -324,7 +337,7 @@ export function AiChatModal({ onClose, scopeId, isOpen = true }: AiChatModalProp
                 }}
                 placeholder={hasApiKey ? t("askAboutScope") : t("setApiKeyFirst")}
                 disabled={!hasApiKey || isAiTyping}
-                className="h-[50px] flex-1 p-3 border border-purple-300 dark:border-blue-900 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-pink-400 dark:text-white disabled:opacity-50 shadow-md"
+                className="h-[50px] flex-1  p-2 flex items-center justify-center border border-purple-300 dark:border-blue-900 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-pink-400 dark:text-white disabled:opacity-50 shadow-md"
                 rows={2}
                 aria-label="Napiš zprávu AI"
                 tabIndex={0}
