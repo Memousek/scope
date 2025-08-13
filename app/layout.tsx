@@ -89,6 +89,13 @@ export default function RootLayout({
         <SchemaOrgScript data={webApplicationSchema} id="webapp-schema" />
       </head>
       <body className={`${geistSans.className} antialiased`} suppressHydrationWarning>
+        {/* Skip link for a11y */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:rounded-md focus:bg-blue-600 focus:text-white"
+        >
+          Přeskočit na obsah
+        </a>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

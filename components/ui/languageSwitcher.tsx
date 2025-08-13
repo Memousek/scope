@@ -25,6 +25,18 @@ export const LanguageSwitcher: React.FC = () => {
 
   useEffect(() => {
     setLangState(getCurrentLanguage());
+    const onLangChanged = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { lang?: string };
+      setLangState(detail?.lang || getCurrentLanguage());
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('lang-changed', onLangChanged as EventListener);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('lang-changed', onLangChanged as EventListener);
+      }
+    };
   }, []);
 
   const setLang = (code: string) => {

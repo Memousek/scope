@@ -12,7 +12,8 @@ const translations: Record<string, Record<string, string>> = {};
 // Load translations at runtime (for SSR/SSG, use dynamic import or next-i18n)
 async function loadTranslations(lang: string) {
   if (translations[lang]) return translations[lang];
-  const data = await import(`../locales/${lang}.json`);
+  // Lazy load only the active language JSON
+  const data = await import(/* webpackChunkName: "i18n-[request]" */ `../locales/${lang}.json`);
   translations[lang] = data.default;
   return translations[lang];
 }
@@ -27,7 +28,10 @@ export function getCurrentLanguage(): string {
 export function setCurrentLanguage(lang: string) {
   if (typeof window !== 'undefined') {
     localStorage.setItem('lang', lang);
-    window.location.reload();
+    // Soft reload: přepni přeložené řetězce bez full refresh
+    // Komponenty, které volají useTranslation, se znovu vyrenderují díky změně stavu
+    // Pro jistotu emitni vlastní event – posluchač přepne stav v hooku
+    window.dispatchEvent(new CustomEvent('lang-changed', { detail: { lang } }));
   }
 }
 
@@ -65,7 +69,7 @@ export function getLanguages() {
 }
 
 export function useTranslation() {
-  const [lang] = useState(getCurrentLanguage());
+  const [lang, setLangState] = useState(getCurrentLanguage());
   const [dict, setDict] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false); // Start as false to prevent initial loading state
 
@@ -84,6 +88,17 @@ export function useTranslation() {
       setIsLoading(false);
     });
   }, [lang]);
+
+  // Posluchač pro změnu jazyka bez full reloadu
+  useEffect(() => {
+    const onLangChanged = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { lang?: string };
+      if (detail?.lang) setLangState(detail.lang);
+      else setLangState(getCurrentLanguage());
+    };
+    window.addEventListener('lang-changed', onLangChanged as EventListener);
+    return () => window.removeEventListener('lang-changed', onLangChanged as EventListener);
+  }, []);
 
   // Memoize the translation function to prevent unnecessary re-renders
   const t = useMemo(() => {
