@@ -1415,35 +1415,26 @@ export function ProjectSection({
                                                 string[]
                                               > = {
                                                 "FE-First": [
-                                                  "PM",
                                                   "FE",
                                                   "BE",
                                                   "QA",
                                                 ],
                                                 "BE-First": [
-                                                  "PM",
                                                   "BE",
                                                   "FE",
                                                   "QA",
                                                 ],
                                                 "BE-FE-QA-PerformanceQA": [
-                                                  "PM",
                                                   "BE",
                                                   "FE",
                                                   "QA",
                                                   "PerformanceQA",
                                                 ],
-                                                Parallel: [
-                                                  "PM",
-                                                  "FE",
-                                                  "BE",
-                                                  "QA",
-                                                ],
+                                                Parallel: ["FE", "BE", "QA"],
                                               };
 
                                               // Rozdělíme role na standardní a custom (a seskupíme pracovníky podle role)
                                               const standardRoles = [
-                                                "PM",
                                                 "FE",
                                                 "BE",
                                                 "QA",
@@ -1479,7 +1470,6 @@ export function ProjectSection({
 
                                               const order =
                                                 workflowOrder[workflowType] || [
-                                                  "PM",
                                                   "FE",
                                                   "BE",
                                                   "QA",
@@ -1552,12 +1542,16 @@ export function ProjectSection({
                                                       )}
                                                     </div>
 
-                                                    {index < allGroups.length - 1 && !(
-                                                      index === standardCount - 1 && customGroups.length > 0
-                                                    ) && (
-                                                      <div className="hidden sm:flex items-center gap-1">
-                                                        <span className="text-blue-500 dark:text-blue-400 font-bold">→</span>
-                                                      </div>
+                                                    {index < allGroups.length - 1 && (
+                                                      index < standardCount - 1 ? (
+                                                        <div className="hidden sm:flex items-center gap-1">
+                                                          <span className="text-blue-500 dark:text-blue-400 font-bold">→</span>
+                                                        </div>
+                                                      ) : index >= standardCount ? (
+                                                        <div className="flex items-center px-1">
+                                                          <span className="text-blue-500 dark:text-blue-400 font-bold">|</span>
+                                                        </div>
+                                                      ) : null
                                                     )}
                                                   </React.Fragment>
                                                 );
