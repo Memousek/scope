@@ -7,8 +7,7 @@
  */
 
 import { createClient } from '@/lib/supabase/client';
-import { Scope } from '@/lib/domain/models/scope.model';
-import { Project } from '@/lib/domain/models/project.model';
+// Removed unused imports to satisfy linter and because server builds context
 
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -69,7 +68,7 @@ export class AiService {
   private async sendOpenAiMessage(
     apiKey: string,
     messages: ChatMessage[],
-    onDelta?: (delta: string) => void
+    _onDelta?: (delta: string) => void
   ): Promise<string> {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -95,7 +94,7 @@ export class AiService {
 
     const data = await response.json();
     const content = data.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
-    if (onDelta) onDelta(content);
+    if (_onDelta) _onDelta(content);
     return content;
   }
 
@@ -105,7 +104,7 @@ export class AiService {
   private async sendGeminiMessage(
     apiKey: string,
     messages: ChatMessage[],
-    onDelta?: (delta: string) => void
+    _onDelta?: (delta: string) => void
   ): Promise<string> {
     // Oddělit system a ostatní zprávy
     const systemMessages = messages.filter(msg => msg.role === 'system');
@@ -150,7 +149,7 @@ export class AiService {
       return 'Odpověď od Gemini neobsahuje žádný text. Zkuste prosím zadat kratší nebo jinak formulovaný dotaz.';
     }
     const content = parts[0].text;
-    if (onDelta) onDelta(content);
+    if (_onDelta) _onDelta(content);
     return content;
   }
 

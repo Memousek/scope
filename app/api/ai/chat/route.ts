@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
 
     const notesLines = wantsNotes
       ? (focusedProjects || []).map(p => {
-          const ns = ((p as any).project_notes || []) as Array<{ text: string }>;
+          const ns = ((p as unknown as { project_notes?: Array<{ text: string }> }).project_notes || []);
           const text = ns.length > 0 ? ns.slice(0, 3).map(n => n.text).join(' | ') : '—';
           return `• ${p.name}: ${text}`;
         }).join('\n')
@@ -98,10 +98,10 @@ export async function POST(req: NextRequest) {
     const todayIso = `${yyyy}-${mm}-${dd}`;
     const teamLines = (team || []).map(m => `• ${m.name} (${m.role || '—'}, ${m.fte ?? 0} FTE)`).join('\n');
     const activeVacations = (team || [])
-      .flatMap((m: any) =>
+      .flatMap((m: { name: string; vacations?: Array<{ start: string; end: string }> }) =>
         (Array.isArray(m.vacations) ? m.vacations : [])
-          .filter((v: any) => v?.start <= todayIso && todayIso <= v?.end)
-          .map((v: any) => ({ name: m.name, start: v.start, end: v.end }))
+          .filter((v: { start: string; end: string }) => v?.start <= todayIso && todayIso <= v?.end)
+          .map((v: { start: string; end: string }) => ({ name: m.name, start: v.start, end: v.end }))
       );
     const vacationsTodayLine = (() => {
       if (activeVacations.length === 0) return 'Dnes na dovolené: nikdo';
@@ -134,15 +134,15 @@ export async function POST(req: NextRequest) {
     if (wantsNotes) {
       payload.notes = (focusedProjects || []).map(p => ({
         project: p.name,
-        notes: (((p as any).project_notes || []) as Array<{ text: string }>).slice(0, 10).map(n => (n.text || '').slice(0, 300))
+        notes: (((p as unknown as { project_notes?: Array<{ text: string }> }).project_notes) || []).slice(0, 10).map(n => (n.text || '').slice(0, 300))
       }));
     }
     if (wantsTeam || wantsVacations) {
-      payload.team = (team || []).map(m => ({ name: m.name, role: m.role, fte: m.fte }));
+      payload.team = (team || []).map((m: { name: string; role: string; fte: number }) => ({ name: m.name, role: m.role, fte: m.fte }));
     }
     if (wantsVacations) {
       payload.vacationsToday = activeVacations;
-      payload.vacations = (team || []).map((m: any) => ({ name: m.name, vacations: Array.isArray(m.vacations) ? m.vacations.slice(0, 20) : [] }));
+      payload.vacations = (team || []).map((m: { name: string; vacations?: Array<{ start: string; end: string; note?: string }> }) => ({ name: m.name, vacations: Array.isArray(m.vacations) ? m.vacations.slice(0, 20) : [] }));
     }
 
     // Minify and cap payload size
@@ -153,7 +153,7 @@ export async function POST(req: NextRequest) {
       if (dataJson.length > MAX_LEN) {
         // Reduce arrays if needed
         const reduceArray = (arr: unknown[], keep: number) => arr.slice(0, keep);
-        const temp = payload as any;
+        const temp = payload as Record<string, unknown> & { notes?: unknown[]; projects?: unknown[]; team?: unknown[]; vacations?: unknown[] };
         if (Array.isArray(temp.notes)) temp.notes = reduceArray(temp.notes, 5);
         if (Array.isArray(temp.projects)) temp.projects = reduceArray(temp.projects, 8);
         if (Array.isArray(temp.team)) temp.team = reduceArray(temp.team, 20);

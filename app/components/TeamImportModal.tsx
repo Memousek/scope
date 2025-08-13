@@ -175,7 +175,7 @@ export default function TeamImportModal({
       preview.push({ name: String(name), role: String(role), fte: fteNum, vacations });
     });
     return { list: preview, errs: validation };
-  }, [headerMap, mappingStage, rawRows, t]);
+  }, [headerMap, mappingStage, rawRows, t, parseVacations]);
 
   const applyMapping = () => {
     const { list, errs } = mappedPreview;
