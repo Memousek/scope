@@ -739,7 +739,7 @@ export function ProjectSection({
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-br from-purple-400/10 to-pink-400/10 rounded-full blur-2xl"></div>
 
           <div className="relative z-10">
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center justify-between mb-8  flex-col md:flex-row gap-4">
               <div className="flex items-center gap-4">
                 <div className="relative">
                   <h2 className="relative text-2xl font-bold dark:text-white text-gray-900">
@@ -1397,7 +1397,7 @@ export function ProjectSection({
                                               </div>
                                             </div>
                                           </div>
-                                          <div className="flex flex-wrap gap-3 items-center">
+                                          <div className="flex items-center gap-2 overflow-x-auto sm:overflow-visible flex-nowrap py-1 -mx-1 px-1 sm:gap-3">
                                             {(() => {
                                               // Seřadíme role podle workflow pořadí
                                               const workflowType =
@@ -1527,7 +1527,7 @@ export function ProjectSection({
 
                                                     <div
                                                       title={titleText}
-                                                      className={`group relative flex items-center gap-3 p-3 rounded-xl border transition-all duration-300 hover:scale-105 ${
+                                                      className={`group relative flex items-center gap-2 sm:gap-3 p-2 sm:p-3 text-xs sm:text-sm min-w-[72px] sm:min-w-0 rounded-xl border transition-all duration-300 hover:scale-105 ${
                                                         groupStatus === "active"
                                                           ? "bg-gradient-to-br from-green-50/90 to-green-100/70 dark:from-green-900/20 dark:to-green-800/10 border-green-200/50 dark:border-green-600/30 shadow-lg hover:shadow-green-500/25"
                                                           : groupStatus === "waiting"
@@ -1544,7 +1544,7 @@ export function ProjectSection({
                                                             : "bg-red-500"
                                                         }`}
                                                       ></div>
-                                                      {group.role}
+                                                      <span className="whitespace-nowrap">{group.role}</span>
                                                       {group.workers.length > 1 && (
                                                         <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-full bg-black/10 dark:bg-white/10">
                                                           {group.workers.length}
@@ -1555,7 +1555,7 @@ export function ProjectSection({
                                                     {index < allGroups.length - 1 && !(
                                                       index === standardCount - 1 && customGroups.length > 0
                                                     ) && (
-                                                      <div className="flex items-center gap-1">
+                                                      <div className="hidden sm:flex items-center gap-1">
                                                         <span className="text-blue-500 dark:text-blue-400 font-bold">→</span>
                                                       </div>
                                                     )}

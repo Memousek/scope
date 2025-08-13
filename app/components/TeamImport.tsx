@@ -1,6 +1,7 @@
 
 import React, { useRef } from "react";
 import Papa, { ParseResult } from "papaparse";
+import { useTranslation } from "@/lib/translation";
 
 type TeamMember = {
   name: string;
@@ -15,7 +16,7 @@ type TeamImportProps = {
 
 export default function TeamImport({ onImport }: TeamImportProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-
+  const { t } = useTranslation();
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -58,7 +59,7 @@ export default function TeamImport({ onImport }: TeamImportProps) {
               d="M12 6v6m0 0v6m0-6h6m-6 0H6"
             />
           </svg>
-          Importovat členy týmu (CSV)
+          {t("importTeam")}
         </span>
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
       </button>

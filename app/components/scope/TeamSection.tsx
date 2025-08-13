@@ -17,8 +17,10 @@ import { RoleManagementModal } from "./RoleManagementModal";
 import { useTranslation } from "@/lib/translation";
 import { TeamService } from "@/app/services/teamService";
 import { SettingsIcon, FilterIcon, XIcon, ChevronDownIcon } from "lucide-react";
+import { FiUpload } from 'react-icons/fi';
 import { useSWRConfig } from "swr";
 import { FiUsers, FiSearch } from 'react-icons/fi';
+import { Badge } from "../ui/Badge";
 
 interface TeamSectionProps {
   scopeId: string;
@@ -76,7 +78,7 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
     try {
       const newMember = await TeamService.createTeamMember(scopeId, member);
       onTeamChange([...team, newMember]);
-      try { await mutate(["scopeUsage", scopeId]); } catch {}
+      try { await mutate(["scopeUsage", scopeId]); } catch { }
     } catch (error) {
       console.error('Chyba při přidávání člena týmu:', error);
     } finally {
@@ -137,7 +139,7 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
     onTeamChange(team.filter((m) => m.id !== memberId));
     try {
       await TeamService.deleteTeamMember(memberId);
-      try { await mutate(["scopeUsage", scopeId]); } catch {}
+      try { await mutate(["scopeUsage", scopeId]); } catch { }
     } catch (error) {
       console.error('Chyba při mazání člena týmu:', error);
       // Vraťte člena zpět do seznamu při chybě
@@ -177,58 +179,8 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 rounded-2xl"></div>
           <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full blur-3xl"></div>
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-br from-purple-400/10 to-pink-400/10 rounded-full blur-2xl"></div>
-
-            {/* Import členů týmu modal */}
-            {!readOnlyMode && (
-              <div className="mb-6">
-                <button
-                  type="button"
-                  onClick={() => setImportModalOpen(true)}
-                  className="relative group bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/25 active:scale-95"
-                >
-                  <span className="relative z-10 flex items-center gap-2">
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                      />
-                    </svg>
-                    Importovat členy týmu (CSV)
-                  </span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                </button>
-                <TeamImportModal
-                  isOpen={importModalOpen}
-                  onClose={() => setImportModalOpen(false)}
-                  onImport={async (members) => {
-                    setSavingMember(true);
-                    try {
-                      const promises = members.map(m => TeamService.createTeamMember(scopeId, {
-                        name: m.name,
-                        role: m.role,
-                        fte: Number(m.fte)
-                      }));
-                      const newMembers = await Promise.all(promises);
-                      onTeamChange([...team, ...newMembers]);
-                      try { await mutate(["scopeUsage", scopeId]); } catch {}
-                    } catch (error) {
-                      console.error('Chyba při importu členů týmu:', error);
-                    } finally {
-                      setSavingMember(false);
-                    }
-                  }}
-                />
-              </div>
-            )}
           <div className="relative z-10">
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center justify-between mb-8  flex-col md:flex-row gap-4">
               <div className="flex items-center gap-4">
                 <div className="relative">
                   <h2 className="relative text-2xl font-bold dark:text-white text-gray-900">
@@ -239,7 +191,7 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                   <span>{t("teamManagement")}</span>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-col md:flex-row">
                 {/* Filter button */}
                 <button
                   className={`relative group px-4 py-3 rounded-xl font-semibold transition-all duration-300 ${showFilters || roleFilter
@@ -306,6 +258,43 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                       </span>
                     </button>
                   </>
+                )}
+                {/* Import členů týmu modal */}
+                {!readOnlyMode && (
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setImportModalOpen(true)}
+                      className=" group bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/25 active:scale-95"
+                    >
+                      <span className="relative z-10 flex items-center gap-2">
+                        <FiUpload className="w-5 h-5" />
+                        {t("importTeam")} (Experimental)
+                      </span>
+                      <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    </button>
+                    <TeamImportModal
+                      isOpen={importModalOpen}
+                      onClose={() => setImportModalOpen(false)}
+                      onImport={async (members) => {
+                        setSavingMember(true);
+                        try {
+                          const promises = members.map(m => TeamService.createTeamMember(scopeId, {
+                            name: m.name,
+                            role: m.role,
+                            fte: Number(m.fte)
+                          }));
+                          const newMembers = await Promise.all(promises);
+                          onTeamChange([...team, ...newMembers]);
+                          try { await mutate(["scopeUsage", scopeId]); } catch { }
+                        } catch (error) {
+                          console.error('Chyba při importu členů týmu:', error);
+                        } finally {
+                          setSavingMember(false);
+                        }
+                      }}
+                    />
+                  </div>
                 )}
               </div>
             </div>
