@@ -56,7 +56,8 @@ export class SupabaseTeamMemberRepository implements TeamMemberRepository {
         scope_id: teamMember.scopeId,
         name: teamMember.name,
         role: teamMember.role,
-        fte: teamMember.fte
+        fte: teamMember.fte,
+        vacations: (teamMember as any).vacations ?? undefined,
       })
       .eq('id', id)
       .select()
@@ -101,6 +102,7 @@ export class SupabaseTeamMemberRepository implements TeamMemberRepository {
       name: data.name,
       role: data.role,
       fte: data.fte,
+      vacations: data.vacations,
       createdAt: new Date(data.created_at)
     };
   }

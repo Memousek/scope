@@ -8,8 +8,8 @@
  * - Animace s respektem k prefers-reduced-motion
  */
 
-import { useState, useRef, useCallback, useEffect } from "react";
-import { TeamMember } from "./types";
+import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import { TeamMember, VacationRange } from "./types";
 import { useScopeRoles } from '@/app/hooks/useScopeRoles';
 import { AddMemberModal } from "./AddMemberModal";
 import TeamImportModal from "../TeamImportModal";
@@ -17,10 +17,11 @@ import { RoleManagementModal } from "./RoleManagementModal";
 import { useTranslation } from "@/lib/translation";
 import { TeamService } from "@/app/services/teamService";
 import { SettingsIcon, FilterIcon, XIcon, ChevronDownIcon } from "lucide-react";
-import { FiUpload } from 'react-icons/fi';
+import { FiUpload, FiCalendar, FiTag, FiTrash2, FiPlus, FiSave, FiX } from 'react-icons/fi';
 import { useSWRConfig } from "swr";
 import { FiUsers, FiSearch } from 'react-icons/fi';
 // import { Badge } from "../ui/Badge";
+import { VacationModal } from "./VacationModal";
 
 interface TeamSectionProps {
   scopeId: string;
@@ -41,6 +42,40 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
   const [roleFilter, setRoleFilter] = useState<string>("");
   const [isReducedMotion, setIsReducedMotion] = useState(false);
   const debounceTimeouts = useRef<Record<string, NodeJS.Timeout>>({});
+  const [vacationModal, setVacationModal] = useState<{ open: boolean; member: TeamMember | null }>({ open: false, member: null });
+
+  const getMemberVacations = useCallback((memberId: string): VacationRange[] => {
+    try {
+      const key = `scope:${memberId}:vacations`;
+      const raw = localStorage.getItem(key);
+      console.log(raw);
+      return raw ? (JSON.parse(raw) as VacationRange[]) : [];
+    } catch {
+      return [];
+    }
+  }, []);
+
+  const isOnVacationToday = useCallback((memberId: string): boolean => {
+    const today = new Date();
+    const iso = today.toISOString().slice(0, 10);
+    // Try read from inline dataset injected by server (if any)
+    const inline = document.querySelector(`[data-member-vacations="${memberId}"]`) as HTMLElement | null;
+    if (inline?.dataset.v) {
+      try {
+        const arr = JSON.parse(inline.dataset.v) as VacationRange[];
+        return arr.some((r) => r.start <= iso && iso <= r.end);
+      } catch {}
+    }
+    // Fallback local storage legacy
+    try {
+      const raw = localStorage.getItem(`scope:${memberId}:vacations`);
+      if (raw) {
+        const arr = JSON.parse(raw) as VacationRange[];
+        return arr.some((r) => r.start <= iso && iso <= r.end);
+      }
+    } catch {}
+    return false;
+  }, []);
 
   // Detekce prefers-reduced-motion
   useEffect(() => {
@@ -374,7 +409,7 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                     key={member.id}
                     className={`relative group bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-700/90 dark:via-gray-700/70 dark:to-gray-700/50 backdrop-blur-lg rounded-2xl border border-white/40 dark:border-gray-600/40 overflow-hidden transition-all duration-300 ${!isReducedMotion ? 'hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/10 animate-in fade-in duration-300' : 'hover:shadow-lg'
                       }`}
-                    
+
                   >
                     {/* Hover effect overlay */}
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-blue-500/5 group-hover:via-purple-500/5 group-hover:to-pink-500/5 transition-all duration-300 rounded-2xl"></div>
@@ -426,12 +461,23 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                               {readOnlyMode && (
                                 <>
                                   <div className="flex items-center gap-2">
-
-                                    <div className="w-full text-center font-bold text-sm text-gray-600 dark:text-gray-400">
+                                    <div className="w-full text-center font-bold text-sm text-gray-600 dark:text-gray-400 flex items-center justify-center gap-2">
                                       {member.name}
+                                      {isOnVacationToday(member.id) && (
+                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 align-middle">
+                                          <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v2h20V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zM22 10H2v9a2 2 0 002 2h16a2 2 0 002-2v-9z"/></svg>
+                                          {t("onVacation")}
+                                        </span>
+                                      )}
                                     </div>
                                   </div>
                                 </>
+                              )}
+                              {isOnVacationToday(member.id) && (
+                                <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 align-middle">
+                                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v2h20V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zM22 10H2v9a2 2 0 002 2h16a2 2 0 002-2v-9z"/></svg>
+                                  {t("vacations")}
+                                </span>
                               )}
                             </div>
                           </div>
@@ -558,6 +604,14 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                         {/* Akce */}
                         {!readOnlyMode && (
                           <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              className="p-3 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-all duration-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl group"
+                              onClick={() => setVacationModal({ open: true, member })}
+                              title={t("manageVacations")}
+                            >
+                              <FiCalendar className="w-5 h-5" />
+                            </button>
                             <button
                               onClick={() => handleDeleteMember(member.id)}
                               className="p-3 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-all duration-200 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl group"
@@ -745,6 +799,13 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                                         />
                                       </svg>
                                     </button>
+                                    <button
+                                      type="button"
+                                      className="ml-1 px-2 py-1 text-[10px] rounded-md bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700"
+                                      onClick={() => setVacationModal({ open: true, member })}
+                                    >
+                                      {t("vacations")}
+                                    </button>
                                   </div>
                                 </>
                               )}
@@ -843,6 +904,16 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
         </div>
       </section>
 
+      {/* Vacation Modal */}
+      {vacationModal.open && (
+        <VacationModal
+          isOpen={vacationModal.open}
+          member={vacationModal.member}
+          scopeId={scopeId}
+          onClose={() => setVacationModal({ open: false, member: null })}
+        />
+      )}
+
       {/* Role Management Modal */}
       {roleManagementModalOpen && (
         <RoleManagementModal
@@ -854,3 +925,5 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
     </>
   );
 }
+
+// VacationEditor moved to VacationModal.tsx

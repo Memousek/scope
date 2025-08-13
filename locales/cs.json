@@ -543,5 +543,6 @@
   "settingsDescription": "Nastavení aplikace a uživatelských preferencí",
   "languageDescription": "Nastavení jazyka aplikace",
   "themeDescription": "Nastavení motivu aplikace",
-  "missingMainRoleFlow": "Chybí hlavní role v workflowu"
+  "missingMainRoleFlow": "Chybí hlavní role v workflowu",
+  "workers": "pracovníků"
 }

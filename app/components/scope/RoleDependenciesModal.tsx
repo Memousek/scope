@@ -9,6 +9,7 @@ import { Badge } from '@/app/components/ui/Badge';
 
 import { DependencyService, DependencyItem, ActiveWorker } from '@/app/services/dependencyService';
 import { FiInfo } from 'react-icons/fi';
+import { useTranslation } from '@/lib/translation';
 
 interface RoleDependenciesModalProps {
   isOpen: boolean;
@@ -27,7 +28,7 @@ export const RoleDependenciesModal: React.FC<RoleDependenciesModalProps> = ({
   onWorkflowChange,
   onWorkersChange
 }) => {
-
+  const { t } = useTranslation();
   const [selectedWorkflow, setSelectedWorkflow] = useState<string>('FE-First');
   const [activeWorkers, setActiveWorkers] = useState<ActiveWorker[]>([]);
   const [loading, setLoading] = useState(false);
@@ -129,10 +130,7 @@ export const RoleDependenciesModal: React.FC<RoleDependenciesModalProps> = ({
 
   const getGroupSummary = (workers: ActiveWorker[]) => {
     const total = workers.length;
-    const active = workers.filter(w => w.status === 'active').length;
-    const waiting = workers.filter(w => w.status === 'waiting').length;
-    const blocked = workers.filter(w => w.status === 'blocked').length;
-    return `${total} prac. • aktivní ${active} · čeká ${waiting} · blokováno ${blocked}`;
+    return `${total} ${t("workers")}`;
   };
 
   return (

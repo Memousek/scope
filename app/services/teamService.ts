@@ -10,6 +10,7 @@ export interface CreateTeamMemberData {
   name: string;
   role: string;
   fte: number;
+  vacations?: Array<{ start: string; end: string; note?: string }>;
 }
 
 export class TeamService {
@@ -26,6 +27,24 @@ export class TeamService {
 
     if (error) throw error;
     return data || [];
+  }
+
+  /**
+   * Get single team member by id (includes vacations when column exists)
+   */
+  static async getTeamMemberById(memberId: string): Promise<TeamMember | null> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('team_members')
+      .select('*')
+      .eq('id', memberId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('teamService.getTeamMemberById error', error);
+      return null;
+    }
+    return (data as unknown as TeamMember) || null;
   }
 
   /**
@@ -50,7 +69,7 @@ export class TeamService {
     const supabase = createClient();
     const { data, error } = await supabase
       .from('team_members')
-      .update(updates)
+      .update(updates as Record<string, unknown>)
       .eq('id', memberId)
       .select()
       .single();

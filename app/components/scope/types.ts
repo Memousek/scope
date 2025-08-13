@@ -1,8 +1,15 @@
+export interface VacationRange {
+  start: string; // ISO date (YYYY-MM-DD)
+  end: string;   // ISO date (YYYY-MM-DD)
+  note?: string;
+}
+
 export interface TeamMember {
   id: string;
   name: string;
   role: string;
   fte: number;
+  vacations?: VacationRange[]; // optional UI-level metadata (persisted in localStorage)
 }
 
 // Dynamické typy pro role

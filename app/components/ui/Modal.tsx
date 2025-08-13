@@ -100,7 +100,7 @@ export function Modal({
             <div>
               <h2 className="text-2xl font-bold text-white">{title}</h2>
               {description && (
-                <p className="text-white/80 text-sm">{description}</p>
+                <p className="text-white/80 text-sm" dangerouslySetInnerHTML={{ __html: description }} />
               )}
             </div>
           </div>
