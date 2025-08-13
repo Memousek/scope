@@ -10,7 +10,6 @@
 
 import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { TeamMember, VacationRange } from "./types";
-import { useScopeRoles } from '@/app/hooks/useScopeRoles';
 import { AddMemberModal } from "./AddMemberModal";
 import TeamImportModal from "../TeamImportModal";
 import { RoleManagementModal } from "./RoleManagementModal";
@@ -28,13 +27,18 @@ interface TeamSectionProps {
   team: TeamMember[];
   onTeamChange: (team: TeamMember[]) => void;
   readOnlyMode?: boolean;
+  activeRoles?: Array<{ id: string; key: string; label: string }>;
 }
 
-export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false }: TeamSectionProps) {
+export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false, activeRoles: activeRolesProp }: TeamSectionProps) {
   const [importModalOpen, setImportModalOpen] = useState(false);
   const { t } = useTranslation();
   const { mutate } = useSWRConfig();
-  const { activeRoles } = useScopeRoles(scopeId);
+  const rolesToUse = useMemo(() => {
+    if (activeRolesProp && activeRolesProp.length > 0) return activeRolesProp;
+    const labels = Array.from(new Set(team.map(m => m.role)));
+    return labels.map(label => ({ id: label, key: label.toLowerCase(), label }));
+  }, [activeRolesProp, team]);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [roleManagementModalOpen, setRoleManagementModalOpen] = useState(false);
   const [savingMember, setSavingMember] = useState(false);
@@ -498,7 +502,7 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                                   }
                                   disabled={readOnlyMode}
                                 >
-                                  {activeRoles.map((role) => (
+                                  {rolesToUse.map((role) => (
                                     <option key={role.key} value={role.label}>
                                       {role.label}
                                     </option>
@@ -713,7 +717,7 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                                   }
                                   disabled={readOnlyMode}
                                 >
-                                  {activeRoles.map((role) => (
+                                   {rolesToUse.map((role) => (
                                     <option key={role.key} value={role.label}>
                                       {role.label}
                                     </option>

@@ -13,7 +13,7 @@ export function useScopeRoles(scopeId: string) {
   const [activeRoles, setActiveRoles] = useState<ScopeRole[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
+  const [lastUpdate, setLastUpdate] = useState<number>(0);
 
   /**
    * Load roles for the given scope

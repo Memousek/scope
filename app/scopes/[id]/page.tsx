@@ -278,36 +278,40 @@ export default function ScopePage({
 
   // Funkce pro aktualizaci týmu s aktualizací přiřazení k projektům
   const handleTeamChange = useCallback(async (newTeam: TeamMember[]) => {
+    // Vždy aktualizuj lokální stav týmu
     setTeam(newTeam);
-    
-    // Aktualizuj přiřazení k projektům, pokud se změnila role člena týmu
+
+    // Proveď drahé volání pouze pokud se změnila ROLE některého člena
+    const previousRolesById = new Map(team.map((m) => [m.id, m.role] as const));
+    const hasAnyRoleChange = newTeam.some((m) => previousRolesById.get(m.id) !== m.role);
+    if (!hasAnyRoleChange) {
+      return;
+    }
+
     const manageAssignmentsService = ContainerService.getInstance().get(
       ManageProjectTeamAssignmentsService,
       { autobind: true }
     );
 
     try {
-      // Pro každý projekt zkontroluj, jestli je potřeba aktualizovat přiřazení
       for (const project of projects) {
         const projectAssignments = await manageAssignmentsService.getProjectAssignments(project.id);
-        
+
         for (const assignment of projectAssignments) {
-          const teamMember = newTeam.find(tm => tm.id === assignment.teamMemberId);
+          const teamMember = newTeam.find((tm) => tm.id === assignment.teamMemberId);
           if (teamMember && assignment.role !== teamMember.role) {
-            // Aktualizuj roli přiřazení podle nové role člena týmu
             await manageAssignmentsService.updateAssignment(assignment.id, {
-              role: teamMember.role
+              role: teamMember.role,
             });
           }
         }
       }
-      
-      // Refresh project assignments
+
       await fetchProjectAssignments();
     } catch (error) {
       console.error('Chyba při aktualizaci přiřazení k projektům:', error);
     }
-  }, [projects, fetchProjectAssignments]);
+  }, [projects, fetchProjectAssignments, team]);
 
   const fetchStats = useCallback(async () => {
     if (!userId) return;

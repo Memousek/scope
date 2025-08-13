@@ -398,6 +398,7 @@ export function ModernScopeLayout({
             team={team}
             onTeamChange={onTeamChange}
             readOnlyMode={readOnlyMode}
+            activeRoles={activeRoles}
           />
         );
 
