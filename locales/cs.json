@@ -544,5 +544,10 @@
   "languageDescription": "Nastavení jazyka aplikace",
   "themeDescription": "Nastavení motivu aplikace",
   "missingMainRoleFlow": "Chybí hlavní role v workflowu",
-  "workers": "pracovníků"
+  "workers": "pracovníků",
+  "manageVacations": "Správa dovolených",
+  "defineMemberVacations": "Definujte dovolené člena týmu",
+  "note": "Poznámka",
+  "addRange": "Přidat období",
+  "user's": "uživatele"
 }

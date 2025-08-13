@@ -73,8 +73,8 @@ export function VacationModal({ isOpen, member, scopeId, onClose }: VacationModa
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={t("manageVacations")}
-      description={`${t("defineMemberVacations")} <b>${member.name}</b>`}
+      title={`${t("manageVacations")} ${t("user's")} <b>${member.name}</b>`}
+      description={`${t("defineMemberVacations")}`}
       icon={<FiCalendar className="w-4 h-4" />}
     >
       <div className="space-y-4">

@@ -98,7 +98,7 @@ export function Modal({
               {icon}
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-white">{title}</h2>
+              <h2 className="text-2xl font-bold text-white" dangerouslySetInnerHTML={{ __html: title }} />
               {description && (
                 <p className="text-white/80 text-sm" dangerouslySetInnerHTML={{ __html: description }} />
               )}
