@@ -462,6 +462,14 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
                                           {t("onVacation")}
                                         </span>
                                       )}
+                                      <button
+                                        type="button"
+                                        className="ml-2 p-2 rounded-lg text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                                        onClick={() => setVacationModal({ open: true, member, readOnly: true })}
+                                        title={t("vacations")}
+                                      >
+                                        <FiCalendar className="w-4 h-4" />
+                                      </button>
                                     </div>
                                   </div>
                                 </>
@@ -600,7 +608,7 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
                             <button
                               type="button"
                               className="p-3 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-all duration-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl group"
-                              onClick={() => setVacationModal({ open: true, member })}
+                              onClick={() => setVacationModal({ open: true, member, readOnly: false })}
                               title={t("manageVacations")}
                             >
                               <FiCalendar className="w-5 h-5" />
@@ -655,8 +663,16 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
                                 />
                               )}
                               {readOnlyMode && (
-                                <div className="text-gray-600 dark:text-gray-400 font-semibold text-base">
+                                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 font-semibold text-base">
                                   {member.name}
+                                  <button
+                                    type="button"
+                                    className="p-1.5 rounded-lg text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                                    onClick={() => setVacationModal({ open: true, member, readOnly: true })}
+                                    title={t("vacations")}
+                                  >
+                                    <FiCalendar className="w-4 h-4" />
+                                  </button>
                                 </div>
                               )}
                             </div>
@@ -795,7 +811,7 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
                                     <button
                                       type="button"
                                       className="ml-1 px-2 py-1 text-[10px] rounded-md bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700"
-                                      onClick={() => setVacationModal({ open: true, member, readOnly: false })}
+                                      onClick={() => setVacationModal({ open: true, member, readOnly: true })}
                                     >
                                       {t("vacations")}
                                     </button>
@@ -903,6 +919,7 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
           isOpen={vacationModal.open}
           member={vacationModal.member}
           scopeId={scopeId}
+          readOnly={vacationModal.readOnly}
           onClose={() => setVacationModal({ open: false, member: null })}
         />
       )}
