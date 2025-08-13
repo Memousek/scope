@@ -100,13 +100,31 @@ export function ModernScopeLayout({
   const [importModalOpen, setImportModalOpen] = useState(false);
 
   const handleExportTeam = () => {
-    const teamColumns: (keyof TeamMember)[] = ["name", "role", "fte"];
-    const teamHeaderMap = {
+    // Exportujeme i dovolené jako serializovaný seznam: start..end|note; start..end|note
+    type TeamRow = TeamMember & { vacationsText?: string };
+    const rows: TeamRow[] = team.map((m) => ({
+      ...m,
+      vacationsText: m.vacations && m.vacations.length > 0
+        ? m.vacations.map(v => {
+            // export in DD.MM.YYYY to match UI locale for easier re-import
+            const toCz = (iso: string) => {
+              const [y, mo, d] = iso.split('-');
+              return `${d}.${mo}.${y}`;
+            };
+            return `${toCz(v.start)}..${toCz(v.end)}${v.note ? `|${v.note}` : ''}`;
+          }).join('; ')
+        : ''
+    }));
+
+    const columns: (keyof TeamRow)[] = ["name", "role", "fte", "vacationsText"];
+    const headerMap = {
       name: t("name"),
       role: t("role"),
       fte: t("fte"),
-    };
-    downloadCSV(`team-export-${scopeId}.csv`, team, teamColumns, teamHeaderMap);
+      vacationsText: t("vacations"),
+    } as Record<string, string>;
+
+    downloadCSV(`team-export-${scopeId}.csv`, rows, columns, headerMap);
   };
 
   const handleExportProjects = () => {

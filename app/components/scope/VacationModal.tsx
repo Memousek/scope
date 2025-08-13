@@ -18,9 +18,10 @@ interface VacationModalProps {
   scopeId: string;
   onClose: () => void;
   readOnly?: boolean;
+  onSaved?: (ranges: VacationRange[]) => void;
 }
 
-export function VacationModal({ isOpen, member, scopeId, onClose, readOnly = false }: VacationModalProps) {
+export function VacationModal({ isOpen, member, scopeId, onClose, readOnly = false, onSaved }: VacationModalProps) {
   const { t } = useTranslation();
   const storageKey = useMemo(
     () => (member ? `scope:${scopeId}:member:${member.id}:vacations` : ""),
@@ -28,6 +29,8 @@ export function VacationModal({ isOpen, member, scopeId, onClose, readOnly = fal
   );
 
   const [ranges, setRanges] = useState<VacationRange[]>([]);
+  const [errorsByIndex, setErrorsByIndex] = useState<Record<number, string[]>>({});
+  const [hasAnyError, setHasAnyError] = useState(false);
   
   const getInclusiveDays = useCallback((start?: string, end?: string): number | null => {
     if (!start || !end) return null;
@@ -82,10 +85,61 @@ export function VacationModal({ isOpen, member, scopeId, onClose, readOnly = fal
         console.error('Failed to save vacations to DB, fallback localStorage', e);
         try { localStorage.setItem(storageKey, JSON.stringify(ranges)); } catch {}
       })
+      .then(() => {
+        try {
+          onSaved?.(ranges);
+        } catch {}
+      })
       .finally(() => onClose());
   };
 
   if (!isOpen || !member) return null;
+
+  // Validate on every change of ranges
+  useEffect(() => {
+    const newErrors: Record<number, string[]> = {};
+    const isoRegex = /^\d{4}-\d{2}-\d{2}$/;
+
+    // Basic per-range validation
+    ranges.forEach((r, i) => {
+      const errs: string[] = [];
+      if (!r.start) errs.push(t('dateFromRequired'));
+      if (!r.end) errs.push(t('dateToRequired'));
+      if (r.start && !isoRegex.test(r.start)) errs.push(t('dateFromInvalid'));
+      if (r.end && !isoRegex.test(r.end)) errs.push(t('dateToInvalid'));
+      if (r.start && r.end) {
+        const s = new Date(r.start).getTime();
+        const e = new Date(r.end).getTime();
+        if (!Number.isNaN(s) && !Number.isNaN(e) && s > e) {
+          errs.push(t('dateFromAfterTo'));
+      }
+      }
+      if (errs.length > 0) newErrors[i] = errs;
+    });
+
+    // Overlap validation (only if dates are valid and start<=end)
+    const normalized = ranges
+      .map((r, i) => ({
+        i,
+        s: r.start && isoRegex.test(r.start) ? new Date(r.start).getTime() : NaN,
+        e: r.end && isoRegex.test(r.end) ? new Date(r.end).getTime() : NaN,
+      }))
+      .filter((x) => !Number.isNaN(x.s) && !Number.isNaN(x.e) && x.s <= x.e)
+      .sort((a, b) => a.s - b.s);
+
+    for (let idx = 1; idx < normalized.length; idx++) {
+      const prev = normalized[idx - 1];
+      const cur = normalized[idx];
+      // inclusive overlap
+      if (prev.e >= cur.s) {
+        newErrors[prev.i] = [...(newErrors[prev.i] || []), t('dateRangesOverlap')];
+        newErrors[cur.i] = [...(newErrors[cur.i] || []), t('dateRangesOverlap')];
+      }
+    }
+
+    setErrorsByIndex(newErrors);
+    setHasAnyError(Object.keys(newErrors).length > 0);
+  }, [ranges, t]);
 
   return (
     <Modal
@@ -171,6 +225,7 @@ export function VacationModal({ isOpen, member, scopeId, onClose, readOnly = fal
                             value={r.end}
                             onChange={(e) => updateRange(i, { end: e.target.value })}
                             aria-describedby={helpId}
+                            min={r.start || undefined}
                           />
                         )}
                       </div>
@@ -214,6 +269,13 @@ export function VacationModal({ isOpen, member, scopeId, onClose, readOnly = fal
                     <p id={helpId} className="text-[11px] text-gray-500 dark:text-gray-400">
                       {t("from")} / {t("to")} — {t("note")}
                     </p>
+                    {errorsByIndex[i] && errorsByIndex[i].length > 0 && (
+                      <ul className="mt-1 text-xs text-red-500 list-disc ml-5">
+                        {errorsByIndex[i].map((er, idx) => (
+                          <li key={idx}>{er}</li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                 </fieldset>
               </li>
@@ -246,8 +308,9 @@ export function VacationModal({ isOpen, member, scopeId, onClose, readOnly = fal
             {!readOnly && (
               <button
                 type="button"
-                className="px-5 py-2 rounded-xl bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white flex items-center gap-2"
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={handleSave}
+                disabled={hasAnyError || ranges.length === 0}
               >
                 <FiSave className="w-4 h-4" /> {t("save")}
               </button>

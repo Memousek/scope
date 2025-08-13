@@ -49,25 +49,10 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
   const [vacationModal, setVacationModal] = useState<{ open: boolean; member: TeamMember | null; readOnly?: boolean }>({ open: false, member: null });
 
 
-  const isOnVacationToday = useCallback((memberId: string): boolean => {
-    const today = new Date();
-    const iso = today.toISOString().slice(0, 10);
-    const inline = document.querySelector(`[data-member-vacations="${memberId}"]`) as HTMLElement | null;
-    if (inline?.dataset.v) {
-      try {
-        const arr = JSON.parse(inline.dataset.v) as VacationRange[];
-        return arr.some((r) => r.start <= iso && iso <= r.end);
-      } catch {}
-    }
-    // Fallback local storage legacy
-    try {
-      const raw = localStorage.getItem(`scope:${memberId}:vacations`);
-      if (raw) {
-        const arr = JSON.parse(raw) as VacationRange[];
-        return arr.some((r) => r.start <= iso && iso <= r.end);
-      }
-    } catch {}
-    return false;
+  const isOnVacationToday = useCallback((member: TeamMember): boolean => {
+    const iso = new Date().toISOString().slice(0, 10);
+    if (!Array.isArray(member.vacations)) return false;
+    return member.vacations.some((r) => r.start <= iso && iso <= r.end);
   }, []);
 
   // Detekce prefers-reduced-motion
@@ -307,13 +292,31 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
                       onImport={async (members) => {
                         setSavingMember(true);
                         try {
-                          const promises = members.map(m => TeamService.createTeamMember(scopeId, {
-                            name: m.name,
-                            role: m.role,
-                            fte: Number(m.fte)
-                          }));
-                          const newMembers = await Promise.all(promises);
-                          onTeamChange([...team, ...newMembers]);
+                          const nameToMember = new Map(team.map(tm => [tm.name.trim().toLowerCase(), tm] as const));
+                          const updatedTeam = [...team];
+                          for (const m of members) {
+                            const normalized = m.name.trim().toLowerCase();
+                            const existing = nameToMember.get(normalized);
+                            if (existing) {
+                              const updated = await TeamService.updateTeamMember(existing.id, {
+                                role: m.role,
+                                fte: Number(m.fte),
+                                vacations: m.vacations,
+                              });
+                              const idx = updatedTeam.findIndex(t => t.id === existing.id);
+                              if (idx >= 0) updatedTeam[idx] = updated;
+                            } else {
+                              const created = await TeamService.createTeamMember(scopeId, {
+                                name: m.name,
+                                role: m.role,
+                                fte: Number(m.fte),
+                                vacations: m.vacations,
+                              });
+                              updatedTeam.push(created);
+                              nameToMember.set(normalized, created);
+                            }
+                          }
+                          onTeamChange(updatedTeam);
                           try { await mutate(["scopeUsage", scopeId]); } catch { }
                         } catch (error) {
                           console.error('Chyba při importu členů týmu:', error);
@@ -456,7 +459,7 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
                                   <div className="flex items-center gap-2">
                                     <div className="w-full text-center font-bold text-sm text-gray-600 dark:text-gray-400 flex items-center justify-center gap-2">
                                       {member.name}
-                                      {isOnVacationToday(member.id) && (
+                                      {isOnVacationToday(member) && (
                                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 align-middle">
                                           <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v2h20V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zM22 10H2v9a2 2 0 002 2h16a2 2 0 002-2v-9z"/></svg>
                                           {t("onVacation")}
@@ -474,8 +477,8 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
                                   </div>
                                 </>
                               )}
-                              {isOnVacationToday(member.id) && (
-                                <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 align-middle">
+                              {!readOnlyMode && isOnVacationToday(member) && (
+                                <span className="absolute -top-2 right-0 inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 align-middle">
                                   <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v2h20V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zM22 10H2v9a2 2 0 002 2h16a2 2 0 002-2v-9z"/></svg>
                                   {t("vacations")}
                                 </span>
@@ -921,6 +924,14 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
           scopeId={scopeId}
           readOnly={vacationModal.readOnly}
           onClose={() => setVacationModal({ open: false, member: null })}
+          onSaved={(ranges) => {
+            if (!vacationModal.member) return;
+            // promítnout do lokálního stavu, aby se po uložení hned propsaly dovolené
+            const updated = team.map((m) =>
+              m.id === vacationModal.member?.id ? { ...m, vacations: ranges } : m
+            );
+            onTeamChange(updated);
+          }}
         />
       )}
 

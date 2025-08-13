@@ -3,11 +3,13 @@ import Papa from "papaparse";
 import { Modal } from "./ui/Modal";
 import { FiUpload } from "react-icons/fi";
 import { useTranslation } from "@/lib/translation";
+import type { VacationRange } from "./scope/types";
 
 export type TeamImportMember = {
   name: string;
   role: string;
   fte: number;
+  vacations?: VacationRange[];
 };
 
 interface TeamImportModalProps {
@@ -38,28 +40,65 @@ export default function TeamImportModal({
       complete: (results) => {
         const preview: TeamImportMember[] = [];
         const validation: string[] = [];
-        // Mapování názvů sloupců na klíče
-        const nameKeys = ["name", "jméno", "jm", "člen", "osoba"];
-        const roleKeys = ["role", "pozice", "funkce", "position"];
-        const fteKeys = ["fte", "úvazek", "uvazek", "allocation", "alokace"];
+        // Mapování názvů sloupců na klíče (tolerantní)
+        const normalize = (s: string) => s
+          .replace(/^\uFEFF/, "")
+          .trim()
+          .toLowerCase()
+          .normalize("NFD").replace(/\p{Diacritic}/gu, "");
+        const nameTokens = ["name", "jmeno", "jméno", "clen", "osoba"]; // includes diacritics-free
+        const roleTokens = ["role", "pozice", "funkce", "position"];
+        const fteTokens = ["fte", "uvazek", "alokace", "allocation"];
+        const vacationsKeys = ["vacations", "dovolena", "dovolene", "dovolenae", "dovolenej", "dovolené", "dovolená", "holiday", "holidays"];
+
+        const toIso = (s: string): string | null => {
+          const trimmed = s.trim();
+          // ISO already
+          if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+          // Accept DD.MM.YYYY
+          const m = trimmed.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+          if (m) {
+            const [, dd, mm, yyyy] = m;
+            return `${yyyy}-${mm}-${dd}`;
+          }
+          return null;
+        };
+
+        const parseVacations = (val: unknown): VacationRange[] | undefined => {
+          if (typeof val !== "string") return undefined;
+          const text = val.trim();
+          if (!text) return undefined;
+          // Supported formats per item:
+          // YYYY-MM-DD..YYYY-MM-DD|note   or   YYYY-MM-DD..YYYY-MM-DD:note
+          // Items separated by ; or ,
+          const items = text.split(/[;,]+/).map((s) => s.trim()).filter(Boolean);
+          const ranges: VacationRange[] = [];
+          for (const item of items) {
+            const [rangePart, notePart] = item.split(/[|:]/).map((s) => s.trim());
+            const [start, end] = rangePart.split(/\.\.|–|—|to|-/).map((s) => s.trim());
+            if (!start || !end) continue;
+            const startIso = toIso(start);
+            const endIso = toIso(end);
+            if (!startIso || !endIso) continue;
+            ranges.push({ start: startIso, end: endIso, note: notePart || undefined });
+          }
+          return ranges.length > 0 ? ranges : undefined;
+        };
 
         (results.data as Array<Record<string, unknown>>).forEach((row, idx) => {
           const r = row as Record<string, string | number | undefined>;
-          // Najdi správné klíče
-          const nameKey = Object.keys(r).find((k) =>
-            nameKeys.includes(k.trim().toLowerCase())
-          );
-          const roleKey = Object.keys(r).find((k) =>
-            roleKeys.includes(k.trim().toLowerCase())
-          );
-          const fteKey = Object.keys(r).find((k) =>
-            fteKeys.includes(k.trim().toLowerCase())
-          );
+          const keys = Object.keys(r);
+          // Najdi správné klíče (fuzzy)
+          const nameKey = keys.find((k) => nameTokens.some((t) => normalize(k).includes(t)));
+          const roleKey = keys.find((k) => roleTokens.some((t) => normalize(k).includes(t)));
+          const fteKey = keys.find((k) => fteTokens.some((t) => normalize(k).includes(t)));
 
           const name = nameKey ? r[nameKey] : "";
           const role = roleKey ? r[roleKey] : "";
           let fteVal = fteKey ? r[fteKey] : "";
-          if (typeof fteVal === "string") fteVal = fteVal.trim();
+          if (typeof fteVal === "string") fteVal = fteVal.replace(",", ".").trim();
+          const vacKey = keys.find((k) => vacationsKeys.includes(normalize(k)) || normalize(k).includes("vac"));
+          const vacations = vacKey ? parseVacations(r[vacKey]) : undefined;
 
           if (!name || !role || fteVal === undefined || fteVal === "") {
             validation.push(`${t("row")} ${idx + 2}: ${t("missingFields")}.`);
@@ -72,7 +111,7 @@ export default function TeamImportModal({
             );
             return;
           }
-          preview.push({ name: String(name), role: String(role), fte: fteNum });
+          preview.push({ name: String(name), role: String(role), fte: fteNum, vacations });
         });
         setMembers(preview);
         setErrors(validation);
@@ -97,7 +136,7 @@ export default function TeamImportModal({
       title={t("importTeamMembers")}
       icon={<FiUpload />}
     >
-      <div className="mb-6">
+      <div className="mb-6 flex items-center gap-2 justify-center">
         <input
           type="file"
           accept=".csv"
@@ -116,6 +155,7 @@ export default function TeamImportModal({
           <span className="ml-4 text-base text-gray-400">{fileName}</span>
         )}
       </div>
+      <span className="text-sm text-gray-400">{t("importTeamMembersDescription")}</span>
       {errors.length > 0 && (
         <div className="mb-4 text-red-500 bg-red-50 rounded-lg p-3 border border-red-200">
           <strong className="block mb-2">{t("fileErrors")}:</strong>
@@ -127,7 +167,7 @@ export default function TeamImportModal({
         </div>
       )}
       {members.length > 0 && (
-        <div className="mb-4">
+        <div className="mb-4 mt-4">
           <strong className="block mb-2 text-base text-gray-300">
             {t("previewImportedMembers")}:
           </strong>
@@ -144,6 +184,9 @@ export default function TeamImportModal({
                   <th className="p-3 font-semibold text-lg text-left">
                     {t("fte")}
                   </th>
+                  <th className="p-3 font-semibold text-lg text-left">
+                    {t("vacations")}
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -155,6 +198,11 @@ export default function TeamImportModal({
                     <td className="p-3 text-base text-white">{m.name}</td>
                     <td className="p-3 text-base text-white">{m.role}</td>
                     <td className="p-3 text-base text-white">{m.fte}</td>
+                    <td className="p-3 text-base text-white">
+                      {m.vacations && m.vacations.length > 0
+                        ? m.vacations.map((v) => `${v.start}..${v.end}${v.note ? `|${v.note}` : ""}`).join("; ")
+                        : "—"}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -173,7 +221,7 @@ export default function TeamImportModal({
         <button
           type="button"
           onClick={handleImport}
-          className="px-7 py-2 rounded-xl bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white font-bold shadow-lg hover:scale-105 transition-all"
+          className="px-7 py-2 rounded-xl bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white font-bold shadow-lg hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={members.length === 0 || errors.length > 0}
         >
           {t("import")}
