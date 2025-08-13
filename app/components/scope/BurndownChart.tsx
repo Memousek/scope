@@ -8,7 +8,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { Project, TeamMember } from './types';
 import { calculatePriorityDatesWithAssignments } from '@/app/utils/dateUtils';
 import { ProjectTeamAssignment } from '@/lib/domain/models/project-team-assignment.model';
@@ -43,6 +43,35 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [activeLegend, setActiveLegend] = useState<string | null>(null);
   const chartRef = useRef<HTMLDivElement>(null);
+
+  // Today reference label (closest existing tick label)
+  const todayTickLabel = (() => {
+    if (chartData.length === 0) return null;
+    const today = new Date();
+    const parseLabel = (label: string): Date | null => {
+      // Parses labels like "13.08" or "13. 08" (cs-CZ day+month without year)
+      const match = label.match(/(\d{2})\.?\s*(\d{2})/);
+      if (!match) return null;
+      const day = Number(match[1]);
+      const month = Number(match[2]);
+      const d = new Date(today.getFullYear(), month - 1, day);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    };
+    let bestLabel: string | null = null;
+    let bestDiff = Number.POSITIVE_INFINITY;
+    for (const pt of chartData) {
+      if (typeof pt.date !== 'string') continue;
+      const d = parseLabel(pt.date);
+      if (!d) continue;
+      const diff = Math.abs(d.getTime() - new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime());
+      if (diff < bestDiff) {
+        bestDiff = diff;
+        bestLabel = pt.date;
+      }
+    }
+    return bestLabel;
+  })();
 
   // Export PNG functionality
   const handleExportPNG = async () => {
@@ -385,10 +414,18 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
     "#0891b2",
   ];
 
+  // Color generator for many projects (fallback after palette)
+  const getProjectColor = (index: number) => {
+    const palette = projectColors;
+    if (index < palette.length) return palette[index % palette.length];
+    const hue = (index * 137.508) % 360; // golden-angle spacing
+    return `hsl(${hue} 65% 55%)`;
+  };
+
   const projectLines = projects.map((project, index) => ({
     key: `project_${project.id}`,
     label: project.name,
-    color: projectColors[index % projectColors.length],
+    color: getProjectColor(index),
   }));
 
   // Legend handlers
@@ -478,6 +515,10 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
                 stroke="#374151"
                 opacity={0.3}
               />
+              {/* Today vertical reference line (only if not at the edges) */}
+              {todayTickLabel && chartData.length > 2 && todayTickLabel !== chartData[0]?.date && todayTickLabel !== chartData[chartData.length - 1]?.date && (
+                <ReferenceLine x={todayTickLabel} stroke="#ef4444" strokeDasharray="4 4" ifOverflow="extendDomain" label={{ value: (t('today') as string) || 'Dnes', position: 'top', fill: '#ef4444' }} />
+              )}
               <XAxis
                 dataKey="date"
                 stroke="#6b7280"
