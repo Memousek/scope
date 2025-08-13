@@ -93,8 +93,6 @@ export function VacationModal({ isOpen, member, scopeId, onClose, readOnly = fal
       .finally(() => onClose());
   };
 
-  if (!isOpen || !member) return null;
-
   // Validate on every change of ranges
   useEffect(() => {
     const newErrors: Record<number, string[]> = {};
@@ -140,6 +138,9 @@ export function VacationModal({ isOpen, member, scopeId, onClose, readOnly = fal
     setErrorsByIndex(newErrors);
     setHasAnyError(Object.keys(newErrors).length > 0);
   }, [ranges, t]);
+
+  // Guard render after all hooks are declared to avoid conditional hooks warning
+  if (!isOpen || !member) return null;
 
   return (
     <Modal
@@ -310,7 +311,7 @@ export function VacationModal({ isOpen, member, scopeId, onClose, readOnly = fal
                 type="button"
                 className="px-5 py-2 rounded-xl bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={handleSave}
-                disabled={hasAnyError || ranges.length === 0}
+                disabled={hasAnyError}
               >
                 <FiSave className="w-4 h-4" /> {t("save")}
               </button>

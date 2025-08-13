@@ -1505,24 +1505,6 @@ export function ProjectSection({
                                               );
 
                                               const standardGroupsMap = groupByRole(standardWorkers);
-                                              // helper: je někdo z role dnes na dovolené?
-                                              const isRoleOnVacationToday = (roleLabel: string): boolean => {
-                                                const assigned = (projectAssignments[project.id] || []).filter(
-                                                  (a) => a.role.toUpperCase() === roleLabel.toUpperCase() || a.role === roleLabel
-                                                );
-                                                if (assigned.length === 0) return false;
-                                                const now = new Date();
-                                                const iso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-                                                return assigned.some((a) =>
-                                                  team.some(
-                                                    (m) =>
-                                                      m.id === a.teamMemberId &&
-                                                      Array.isArray(m.vacations) &&
-                                                      m.vacations.some((v) => v.start <= iso && iso <= v.end)
-                                                  )
-                                                );
-                                              };
-
                                               const getRoleVacationersToday = (roleLabel: string): string[] => {
                                                 const assigned = (projectAssignments[project.id] || []).filter(
                                                   (a) => a.role.toUpperCase() === roleLabel.toUpperCase() || a.role === roleLabel
