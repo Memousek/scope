@@ -1,3 +1,4 @@
+"use client";
 /**
  * Modern Scope Layout Component
  * - Glass-like design with animations
@@ -6,7 +7,8 @@
  * - Responsive design with smooth transitions
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { TeamSection } from "./TeamSection";
 import { ProjectSection } from "./ProjectSection";
 import { BurndownChart } from "./BurndownChart";
@@ -96,8 +98,43 @@ export function ModernScopeLayout({
 }: ModernScopeLayoutProps) {
   const { t } = useTranslation();
   const { activeRoles } = useScopeRoles(scopeId);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
   const [activeTab, setActiveTab] = useState<TabType>("overview");
   const [importModalOpen, setImportModalOpen] = useState(false);
+
+  // Initialize active tab from URL or localStorage
+  useEffect(() => {
+    try {
+      const tabFromUrl = (searchParams?.get("tab") as TabType) || null;
+      const savedKey = `scope:${scopeId}:activeTab`;
+      const tabFromStorage = (typeof window !== "undefined"
+        ? (localStorage.getItem(savedKey) as TabType | null)
+        : null);
+
+      const allowed: TabType[] = ["overview", "team", "projects", "burndown"];
+      const nextTab: TabType = (tabFromUrl && (allowed as string[]).includes(tabFromUrl))
+        ? tabFromUrl
+        : (tabFromStorage && (allowed as string[]).includes(tabFromStorage))
+          ? tabFromStorage
+          : "overview";
+      setActiveTab(nextTab);
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scopeId]);
+
+  const handleSelectTab = (tab: TabType) => {
+    setActiveTab(tab);
+    try {
+      if (typeof window !== "undefined") {
+        localStorage.setItem(`scope:${scopeId}:activeTab`, tab);
+        const url = new URL(window.location.href);
+        url.searchParams.set("tab", tab);
+        router.replace(url.toString(), { scroll: false });
+      }
+    } catch {}
+  };
 
   const handleExportTeam = () => {
     // Exportujeme i dovolené jako serializovaný seznam: start..end|note; start..end|note
@@ -329,6 +366,8 @@ export function ModernScopeLayout({
                     <button
                       onClick={() => setAddMemberModalOpen(true)}
                       className="relative group bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 text-white rounded-xl p-4 hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/25 active:scale-95 flex flex-col items-center gap-3 motion-reduce:scale-100 motion-reduce:transition-none"
+                      aria-label={t("addMember")}
+                      title={t("addMember")}
                     >
                       <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                       <FiUsers className="relative z-10 text-2xl" />
@@ -343,6 +382,8 @@ export function ModernScopeLayout({
                     <button
                       onClick={() => setAddProjectModalOpen(true)}
                       className="relative group bg-gradient-to-br from-emerald-600 via-green-700 to-teal-600 text-white rounded-xl p-4 hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-green-500/25 active:scale-95 flex flex-col items-center gap-3 motion-reduce:scale-100 motion-reduce:transition-none"
+                      aria-label={t("addNewProject")}
+                      title={t("addNewProject")}
                     >
                       <div className="absolute inset-0 bg-gradient-to-r from-emerald-700 via-green-800 to-teal-700 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                       <FiTrendingUp className="relative z-10 text-2xl" />
@@ -356,6 +397,8 @@ export function ModernScopeLayout({
                   <button
                     onClick={handleExportTeam}
                     className="relative group bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 text-white rounded-xl p-4 hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-orange-500/25 active:scale-95 flex flex-col items-center gap-3 motion-reduce:scale-100 motion-reduce:transition-none"
+                    aria-label={t("exportTeam")}
+                    title={t("exportTeam")}
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <FiBarChart2 className="relative z-10 text-2xl" />
@@ -368,6 +411,8 @@ export function ModernScopeLayout({
                   <button
                     onClick={handleExportProjects}
                     className="relative group bg-gradient-to-br from-teal-500 via-cyan-500 to-blue-500 text-white rounded-xl p-4 hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-teal-500/25 active:scale-95 flex flex-col items-center gap-3 motion-reduce:scale-100 motion-reduce:transition-none"
+                    aria-label={t("exportProjects")}
+                    title={t("exportProjects")}
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-teal-600 via-cyan-600 to-blue-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <FiFolder className="relative z-10 text-2xl" />
@@ -381,6 +426,8 @@ export function ModernScopeLayout({
                     <button
                       onClick={() => setImportModalOpen(true)}
                       className="relative bg-gradient-to-br from-teal-500 via-purple-500 to-pink-500 text-white rounded-xl p-4 hover:scale-105 transition-all duration-300 flex flex-col items-center gap-3 group motion-reduce:scale-100 motion-reduce:transition-none"
+                      aria-label={t("importTeam")}
+                      title={t("importTeam")}
                     >
                       <FiUpload className="text-2xl" />
                       <span className="text-sm font-semibold">
@@ -389,14 +436,15 @@ export function ModernScopeLayout({
                     </button>
                   )}
 
-                  {/* Import Projects - Soon */}
-                  {!readOnlyMode && (
+                  {/* Import Projects (feature-flagged) */}
+                  {(!readOnlyMode) && (
                     <button
                       onClick={() => {}}
-                      className="relative cursor-not-allowed opacity-50 bg-gradient-to-br from-red-500 via-pink-500 to-purple-500 text-white rounded-xl p-4 hover:scale-105 transition-all duration-300 flex flex-col items-center gap-3 group motion-reduce:scale-100 motion-reduce:transition-none"
+                      className="disabled:opacity-50 disabled:cursor-not-allowed relative bg-gradient-to-br from-red-500 via-pink-500 to-purple-500 text-white rounded-xl p-4 hover:scale-105 transition-all duration-300 flex flex-col items-center gap-3 group motion-reduce:scale-100 motion-reduce:transition-none"
+                      aria-label={t("importProjects")}
+                      title={t("importProjects")}
                       disabled={true}
                     >
-                      <Badge label={t("soon")} variant="soon" />
                       <FiUpload className="text-2xl" />
                       <span className="text-sm font-semibold">
                         {t("importProjects")}
@@ -469,7 +517,7 @@ export function ModernScopeLayout({
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as TabType)}
+              onClick={() => handleSelectTab(tab.id as TabType)}
               className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold transition-all duration-300 ${
                 activeTab === tab.id
                   ? "z-10 relative bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 text-white shadow-2xl shadow-blue-500/25 scale-105"
@@ -479,6 +527,7 @@ export function ModernScopeLayout({
               role="tab"
               aria-selected={activeTab === tab.id}
               id={`tab-${tab.id}`}
+              aria-current={activeTab === tab.id ? "page" : undefined}
             >
               {activeTab === tab.id && (
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>

@@ -1,3 +1,4 @@
+"use client";
 /**
  * Modern Burndown Chart Component using Recharts
  * - Professional line charts with animations
@@ -7,7 +8,7 @@
  * - Burndown chart showing remaining work over time
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { Project, TeamMember } from './types';
 import { calculatePriorityDatesWithAssignments } from '@/app/utils/dateUtils';
@@ -43,6 +44,11 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [activeLegend, setActiveLegend] = useState<string | null>(null);
   const chartRef = useRef<HTMLDivElement>(null);
+  const [dateRangeDays, setDateRangeDays] = useState<30 | 60 | 90>(() => {
+    if (typeof window === 'undefined') return 60;
+    const saved = localStorage.getItem(`scope:${scopeId}:burndown:range`);
+    return (saved === '30' || saved === '60' || saved === '90') ? Number(saved) as 30 | 60 | 90 : 60;
+  });
 
   // Today reference label (closest existing tick label)
   const todayTickLabel = (() => {
@@ -201,7 +207,7 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
 
       // Zajistíme správné zobrazení všech datových bodů
       const minPoints = 5;
-      const maxPoints = 30; // Zvýšeno pro lepší zobrazení
+      const maxPoints = dateRangeDays; // omezení dle UI přepínače
       
       let filteredDates = uniqueDates;
       if (uniqueDates.length > maxPoints) {
@@ -330,13 +336,15 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
         const db = b.date.split('.').reverse().join('-');
         return new Date(da).getTime() - new Date(db).getTime();
       });
-      setChartData(sortedData);
+      // Ořízneme na posledních N dní dle přepínače
+      const sliced = sortedData.slice(-dateRangeDays);
+      setChartData(sliced);
     } catch (error) {
       console.error('Error generating burndown chart data:', error);
       // Fallback na prázdná data
       setChartData([]);
     }
-  }, [projects, team, projectAssignments, activeRoles, workflowDependencies]);
+  }, [projects, team, projectAssignments, activeRoles, workflowDependencies, dateRangeDays]);
 
   const CustomTooltip = ({
     active,
@@ -476,8 +484,8 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
             </div>
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* Stats Cards + Range selector */}
+          <div className="grid grid-cols-2 gap-3 items-start">
             <div className="bg-gradient-to-br from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm rounded-xl p-3 border border-gray-200/50 dark:border-gray-600/50 shadow-lg">
               <div className="flex items-center gap-2 mb-1">
                 <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
@@ -499,6 +507,18 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
               <div className="text-lg font-bold text-gray-900 dark:text-white">
                 {remainingWork}%
               </div>
+            </div>
+            <div className="flex items-center justify-end gap-2">
+              {[30, 60, 90].map((r) => (
+                <button
+                  key={r}
+                  onClick={() => { setDateRangeDays(r as 30 | 60 | 90); try { localStorage.setItem(`scope:${scopeId}:burndown:range`, String(r)); } catch {} }}
+                  aria-pressed={dateRangeDays === r}
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition ${dateRangeDays === r ? 'bg-blue-600 text-white' : 'bg-white/60 dark:bg-gray-700/60 text-gray-700 dark:text-gray-300 hover:bg-white/80 dark:hover:bg-gray-700/80'}`}
+                >
+                  {r} {t('days')}
+                </button>
+              ))}
             </div>
           </div>
         </div>
