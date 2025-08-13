@@ -525,7 +525,7 @@ export function calculatePriorityDatesWithAssignments(
       });
     }
 
-    let projectWorkdays = Math.ceil(maxDays);
+    const projectWorkdays = Math.ceil(maxDays);
 
     // --- ŘETĚZENÝ START: vždy z chainCursor
     const priorityStartDate = new Date(chainCursor);
