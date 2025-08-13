@@ -28,9 +28,10 @@ interface TeamSectionProps {
   onTeamChange: (team: TeamMember[]) => void;
   readOnlyMode?: boolean;
   activeRoles?: Array<{ id: string; key: string; label: string }>;
+  loading?: boolean;
 }
 
-export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false, activeRoles: activeRolesProp }: TeamSectionProps) {
+export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false, activeRoles: activeRolesProp, loading = false }: TeamSectionProps) {
   const [importModalOpen, setImportModalOpen] = useState(false);
   const { t } = useTranslation();
   const { mutate } = useSWRConfig();
@@ -173,6 +174,41 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
   //   return `rgb(${Math.round((t - R) * p + R)}, ${Math.round((t - G) * p + G)}, ${Math.round((t - B) * p + B)})`;
   // }
 
+
+  // Skeleton UI for loading
+  if (loading) {
+    return (
+      <section className="mb-8">
+        <div className="relative bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 rounded-2xl p-8 shadow-2xl">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 rounded-2xl"></div>
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-br from-purple-400/10 to-pink-400/10 rounded-full blur-2xl"></div>
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-8">
+              <div className="h-7 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+              <div className="h-9 w-64 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse" />
+            </div>
+            <div className="space-y-4">
+              {Array.from({ length: 5 }).map((_, idx) => (
+                <div key={idx} className="bg-white/70 dark:bg-gray-700/70 rounded-2xl border border-gray-200/50 dark:border-gray-600/50 p-4 animate-pulse">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-600" />
+                      <div>
+                        <div className="h-4 w-40 bg-gray-200 dark:bg-gray-600 rounded mb-2" />
+                        <div className="h-3 w-24 bg-gray-200 dark:bg-gray-600 rounded" />
+                      </div>
+                    </div>
+                    <div className="h-8 w-28 bg-gray-200 dark:bg-gray-600 rounded" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <>

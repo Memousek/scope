@@ -77,6 +77,7 @@ interface ModernScopeLayoutProps {
   ) => Promise<void>;
   readOnlyMode?: boolean;
   user?: import("@/lib/domain/models/user.model").User;
+  loadingTeam?: boolean;
 }
 
 type TabType = "overview" | "team" | "projects" | "burndown";
@@ -95,6 +96,7 @@ export function ModernScopeLayout({
   onAddProject,
   readOnlyMode = false,
   user,
+  loadingTeam = false,
 }: ModernScopeLayoutProps) {
   const { t } = useTranslation();
   const { activeRoles } = useScopeRoles(scopeId);
@@ -465,6 +467,7 @@ export function ModernScopeLayout({
             onTeamChange={onTeamChange}
             readOnlyMode={readOnlyMode}
             activeRoles={activeRoles}
+            loading={loadingTeam}
           />
         );
 

@@ -133,6 +133,8 @@ export function ProjectSection({
     >
   >({});
 
+  // Note: skeleton rendering should happen in parent/layout to keep hooks order stable
+
   // Drag and drop state
   const [draggedProject, setDraggedProject] = useState<Project | null>(null);
   const [dragOverProject, setDragOverProject] = useState<string | null>(null);

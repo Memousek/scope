@@ -648,6 +648,7 @@ export default function ScopePage({
           onAddMember={handleAddMember}
           onAddProject={handleAddProject}
           user={user!}
+          loadingTeam={!team || team.length === 0}
         />
       </div>
 
