@@ -574,5 +574,8 @@
   "insertCSVFromURLPlaceholder": "https://example.com/csv.csv",
   "lostWorkdaysDueToVacations": "Ztracené pracovní dny kvůli dovoleným",
   "availabilityWeek": "Dostupnost (2 týdny)",
-  "available": "Dostupný"
+  "available": "Dostupný",
+  "columnMapping": "Mapování sloupců",
+  "preview": "Náhled",
+  "changeSource": "Změnit source"
 }

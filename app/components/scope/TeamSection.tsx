@@ -639,10 +639,10 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
                                             : 'bg-gray-300 dark:bg-gray-700';
                                     const isSeparator = idx === 5;
                                     return (
-                                      <>
+                                      <React.Fragment key={idx}>
                                         {isSeparator && <div className="w-2 h-3" />}
-                                        <div key={idx} className={`w-3 h-3 rounded ${style}`} title={`${d.toLocaleDateString('cs-CZ')} • ${vac ? t('onVacation') : t('available')}`}></div>
-                                      </>
+                                        <div className={`w-3 h-3 rounded ${style}`} title={`${d.toLocaleDateString('cs-CZ')} • ${vac ? t('onVacation') : t('available')}`}></div>
+                                      </React.Fragment>
                                     );
                                   })}
                                 </div>
