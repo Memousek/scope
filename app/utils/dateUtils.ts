@@ -648,10 +648,9 @@ export function calculatePriorityDatesWithAssignments(
         maxDays = getWorkdaysDiff(projectStart, latestEnd);
         if (maxDays < 0) maxDays = 0;
         // uložíme hypotetické bez dovolených
-        (result as Record<string, { __baselineNoVac?: Date }>)[project.id] = {
-          ...(result[project.id] || ({} as any)),
-          __baselineNoVac: latestEndNoVac || undefined,
-        } as any;
+        const existing = (result as Record<string, { __baselineNoVac?: Date }>)[project.id] || {};
+        const merged: { __baselineNoVac?: Date } = { ...existing, __baselineNoVac: latestEndNoVac || existing.__baselineNoVac };
+        (result as Record<string, { __baselineNoVac?: Date }>)[project.id] = merged;
       }
     }
 
