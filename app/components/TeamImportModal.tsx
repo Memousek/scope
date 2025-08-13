@@ -14,6 +14,36 @@ import { FiUpload } from "react-icons/fi";
 import { useTranslation } from "@/lib/translation";
 import type { VacationRange } from "./scope/types";
 
+// Helpers moved to module scope to keep stable identities across renders
+const toIso = (s: string): string | null => {
+  const trimmed = s.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+  const m = trimmed.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if (m) {
+    const [, dd, mm, yyyy] = m;
+    return `${yyyy}-${mm}-${dd}`;
+  }
+  return null;
+};
+
+const parseVacations = (val: unknown): VacationRange[] | undefined => {
+  if (typeof val !== "string") return undefined;
+  const text = val.trim();
+  if (!text) return undefined;
+  const items = text.split(/[;,]+/).map((s) => s.trim()).filter(Boolean);
+  const ranges: VacationRange[] = [];
+  for (const item of items) {
+    const [rangePart, notePart] = item.split(/[|:]/).map((s) => s.trim());
+    const [start, end] = rangePart.split(/\.{2}|–|—|to|-/).map((s) => s.trim());
+    if (!start || !end) continue;
+    const startIso = toIso(start);
+    const endIso = toIso(end);
+    if (!startIso || !endIso) continue;
+    ranges.push({ start: startIso, end: endIso, note: notePart || undefined });
+  }
+  return ranges.length > 0 ? ranges : undefined;
+};
+
 export type TeamImportMember = {
   name: string;
   role: string;
@@ -57,35 +87,7 @@ export default function TeamImportModal({
     setMappingStage("idle");
   };
 
-  // Helpers
-  const toIso = (s: string): string | null => {
-    const trimmed = s.trim();
-    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
-    const m = trimmed.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
-    if (m) {
-      const [, dd, mm, yyyy] = m;
-      return `${yyyy}-${mm}-${dd}`;
-    }
-    return null;
-  };
-
-  const parseVacations = (val: unknown): VacationRange[] | undefined => {
-    if (typeof val !== "string") return undefined;
-    const text = val.trim();
-    if (!text) return undefined;
-    const items = text.split(/[;,]+/).map((s) => s.trim()).filter(Boolean);
-    const ranges: VacationRange[] = [];
-    for (const item of items) {
-      const [rangePart, notePart] = item.split(/[|:]/).map((s) => s.trim());
-      const [start, end] = rangePart.split(/\.{2}|–|—|to|-/).map((s) => s.trim());
-      if (!start || !end) continue;
-      const startIso = toIso(start);
-      const endIso = toIso(end);
-      if (!startIso || !endIso) continue;
-      ranges.push({ start: startIso, end: endIso, note: notePart || undefined });
-    }
-    return ranges.length > 0 ? ranges : undefined;
-  };
+  // Helpers are defined at module scope
 
   // Initial mapping suggestion from headers
   const initializeMapping = (headers: string[]) => {
@@ -175,7 +177,7 @@ export default function TeamImportModal({
       preview.push({ name: String(name), role: String(role), fte: fteNum, vacations });
     });
     return { list: preview, errs: validation };
-  }, [headerMap, mappingStage, rawRows, t, parseVacations]);
+  }, [headerMap, mappingStage, rawRows, t]);
 
   const applyMapping = () => {
     const { list, errs } = mappedPreview;

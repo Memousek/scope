@@ -55,7 +55,7 @@ export class AiService {
    * Get scope data with projects
    */
   // Klient už nenačítá detailní data; vše sestaví serverový endpoint.
-  private async getScopeData(_scopeId: string): Promise<null> { return null; }
+  private async getScopeData(): Promise<null> { return null; }
 
   /**
    * Create context for AI analysis
@@ -187,6 +187,7 @@ export class AiService {
       }
       const json = await res.json();
       const aiResponse: string = json.message as string;
+      if (onDelta) onDelta(aiResponse);
 
       return {
         message: aiResponse,
