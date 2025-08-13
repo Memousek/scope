@@ -481,8 +481,8 @@ export function calculatePriorityDatesWithAssignments(
       let projectEndDate = new Date(Math.max(...Object.values(roleEndDates).map(d => d.getTime())));
 
       // 4) Posun kvůli blokacím/čekání – pouze posunout, ne násobně navyšovat
-      const BLOCKED_SHIFT_DAYS = 10;
-      const WAITING_SHIFT_DAYS = 5;
+      const BLOCKED_SHIFT_DAYS = 5;
+      const WAITING_SHIFT_DAYS = 2;
       let shiftDays = 0;
       wf.active_workers.forEach(w => {
         const roleKey = findRoleKey(w.role);
