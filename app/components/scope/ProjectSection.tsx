@@ -1441,119 +1441,127 @@ export function ProjectSection({
                                                 ],
                                               };
 
-                                              // Rozdělíme role na standardní a custom
+                                              // Rozdělíme role na standardní a custom (a seskupíme pracovníky podle role)
                                               const standardRoles = [
                                                 "PM",
                                                 "FE",
                                                 "BE",
-                                                "QA"
-                                               
+                                                "QA",
                                               ];
-                                              if(workflowType === "BE-FE-QA-PerformanceQA") {
+                                              if (workflowType === "BE-FE-QA-PerformanceQA") {
                                                 standardRoles.push("PerformanceQA");
                                               }
-                                              const standardWorkers =
-                                                workers.filter((worker) =>
-                                                  standardRoles.some(
-                                                    (role) =>
-                                                      role.toLowerCase() ===
-                                                      worker.role.toLowerCase()
-                                                  )
-                                                );
-                                              const customWorkers =
-                                                workers.filter(
-                                                  (worker) =>
-                                                    !standardRoles.some(
-                                                      (role) =>
-                                                        role.toLowerCase() ===
-                                                        worker.role.toLowerCase()
-                                                    )
-                                                );
 
-                                              // Seřadíme standardní role podle workflow pořadí
-                                              const order = workflowOrder[
-                                                workflowType
-                                              ] || ["PM", "FE", "BE", "QA", "PerformanceQA"];
-                                              standardWorkers.sort((a, b) => {
-                                                const aIndex = order.findIndex(
-                                                  (role) =>
-                                                    role.toLowerCase() ===
-                                                    a.role.toLowerCase()
-                                                );
-                                                const bIndex = order.findIndex(
-                                                  (role) =>
-                                                    role.toLowerCase() ===
-                                                    b.role.toLowerCase()
-                                                );
-                                                return aIndex - bIndex;
-                                              });
+                                              const groupByRole = (list: typeof workers) => {
+                                                const map: Record<string, typeof workers> = {};
+                                                list.forEach((w) => {
+                                                  const key = w.role.toUpperCase();
+                                                  if (!map[key]) map[key] = [];
+                                                  map[key].push(w);
+                                                });
+                                                return map;
+                                              };
 
-                                              // Spojíme standardní a custom role
-                                              const allWorkers = [
-                                                ...standardWorkers,
-                                                ...customWorkers,
-                                              ];
-                                              const standardCount =
-                                                standardWorkers.length;
-
-                                              return allWorkers.map(
-                                                (worker, index) => (
-                                                  <React.Fragment key={index}>
-                                                    {/* Vertikální čára před custom rolemi */}
-                                                    {index === standardCount &&
-                                                      customWorkers.length >
-                                                        0 && (
-                                                        <div className="flex items-center gap-3">
-                                                          <div className="text-blue-500 dark:text-blue-400 font-bold">
-                                                            ||
-                                                          </div>
-                                                        </div>
-                                                      )}
-
-                                                    <div
-                                                      className={`group relative flex items-center gap-3 p-3 rounded-xl border transition-all duration-300 hover:scale-105 ${
-                                                        worker.status ===
-                                                        "active"
-                                                          ? "bg-gradient-to-br from-green-50/90 to-green-100/70 dark:from-green-900/20 dark:to-green-800/10 border-green-200/50 dark:border-green-600/30 shadow-lg hover:shadow-green-500/25"
-                                                          : worker.status ===
-                                                              "waiting"
-                                                            ? "bg-gradient-to-br from-yellow-50/90 to-yellow-100/70 dark:from-yellow-900/20 dark:to-yellow-800/10 border-yellow-200/50 dark:border-yellow-600/30 shadow-lg hover:shadow-yellow-500/25"
-                                                            : "bg-gradient-to-br from-red-50/90 to-red-100/70 dark:from-red-900/20 dark:to-red-800/10 border-red-200/50 dark:border-red-600/30 shadow-lg hover:shadow-red-500/25"
-                                                      }`}
-                                                    >
-                                                      {/* Status indicator */}
-                                                      <div
-                                                        className={`w-3 h-3 rounded-full ${
-                                                          worker.status ===
-                                                          "active"
-                                                            ? "bg-green-500 animate-pulse"
-                                                            : worker.status ===
-                                                                "waiting"
-                                                              ? "bg-yellow-500"
-                                                              : "bg-red-500"
-                                                        }`}
-                                                      ></div>
-                                                      {worker.role.charAt(0) +
-                                                        worker.role.charAt(1)}
-                                                    </div>
-
-                                                    {/* Šipka mezi rolemi (ale ne před custom rolemi) */}
-                                                    {index <
-                                                      allWorkers.length - 1 &&
-                                                      !(
-                                                        index ===
-                                                          standardCount - 1 &&
-                                                        customWorkers.length > 0
-                                                      ) && (
-                                                        <div className="flex items-center gap-1">
-                                                          <span className="text-blue-500 dark:text-blue-400 font-bold">
-                                                            →
-                                                          </span>
-                                                        </div>
-                                                      )}
-                                                  </React.Fragment>
+                                              const standardWorkers = workers.filter((w) =>
+                                                standardRoles.some(
+                                                  (r) => r.toLowerCase() === w.role.toLowerCase()
                                                 )
                                               );
+                                              const customWorkers = workers.filter(
+                                                (w) =>
+                                                  !standardRoles.some(
+                                                    (r) => r.toLowerCase() === w.role.toLowerCase()
+                                                  )
+                                              );
+
+                                              const standardGroupsMap = groupByRole(standardWorkers);
+                                              const customGroupsMap = groupByRole(customWorkers);
+
+                                              const order =
+                                                workflowOrder[workflowType] || [
+                                                  "PM",
+                                                  "FE",
+                                                  "BE",
+                                                  "QA",
+                                                  "PerformanceQA",
+                                                ];
+
+                                              const standardGroups = order
+                                                .filter((role) => standardGroupsMap[role])
+                                                .map((role) => ({ role, workers: standardGroupsMap[role] }));
+                                              const customGroups = Object.keys(customGroupsMap)
+                                                .sort()
+                                                .map((role) => ({ role, workers: customGroupsMap[role] }));
+
+                                              const allGroups = [...standardGroups, ...customGroups];
+                                              const standardCount = standardGroups.length;
+
+                                              const getGroupStatus = (
+                                                ws: typeof workers
+                                              ): "active" | "waiting" | "blocked" => {
+                                                if (ws.some((w) => w.status === "blocked")) return "blocked";
+                                                if (ws.some((w) => w.status === "active")) return "active";
+                                                return "waiting";
+                                              };
+
+                                              const getGroupSummary = (ws: typeof workers) => {
+                                                const total = ws.length;
+                                                const active = ws.filter((w) => w.status === "active").length;
+                                                const waiting = ws.filter((w) => w.status === "waiting").length;
+                                                const blocked = ws.filter((w) => w.status === "blocked").length;
+                                                return `${total} prac. • aktivní ${active} · čeká ${waiting} · blokováno ${blocked}`;
+                                              };
+
+                                              return allGroups.map((group, index) => {
+                                                const groupStatus = getGroupStatus(group.workers);
+                                                const titleText = group.workers
+                                                  .map((w) => `${(w as any).name ?? group.role}`)
+                                                  .join(", ");
+                                                return (
+                                                  <React.Fragment key={`${group.role}-${index}`}>
+                                                    {index === standardCount && customGroups.length > 0 && (
+                                                      <div className="flex items-center gap-3">
+                                                        <div className="text-blue-500 dark:text-blue-400 font-bold">||</div>
+                                                      </div>
+                                                    )}
+
+                                                    <div
+                                                      title={titleText}
+                                                      className={`group relative flex items-center gap-3 p-3 rounded-xl border transition-all duration-300 hover:scale-105 ${
+                                                        groupStatus === "active"
+                                                          ? "bg-gradient-to-br from-green-50/90 to-green-100/70 dark:from-green-900/20 dark:to-green-800/10 border-green-200/50 dark:border-green-600/30 shadow-lg hover:shadow-green-500/25"
+                                                          : groupStatus === "waiting"
+                                                          ? "bg-gradient-to-br from-yellow-50/90 to-yellow-100/70 dark:from-yellow-900/20 dark:to-yellow-800/10 border-yellow-200/50 dark:border-yellow-600/30 shadow-lg hover:shadow-yellow-500/25"
+                                                          : "bg-gradient-to-br from-red-50/90 to-red-100/70 dark:from-red-900/20 dark:to-red-800/10 border-red-200/50 dark:border-red-600/30 shadow-lg hover:shadow-red-500/25"
+                                                      }`}
+                                                    >
+                                                      <div
+                                                        className={`w-3 h-3 rounded-full ${
+                                                          groupStatus === "active"
+                                                            ? "bg-green-500 animate-pulse"
+                                                            : groupStatus === "waiting"
+                                                            ? "bg-yellow-500"
+                                                            : "bg-red-500"
+                                                        }`}
+                                                      ></div>
+                                                      {group.role}
+                                                      {group.workers.length > 1 && (
+                                                        <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-full bg-black/10 dark:bg-white/10">
+                                                          {group.workers.length}
+                                                        </span>
+                                                      )}
+                                                    </div>
+
+                                                    {index < allGroups.length - 1 && !(
+                                                      index === standardCount - 1 && customGroups.length > 0
+                                                    ) && (
+                                                      <div className="flex items-center gap-1">
+                                                        <span className="text-blue-500 dark:text-blue-400 font-bold">→</span>
+                                                      </div>
+                                                    )}
+                                                  </React.Fragment>
+                                                );
+                                              });
                                             })()}
                                           </div>
                                         </div>
