@@ -372,9 +372,9 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                 filteredTeam.map((member, index) => (
                   <div
                     key={member.id}
-                    className={`relative group bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-700/90 dark:via-gray-700/70 dark:to-gray-700/50 backdrop-blur-lg rounded-2xl border border-white/40 dark:border-gray-600/40 overflow-hidden transition-all duration-300 ${!isReducedMotion ? 'hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/10 animate-in slide-in-from-bottom-8 fade-in duration-700' : 'hover:shadow-lg'
+                    className={`relative group bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-700/90 dark:via-gray-700/70 dark:to-gray-700/50 backdrop-blur-lg rounded-2xl border border-white/40 dark:border-gray-600/40 overflow-hidden transition-all duration-300 ${!isReducedMotion ? 'hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/10 animate-in fade-in duration-300' : 'hover:shadow-lg'
                       }`}
-                    style={!isReducedMotion ? { animationDelay: `${index * 100}ms` } : {}}
+                    
                   >
                     {/* Hover effect overlay */}
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-blue-500/5 group-hover:via-purple-500/5 group-hover:to-pink-500/5 transition-all duration-300 rounded-2xl"></div>
