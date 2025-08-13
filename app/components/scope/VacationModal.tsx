@@ -5,7 +5,7 @@
  * - Hezký a přehledný UI s ikonami a zvýrazněním
  */
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Modal } from "../ui/Modal";
 import { useTranslation } from "@/lib/translation";
 import { FiCalendar, FiTag, FiTrash2, FiPlus, FiSave, FiX } from "react-icons/fi";
@@ -27,14 +27,23 @@ export function VacationModal({ isOpen, member, scopeId, onClose }: VacationModa
   );
 
   const [ranges, setRanges] = useState<VacationRange[]>([]);
+  
+  const getInclusiveDays = useCallback((start?: string, end?: string): number | null => {
+    if (!start || !end) return null;
+    const s = new Date(start);
+    const e = new Date(end);
+    if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime())) return null;
+    const diff = Math.floor((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    return diff > 0 ? diff : 0;
+  }, []);
 
   // Load from Supabase (fallback localStorage for legacy)
   useEffect(() => {
     const load = async () => {
       if (!isOpen || !member) return;
       const dbMember = await TeamService.getTeamMemberById(member.id);
-      if (dbMember && Array.isArray((dbMember as any).vacations)) {
-        setRanges(((dbMember as any).vacations as VacationRange[]) || []);
+      if (dbMember && Array.isArray(dbMember.vacations)) {
+        setRanges(dbMember.vacations || []);
       } else {
         try {
           const raw = localStorage.getItem(storageKey) || localStorage.getItem(`scope:${member.id}:vacations`);
@@ -47,11 +56,19 @@ export function VacationModal({ isOpen, member, scopeId, onClose }: VacationModa
     void load();
   }, [isOpen, member, storageKey]);
 
-  const addRange = () =>
+  const addRange = () => {
+    const newIndex = ranges.length;
+    const today = new Date().toISOString().slice(0, 10);
     setRanges((prev) => [
       ...prev,
-      { start: new Date().toISOString().slice(0, 10), end: new Date().toISOString().slice(0, 10) },
+      { start: today, end: today },
     ]);
+    // shift focus to the new start input for accessibility
+    setTimeout(() => {
+      const el = document.getElementById(`vac-start-${newIndex}-${member?.id ?? 'x'}`);
+      if (el) (el as HTMLInputElement).focus();
+    }, 0);
+  };
   const updateRange = (i: number, patch: Partial<VacationRange>) =>
     setRanges((prev) => prev.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
   const removeRange = (i: number) => setRanges((prev) => prev.filter((_, idx) => idx !== i));
@@ -59,7 +76,7 @@ export function VacationModal({ isOpen, member, scopeId, onClose }: VacationModa
   const handleSave = () => {
     if (!member) return;
     // Persist to Supabase (JSONB column vacations); fallback localStorage
-    TeamService.updateTeamMember(member.id, { vacations: ranges } as unknown as TeamMember)
+    TeamService.updateTeamMember(member.id, { vacations: ranges } as Partial<TeamMember>)
       .catch((e) => {
         console.error('Failed to save vacations to DB, fallback localStorage', e);
         try { localStorage.setItem(storageKey, JSON.stringify(ranges)); } catch {}
@@ -77,72 +94,118 @@ export function VacationModal({ isOpen, member, scopeId, onClose }: VacationModa
       description={`${t("defineMemberVacations")}`}
       icon={<FiCalendar className="w-4 h-4" />}
     >
-      <div className="space-y-4">
-        <div className="space-y-3">
-          {ranges.map((r, i) => (
-            <div
-              key={i}
-              className="rounded-2xl p-3 border border-gray-200/60 dark:border-gray-700/60 bg-gradient-to-br from-white/90 to-white/70 dark:from-gray-800/90 dark:to-gray-800/70 shadow-sm"
-            >
-              <div className="grid grid-cols-1 sm:grid-cols-8 gap-2 items-center">
-                <label className="text-[11px] uppercase tracking-wide sm:col-span-1 text-gray-500 dark:text-gray-400">
-                  {t("from")}
-                </label>
-                <input
-                  type="date"
-                  className="sm:col-span-3 w-full rounded-xl px-3 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={r.start}
-                  onChange={(e) => updateRange(i, { start: e.target.value })}
-                />
-                <label className="text-[11px] uppercase tracking-wide sm:col-span-1 text-gray-500 dark:text-gray-400">
-                  {t("to")}
-                </label>
-                <input
-                  type="date"
-                  className="sm:col-span-3 w-full rounded-xl px-3 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={r.end}
-                  onChange={(e) => updateRange(i, { end: e.target.value })}
-                />
-                <div className="sm:col-span-7 flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 text-white flex items-center justify-center">
-                    <FiTag className="w-4 h-4" />
+      <div className="space-y-5" role="region" aria-labelledby="vacation-editor-title">
+        <h3 id="vacation-editor-title" className="sr-only">
+          {t("manageVacations")}
+        </h3>
+
+        <ul role="list" className="space-y-4">
+          {ranges.map((r, i) => {
+            const startId = `vac-start-${i}-${member.id}`;
+            const endId = `vac-end-${i}-${member.id}`;
+            const noteId = `vac-note-${i}-${member.id}`;
+            const helpId = `vac-help-${i}-${member.id}`;
+            const days = getInclusiveDays(r.start, r.end);
+
+            return (
+              <li key={i} role="listitem">
+                <fieldset className="rounded-2xl border border-gray-200/60 dark:border-gray-700/60 bg-gradient-to-br from-white/95 to-white/70 dark:from-gray-800/95 dark:to-gray-800/70 shadow-sm">
+                  <legend className="px-3 py-1 text-xs font-semibold text-gray-600 dark:text-gray-300">
+                    {t("vacations")} #{i + 1}
+                        {days !== null && (
+                          <span className="inline-flex items-center px-2 py-1 " aria-live="polite">
+                            {days} {days === 1 ? t("day") : t("days")}
+                          </span>
+                        )}
+                  </legend>
+
+                  <div className="p-4 space-y-3" role="group" aria-labelledby={`${startId} ${endId}`}>
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+                      <div className="sm:col-span-5">
+                        <label htmlFor={startId} className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">
+                          {t("from")}
+                        </label>
+                        <input
+                          id={startId}
+                          type="date"
+                          className="w-full rounded-xl px-3 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          value={r.start}
+                          onChange={(e) => updateRange(i, { start: e.target.value })}
+                          aria-describedby={helpId}
+                        />
+                      </div>
+                      <div className="sm:col-span-5">
+                        <label htmlFor={endId} className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">
+                          {t("to")}
+                        </label>
+                        <input
+                          id={endId}
+                          type="date"
+                          className="w-full rounded-xl px-3 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          value={r.end}
+                          onChange={(e) => updateRange(i, { end: e.target.value })}
+                          aria-describedby={helpId}
+                        />
+                      </div>
+                      <div className="sm:col-span-2 flex items-end justify-end gap-2">
+                        <button
+                          type="button"
+                          className="px-3 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 flex items-center gap-1"
+                          onClick={() => removeRange(i)}
+                          aria-label={`${t("remove")} #${i + 1}`}
+                        >
+                          <FiTrash2 className="w-4 h-4" /> {t("remove")}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 text-white flex items-center justify-center" aria-hidden="true">
+                        <FiTag className="w-4 h-4" />
+                      </div>
+                      <label htmlFor={noteId} className="sr-only">{t("note")}</label>
+                      <input
+                        id={noteId}
+                        type="text"
+                        className="flex-1 rounded-xl px-3 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        placeholder={t("note")}
+                        value={r.note || ""}
+                        onChange={(e) => updateRange(i, { note: e.target.value })}
+                      />
+                    </div>
+
+                    <p id={helpId} className="text-[11px] text-gray-500 dark:text-gray-400">
+                      {t("from")} / {t("to")} — {t("note")}
+                    </p>
                   </div>
-                  <input
-                    type="text"
-                    className="flex-1 rounded-xl px-3 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    placeholder={t("note")}
-                    value={r.note || ""}
-                    onChange={(e) => updateRange(i, { note: e.target.value })}
-                  />
-                  <button
-                    className="px-3 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 flex items-center gap-1"
-                    onClick={() => removeRange(i)}
-                  >
-                    <FiTrash2 className="w-4 h-4" /> {t("remove")}
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
+                </fieldset>
+              </li>
+            );
+          })}
           {ranges.length === 0 && (
-            <div className="text-sm text-center font-semibold text-gray-800 dark:text-gray-100">{t("noVacations")}</div>
+            <li className="text-sm text-center font-semibold text-gray-800 dark:text-gray-100" role="status">{t("noVacations")}</li>
           )}
-        </div>
+        </ul>
+
         <div className="flex justify-between items-center">
           <button
+            type="button"
             className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700 flex items-center gap-2"
             onClick={addRange}
+            aria-label={t("addRange")}
           >
             <FiPlus className="w-4 h-4" /> {t("addRange")}
           </button>
           <div className="flex gap-2">
             <button
+              type="button"
               className="px-4 py-2 rounded-xl bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 flex items-center gap-2"
               onClick={onClose}
             >
               <FiX className="w-4 h-4" /> {t("cancel")}
             </button>
             <button
+              type="button"
               className="px-5 py-2 rounded-xl bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white flex items-center gap-2"
               onClick={handleSave}
             >

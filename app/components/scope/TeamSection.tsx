@@ -16,7 +16,7 @@ import { RoleManagementModal } from "./RoleManagementModal";
 import { useTranslation } from "@/lib/translation";
 import { TeamService } from "@/app/services/teamService";
 import { SettingsIcon, FilterIcon, XIcon, ChevronDownIcon } from "lucide-react";
-import { FiUpload, FiCalendar, FiTag, FiTrash2, FiPlus, FiSave, FiX } from 'react-icons/fi';
+import { FiUpload, FiCalendar} from 'react-icons/fi';
 import { useSWRConfig } from "swr";
 import { FiUsers, FiSearch } from 'react-icons/fi';
 // import { Badge } from "../ui/Badge";

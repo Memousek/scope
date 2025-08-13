@@ -550,5 +550,8 @@
   "note": "Poznámka",
   "addRange": "Přidat období",
   "user's": "uživatele",
-  "noVacations": "Žádné dovolené"
+  "noVacations": "Žádné dovolené",
+  "vacations": "Dovolená",
+  "onVacation": "Na dovolené",
+  "day": "den"
 }
