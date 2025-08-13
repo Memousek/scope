@@ -207,6 +207,8 @@ export function VacationModal({ isOpen, member, scopeId, onClose, readOnly = fal
                             value={r.start}
                             onChange={(e) => updateRange(i, { start: e.target.value })}
                             aria-describedby={helpId}
+                            aria-invalid={Boolean(errorsByIndex[i] && errorsByIndex[i].length > 0)}
+                            aria-errormessage={errorsByIndex[i] && errorsByIndex[i].length > 0 ? `${helpId}-errors` : undefined}
                           />
                         )}
                       </div>
@@ -226,6 +228,8 @@ export function VacationModal({ isOpen, member, scopeId, onClose, readOnly = fal
                             value={r.end}
                             onChange={(e) => updateRange(i, { end: e.target.value })}
                             aria-describedby={helpId}
+                            aria-invalid={Boolean(errorsByIndex[i] && errorsByIndex[i].length > 0)}
+                            aria-errormessage={errorsByIndex[i] && errorsByIndex[i].length > 0 ? `${helpId}-errors` : undefined}
                             min={r.start || undefined}
                           />
                         )}
@@ -271,7 +275,7 @@ export function VacationModal({ isOpen, member, scopeId, onClose, readOnly = fal
                       {t("from")} / {t("to")} — {t("note")}
                     </p>
                     {errorsByIndex[i] && errorsByIndex[i].length > 0 && (
-                      <ul className="mt-1 text-xs text-red-500 list-disc ml-5">
+                      <ul id={`${helpId}-errors`} className="mt-1 text-xs text-red-500 list-disc ml-5" role="alert">
                         {errorsByIndex[i].map((er, idx) => (
                           <li key={idx}>{er}</li>
                         ))}

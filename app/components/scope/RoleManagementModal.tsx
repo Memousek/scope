@@ -130,9 +130,10 @@ export const RoleManagementModal: React.FC<RoleManagementModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title={t('manageRoles')}
+      description={t('manageRolesDescription')}
       icon={<FiEdit size={24} className="text-white" />}
     >
-      <div className="space-y-6">
+      <div className="space-y-6" role="region" aria-label={t('roles')}>
         {/* Initialize defaults button */}
         <div className="flex justify-between items-center">
           <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
@@ -320,46 +321,52 @@ export const RoleManagementModal: React.FC<RoleManagementModalProps> = ({
         )}
 
         {/* Roles list */}
-        <div className="space-y-3">
+        <ul className="space-y-3" role="list">
           {roles.map((role) => (
-            <div
-              key={role.id}
-              className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600"
-            >
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-4 h-4 rounded-full"
-                  style={{ backgroundColor: role.color }}
-                />
-                <div>
-                  <div className="font-medium text-gray-900 dark:text-gray-100">
-                    {role.label}
+            <li key={role.id} role="listitem">
+              <div
+                className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div
+                    className="w-4 h-4 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: role.color }}
+                    aria-hidden="true"
+                  />
+                  <div className="truncate">
+                    <div className="font-medium text-gray-900 dark:text-gray-100 truncate">
+                      {role.label}
+                    </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                      {role.key}
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
-                    {role.key}
-                  </div>
+                  {!role.isActive && (
+                    <span className="inline-flex items-center gap-1 text-xs text-gray-500" aria-label={t('inactive')}>
+                      <FiEyeOff className="w-4 h-4" /> {t('inactive')}
+                    </span>
+                  )}
                 </div>
-                {!role.isActive && (
-                  <FiEyeOff className="w-4 h-4 text-gray-400" />
-                )}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleEditRole(role)}
+                    className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    aria-label={t('editRole')}
+                  >
+                    <FiEdit className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteRole(role.id)}
+                    className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
+                    aria-label={t('deleteRole')}
+                  >
+                    <FiTrash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleEditRole(role)}
-                  className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                >
-                  <FiEdit className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => handleDeleteRole(role.id)}
-                  className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                >
-                  <FiTrash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
 
         {roles.length === 0 && (
           <div className="text-center text-gray-500 dark:text-gray-400 py-8">
