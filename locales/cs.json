@@ -542,5 +542,6 @@
   "closeChatWarningText": "Pokud opustíte chat, ztratíte aktuální konverzaci a nebudete moci pokračovat v předchozích otázkách.",
   "settingsDescription": "Nastavení aplikace a uživatelských preferencí",
   "languageDescription": "Nastavení jazyka aplikace",
-  "themeDescription": "Nastavení motivu aplikace"
+  "themeDescription": "Nastavení motivu aplikace",
+  "missingMainRoleFlow": "Chybí hlavní role v workflowu"
 }

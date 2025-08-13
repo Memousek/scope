@@ -1375,6 +1375,36 @@ export function ProjectSection({
                                           <div className="absolute bottom-0 left-0 w-12 h-12 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full blur-lg"></div>
 
                                           <div className="relative z-10">
+                                            {(() => {
+                                              const workflowType =
+                                                workflowDependencies[project.id]
+                                                  .workflow_type;
+                                              const requiredMain: Record<string, string[] | null> = {
+                                                "FE-First": ["FE"],
+                                                "BE-First": ["BE"],
+                                                Parallel: null,
+                                                "BE-FE-QA-PerformanceQA": ["BE"],
+                                              };
+                                              const rolesInWorkers = (
+                                                workflowDependencies[project.id]
+                                                  .active_workers || []
+                                              ).map((w) => w.role.toUpperCase());
+                                              const required = requiredMain[workflowType];
+                                              const missing = required
+                                                ? required.filter(
+                                                    (r) =>
+                                                      !rolesInWorkers.includes(r.toUpperCase())
+                                                  )
+                                                : [];
+                                              return missing.length > 0 ? (
+                                                <Badge
+                                                  label={`${t("missingMainRoleFlow")}: ${missing.join(", ")}`}
+                                                  variant="warning"
+                                                  position="top-right"
+                                                  className="text-[10px]"
+                                                />
+                                              ) : null;
+                                            })()}
                                             <div className="flex items-center gap-3 mb-4">
                                               <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
                                                 <span className="text-white text-sm font-bold">
