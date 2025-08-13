@@ -20,7 +20,7 @@ import { SettingsIcon, FilterIcon, XIcon, ChevronDownIcon } from "lucide-react";
 import { FiUpload } from 'react-icons/fi';
 import { useSWRConfig } from "swr";
 import { FiUsers, FiSearch } from 'react-icons/fi';
-import { Badge } from "../ui/Badge";
+// import { Badge } from "../ui/Badge";
 
 interface TeamSectionProps {
   scopeId: string;
@@ -369,7 +369,7 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false 
                   )}
                 </div>
               ) : (
-                filteredTeam.map((member, index) => (
+                filteredTeam.map((member) => (
                   <div
                     key={member.id}
                     className={`relative group bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-700/90 dark:via-gray-700/70 dark:to-gray-700/50 backdrop-blur-lg rounded-2xl border border-white/40 dark:border-gray-600/40 overflow-hidden transition-all duration-300 ${!isReducedMotion ? 'hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/10 animate-in fade-in duration-300' : 'hover:shadow-lg'

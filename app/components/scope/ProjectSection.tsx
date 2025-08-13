@@ -1524,18 +1524,11 @@ export function ProjectSection({
                                                 return "waiting";
                                               };
 
-                                              const getGroupSummary = (ws: typeof workers) => {
-                                                const total = ws.length;
-                                                const active = ws.filter((w) => w.status === "active").length;
-                                                const waiting = ws.filter((w) => w.status === "waiting").length;
-                                                const blocked = ws.filter((w) => w.status === "blocked").length;
-                                                return `${total} prac. • aktivní ${active} · čeká ${waiting} · blokováno ${blocked}`;
-                                              };
-
                                               return allGroups.map((group, index) => {
                                                 const groupStatus = getGroupStatus(group.workers);
+                                                type WorkerLike = { role: string; status: "active" | "waiting" | "blocked"; name?: string };
                                                 const titleText = group.workers
-                                                  .map((w) => `${(w as any).name ?? group.role}`)
+                                                  .map((w: WorkerLike) => w.name ?? w.role)
                                                   .join(", ");
                                                 return (
                                                   <React.Fragment key={`${group.role}-${index}`}>
