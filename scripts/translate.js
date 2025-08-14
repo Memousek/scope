@@ -108,7 +108,12 @@ const DEEPL_LANG_MAP = {
   'it': 'IT',
   'hu': 'HU',
   'kr': 'KO',
-  'ch': 'ZH'
+  'ch': 'ZH',
+  'nl': 'NL',
+  'sv': 'SV',
+  'no': 'NO',
+  'da': 'DA',
+  'fi': 'FI'
 };
 
 // Load source translations

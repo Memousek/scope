@@ -56,6 +56,13 @@ export function getLanguages() {
     { code: 'es', label: 'Español', flag: 'es' },
     { code: 'pt', label: 'Português', flag: 'pt' },
     { code: 'it', label: 'Italiano', flag: 'it' },
+    { code: 'nl', label: 'Nederlands', flag: 'nl' },
+    
+    // Skandinávie
+    { code: 'sv', label: 'Svenska', flag: 'se' },
+    { code: 'no', label: 'Norsk', flag: 'no' },
+    { code: 'da', label: 'Dansk', flag: 'dk' },
+    { code: 'fi', label: 'Suomi', flag: 'fi' },
     
     // Blízký východ
     { code: 'tr', label: 'Türkçe', flag: 'tr' },
