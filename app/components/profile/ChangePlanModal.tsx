@@ -60,7 +60,8 @@ export function ChangePlanModal({ isOpen, onClose, currentPlan, userId, onPlanCh
       setChanging(true);
       setError(null);
       const planService = ContainerService.getInstance().get(ManageUserPlansService);
-      const ok = await planService.updateUserPlan(userId, selectedPlan);
+      // Allow only self-downgrade in-app; upgrades musí přes admin/billing
+      const ok = await planService.updateUserPlan(userId, selectedPlan, { allowSelfDowngrade: true });
       if (ok) {
         setSuccess(true);
         // Revalidate cached plan
@@ -76,7 +77,12 @@ export function ChangePlanModal({ isOpen, onClose, currentPlan, userId, onPlanCh
       }
     } catch (e) {
       console.error("Error changing plan:", e);
-      setError(t("failedToChangePlan") || "");
+      const message = (e as Error)?.message || '';
+      if (message.includes('domain policy')) {
+        setError(t('planManagedByDomain') || 'This plan is managed by your domain. Contact admin.');
+      } else {
+        setError(t("planChangeRequiresAdmin") || "Plan change requires admin approval");
+      }
     } finally {
       setChanging(false);
     }

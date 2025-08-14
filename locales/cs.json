@@ -597,5 +597,7 @@
   "jiraProject": "Projekt",
   "orProjectKey": "nebo klíč projektu",
   "importedRows": "Naimportované řádky",
-  "today": "Dnes"
+  "today": "Dnes",
+  "planManagedByDomain": "Plán spravovaný podle domény",
+  "planChangeRequiresAdmin": "Plán lze měnit pouze přes administrátora domény."
 }

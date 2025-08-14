@@ -4,6 +4,7 @@ import { injectable, inject } from "inversify";
 import { ProjectRepository } from "@/lib/domain/repositories/project.repository";
 import { TeamMemberRepository } from "@/lib/domain/repositories/team-member.repository";
 import { ScopeRepository } from "@/lib/domain/repositories/scope.repository";
+import { createClient } from "@/lib/supabase/client";
 
 export interface PlanUsage {
   projects: number;
@@ -68,10 +69,36 @@ export class ManageUserPlansService {
   /**
    * Update user's plan
    */
-  async updateUserPlan(userId: string, planId: string): Promise<boolean> {
+  async updateUserPlan(userId: string, planId: string, opts?: { allowSelfDowngrade?: boolean; requestedBy?: { id: string; role?: string } }): Promise<boolean> {
     const plan = await this.planRepository.findById(planId);
-    if (!plan || !plan.isActive) {
-      throw new Error('Invalid or inactive plan');
+    if (!plan || !plan.isActive) throw new Error('Invalid or inactive plan');
+
+    // Deny if domain-managed
+    const supabase = createClient();
+    const { data: meta } = await supabase
+      .from('user_meta')
+      .select('email')
+      .eq('user_id', userId)
+      .maybeSingle();
+    const email = (meta as any)?.email as string | undefined;
+    if (email && email.includes('@')) {
+      const domain = email.split('@')[1].toLowerCase();
+      const { data: assignment } = await supabase
+        .from('domain_plan_assignments')
+        .select('domain, is_active')
+        .eq('domain', domain)
+        .eq('is_active', true)
+        .maybeSingle();
+      if (assignment) {
+        throw new Error('PlanChangeRequiresAdmin');
+      }
+    }
+
+    // Basic policy: only admin/god can change plan, or self-downgrade allowed via opts
+    const isGod = opts?.requestedBy?.role === 'god';
+    if (!isGod && !opts?.allowSelfDowngrade) {
+      // deny direct change; caller must go přes billing/admin flow
+      throw new Error('PlanChangeRequiresAdmin');
     }
 
     return this.planRepository.updateUserPlan(userId, planId);
