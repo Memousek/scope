@@ -7,7 +7,7 @@
  */
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { ScopeList } from "@/app/components/scope/ScopeList";
 import { ContainerService } from "@/lib/container.service";
 import { DeleteScopeService } from "@/lib/domain/services/delete-scope.service";
@@ -42,6 +42,7 @@ export default function ScopesListPage() {
   const [scopes, setScopes] = useState<Scope[]>([]);
   const [fetching, setFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     if (!loading && !user) {
@@ -81,6 +82,16 @@ export default function ScopesListPage() {
     }
   };
 
+  // Předpočítej filtrovaný/řazený seznam (stabilní pořadí hooků)
+  const filteredScopes = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const base = q
+      ? scopes.filter((s) => [s.name, s.description || ""].some((v) => v.toLowerCase().includes(q)))
+      : scopes.slice();
+    base.sort((a, b) => a.name.localeCompare(b.name));
+    return base;
+  }, [scopes, query]);
+
   const handleRemoveScope = async (scopeId: string) => {
     setError(null);
     if (!user?.email) return;
@@ -108,17 +119,30 @@ export default function ScopesListPage() {
     <main className="flex flex-col items-center bg-gray-50 dark:bg-gray-900">
       <div className="flex-1 w-full flex flex-col gap-20 items-center">
         <div className="flex-1 flex flex-col gap-20 max-w-5xl p-5">
-          <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold">Vaše scopy</h1>
-            <button
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg text-base font-semibold hover:bg-blue-700 transition"
-              onClick={() => router.push('/scopes/new')}
-            >
-              Vytvořit nový scope
-            </button>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Vaše scopy</h1>
+            <div className="w-full md:w-auto flex flex-col sm:flex-row gap-3 items-stretch md:items-center">
+              <div className="relative flex-1 min-w-[220px]">
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Hledat scopy..."
+                  aria-label="Hledat"
+                  className="w-full bg-white/80 dark:bg-gray-800/80 border border-gray-200/50 dark:border-gray-700/50 rounded-xl pl-10 pr-3 py-3 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"/></svg>
+              </div>
+              <button
+                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl text-base font-semibold hover:from-blue-700 hover:to-purple-700 transition"
+                onClick={() => router.push('/scopes/new')}
+              >
+                Vytvořit nový scope
+              </button>
+            </div>
           </div>
+
           <ScopeList
-            scopes={scopes}
+            scopes={filteredScopes}
             user={user}
             loading={fetching}
             error={error}
