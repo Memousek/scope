@@ -80,7 +80,7 @@ export class ManageUserPlansService {
       .select('email')
       .eq('user_id', userId)
       .maybeSingle();
-    const email = (meta as any)?.email as string | undefined;
+    const email = (meta as { email?: string | null } | null)?.email ?? null;
     if (email && email.includes('@')) {
       const domain = email.split('@')[1].toLowerCase();
       const { data: assignment } = await supabase
