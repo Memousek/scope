@@ -116,6 +116,14 @@ export function ModernScopeLayout({
   // Derived flag kept local; remove unused var warnings by using inline checks where needed
   const isOwnerOrGod = isOwner || isGod; // eslint-disable-line @typescript-eslint/no-unused-vars
 
+  // Helper to compute allowed tabs based on permissions and integrations
+  const getAllowedTabs = (): TabType[] => {
+    const base: TabType[] = ["overview", "team", "projects", "burndown"];
+    if (isGod && integrations?.jiraApiToken && integrations?.jiraBaseUrl) base.push("jira");
+    if (isGod) base.push("settings");
+    return base;
+  };
+
   // Initialize active tab from URL or localStorage
   useEffect(() => {
     try {
@@ -125,7 +133,7 @@ export function ModernScopeLayout({
         ? (localStorage.getItem(savedKey) as TabType | null)
         : null);
 
-      const allowed: TabType[] = ["overview", "team", "projects", "burndown", "jira", "settings"];
+      const allowed: TabType[] = getAllowedTabs();
       const nextTab: TabType = (tabFromUrl && (allowed as string[]).includes(tabFromUrl))
         ? tabFromUrl
         : (tabFromStorage && (allowed as string[]).includes(tabFromStorage))
@@ -137,12 +145,14 @@ export function ModernScopeLayout({
   }, [scopeId]);
 
   const handleSelectTab = (tab: TabType) => {
-    setActiveTab(tab);
+    const allowed = getAllowedTabs();
+    const safeTab: TabType = (allowed as string[]).includes(tab) ? tab : allowed[0] ?? "overview";
+    setActiveTab(safeTab);
     try {
       if (typeof window !== "undefined") {
-        localStorage.setItem(`scope:${scopeId}:activeTab`, tab);
+        localStorage.setItem(`scope:${scopeId}:activeTab`, safeTab);
         const url = new URL(window.location.href);
-        url.searchParams.set("tab", tab);
+        url.searchParams.set("tab", safeTab);
         router.replace(url.toString(), { scroll: false });
       }
     } catch {}

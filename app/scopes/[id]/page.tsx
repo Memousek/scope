@@ -32,7 +32,7 @@ import { TeamService } from "@/app/services/teamService";
 import { ProjectService } from "@/app/services/projectService";
 import { ScopeService } from "@/app/services/scopeService";
 import { ScopeEditorService } from "@/app/services/scopeEditorService";
-import { FiCheck, FiEdit2, FiShare2, FiX } from "react-icons/fi";
+import { FiShare2 } from "react-icons/fi";
 import { UserRepository } from "@/lib/domain/repositories/user.repository";
 import { User } from "@/lib/domain/models/user.model";
 
@@ -54,11 +54,10 @@ export default function ScopePage({
   } | null>(null);
   const [fetching, setFetching] = useState(false);
   const [description, setDescription] = useState("");
-  const [editingDescription, setEditingDescription] = useState(false);
-  const [savingDescription, setSavingDescription] = useState(false);
 
   // --- Tým ---
   const [team, setTeam] = useState<TeamMember[]>([]);
+  const [teamLoading, setTeamLoading] = useState(true);
 
   // --- Projekty ---
   const [projects, setProjects] = useState<Project[]>([]);
@@ -100,10 +99,7 @@ export default function ScopePage({
   const [isEditor, setIsEditor] = useState(false);
 
   // --- Název ---
-  const [editingName, setEditingName] = useState(false);
-  const [name, setName] = useState("");
-  const [savingName, setSavingName] = useState(false);
-  const [errorName, setErrorName] = useState<string | null>(null);
+  // Inline edit názvu a popisu bylo přesunuto do Nastavení
 
   // --- AI Chat ---
   const [aiChatOpen, setAiChatOpen] = useState(false);
@@ -185,7 +181,6 @@ export default function ScopePage({
       if (data) {
         setScope(data);
         setDescription(data.description || "");
-        setName(data.name || "");
       }
     } catch (error) {
       console.error("Chyba při načítání scope:", error);
@@ -198,10 +193,13 @@ export default function ScopePage({
     if (!userId) return;
 
     try {
+      setTeamLoading(true);
       const data = await TeamService.loadTeam(id);
       setTeam(data || []);
     } catch (error) {
       console.error("Chyba při načítání týmu:", error);
+    } finally {
+      setTeamLoading(false);
     }
   }, [userId, id]);
 
@@ -444,37 +442,7 @@ export default function ScopePage({
     }
   }, [loading, user, id]);
 
-  const handleSaveDescription = async () => {
-    if (!userId) return;
-
-    setSavingDescription(true);
-    try {
-      await ScopeService.updateScopeDescription(id, description);
-      setEditingDescription(false);
-    } catch (error) {
-      console.error("Chyba při ukládání popisu:", error);
-    } finally {
-      setSavingDescription(false);
-    }
-  };
-
-  const handleSaveName = async () => {
-    if (!userId || !name.trim()) return;
-
-    setSavingName(true);
-    setErrorName(null);
-
-    try {
-      await ScopeService.updateScopeName(id, name);
-      setEditingName(false);
-      setScope((prev) => (prev ? { ...prev, name: name.trim() } : null));
-    } catch (error) {
-      console.error("Chyba při ukládání názvu:", error);
-      setErrorName("Chyba při ukládání názvu");
-    } finally {
-      setSavingName(false);
-    }
-  };
+  // Editace názvu a popisu probíhá pouze v záložce Nastavení
 
   if (loading || !user) {
     return (
@@ -520,54 +488,11 @@ export default function ScopePage({
                 </span>
               </div>
               <div>
-                {editingName ? (
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="text-3xl font-bold bg-transparent border-b-2 border-blue-500 focus:outline-none text-gray-900 dark:text-white"
-                      autoFocus
-                    />
-                    <button
-                      onClick={handleSaveName}
-                      disabled={savingName}
-                      className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
-                    >
-                      {savingName ? t('saving') : <FiCheck className="text-sm" />}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setEditingName(false);
-                        setName(scope.name);
-                        setErrorName(null);
-                      }}
-                      className="text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-                    >
-                      <FiX className="text-sm" />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <h1 className="text-3xl font-bold text-whte dark:text-gray-100">
-                      {scope.name}
-                    </h1>
-                    {isOwner && (
-                      <button
-                        onClick={() => setEditingName(true)}
-                        className="transition-transform hover:scale-110 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-                        title={t('editScopeName')}
-                      >
-                        <FiEdit2 className="text-xl" />
-                      </button>
-                    )}
-                  </div>
-                )}
-                {errorName && (
-                  <p className="text-red-600 dark:text-red-400 text-sm mt-1">
-                    {errorName}
-                  </p>
-                )}
+                <div className="flex items-center gap-2">
+                  <h1 className="text-3xl font-bold text-whte dark:text-gray-100">
+                    {scope.name}
+                  </h1>
+                </div>
                 <p className="text-gray-600 dark:text-gray-400">
                   Scope ID: {scope.id}
                 </p>
@@ -586,51 +511,13 @@ export default function ScopePage({
             </div>
           </div>
 
-          {/* Description */}
+          {/* Description (read-only; edit in Settings) */}
           <div className="mb-6">
-            {editingDescription ? (
-              <div className="flex items-start gap-2">
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                  rows={3}
-                  placeholder={t('addScopeDescription')}
-                  autoFocus
-                />
-                <button
-                  onClick={handleSaveDescription}
-                  disabled={savingDescription}
-                  className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 px-3 py-1"
-                >
-                  {savingDescription ? t('saving') : <FiCheck className="text-sm" />}
-                </button>
-                <button
-                  onClick={() => {
-                    setEditingDescription(false);
-                    setDescription(scope.description || "");
-                  }}
-                  className="text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 px-3 py-1"
-                >
-                  <FiX className="text-sm" />
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-start gap-2">
-                <p className="text-gray-600 dark:text-gray-400">
-                  {description || t('noDescription')}
-                </p>
-                {isOwner && (
-                  <button
-                    onClick={() => setEditingDescription(true)}
-                    className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-transform hover:scale-110"
-                    title={t('editScopeDescription')}
-                  >
-                    <FiEdit2 className="text-sm" />
-                  </button>
-                )}
-              </div>
-            )}
+            <div className="flex items-start gap-2">
+              <p className="text-gray-600 dark:text-gray-400">
+                {description || t('noDescription')}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -648,7 +535,7 @@ export default function ScopePage({
           onAddMember={handleAddMember}
           onAddProject={handleAddProject}
           user={user!}
-          loadingTeam={!team || team.length === 0}
+          loadingTeam={teamLoading}
           isOwner={isOwner}
         />
       </div>
