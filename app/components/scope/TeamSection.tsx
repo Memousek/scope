@@ -16,7 +16,7 @@ import { RoleManagementModal } from "./RoleManagementModal";
 import { useTranslation } from "@/lib/translation";
 import { TeamService } from "@/app/services/teamService";
 import { SettingsIcon, FilterIcon, XIcon, ChevronDownIcon } from "lucide-react";
-import { FiUpload, FiCalendar} from 'react-icons/fi';
+import { FiUpload, FiCalendar } from 'react-icons/fi';
 import { useSWRConfig } from "swr";
 import { FiUsers, FiSearch } from 'react-icons/fi';
 // import { Badge } from "../ui/Badge";
@@ -29,9 +29,10 @@ interface TeamSectionProps {
   readOnlyMode?: boolean;
   activeRoles?: Array<{ id: string; key: string; label: string }>;
   loading?: boolean;
+  onRolesChanged?: (roles: Array<{ id: string; key: string; label: string }>) => void;
 }
 
-export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false, activeRoles: activeRolesProp, loading = false }: TeamSectionProps) {
+export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false, activeRoles: activeRolesProp, loading = false, onRolesChanged }: TeamSectionProps) {
   const [importModalOpen, setImportModalOpen] = useState(false);
   const { t } = useTranslation();
   const { mutate } = useSWRConfig();
@@ -45,6 +46,8 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
   const [savingMember, setSavingMember] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [roleFilter, setRoleFilter] = useState<string>("");
+  type VacationFilter = 'all' | 'vacation' | 'available';
+  const [vacationFilter, setVacationFilter] = useState<VacationFilter>('all');
   const [isReducedMotion, setIsReducedMotion] = useState(false);
   const debounceTimeouts = useRef<Record<string, NodeJS.Timeout>>({});
   const [vacationModal, setVacationModal] = useState<{ open: boolean; member: TeamMember | null; readOnly?: boolean }>({ open: false, member: null });
@@ -73,12 +76,18 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
   // Filtrování členů týmu
   const filteredTeam = team.filter((member) => {
     const matchesRole = !roleFilter || member.role === roleFilter;
-    return matchesRole;
+    const onVacation = isOnVacationToday(member);
+    const matchesVacation =
+      vacationFilter === 'all' ||
+      (vacationFilter === 'vacation' && onVacation) ||
+      (vacationFilter === 'available' && !onVacation);
+    return matchesRole && matchesVacation;
   });
 
   // Reset filtrů
   const resetFilters = () => {
     setRoleFilter("");
+    setVacationFilter('all');
   };
 
   // Získání unikátních rolí pro filtr
@@ -407,6 +416,36 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
                       ))}
                     </select>
                   </div>
+
+                  {/* Vacation filter */}
+                  <div className={`${!isReducedMotion ? 'animate-in slide-in-from-top-4 fade-in duration-500 delay-150' : ''}`}>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      {t("filterByVacation")}
+                    </label>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setVacationFilter('all')}
+                        className={`px-3 py-2 rounded-lg text-sm border transition-colors ${vacationFilter === 'all' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white/90 dark:bg-gray-700/90 text-gray-800 dark:text-gray-200 border-gray-300/50 dark:border-gray-600/50'}`}
+                      >
+                        {t("showAll")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setVacationFilter('vacation')}
+                        className={`px-3 py-2 rounded-lg text-sm border transition-colors ${vacationFilter === 'vacation' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white/90 dark:bg-gray-700/90 text-gray-800 dark:text-gray-200 border-gray-300/50 dark:border-gray-600/50'}`}
+                      >
+                        {t("onVacation")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setVacationFilter('available')}
+                        className={`px-3 py-2 rounded-lg text-sm border transition-colors ${vacationFilter === 'available' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white/90 dark:bg-gray-700/90 text-gray-800 dark:text-gray-200 border-gray-300/50 dark:border-gray-600/50'}`}
+                      >
+                        {t("available")}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -498,7 +537,7 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
                                       {member.name}
                                       {isOnVacationToday(member) && (
                                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 align-middle">
-                                          <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v2h20V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zM22 10H2v9a2 2 0 002 2h16a2 2 0 002-2v-9z"/></svg>
+                                          <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v2h20V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zM22 10H2v9a2 2 0 002 2h16a2 2 0 002-2v-9z" /></svg>
                                           {t("onVacation")}
                                         </span>
                                       )}
@@ -516,7 +555,7 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
                               )}
                               {!readOnlyMode && isOnVacationToday(member) && (
                                 <span className="absolute -top-2 right-0 inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 align-middle">
-                                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v2h20V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zM22 10H2v9a2 2 0 002 2h16a2 2 0 002-2v-9z"/></svg>
+                                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v2h20V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zM22 10H2v9a2 2 0 002 2h16a2 2 0 002-2v-9z" /></svg>
                                   {t("vacations")}
                                 </span>
                               )}
@@ -807,7 +846,7 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
                                   }
                                   disabled={readOnlyMode}
                                 >
-                                   {rolesToUse.map((role) => (
+                                  {rolesToUse.map((role) => (
                                     <option key={role.key} value={role.label}>
                                       {role.label}
                                     </option>
@@ -893,13 +932,6 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
                                         />
                                       </svg>
                                     </button>
-                                    <button
-                                      type="button"
-                                      className="ml-1 px-2 py-1 text-[10px] rounded-md bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700"
-                                      onClick={() => setVacationModal({ open: true, member, readOnly: true })}
-                                    >
-                                      {t("vacations")}
-                                    </button>
                                   </div>
                                 </>
                               )}
@@ -912,6 +944,16 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
                               )}
                             </div>
                           </div>
+
+                          {!readOnlyMode && (
+                            <button
+                              type="button"
+                              className="ml-1 px-2 py-1 text-[10px] rounded-md bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700"
+                              onClick={() => setVacationModal({ open: true, member, readOnly: true })}
+                            >
+                              {t("vacations")}
+                            </button>
+                          )}
                         </div>
                       </div>
 
@@ -1023,6 +1065,16 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
           isOpen={roleManagementModalOpen}
           onClose={() => setRoleManagementModalOpen(false)}
           scopeId={scopeId}
+          onRolesChanged={(r) => {
+            // update local roles list used for selects if parent didn't pass activeRoles
+            if (!activeRolesProp || activeRolesProp.length === 0) {
+              // rebuild rolesToUse by forcing recompute through team state update noop
+              // and inform parent if they care
+              onRolesChanged?.(r);
+            } else {
+              onRolesChanged?.(r);
+            }
+          }}
         />
       )}
     </>

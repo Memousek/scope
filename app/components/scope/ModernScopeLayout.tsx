@@ -468,6 +468,14 @@ export function ModernScopeLayout({
             readOnlyMode={readOnlyMode}
             activeRoles={activeRoles}
             loading={loadingTeam}
+            onRolesChanged={(newActive) => {
+              try {
+                // Update activeRoles used by parent layout immediately
+                // We keep shape compatible: id, key, label
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (activeRoles as any).splice(0, (activeRoles as any).length, ...newActive);
+              } catch {}
+            }}
           />
         );
 

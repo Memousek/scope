@@ -1353,11 +1353,6 @@ export function ProjectSection({
                                             ? `+${prioritySlippage} ${t("days")}`
                                             : `${prioritySlippage} ${t("days")}`}
                                       </div>
-                                      {calculations?.priorityDates?.lostWorkdaysDueToVacations !== undefined && (
-                                        <div className="mt-1 text-[11px] text-gray-600 dark:text-gray-400">
-                                          {t("lostWorkdaysDueToVacations")}: {calculations.priorityDates.lostWorkdaysDueToVacations}
-                                        </div>
-                                      )}
                                     </div>
                                   </div>
                                 </div>
