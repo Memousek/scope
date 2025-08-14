@@ -105,7 +105,7 @@ export function ModernScopeLayout({
   isOwner = false,
 }: ModernScopeLayoutProps) {
   const { t } = useTranslation();
-  const { activeRoles } = useScopeRoles(scopeId);
+  const { activeRoles, loadRoles } = useScopeRoles(scopeId);
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -480,12 +480,8 @@ export function ModernScopeLayout({
             readOnlyMode={readOnlyMode}
             activeRoles={activeRoles}
             loading={loadingTeam}
-            onRolesChanged={(newActive) => {
-              try {
-                // replace items immutably to avoid mutating hook state from outside
-                // use provided hook loader instead of casting to any
-                // Trigger a soft reload of roles via SWR/global state if available
-              } catch {}
+            onRolesChanged={() => {
+              try { loadRoles(); } catch {}
             }}
           />
         );
@@ -519,8 +515,13 @@ export function ModernScopeLayout({
 
       case "jira":
         return (
-          <div className="p-4">
-            <div className="mb-4 text-sm text-gray-600 dark:text-gray-300">{t('jiraImport')}</div>
+          <div className="relative bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 rounded-2xl p-8 shadow-2xl">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 rounded-2xl"></div>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-br from-purple-400/10 to-pink-400/10 rounded-full blur-2xl"></div>
+
+            <div className="relative z-10">
+            <div className="mb-4 text-xl font-bold dark:text-white text-gray-900">{t('jiraImport')}</div>
             <button
               onClick={() => setJiraOpen(true)}
               className="relative bg-gradient-to-br from-sky-600 to-blue-600 text-white rounded-xl p-4 hover:scale-105 transition-all duration-300"
@@ -531,6 +532,7 @@ export function ModernScopeLayout({
             {jiraOpen && (
               <JiraImportModal isOpen={jiraOpen} onClose={() => setJiraOpen(false)} team={team} scopeId={scopeId} />
             )}
+          </div>
           </div>
         );
 
