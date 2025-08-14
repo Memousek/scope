@@ -9,6 +9,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from '@/lib/translation';
 import { ScopeSettingsService } from '@/app/services/scopeSettingsService';
+import { ScopeService } from '@/app/services/scopeService';
 import { FiCalendar, FiSettings, FiTrash2 } from 'react-icons/fi';
 
 interface Props { scopeId: string; }
@@ -23,6 +24,9 @@ export function getScopeIntegration(scopeId: string): { jiraBaseUrl?: string; ji
 
 export function ScopeSettings({ scopeId }: Props) {
   const { t } = useTranslation();
+  // Scope basic info
+  const [scopeName, setScopeName] = useState<string>('');
+  const [scopeDescription, setScopeDescription] = useState<string>('');
   const [jiraBaseUrl, setJiraBaseUrl] = useState('');
   const [jiraEmail, setJiraEmail] = useState('');
   const [jiraApiToken, setJiraApiToken] = useState('');
@@ -59,6 +63,15 @@ export function ScopeSettings({ scopeId }: Props) {
 
   useEffect(() => {
     (async () => {
+      // Load scope basic info
+      try {
+        const scope = await ScopeService.loadScope(scopeId);
+        if (scope) {
+          setScopeName(scope.name || '');
+          setScopeDescription(scope.description || '');
+        }
+      } catch {}
+
       const cfg = await ScopeSettingsService.get(scopeId);
       if (cfg) {
         if (cfg.jira) {
@@ -82,6 +95,9 @@ export function ScopeSettings({ scopeId }: Props) {
     setError(null);
     // Basic validation
     const nextFieldErrors: Record<string, string> = {};
+    if (!scopeName.trim()) {
+      nextFieldErrors.scopeName = t('required');
+    }
     if (jiraBaseUrl && !/^https?:\/\//i.test(jiraBaseUrl)) {
       nextFieldErrors.jiraBaseUrl = 'URL musí začínat http(s)://';
     }
@@ -92,6 +108,10 @@ export function ScopeSettings({ scopeId }: Props) {
     if (Object.keys(nextFieldErrors).length > 0) return;
 
     try {
+      // Save basic scope info
+      await ScopeService.updateScopeName(scopeId, scopeName);
+      await ScopeService.updateScopeDescription(scopeId, scopeDescription);
+
       await ScopeSettingsService.upsert(scopeId, { jira: { baseUrl: jiraBaseUrl, email: jiraEmail, apiToken: jiraApiToken }, debug: { enabled: debugEnabled }, calendar: { includeHolidays, country: holidayCountry, subdivision: holidaySubdivision || null } });
       try { sessionStorage.setItem(`scope:${scopeId}:integrations-cache`, JSON.stringify({ jiraBaseUrl, jiraEmail, jiraApiToken, debugEnabled, includeHolidays, holidayCountry, holidaySubdivision })); } catch {}
       // Notifikuj ostatní části aplikace o změně kalendáře (pro přepočty)
@@ -110,6 +130,31 @@ export function ScopeSettings({ scopeId }: Props) {
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        {/* Basic info Section */}
+        <section className="relative bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 rounded-2xl p-6 shadow-2xl">
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-indigo-400/10 to-blue-400/10 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-br from-blue-400/10 to-indigo-400/10 rounded-full blur-2xl"></div>
+          </div>
+          <header className="relative z-10 mb-5 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-500 text-white flex items-center justify-center shadow-lg"><FiSettings /></div>
+            <div>
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100">{t('edit')}</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t('addScopeDescription')}</p>
+            </div>
+          </header>
+          <div className="relative z-10 grid grid-cols-1 gap-3">
+            <div>
+              <label className="block text-sm mb-1">{t('projectName')}</label>
+              <input value={scopeName} onChange={(e)=>setScopeName(e.target.value)} className={`w-full rounded-lg border px-3 py-2 bg-white dark:bg-gray-900 ${fieldErrors.scopeName ? 'border-red-500' : ''}`} placeholder={t('projectName')} />
+              {fieldErrors.scopeName && <div className="mt-1 text-xs text-red-600">{fieldErrors.scopeName}</div>}
+            </div>
+            <div>
+              <label className="block text-sm mb-1">{t('description')}</label>
+              <textarea value={scopeDescription} onChange={(e)=>setScopeDescription(e.target.value)} rows={3} className="w-full rounded-lg border px-3 py-2 bg-white dark:bg-gray-900" placeholder={t('addScopeDescription')}></textarea>
+            </div>
+          </div>
+        </section>
         <section className="relative bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 rounded-2xl p-6 shadow-2xl">
           <div className="absolute inset-0 pointer-events-none">
             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full blur-3xl"></div>
