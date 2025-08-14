@@ -53,7 +53,8 @@ export default function AdminPage() {
         setPlans(allPlans);
         // assignments
         const { data } = await supabase.from('domain_plan_assignments').select('*').order('domain');
-        const withNames = (data || []).map((r: any) => ({ id: r.id, domain: r.domain as string, planId: r.plan_id as string, originalDomain: r.domain as string, planName: allPlans.find(p=>p.id===r.plan_id)?.displayName || allPlans.find(p=>p.id===r.plan_id)?.name }));
+        type Row = { id: string; domain: string; plan_id: string };
+        const withNames = ((data || []) as Row[]).map((r) => ({ id: r.id, domain: r.domain, planId: r.plan_id, originalDomain: r.domain, planName: allPlans.find(p=>p.id===r.plan_id)?.displayName || allPlans.find(p=>p.id===r.plan_id)?.name }));
         setItems(withNames);
       } finally {
         setLoading(false);
@@ -79,7 +80,7 @@ export default function AdminPage() {
     const supabase = createClient();
     const newDomain = row.domain.trim().toLowerCase();
     if (!newDomain) return;
-    await supabase.from('domain_plan_assignments').upsert({ domain: newDomain, plan_id: row.planId } as any, { onConflict: 'domain' as any });
+    await supabase.from('domain_plan_assignments').upsert({ domain: newDomain, plan_id: row.planId } as { domain: string; plan_id: string }, { onConflict: 'domain' as unknown as undefined });
     if (row.prevDomain && row.prevDomain !== newDomain) {
       await supabase.from('domain_plan_assignments').delete().eq('domain', row.prevDomain);
     }
@@ -100,8 +101,8 @@ export default function AdminPage() {
     // Nejprve upsertni aktuální konfiguraci, aby se aplikovala čerstvá data bez kliku na Save
     const payload = items
       .filter(i => i.domain.trim() && i.planId)
-      .map(i => ({ domain: i.domain.trim().toLowerCase(), plan_id: i.planId }));
-    if (payload.length > 0) await supabase.from('domain_plan_assignments').upsert(payload as any, { onConflict: 'domain' as any });
+      .map(i => ({ domain: i.domain.trim().toLowerCase(), plan_id: i.planId } as { domain: string; plan_id: string }));
+    if (payload.length > 0) await supabase.from('domain_plan_assignments').upsert(payload);
     const { data, error } = await supabase.rpc('apply_all_domain_plan_assignments');
     if (!error) alert(`Updated users: ${data ?? 0}`);
   };
@@ -120,12 +121,13 @@ export default function AdminPage() {
     try {
       const supabase = createClient();
       const q = userQuery.trim();
-      const { data, error } = await supabase.rpc('search_users', { p_query: q, p_limit: 10 });
+      const { data, error } = await supabase.rpc('search_users', { p_query: q, p_limit: 10 } as { p_query: string; p_limit: number });
       if (error) throw error;
-      const rows = (data || []).map((r: any) => ({
-        userId: r.user_id as string,
-        email: r.email as string,
-        planId: (r.plan_id as string) ?? null,
+      type SearchRow = { user_id: string; email: string; plan_id: string | null };
+      const rows = ((data || []) as SearchRow[]).map((r) => ({
+        userId: r.user_id,
+        email: r.email,
+        planId: r.plan_id,
       }));
       setUserResults(rows);
     } finally {
