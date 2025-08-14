@@ -73,7 +73,7 @@ export const LanguageSwitcher: React.FC = () => {
               alt={currentLanguage.label}
               width={20}
               height={10}
-              className="rounded-full absolute top-0 right-0"
+              className="rounded-full absolute top-0 right-0 h-auto"
             />
           )}
           {isCurrentRTL && (
@@ -104,7 +104,7 @@ export const LanguageSwitcher: React.FC = () => {
                     alt={l.label} 
                     width={20} 
                     height={10} 
-                    className="rounded-sm"
+                    className="rounded-sm h-auto"
                   />
                   <span>{l.label}</span>
                   {isLanguageRTL && (

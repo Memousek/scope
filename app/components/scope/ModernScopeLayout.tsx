@@ -28,10 +28,14 @@ import {
   FiSearch,
   FiFolder,
   FiUpload,
+  FiSettings,
+  FiExternalLink,
 } from "react-icons/fi";
 import TeamImportModal from "../TeamImportModal";
 import { mutate } from "swr";
 import { TeamService } from "@/app/services/teamService";
+import { JiraImportModal } from "./JiraImportModal";
+import { ScopeSettings, getScopeIntegration } from "./ScopeSettings";
 
 interface ModernScopeLayoutProps {
   scopeId: string;
@@ -78,9 +82,10 @@ interface ModernScopeLayoutProps {
   readOnlyMode?: boolean;
   user?: import("@/lib/domain/models/user.model").User;
   loadingTeam?: boolean;
+  isOwner?: boolean;
 }
 
-type TabType = "overview" | "team" | "projects" | "burndown";
+type TabType = "overview" | "team" | "projects" | "burndown" | "jira" | "settings";
 
 export function ModernScopeLayout({
   scopeId,
@@ -97,6 +102,7 @@ export function ModernScopeLayout({
   readOnlyMode = false,
   user,
   loadingTeam = false,
+  isOwner = false,
 }: ModernScopeLayoutProps) {
   const { t } = useTranslation();
   const { activeRoles } = useScopeRoles(scopeId);
@@ -105,6 +111,9 @@ export function ModernScopeLayout({
 
   const [activeTab, setActiveTab] = useState<TabType>("overview");
   const [importModalOpen, setImportModalOpen] = useState(false);
+  const integrations = typeof window !== 'undefined' ? getScopeIntegration(scopeId) : null;
+  const isGod = user?.additional?.role === 'god';
+  const isOwnerOrGod = isOwner || isGod;
 
   // Initialize active tab from URL or localStorage
   useEffect(() => {
@@ -115,7 +124,7 @@ export function ModernScopeLayout({
         ? (localStorage.getItem(savedKey) as TabType | null)
         : null);
 
-      const allowed: TabType[] = ["overview", "team", "projects", "burndown"];
+      const allowed: TabType[] = ["overview", "team", "projects", "burndown", "jira", "settings"];
       const nextTab: TabType = (tabFromUrl && (allowed as string[]).includes(tabFromUrl))
         ? tabFromUrl
         : (tabFromStorage && (allowed as string[]).includes(tabFromStorage))
@@ -206,12 +215,15 @@ export function ModernScopeLayout({
   const [aiChatModalOpen, setAiChatModalOpen] = useState(false);
   const [savingMember, setSavingMember] = useState(false);
   const [savingProject, setSavingProject] = useState(false);
+  const [jiraOpen, setJiraOpen] = useState(false);
 
   const tabs = [
     { id: "overview", label: t("overview"), icon: <FiBarChart2 /> },
     { id: "team", label: t("team"), icon: <FiUsers /> },
     { id: "projects", label: t("projects"), icon: <FiFolder /> },
     { id: "burndown", label: t("burndown"), icon: <FiTrendingUp /> },
+    ...(isGod && integrations?.jiraApiToken && integrations?.jiraBaseUrl ? [{ id: "jira", label: t("jira"), icon: <FiExternalLink /> }] : []),
+    ...(isGod ? [{ id: "settings", label: t("settings"), icon: <FiSettings /> }] : []),
   ];
 
   const renderTabContent = () => {
@@ -437,7 +449,6 @@ export function ModernScopeLayout({
                       </span>
                     </button>
                   )}
-
                   {/* Import Projects (feature-flagged) */}
                   {(!readOnlyMode) && (
                     <button
@@ -470,9 +481,6 @@ export function ModernScopeLayout({
             loading={loadingTeam}
             onRolesChanged={(newActive) => {
               try {
-                // Update activeRoles used by parent layout immediately
-                // We keep shape compatible: id, key, label
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (activeRoles as any).splice(0, (activeRoles as any).length, ...newActive);
               } catch {}
             }}
@@ -503,6 +511,30 @@ export function ModernScopeLayout({
               workflowDependencies={workflowDependencies}
               scopeId={scopeId}
             />
+          </div>
+        );
+
+      case "jira":
+        return (
+          <div className="p-4">
+            <div className="mb-4 text-sm text-gray-600 dark:text-gray-300">{t('jiraImport')}</div>
+            <button
+              onClick={() => setJiraOpen(true)}
+              className="relative bg-gradient-to-br from-sky-600 to-blue-600 text-white rounded-xl p-4 hover:scale-105 transition-all duration-300"
+              aria-label="Jira import"
+            >
+              {t('jiraImport')}
+            </button>
+            {jiraOpen && (
+              <JiraImportModal isOpen={jiraOpen} onClose={() => setJiraOpen(false)} team={team} scopeId={scopeId} />
+            )}
+          </div>
+        );
+
+      case "settings":
+        return (
+          <div className="p-4">
+            <ScopeSettings scopeId={scopeId} />
           </div>
         );
 
@@ -597,6 +629,15 @@ export function ModernScopeLayout({
         <AiChatModal
           isOpen={aiChatModalOpen}
           onClose={() => setAiChatModalOpen(false)}
+          scopeId={scopeId}
+        />
+      )}
+
+      {jiraOpen && (
+        <JiraImportModal
+          isOpen={jiraOpen}
+          onClose={() => setJiraOpen(false)}
+          team={team}
           scopeId={scopeId}
         />
       )}

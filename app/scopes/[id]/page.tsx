@@ -649,6 +649,7 @@ export default function ScopePage({
           onAddProject={handleAddProject}
           user={user!}
           loadingTeam={!team || team.length === 0}
+          isOwner={isOwner}
         />
       </div>
 

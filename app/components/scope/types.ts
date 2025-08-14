@@ -10,6 +10,7 @@ export interface TeamMember {
   role: string;
   fte: number;
   vacations?: VacationRange[]; // optional UI-level metadata (persisted in localStorage)
+  timesheets?: TimesheetEntry[]; // optional: stored per member as JSON
 }
 
 // Dynamické typy pro role
@@ -26,6 +27,16 @@ export interface ScopeRole {
   updated_at: string;
 }
 
+// Timesheet entry stored per team member as JSON
+export interface TimesheetEntry {
+  date: string; // ISO YYYY-MM-DD
+  project?: string;
+  role?: string;
+  hours: number;
+  note?: string;
+  externalId?: string;
+}
+
 import { User } from "@/lib/domain/models/user.model";
 
 export interface Project {
@@ -38,7 +49,14 @@ export interface Project {
   status?: 'not_started' | 'in_progress' | 'paused' | 'completed' | 'cancelled' | 'archived' | 'suspended';
   custom_role_data?: Record<string, number> | null;
   notes?: ProjectNote[];
-  [key: string]: string | number | null | undefined | ProjectNote[] | Record<string, number>;
+  integrations?: {
+    jira?: {
+      projectKey?: string;
+      issueTypeId?: string;
+      url?: string;
+    }
+  };
+  [key: string]: string | number | null | undefined | ProjectNote[] | Record<string, number> | { [k: string]: unknown };
 }
 
 export interface ProjectNote {

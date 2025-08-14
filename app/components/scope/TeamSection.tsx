@@ -15,12 +15,14 @@ import TeamImportModal from "../TeamImportModal";
 import { RoleManagementModal } from "./RoleManagementModal";
 import { useTranslation } from "@/lib/translation";
 import { TeamService } from "@/app/services/teamService";
-import { SettingsIcon, FilterIcon, XIcon, ChevronDownIcon } from "lucide-react";
-import { FiUpload, FiCalendar } from 'react-icons/fi';
+import { SettingsIcon, FilterIcon, XIcon, ChevronDownIcon} from "lucide-react";
+import { FiUpload, FiCalendar, FiBarChart2 } from 'react-icons/fi';
 import { useSWRConfig } from "swr";
 import { FiUsers, FiSearch } from 'react-icons/fi';
-// import { Badge } from "../ui/Badge";
 import { VacationModal } from "./VacationModal";
+import { TimesheetImportModal } from "./TimesheetImportModal";
+import { ReportsModal } from "./ReportsModal";
+import { Badge } from "../ui/Badge";
 
 interface TeamSectionProps {
   scopeId: string;
@@ -51,6 +53,8 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
   const [isReducedMotion, setIsReducedMotion] = useState(false);
   const debounceTimeouts = useRef<Record<string, NodeJS.Timeout>>({});
   const [vacationModal, setVacationModal] = useState<{ open: boolean; member: TeamMember | null; readOnly?: boolean }>({ open: false, member: null });
+  const [timesheetModal, setTimesheetModal] = useState<{ open: boolean; member: TeamMember | null }>({ open: false, member: null });
+  const [reportsOpen, setReportsOpen] = useState(false);
 
 
   const isOnVacationToday = useCallback((member: TeamMember): boolean => {
@@ -373,6 +377,20 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
                     />
                   </div>
                 )}
+                {!readOnlyMode && (
+                  <button
+                    className="relative group disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105"
+                    onClick={() => setReportsOpen(true)}
+                    disabled={true}
+                  >
+                    <Badge label={t("soon")} variant="soon" />
+                    <span className="relative z-10 flex items-center gap-2">
+                      <FiBarChart2 className="w-5 h-5" /> 
+                      {t("reports")}
+                    </span>
+                  </button>
+                )}
+                
               </div>
             </div>
 
@@ -738,6 +756,15 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
                               <FiCalendar className="w-5 h-5" />
                             </button>
                             <button
+                              type="button"
+                              className="p-3 text-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 transition-all duration-200 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-xl group"
+                              onClick={() => setTimesheetModal({ open: true, member })}
+                              title={t("importTimesheets")}
+                              disabled={true}
+                            >
+                              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v12m0 0l-3-3m3 3l3-3M6 20h12"/></svg>
+                            </button>
+                            <button
                               onClick={() => handleDeleteMember(member.id)}
                               className="p-3 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-all duration-200 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl group"
                               title={t("delete")}
@@ -1059,6 +1086,23 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
         />
       )}
 
+      {/* Timesheet Import Modal */}
+      {timesheetModal.open && (
+        <TimesheetImportModal
+          isOpen={timesheetModal.open}
+          onClose={() => setTimesheetModal({ open: false, member: null })}
+          member={timesheetModal.member}
+        />
+      )}
+
+      {/* Reports Modal */}
+      {reportsOpen && (
+        <ReportsModal
+          isOpen={reportsOpen}
+          onClose={() => setReportsOpen(false)}
+          team={team}
+        />
+      )}
       {/* Role Management Modal */}
       {roleManagementModalOpen && (
         <RoleManagementModal
