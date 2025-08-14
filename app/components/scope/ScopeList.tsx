@@ -16,6 +16,7 @@ import {TeamMemberRepository} from "@/lib/domain/repositories/team-member.reposi
 import {ProjectRepository} from "@/lib/domain/repositories/project.repository";
 import {ContainerService} from "@/lib/container.service";
 import { FiClipboard } from 'react-icons/fi';
+import Link from 'next/link';
 
 
 export type ScopeListItem = {
@@ -151,12 +152,12 @@ export const ScopeList: React.FC<ScopeListProps> = ({
                 <p className="text-gray-500 dark:text-gray-400 text-sm">
                   Vytvořte svůj první scope pro začátek práce
                 </p>
-                <a
+                <Link
                   href="/scopes/new"
                   className="mt-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-5 py-2 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-200 hover:scale-105 shadow-lg"
                 >
                   {t("create_new_scope")}
-                </a>
+                </Link>
               </div>
             </div>
           </motion.div>
