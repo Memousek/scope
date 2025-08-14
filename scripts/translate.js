@@ -131,17 +131,24 @@ async function translateTexts(texts, targetLang, retryCount = 0) {
   }
   
   try {
+    const params = new URLSearchParams();
+    if (Array.isArray(texts)) {
+      for (const t of texts) {
+        params.append('text', t);
+      }
+    } else {
+      params.append('text', texts);
+    }
+    params.append('source_lang', SOURCE_LANG);
+    params.append('target_lang', deeplLang);
+
     const response = await fetch(DEEPL_API_URL, {
       method: 'POST',
       headers: {
         'Authorization': `DeepL-Auth-Key ${DEEPL_API_KEY}`,
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: new URLSearchParams({
-        text: Array.isArray(texts) ? texts.join('\n') : texts,
-        source_lang: SOURCE_LANG,
-        target_lang: deeplLang,
-      }),
+      body: params,
     });
     
     if (!response.ok) {
@@ -159,13 +166,10 @@ async function translateTexts(texts, targetLang, retryCount = 0) {
     }
     
     const data = await response.json();
-    const translatedText = data.translations[0].text;
-    
-    // Split the translated text back into individual texts
     if (Array.isArray(texts)) {
-      return translatedText.split('\n');
+      return data.translations.map(t => t.text);
     } else {
-      return [translatedText];
+      return [data.translations[0].text];
     }
   } catch (error) {
     console.error(`Error translating texts to ${targetLang}:`, error.message);
@@ -173,64 +177,121 @@ async function translateTexts(texts, targetLang, retryCount = 0) {
   }
 }
 
-// Translate all keys in the source translations using batch translation
+// Helper: determine if a value is a plain object
+function isPlainObject(value) {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+// Helper: deep clone JSON-compatible data
+function deepClone(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+// Helper: collect all string leaves' paths and texts from a subtree
+function collectStringPaths(value, basePath, outPaths, outTexts) {
+  if (typeof value === 'string') {
+    if (value.trim() !== '') {
+      outPaths.push(basePath.slice());
+      outTexts.push(value);
+    }
+    return;
+  }
+  if (Array.isArray(value)) {
+    for (let index = 0; index < value.length; index++) {
+      collectStringPaths(value[index], basePath.concat(index), outPaths, outTexts);
+    }
+    return;
+  }
+  if (isPlainObject(value)) {
+    for (const key of Object.keys(value)) {
+      collectStringPaths(value[key], basePath.concat(key), outPaths, outTexts);
+    }
+  }
+}
+
+// Helper: set value at deep path (creates containers if missing)
+function setValueAtPath(target, path, newValue) {
+  if (path.length === 0) return;
+  if (path.length === 1) {
+    target[path[0]] = newValue;
+    return;
+  }
+  let cursor = target;
+  for (let i = 0; i < path.length - 1; i++) {
+    const step = path[i];
+    const nextStep = path[i + 1];
+    if (cursor[step] === undefined) {
+      cursor[step] = typeof nextStep === 'number' ? [] : {};
+    }
+    cursor = cursor[step];
+  }
+  cursor[path[path.length - 1]] = newValue;
+}
+
+// Translate all keys (including nested objects/arrays) using batch translation
 async function translateAllKeys(sourceTranslations, targetLang, startFromKey = null) {
   const translated = {};
   const keys = Object.keys(sourceTranslations);
-  
-  console.log(`Translating ${keys.length} keys to ${targetLang}...`);
-  
+
+  console.log(`Translating ${keys.length} top-level keys to ${targetLang}...`);
+
   let startIndex = 0;
   if (startFromKey) {
     startIndex = keys.indexOf(startFromKey);
     if (startIndex === -1) startIndex = 0;
     console.log(`Starting from key: ${startFromKey} (index: ${startIndex})`);
   }
-  
-  // Filter out empty texts and prepare for batch translation
+
+  // Copy untouched prefix as-is (keep CZ for earlier keys)
+  for (let i = 0; i < startIndex; i++) {
+    const key = keys[i];
+    translated[key] = sourceTranslations[key];
+  }
+
+  // Collect all string leaves from keys >= startIndex
+  const pathsToTranslate = [];
   const textsToTranslate = [];
-  const keysToTranslate = [];
-  
+
   for (let i = startIndex; i < keys.length; i++) {
     const key = keys[i];
-    const text = sourceTranslations[key];
-    
-    // Skip if text is empty or contains only placeholders
-    if (!text || text.trim() === '') {
-      translated[key] = text;
-      continue;
+    const value = sourceTranslations[key];
+    if (typeof value === 'string') {
+      if (value.trim() !== '') {
+        // Prepare container in translated structure
+        translated[key] = value;
+        pathsToTranslate.push([key]);
+        textsToTranslate.push(value);
+      } else {
+        translated[key] = value;
+      }
+    } else if (isPlainObject(value) || Array.isArray(value)) {
+      translated[key] = deepClone(value);
+      collectStringPaths(value, [key], pathsToTranslate, textsToTranslate);
+    } else {
+      // numbers/booleans/null
+      translated[key] = value;
     }
-    
-    textsToTranslate.push(text);
-    keysToTranslate.push(key);
   }
-  
+
   console.log(`Batch translating ${textsToTranslate.length} texts...`);
-  
-  // Translate all texts in one request
+
+  if (textsToTranslate.length === 0) {
+    console.log('No texts to translate.');
+    return translated;
+  }
+
   const translatedTexts = await translateTexts(textsToTranslate, targetLang);
-  
+
   if (translatedTexts !== null) {
-    // Map translated texts back to keys
-    for (let i = 0; i < keysToTranslate.length; i++) {
-      translated[keysToTranslate[i]] = translatedTexts[i];
+    for (let i = 0; i < pathsToTranslate.length; i++) {
+      setValueAtPath(translated, pathsToTranslate[i], translatedTexts[i]);
     }
     console.log(`Successfully translated ${translatedTexts.length} texts`);
   } else {
-    // If batch translation fails, keep original texts
-    console.log('Batch translation failed, keeping original texts');
-    for (const key of keysToTranslate) {
-      translated[key] = sourceTranslations[key];
-    }
+    console.log('Batch translation failed, keeping original texts for remaining keys');
+    // Keep translated object as the original clone for nested keys
   }
-  
-  // Add any skipped keys (empty texts)
-  for (const key of keys) {
-    if (!translated[key]) {
-      translated[key] = sourceTranslations[key];
-    }
-  }
-  
+
   console.log('\n');
   return translated;
 }
