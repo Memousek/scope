@@ -2,6 +2,7 @@ import { injectable, inject } from 'inversify';
 import { ProjectRepository } from '../repositories/project.repository';
 import { TeamMemberRepository } from '../repositories/team-member.repository';
 import { createClient } from '@/lib/supabase/client';
+import Holidays from 'date-holidays';
 
 export interface AverageSlipResult {
   averageSlip: number;
@@ -17,6 +18,9 @@ export class CalculateAverageSlipService {
     @inject(ProjectRepository) private projectRepository: ProjectRepository,
     @inject(TeamMemberRepository) private teamMemberRepository: TeamMemberRepository
   ) {}
+
+  // Cache holiday calculators per country/subdivision to avoid repeated instantiation
+  private holidaysCache = new Map<string, Holidays>();
 
   /**
    * Add specified number of workdays to a date (excluding weekends and optional holidays)
@@ -45,15 +49,18 @@ export class CalculateAverageSlipService {
     return true;
   }
 
-  // Lightweight holiday checker (server-side) using date-holidays
-  // We import lazily to avoid bundling for SSR unnecessarily.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private isHoliday(date: Date, country: string, subdivision?: string): boolean {
-    // Lazy require to keep edge/server compatibility
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const Holidays = require('date-holidays');
-    const hd = subdivision ? new Holidays(country, subdivision) : new Holidays(country);
-    return Boolean(hd.isHoliday(date));
+  private getHolidayChecker(country: string, subdivision?: string | null): Holidays {
+    const key = `${country.toUpperCase()}${subdivision ? `:${subdivision}` : ''}`;
+    let hd = this.holidaysCache.get(key);
+    if (!hd) {
+      hd = subdivision ? new Holidays(country, subdivision) : new Holidays(country);
+      this.holidaysCache.set(key, hd);
+    }
+    return hd;
+  }
+
+  private isHoliday(date: Date, country: string, subdivision?: string | null): boolean {
+    return Boolean(this.getHolidayChecker(country, subdivision).isHoliday(date));
   }
 
   /**

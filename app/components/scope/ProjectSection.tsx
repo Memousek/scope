@@ -173,7 +173,7 @@ export function ProjectSection({
       }
     };
     fetchProjectsAndNotes();
-  }, [loadProjects, loadTeam]);
+  }, [loadProjects, loadTeam, scopeId]);
 
   // Load workflow dependencies for all projects
   const loadWorkflowDependencies = useCallback(async () => {
