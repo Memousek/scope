@@ -12,6 +12,14 @@ export interface ScopeSettings {
     apiToken?: string | null;
   };
   debug?: { enabled?: boolean };
+  calendar?: {
+    // Preferred: generic include + selected country/subdivision
+    includeHolidays?: boolean;
+    country?: string; // e.g., 'CZ', 'DE', 'US'
+    subdivision?: string | null; // optional, e.g., 'CA', 'ON', etc.
+    // Backward compatibility with older setting
+    includeCzechHolidays?: boolean;
+  };
   [key: string]: unknown;
 }
 

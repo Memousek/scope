@@ -206,8 +206,8 @@
   "missingTables": "Chybějící tabulky:",
   "runMigrations": "Prosím spusťte migrace databáze pro vytvoření těchto tabulek.",
   "databaseErrors": "Chyby:",
-          "failedToCheckDatabaseHealth": "Nepodařilo se zkontrolovat stav databáze",
-        "share_scope": "Sdílení scope",
+  "failedToCheckDatabaseHealth": "Nepodařilo se zkontrolovat stav databáze",
+  "share_scope": "Sdílení scope",
   "share_link_type": "Typ odkazu",
   "share_link_default": "--Vyberte typ odkazu--",
   "share_link_edit": "Editace",
@@ -599,5 +599,25 @@
   "importedRows": "Naimportované řádky",
   "today": "Dnes",
   "planManagedByDomain": "Plán spravovaný podle domény",
-  "planChangeRequiresAdmin": "Plán lze měnit pouze přes administrátora domény."
+  "planChangeRequiresAdmin": "Plán lze měnit pouze přes administrátora domény.",
+  "scopeSettings": {
+    "jira": "Jira",
+    "jiraHint": "Vyplňte pouze pokud integrujete s Atlassian Jira.",
+    "baseUrl": "Base URL",
+    "email": "Email",
+    "apiToken": "API Token",
+    "apiTokenHint": "Token vygenerujete v Atlassian účtu (Profile → Security → API tokens).",
+    "clearJira": "Vyčistit Jira",
+    "calendar": "Pracovní kalendář",
+    "calendarHint": "Sváteční dny ovlivní plánování, burndown i výpočty skluzu.",
+    "includeHolidays": "Zohlednit státní svátky",
+    "country": "Země",
+    "regionOptional": "Region (volitelné)",
+    "advanced": "Pokročilé",
+    "debugMode": "Debug mód",
+    "validation": {
+      "baseUrl": "URL musí začínat http(s)://",
+      "countryIso": "Použijte 2-písmenný ISO kód (např. CZ, DE, US)"
+    }
+  }
 }

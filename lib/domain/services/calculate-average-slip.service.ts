@@ -1,6 +1,7 @@
 import { injectable, inject } from 'inversify';
 import { ProjectRepository } from '../repositories/project.repository';
 import { TeamMemberRepository } from '../repositories/team-member.repository';
+import { createClient } from '@/lib/supabase/client';
 
 export interface AverageSlipResult {
   averageSlip: number;
@@ -18,16 +19,15 @@ export class CalculateAverageSlipService {
   ) {}
 
   /**
-   * Add specified number of workdays to a date (excluding weekends)
+   * Add specified number of workdays to a date (excluding weekends and optional holidays)
    */
-  private addWorkdays(date: Date, workdays: number): Date {
+  private addWorkdays(date: Date, workdays: number, includeHolidays: boolean, country: string, subdivision?: string | null): Date {
     const result = new Date(date);
     let added = 0;
     
     while (added < workdays) {
       result.setDate(result.getDate() + 1);
-      const day = result.getDay();
-      if (day !== 0 && day !== 6) { // 0 = neděle, 6 = sobota
+      if (this.isWorkday(result, includeHolidays, country, subdivision)) {
         added++;
       }
     }
@@ -36,11 +36,24 @@ export class CalculateAverageSlipService {
   }
 
   /**
-   * Workday predicate
+   * Workday predicate (weekdays; optional public holidays)
    */
-  private isWorkday(d: Date): boolean {
+  private isWorkday(d: Date, includeHolidays: boolean, country: string, subdivision?: string | null): boolean {
     const day = d.getDay();
-    return day !== 0 && day !== 6;
+    if (day === 0 || day === 6) return false;
+    if (includeHolidays && this.isHoliday(d, country, subdivision || undefined)) return false;
+    return true;
+  }
+
+  // Lightweight holiday checker (server-side) using date-holidays
+  // We import lazily to avoid bundling for SSR unnecessarily.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private isHoliday(date: Date, country: string, subdivision?: string): boolean {
+    // Lazy require to keep edge/server compatibility
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const Holidays = require('date-holidays');
+    const hd = subdivision ? new Holidays(country, subdivision) : new Holidays(country);
+    return Boolean(hd.isHoliday(date));
   }
 
   /**
@@ -48,7 +61,7 @@ export class CalculateAverageSlipService {
    * Positive = reserve (end after start), Negative = slip (end before start).
    * Returns 0 when same calendar day.
    */
-  private getWorkdaysDiff(start: Date, end: Date): number {
+  private getWorkdaysDiff(start: Date, end: Date, includeHolidays: boolean, country: string, subdivision?: string | null): number {
     const a = new Date(start);
     a.setHours(0, 0, 0, 0);
     const b = new Date(end);
@@ -64,7 +77,7 @@ export class CalculateAverageSlipService {
 
     let count = 0;
     while (d <= to) {
-      if (this.isWorkday(d)) count++;
+      if (this.isWorkday(d, includeHolidays, country, subdivision)) count++;
       d.setDate(d.getDate() + 1);
     }
     return sign * count;
@@ -73,13 +86,13 @@ export class CalculateAverageSlipService {
   /**
    * Get number of workdays between two dates (excluding weekends)
    */
-  private getWorkdaysCount(start: Date, end: Date): number {
+  private getWorkdaysCount(start: Date, end: Date, includeHolidays: boolean, country: string, subdivision?: string | null): number {
     const days: Date[] = [];
     const d = new Date(start);
     d.setHours(0, 0, 0, 0);
     
     while (d <= end) {
-      if (d.getDay() !== 0 && d.getDay() !== 6) {
+      if (this.isWorkday(d, includeHolidays, country, subdivision)) {
         days.push(new Date(d));
       }
       d.setDate(d.getDate() + 1);
@@ -91,7 +104,7 @@ export class CalculateAverageSlipService {
   /**
    * Calculate priority dates for projects
    */
-  private calculatePriorityDates(projects: unknown[], team: unknown[]): Record<string, { priorityStartDate: Date; priorityEndDate: Date }> {
+  private calculatePriorityDates(projects: unknown[], team: unknown[], includeHolidays: boolean, country: string, subdivision?: string | null): Record<string, { priorityStartDate: Date; priorityEndDate: Date }> {
     // Sort projects by priority (ascending), then by created_at
     const sorted = [...projects].sort((a: unknown, b: unknown) => {
       const aProject = a as { priority: number; createdAt: string };
@@ -136,8 +149,8 @@ export class CalculateAverageSlipService {
         const nextStart = new Date(prevEnd);
         nextStart.setDate(nextStart.getDate() + 1);
         
-        // Skip weekends
-        while (nextStart.getDay() === 0 || nextStart.getDay() === 6) {
+        // Skip non-workdays (weekends + holidays)
+        while (!this.isWorkday(nextStart, includeHolidays, country, subdivision)) {
           nextStart.setDate(nextStart.getDate() + 1);
         }
         
@@ -145,7 +158,7 @@ export class CalculateAverageSlipService {
       }
       
       // Priority end date = start + project duration
-      const priorityEndDate = this.addWorkdays(priorityStartDate, projectWorkdays);
+      const priorityEndDate = this.addWorkdays(priorityStartDate, projectWorkdays, includeHolidays, country, subdivision);
       
       const projectWithId = project as { id: string };
       result[projectWithId.id] = { priorityStartDate, priorityEndDate };
@@ -155,6 +168,17 @@ export class CalculateAverageSlipService {
   }
 
   async execute(scopeId: string): Promise<AverageSlipResult> {
+    // Load scope settings to determine holiday behavior
+    const supabase = createClient();
+    const { data: scopeRow } = await supabase
+      .from('scopes')
+      .select('settings')
+      .eq('id', scopeId)
+      .maybeSingle();
+    const settings = (scopeRow?.settings || {}) as { calendar?: { includeHolidays?: boolean; includeCzechHolidays?: boolean; country?: string; subdivision?: string | null } };
+    const includeHolidays = typeof settings.calendar?.includeHolidays === 'boolean' ? settings.calendar?.includeHolidays : !!settings.calendar?.includeCzechHolidays;
+    const country = settings.calendar?.country || 'CZ';
+    const subdivision = settings.calendar?.subdivision || null;
     const [projects, team] = await Promise.all([
       this.projectRepository.findByScopeId(scopeId),
       this.teamMemberRepository.findByScopeId(scopeId)
@@ -171,7 +195,7 @@ export class CalculateAverageSlipService {
     }
 
     // Calculate priority dates
-    const priorityDates = this.calculatePriorityDates(projects, team);
+    const priorityDates = this.calculatePriorityDates(projects, team, includeHolidays, country, subdivision);
 
     // Calculate slip for each project using priority dates
     const projectsWithCalculatedSlip = projects.map(project => {
@@ -199,10 +223,10 @@ export class CalculateAverageSlipService {
 
       const remainingWorkdays = Math.ceil(maxDays);
       const today = new Date();
-      const calculatedDeliveryDate = this.addWorkdays(today, remainingWorkdays);
+      const calculatedDeliveryDate = this.addWorkdays(today, remainingWorkdays, includeHolidays, country, subdivision);
       
       // Calculate slip against priority date using signed workday diff (positive = reserve, negative = slip)
-      const finalSlip = this.getWorkdaysDiff(calculatedDeliveryDate, priorityDate.priorityEndDate);
+      const finalSlip = this.getWorkdaysDiff(calculatedDeliveryDate, priorityDate.priorityEndDate, includeHolidays, country, subdivision);
 
       return {
         ...project,

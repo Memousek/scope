@@ -7,7 +7,8 @@
  */
 import { useState, useEffect, useMemo } from 'react';
 
-const translations: Record<string, Record<string, string>> = {};
+type TranslationDict = Record<string, unknown>;
+const translations: Record<string, TranslationDict> = {};
 
 // Load translations at runtime (for SSR/SSG, use dynamic import or next-i18n)
 async function loadTranslations(lang: string) {
@@ -70,7 +71,7 @@ export function getLanguages() {
 
 export function useTranslation() {
   const [lang, setLangState] = useState(getCurrentLanguage());
-  const [dict, setDict] = useState<Record<string, string>>({});
+  const [dict, setDict] = useState<TranslationDict>({});
   const [isLoading, setIsLoading] = useState(false); // Start as false to prevent initial loading state
 
   useEffect(() => {
@@ -101,16 +102,34 @@ export function useTranslation() {
   }, []);
 
   // Memoize the translation function to prevent unnecessary re-renders
+  // Helper: resolve nested keys via dot-notation (e.g., scopeSettings.jira)
+  function getByPath(obj: unknown, path: string): unknown {
+    if (!obj) return undefined;
+    const parts = path.split('.');
+    let current: unknown = obj;
+    for (const p of parts) {
+      if (current && typeof current === 'object' && p in (current as Record<string, unknown>)) {
+        current = (current as Record<string, unknown>)[p];
+      } else {
+        return undefined;
+      }
+    }
+    return current;
+  }
+
   const t = useMemo(() => {
     return (key: string, params?: Record<string, string | number>): string => {
-      let text = dict[key] || key;
-      
+      let resolved = getByPath(dict, key);
+      if (typeof resolved !== 'string') {
+        // fallback to flat lookup or return key
+        resolved = (dict as Record<string, unknown>)[key];
+      }
+      let text = typeof resolved === 'string' ? resolved : key;
       if (params) {
         Object.entries(params).forEach(([param, value]) => {
           text = text.replace(new RegExp(`{${param}}`, 'g'), String(value));
         });
       }
-      
       return text;
     };
   }, [dict]);

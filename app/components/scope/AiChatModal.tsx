@@ -239,7 +239,7 @@ export function AiChatModal({ onClose, scopeId, isOpen = true }: AiChatModalProp
           {/* Close warning dialog */}
           {showCloseWarning && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-              <div className=" rounded-2xl shadow-2xl p-6 max-w-xs w-full border border-pink-300 dark:border-blue-900">
+              <div className=" rounded-2xl shadow-2xl p-6 max-w-xs w-full border border-pink-300 dark:border-blue-900 bg-white dark:bg-gray-900">
                 <h2 className="text-lg font-bold mb-2 text-pink-600 dark:text-pink-400">{t("closeChatWarningTitle") || "Opravdu zavřít chat?"}</h2>
                 <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">{t("closeChatWarningText") || "Při zavření chatu bude konverzace nenávratně smazána."}</p>
                 <div className="flex gap-2 justify-end">

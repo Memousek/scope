@@ -44,6 +44,8 @@ import {
 import { useScopeRoles } from "@/app/hooks/useScopeRoles";
 import { User } from "@/lib/domain/models/user.model";
 import { useSWRConfig } from "swr";
+import { setCalendarConfig } from "@/app/utils/dateUtils";
+import { ScopeSettingsService } from "@/app/services/scopeSettingsService";
 
 import { Badge } from "@/app/components/ui/Badge";
 import { FiUsers, FiFolder, FiFilter, FiChevronDown, FiDelete, FiEdit } from "react-icons/fi";
@@ -146,6 +148,22 @@ export function ProjectSection({
     const fetchProjectsAndNotes = async () => {
       // Načteme projekty i tým, aby vizualizace workflow a výpočty (včetně dovolených) měly kompletní data
       try {
+        // Configure calendar (holidays) from scope settings; default by locale
+        try {
+          const cfg = await ScopeSettingsService.get(scopeId);
+          if (cfg?.calendar) {
+            const include = typeof cfg.calendar.includeHolidays === 'boolean' ? cfg.calendar.includeHolidays : !!cfg.calendar.includeCzechHolidays;
+            const country = cfg.calendar.country || 'CZ';
+            const subdivision = cfg.calendar.subdivision || null;
+            setCalendarConfig({ includeHolidays: include, country, subdivision });
+          } else {
+            const loc = Intl.DateTimeFormat().resolvedOptions().locale || 'cs';
+            setCalendarConfig({ includeHolidays: loc.startsWith('cs'), country: 'CZ', subdivision: null });
+          }
+        } catch {
+          const loc = Intl.DateTimeFormat().resolvedOptions().locale || 'cs';
+          setCalendarConfig({ includeHolidays: loc.startsWith('cs'), country: 'CZ', subdivision: null });
+        }
         await Promise.all([
           loadProjects(),
           loadTeam(),
@@ -346,7 +364,7 @@ export function ProjectSection({
 
       await addProject(projectData);
       // Refresh usage cache for this scope
-      try { await mutate(["scopeUsage", scopeId]); } catch {}
+      try { await mutate(["scopeUsage", scopeId]); } catch { }
       // Reload projects to get updated data
       await loadProjects();
     } catch (error) {
@@ -378,7 +396,7 @@ export function ProjectSection({
       }
 
       // Refresh usage cache for this scope
-      try { await mutate(["scopeUsage", scopeId]); } catch {}
+      try { await mutate(["scopeUsage", scopeId]); } catch { }
       // Reload projects to get updated order
       await loadProjects();
     } catch (error) {
@@ -537,13 +555,13 @@ export function ProjectSection({
       {
         info: ProjectDeliveryInfo;
         priorityDates:
-          | {
-              priorityStartDate: Date;
-              priorityEndDate: Date;
-              blockingProjectName?: string;
-              lostWorkdaysDueToVacations?: number;
-            }
-          | undefined;
+        | {
+          priorityStartDate: Date;
+          priorityEndDate: Date;
+          blockingProjectName?: string;
+          lostWorkdaysDueToVacations?: number;
+        }
+        | undefined;
         totalProgress: number;
         formattedAssignments: Record<
           string,
@@ -578,16 +596,16 @@ export function ProjectSection({
       const projectDeps = workflowDependencies[project.id];
       const info = projectDeps
         ? calculateProjectDeliveryInfoWithWorkflow(
-            project,
-            team,
-            projectAssignments[project.id] || [],
-            projectDeps
-          )
+          project,
+          team,
+          projectAssignments[project.id] || [],
+          projectDeps
+        )
         : calculateProjectDeliveryInfoWithAssignments(
-            project,
-            team,
-            projectAssignments[project.id] || []
-          );
+          project,
+          team,
+          projectAssignments[project.id] || []
+        );
 
       const totalProgress = calculateTotalProgress(
         project as unknown as Record<string, unknown>,
@@ -597,11 +615,11 @@ export function ProjectSection({
       // Calculate slippage against priority deadline
       const prioritySlippage = priorityDates[project.id]?.priorityEndDate
         ? calculatePrioritySlippage(
-            project,
-            priorityDates[project.id].priorityEndDate,
-            team,
-            projectAssignments[project.id] || []
-          )
+          project,
+          priorityDates[project.id].priorityEndDate,
+          team,
+          projectAssignments[project.id] || []
+        )
         : 0;
 
       calculations[project.id] = {
@@ -765,10 +783,9 @@ export function ProjectSection({
               <div className="flex items-center gap-2">
                 <button
                   className={`relative group px-4 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center gap-2
-                    ${
-                      filterPanelOpen || selectedStatuses.length > 0
-                        ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white"
-                        : "bg-white/80 dark:bg-gray-700/80 text-gray-700 dark:text-gray-300 hover:bg-white/90 dark:hover:bg-gray-700/90"
+                    ${filterPanelOpen || selectedStatuses.length > 0
+                      ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white"
+                      : "bg-white/80 dark:bg-gray-700/80 text-gray-700 dark:text-gray-300 hover:bg-white/90 dark:hover:bg-gray-700/90"
                     }
                   `}
                   onClick={() => setFilterPanelOpen((v) => !v)}
@@ -1000,13 +1017,12 @@ export function ProjectSection({
                                         {t("reserveOrSlip")}
                                       </div>
                                       <div
-                                        className={`text-lg font-bold ${
-                                          !hasTeamAssignments(project.id)
+                                        className={`text-lg font-bold ${!hasTeamAssignments(project.id)
                                             ? "text-orange-600 dark:text-orange-400"
                                             : prioritySlippage >= 0
                                               ? "text-green-600 dark:text-green-400"
                                               : "text-red-600 dark:text-red-400"
-                                        }`}
+                                          }`}
                                       >
                                         {!hasTeamAssignments(project.id)
                                           ? t("assignTeamMembers")
@@ -1339,13 +1355,12 @@ export function ProjectSection({
                                         {t("reserveOrSlip")}
                                       </div>
                                       <div
-                                        className={`text-sm font-bold ${
-                                          !hasTeamAssignments(project.id)
+                                        className={`text-sm font-bold ${!hasTeamAssignments(project.id)
                                             ? "text-orange-600 dark:text-orange-400"
                                             : prioritySlippage >= 0
                                               ? "text-green-600 dark:text-green-400"
                                               : "text-red-600 dark:text-red-400"
-                                        }`}
+                                          }`}
                                       >
                                         {!hasTeamAssignments(project.id)
                                           ? t("assignTeamMembers")
@@ -1404,9 +1419,9 @@ export function ProjectSection({
                                               const required = requiredMain[workflowType];
                                               const missing = required
                                                 ? required.filter(
-                                                    (r) =>
-                                                      !rolesInWorkers.includes(r.toUpperCase())
-                                                  )
+                                                  (r) =>
+                                                    !rolesInWorkers.includes(r.toUpperCase())
+                                                )
                                                 : [];
                                               return missing.length > 0 ? (
                                                 <Badge
@@ -1572,22 +1587,20 @@ export function ProjectSection({
 
                                                     <div
                                                       title={titleText}
-                                                      className={`group relative flex items-center gap-2 sm:gap-3 p-2 sm:p-3 text-xs sm:text-sm min-w-[72px] sm:min-w-0 rounded-xl border transition-all duration-300 hover:scale-105 ${
-                                                        groupStatus === "active"
+                                                      className={`group relative flex items-center gap-2 sm:gap-3 p-2 sm:p-3 text-xs sm:text-sm min-w-[72px] sm:min-w-0 rounded-xl border transition-all duration-300 hover:scale-105 ${groupStatus === "active"
                                                           ? "bg-gradient-to-br from-green-50/90 to-green-100/70 dark:from-green-900/20 dark:to-green-800/10 border-green-200/50 dark:border-green-600/30 shadow-lg hover:shadow-green-500/25"
                                                           : groupStatus === "waiting"
-                                                          ? "bg-gradient-to-br from-yellow-50/90 to-yellow-100/70 dark:from-yellow-900/20 dark:to-yellow-800/10 border-yellow-200/50 dark:border-yellow-600/30 shadow-lg hover:shadow-yellow-500/25"
-                                                          : "bg-gradient-to-br from-red-50/90 to-red-100/70 dark:from-red-900/20 dark:to-red-800/10 border-red-200/50 dark:border-red-600/30 shadow-lg hover:shadow-red-500/25"
-                                                      }`}
+                                                            ? "bg-gradient-to-br from-yellow-50/90 to-yellow-100/70 dark:from-yellow-900/20 dark:to-yellow-800/10 border-yellow-200/50 dark:border-yellow-600/30 shadow-lg hover:shadow-yellow-500/25"
+                                                            : "bg-gradient-to-br from-red-50/90 to-red-100/70 dark:from-red-900/20 dark:to-red-800/10 border-red-200/50 dark:border-red-600/30 shadow-lg hover:shadow-red-500/25"
+                                                        }`}
                                                     >
                                                       <div
-                                                        className={`w-3 h-3 rounded-full ${
-                                                          groupStatus === "active"
+                                                        className={`w-3 h-3 rounded-full ${groupStatus === "active"
                                                             ? "bg-green-500 animate-pulse"
                                                             : groupStatus === "waiting"
-                                                            ? "bg-yellow-500"
-                                                            : "bg-red-500"
-                                                        }`}
+                                                              ? "bg-yellow-500"
+                                                              : "bg-red-500"
+                                                          }`}
                                                       ></div>
                                                       <span className="whitespace-nowrap">{group.role}</span>
                                                       {(() => {
@@ -1598,8 +1611,8 @@ export function ProjectSection({
                                                             title={`${t("onVacation")}: ${vacationers.join(", ")}`}
                                                             className="ml-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
                                                           >
-                                                          <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v2h20V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zM22 10H2v9a2 2 0 002 2h16a2 2 0 002-2v-9z"/></svg>
-                                                          {t("onVacation")}
+                                                            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v2h20V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zM22 10H2v9a2 2 0 002 2h16a2 2 0 002-2v-9z" /></svg>
+                                                            {t("onVacation")}
                                                           </span>
                                                         );
                                                       })()}
@@ -1732,7 +1745,7 @@ export function ProjectSection({
 
                                     <div className="relative">
                                       {project.notes &&
-                                      project.notes.length > 0 ? (
+                                        project.notes.length > 0 ? (
                                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 relative">
                                           {project.notes.map((note, idx) => {
                                             const isAuthor =

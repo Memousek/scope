@@ -1,4 +1,17 @@
 import { Project, TeamMember, ProjectDeliveryInfo } from '@/app/components/scope/types';
+import { isHoliday } from '@/app/utils/holidays';
+
+/**
+ * Date utilities for scheduling.
+ * Weekend-only by default; can globally include public holidays via setCalendarConfig.
+ */
+
+type CalendarConfig = { includeHolidays: boolean; country: string; subdivision?: string | null };
+let calendarConfig: CalendarConfig = { includeHolidays: false, country: 'CZ', subdivision: null };
+
+export function setCalendarConfig(cfg: Partial<CalendarConfig>): void {
+  calendarConfig = { ...calendarConfig, ...cfg };
+}
 
 /**
  * Calculate project delivery date based on workflow dependencies (sequentially)
@@ -57,8 +70,7 @@ export function addWorkdays(date: Date, workdays: number): Date {
   
   while (added < workdays) {
     result.setDate(result.getDate() + 1);
-    const day = result.getDay();
-    if (day !== 0 && day !== 6) { // 0 = neděle, 6 = sobota
+    if (isWorkday(result)) {
       added++;
     }
   }
@@ -67,9 +79,11 @@ export function addWorkdays(date: Date, workdays: number): Date {
 }
 
 // Helper: workday predicate and signed difference without off-by-one
-function isWorkday(d: Date): boolean {
+export function isWorkday(d: Date): boolean {
   const day = d.getDay();
-  return day !== 0 && day !== 6;
+  if (day === 0 || day === 6) return false;
+  if (calendarConfig.includeHolidays && isHoliday(d, calendarConfig.country, calendarConfig.subdivision)) return false;
+  return true;
 }
 
 /**
@@ -108,7 +122,7 @@ export function getWorkdaysBetween(start: Date, end: Date): Date[] {
   d.setHours(0, 0, 0, 0);
   
   while (d <= end) {
-    if (d.getDay() !== 0 && d.getDay() !== 6) {
+    if (isWorkday(d)) {
       days.push(new Date(d));
     }
     d.setDate(d.getDate() + 1);
@@ -295,7 +309,7 @@ export function calculateProjectDeliveryInfoWithAssignments(
 function nextWorkday(date: Date): Date {
   const d = new Date(date);
   d.setDate(d.getDate() + 1);
-  while (d.getDay() === 0 || d.getDay() === 6) {
+  while (!isWorkday(d)) {
     d.setDate(d.getDate() + 1);
   }
   return d;
@@ -427,7 +441,7 @@ export function calculatePriorityDatesWithAssignments(
     while (remaining > 0 && safety < 5000) {
       safety++;
       // move to next day (including start day as a working chunk)
-      if (cursor.getDay() !== 0 && cursor.getDay() !== 6) {
+      if (isWorkday(cursor)) {
         const dailyFte = assignees.reduce((sum, a) => sum + (isOnVacation(a.member, cursor) ? 0 : a.allocationFte), 0);
         // if no capacity this workday, time passes but remaining stays
         if (dailyFte > 0) {
@@ -451,7 +465,7 @@ export function calculatePriorityDatesWithAssignments(
     let safety = 0;
     while (remaining > 0 && safety < 5000) {
       safety++;
-      if (cursor.getDay() !== 0 && cursor.getDay() !== 6) {
+      if (isWorkday(cursor)) {
         const dailyFte = assignees.reduce((sum, a) => sum + a.allocationFte, 0);
         if (dailyFte > 0) {
           remaining -= dailyFte;

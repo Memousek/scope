@@ -11,7 +11,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { Project, TeamMember } from './types';
-import { calculatePriorityDatesWithAssignments } from '@/app/utils/dateUtils';
+import { calculatePriorityDatesWithAssignments, isWorkday } from '@/app/utils/dateUtils';
 import { ProjectTeamAssignment } from '@/lib/domain/models/project-team-assignment.model';
 import { Payload } from "recharts/types/component/DefaultLegendContent";
 import { useTranslation } from "@/lib/translation";
@@ -157,7 +157,7 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
           const endWithBuffer = new Date(priorityEndDate);
           endWithBuffer.setDate(endWithBuffer.getDate() + bufferDays);
           while (current <= endWithBuffer) {
-            if (current.getDay() !== 0 && current.getDay() !== 6) {
+            if (isWorkday(current)) {
               dates.push(new Date(current));
             }
             current.setDate(current.getDate() + 1);
@@ -180,7 +180,7 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
         const current = new Date(today);
         let safetyCounter = 0;
         while (current <= futureDate && safetyCounter < 30) { // Omezení na 30 dní
-          if (current.getDay() !== 0 && current.getDay() !== 6) {
+          if (isWorkday(current)) {
             fallbackDates.push(new Date(current));
           }
           current.setDate(current.getDate() + 1);
@@ -238,7 +238,7 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
         
         while (additionalDates.length < (minPoints - uniqueDates.length) && safetyCounter < 50) {
           current.setDate(current.getDate() + 1);
-          if (current.getDay() !== 0 && current.getDay() !== 6) {
+          if (isWorkday(current)) {
             additionalDates.push(new Date(current));
           }
           safetyCounter++;
