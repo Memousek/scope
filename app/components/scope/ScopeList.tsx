@@ -31,6 +31,7 @@ interface ScopeListProps {
   error?: string | null;
   onDelete?: (id: string) => void;
   onRemove?: (id: string) => void;
+  highlightQuery?: string;
 }
 
 export const ScopeList: React.FC<ScopeListProps> = ({
@@ -41,6 +42,7 @@ export const ScopeList: React.FC<ScopeListProps> = ({
   error,
   onDelete,
   onRemove,
+  highlightQuery,
 }) => {
   const [scopeStats, setScopeStats] = useState<{[key: string]: {teamCount: number, projectCount: number}}>({});
   const [loadingStats, setLoadingStats] = useState<{[key: string]: boolean}>({});
@@ -50,6 +52,26 @@ export const ScopeList: React.FC<ScopeListProps> = ({
     type: ScopeRepository.getScopeType(scope, user),
   }));
   const { t } = useTranslation();
+
+  const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const renderHighlighted = (text?: string) => {
+    if (!text) return null;
+    const q = (highlightQuery || '').trim();
+    if (!q) return text;
+    try {
+      const regex = new RegExp(`(${escapeRegExp(q)})`, 'ig');
+      const parts = text.split(regex);
+      return parts.map((part, idx) => (
+        regex.test(part) ? (
+          <mark key={idx} className="bg-yellow-200 dark:bg-yellow-700 text-gray-900 dark:text-yellow-50 rounded px-0.5">{part}</mark>
+        ) : (
+          <span key={idx}>{part}</span>
+        )
+      ));
+    } catch {
+      return text;
+    }
+  };
 
   // Načítání statistik pro každý scope
   useEffect(() => {
@@ -129,6 +151,12 @@ export const ScopeList: React.FC<ScopeListProps> = ({
                 <p className="text-gray-500 dark:text-gray-400 text-sm">
                   Vytvořte svůj první scope pro začátek práce
                 </p>
+                <a
+                  href="/scopes/new"
+                  className="mt-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-5 py-2 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-200 hover:scale-105 shadow-lg"
+                >
+                  {t("create_new_scope")}
+                </a>
               </div>
             </div>
           </motion.div>
@@ -162,7 +190,7 @@ export const ScopeList: React.FC<ScopeListProps> = ({
                       </div>
                       <div className="flex-1 min-w-0">
                         <h2 className="text-lg sm:text-xl font-bold mb-2 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent truncate">
-                          {scopeItem.scope.name}
+                          {highlightQuery ? renderHighlighted(scopeItem.scope.name) : scopeItem.scope.name}
                         </h2>
                         <div className="flex flex-col sm:items-center md:items-start gap-2">
                           <span className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-semibold shadow-lg ${
@@ -211,7 +239,7 @@ export const ScopeList: React.FC<ScopeListProps> = ({
                   {scopeItem.scope.description && (
                     <div className="mb-4 sm:mb-6">
                       <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed line-clamp-2">
-                        {scopeItem.scope.description}
+                        {highlightQuery ? renderHighlighted(scopeItem.scope.description) : scopeItem.scope.description}
                       </p>
                     </div>
                   )}

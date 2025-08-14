@@ -43,6 +43,7 @@ export default function ScopesListPage() {
   const [fetching, setFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const [sortBy, setSortBy] = useState<'createdAt' | 'name'>('createdAt');
 
   useEffect(() => {
     if (!loading && !user) {
@@ -88,9 +89,9 @@ export default function ScopesListPage() {
     const base = q
       ? scopes.filter((s) => [s.name, s.description || ""].some((v) => v.toLowerCase().includes(q)))
       : scopes.slice();
-    base.sort((a, b) => a.name.localeCompare(b.name));
+    base.sort((a, b) => (sortBy === 'name' ? a.name.localeCompare(b.name) : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
     return base;
-  }, [scopes, query]);
+  }, [scopes, query, sortBy]);
 
   const handleRemoveScope = async (scopeId: string) => {
     setError(null);
@@ -122,8 +123,9 @@ export default function ScopesListPage() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
             <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Vaše scopy</h1>
             <div className="w-full md:w-auto flex flex-col sm:flex-row gap-3 items-stretch md:items-center">
-              <div className="relative flex-1 min-w-[220px]">
+              <div className="relative flex-1 min-w-[220px] sticky top-2 z-10">
                 <input
+                  id="scopes-search"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Hledat scopy..."
@@ -131,6 +133,22 @@ export default function ScopesListPage() {
                   className="w-full bg-white/80 dark:bg-gray-800/80 border border-gray-200/50 dark:border-gray-700/50 rounded-xl pl-10 pr-3 py-3 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"/></svg>
+              </div>
+              <div className="flex items-center bg-white/70 dark:bg-gray-800/70 border border-gray-200/50 dark:border-gray-700/50 rounded-xl p-1">
+                <button
+                  onClick={() => setSortBy('createdAt')}
+                  className={`px-3 py-2 rounded-lg text-sm font-semibold transition-all ${sortBy === 'createdAt' ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white' : 'text-gray-700 dark:text-gray-300'}`}
+                  aria-pressed={sortBy === 'createdAt'}
+                >
+                  Podle data
+                </button>
+                <button
+                  onClick={() => setSortBy('name')}
+                  className={`px-3 py-2 rounded-lg text-sm font-semibold transition-all ${sortBy === 'name' ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white' : 'text-gray-700 dark:text-gray-300'}`}
+                  aria-pressed={sortBy === 'name'}
+                >
+                  Podle názvu
+                </button>
               </div>
               <button
                 className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl text-base font-semibold hover:from-blue-700 hover:to-purple-700 transition"

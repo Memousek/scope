@@ -57,7 +57,6 @@ export default function Home() {
   const [deletingScope, setDeletingScope] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [sortBy, setSortBy] = useState<"createdAt" | "name">("createdAt");
   const router = useRouter();
   const { scrollY } = useScroll();
 
@@ -96,6 +95,36 @@ export default function Home() {
       fetchScopes();
     }
   }, [user, fetchScopes]);
+
+  // Query persistence in URL and localStorage + keyboard shortcuts
+  useEffect(() => {
+    try {
+      const url = new URL(window.location.href);
+      const initialQ = url.searchParams.get('q') || localStorage.getItem('home:q') || '';
+      if (initialQ) setQuery(initialQ);
+    } catch {}
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === '/') {
+        e.preventDefault();
+        const input = document.getElementById('home-search');
+        if (input) (input as HTMLInputElement).focus();
+      }
+      if (e.key.toLowerCase() === 'n') {
+        router.push('/scopes/new');
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [router]);
+
+  useEffect(() => {
+    try {
+      const url = new URL(window.location.href);
+      if (query) url.searchParams.set('q', query); else url.searchParams.delete('q');
+      window.history.replaceState({}, '', url.toString());
+      localStorage.setItem('home:q', query);
+    } catch {}
+  }, [query]);
 
   const handleDeleteScope = async (scopeId: string) => {
     setError(null);
@@ -142,12 +171,9 @@ export default function Home() {
           [s.name, s.description || ""].some((v) => v.toLowerCase().includes(q))
         )
       : scopes.slice();
-    base.sort((a, b) => {
-      if (sortBy === "name") return a.name.localeCompare(b.name);
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
+    base.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     return base;
-  }, [scopes, query, sortBy]);
+  }, [scopes, query]);
 
   if (loading) {
     return (
@@ -174,8 +200,9 @@ export default function Home() {
                   </p>
                 </div>
                 <div className="w-full md:w-auto flex flex-col sm:flex-row gap-3 items-stretch md:items-center">
-                  <div className="relative flex-1 min-w-[220px]">
+                  <div className="relative flex-1 min-w-[220px] sticky top-2 z-10">
                     <input
+                      id="home-search"
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
                       placeholder={t("search_scopes")}
@@ -205,6 +232,7 @@ export default function Home() {
               error={error}
               onDelete={handleDeleteScope}
               onRemove={handleRemoveScope}
+              highlightQuery={query}
             />
           </div>
         </div>
