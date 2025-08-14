@@ -35,8 +35,8 @@ export function ScopeSettings({ scopeId }: Props) {
         setJiraBaseUrl(cfg.jira.baseUrl || '');
         setJiraEmail(cfg.jira.email || '');
         setJiraApiToken(cfg.jira.apiToken || '');
-        setDebugEnabled(Boolean((cfg as any)?.debug?.enabled));
-        try { sessionStorage.setItem(`scope:${scopeId}:integrations-cache`, JSON.stringify({ jiraBaseUrl: cfg.jira.baseUrl, jiraEmail: cfg.jira.email, jiraApiToken: cfg.jira.apiToken, debugEnabled: Boolean((cfg as any)?.debug?.enabled) })); } catch {}
+        setDebugEnabled(Boolean(cfg.debug?.enabled));
+        try { sessionStorage.setItem(`scope:${scopeId}:integrations-cache`, JSON.stringify({ jiraBaseUrl: cfg.jira.baseUrl, jiraEmail: cfg.jira.email, jiraApiToken: cfg.jira.apiToken, debugEnabled: Boolean(cfg.debug?.enabled) })); } catch {}
       }
     })();
   }, [scopeId]);

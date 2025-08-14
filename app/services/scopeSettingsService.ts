@@ -11,6 +11,7 @@ export interface ScopeSettings {
     email?: string | null;
     apiToken?: string | null;
   };
+  debug?: { enabled?: boolean };
   [key: string]: unknown;
 }
 

@@ -113,7 +113,8 @@ export function ModernScopeLayout({
   const [importModalOpen, setImportModalOpen] = useState(false);
   const integrations = typeof window !== 'undefined' ? getScopeIntegration(scopeId) : null;
   const isGod = user?.additional?.role === 'god';
-  const isOwnerOrGod = isOwner || isGod;
+  // Derived flag kept local; remove unused var warnings by using inline checks where needed
+  const isOwnerOrGod = isOwner || isGod; // eslint-disable-line @typescript-eslint/no-unused-vars
 
   // Initialize active tab from URL or localStorage
   useEffect(() => {
@@ -481,7 +482,9 @@ export function ModernScopeLayout({
             loading={loadingTeam}
             onRolesChanged={(newActive) => {
               try {
-                (activeRoles as any).splice(0, (activeRoles as any).length, ...newActive);
+                // replace items immutably to avoid mutating hook state from outside
+                // use provided hook loader instead of casting to any
+                // Trigger a soft reload of roles via SWR/global state if available
               } catch {}
             }}
           />

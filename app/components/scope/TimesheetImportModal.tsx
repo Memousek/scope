@@ -58,7 +58,7 @@ export function TimesheetImportModal({ isOpen, onClose, member }: TimesheetImpor
     try {
       const parsed = await parseCsv(file);
       setRows(parsed);
-    } catch (err) {
+    } catch {
       setError('CSV parse error');
     }
   };
@@ -105,7 +105,7 @@ export function TimesheetImportModal({ isOpen, onClose, member }: TimesheetImpor
       const merged = upsertTimesheets(member.timesheets, entries);
       await TeamService.updateTeamMember(member.id, { timesheets: merged } as Partial<TeamMember>);
       onClose();
-    } catch (e) {
+    } catch {
       setError('Save failed');
     } finally {
       setSaving(false);

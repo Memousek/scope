@@ -20,6 +20,7 @@ import { LogoutButton } from "./logout-button";
 import Image from "next/image";
 import { ThemeSwitcher } from "./theme-switcher";
 import { LanguageSwitcher } from "./ui/languageSwitcher";
+import { Shield } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -60,7 +61,19 @@ export function Header({ user, loading }: HeaderProps) {
         <div className="hidden md:flex items-center gap-4 min-w-[120px] justify-end">
           <LanguageSwitcher />
           <ThemeSwitcher />
-          {user && user.additional?.role === "god" ? <NotifyCentrum /> : null}
+          {user && user.additional?.role === "god" ? (
+            <>
+              <Link
+                href="/admin"
+                aria-label="Admin"
+                className="p-2 rounded-full text-gray-600 dark:text-gray-300 hover:text-white hover:bg-gradient-to-r from-indigo-600 to-purple-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+                title="Admin"
+              >
+                <Shield className="w-4 h-4" />
+              </Link>
+              <NotifyCentrum />
+            </>
+          ) : null}
           {loading ? (
             <div
               className="w-30 h-8 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse"
@@ -160,6 +173,15 @@ export function Header({ user, loading }: HeaderProps) {
                       />
                     ) : (
                       <UserIcon className="w-10 h-10 mb-2" />
+                    )}
+                    {user?.additional?.role === "god" && (
+                      <Link
+                        href="/admin"
+                        className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 transition"
+                        onClick={() => setMobileOpen(false)}
+                      >
+                        <Shield className="w-5 h-5" /> Admin
+                      </Link>
                     )}
                     <Link
                       href="/profile"

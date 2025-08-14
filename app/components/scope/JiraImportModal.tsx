@@ -7,7 +7,6 @@ import React, { useMemo, useState } from 'react';
 import { Modal } from '@/app/components/ui/Modal';
 import { useTranslation } from '@/lib/translation';
 import { TeamMember, TimesheetEntry } from './types';
-import { ScopeSettingsService } from '@/app/services/scopeSettingsService';
 import { TeamService } from '@/app/services/teamService';
 
 interface JiraImportModalProps {
@@ -28,7 +27,9 @@ export function JiraImportModal({ isOpen, onClose, team, scopeId, defaultProject
   const [error, setError] = useState<string | null>(null);
   const [imported, setImported] = useState<number>(0);
   const [debug, setDebug] = useState<boolean>(false);
-  const [lastPreview, setLastPreview] = useState<any>(null);
+  type JiraWorklog = { date: string; authorEmail?: string; issueKey: string; projectKey?: string; hours: number; comment?: string };
+  type Preview = { baseJql: string; from: string; to: string; sample: JiraWorklog[] } | { error: string };
+  const [lastPreview, setLastPreview] = useState<Preview | null>(null);
 
   const memberIndex = useMemo(() => {
     // Mapování podle jména (fallback). Ideálně doplnit accountId/email v budoucnu.
@@ -50,15 +51,13 @@ export function JiraImportModal({ isOpen, onClose, team, scopeId, defaultProject
     return Array.from(existingMap.values()).sort((a, b) => a.date.localeCompare(b.date));
   };
 
-  const runImport = async () => {
+  const runImport = async (): Promise<void> => {
     if (!from || !to) return;
     setLoading(true);
     setError(null);
     setImported(0);
     try {
       const baseJql = jql || (projectKey ? `project = ${projectKey}` : '');
-      // načti settings ze scopes.settings, ať je možné volat bez env proměnných
-      const s = await ScopeSettingsService.get(scopeId);
       const res = await fetch('/api/jira/worklogs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -66,17 +65,16 @@ export function JiraImportModal({ isOpen, onClose, team, scopeId, defaultProject
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error || 'Jira API error');
-      const worklogs = (json?.worklogs || []) as Array<{ date: string; authorEmail?: string; issueKey: string; projectKey?: string; hours: number; comment?: string }>;
+      const worklogs = (json?.worklogs || []) as JiraWorklog[];
       if (debug) setLastPreview({ baseJql, from, to, sample: worklogs.slice(0, 5) });
       if (worklogs.length === 0) return;
 
       const grouped = new Map<string, TimesheetEntry[]>();
       for (const w of worklogs) {
-        // Na mapování člena používáme jméno z teamu; v praxi lépe accountId
-        // Zde jen ukázka – lze doplnit vlastní mapování.
-        // Předpokládáme, že Jira authorEmail obsahuje celé jméno v teamu? Pokud ne, přiřaď ručně později.
-        const candidate = team.find((m: any) => m.name && w.authorEmail && m.name.toLowerCase() === (w.authorEmail?.split('@')[0] || '').toLowerCase());
-        const member = candidate || memberIndex.get(((candidate as any)?.name || '').toLowerCase());
+        // Heuristika: páruj podle prefixu emailu vs. name (lowercase)
+        const emailPrefix = (w.authorEmail?.split('@')[0] || '').toLowerCase();
+        const candidate = emailPrefix ? team.find((m) => m.name && m.name.toLowerCase() === emailPrefix) : undefined;
+        const member = candidate ?? (emailPrefix ? memberIndex.get(emailPrefix) : undefined);
         if (!member) continue;
         const arr = grouped.get(member.id) || [];
         arr.push({ date: w.date, project: w.projectKey || w.issueKey, hours: w.hours, note: w.comment, externalId: w.issueKey });
@@ -85,7 +83,7 @@ export function JiraImportModal({ isOpen, onClose, team, scopeId, defaultProject
 
       let count = 0;
       for (const [memberId, entries] of grouped.entries()) {
-        const m = team.find((x) => (x as any).id === memberId);
+        const m = team.find((x) => x.id === memberId);
         if (!m) continue;
         const merged = upsertTimesheets(m.timesheets, entries);
         await TeamService.updateTeamMember(memberId, { timesheets: merged } as Partial<TeamMember>);
