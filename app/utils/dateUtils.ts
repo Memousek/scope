@@ -7,7 +7,7 @@ import { isHoliday } from '@/app/utils/holidays';
  */
 
 type CalendarConfig = { includeHolidays: boolean; country: string; subdivision?: string | null };
-let calendarConfig: CalendarConfig = { includeHolidays: false, country: 'CZ', subdivision: null };
+let calendarConfig: CalendarConfig = { includeHolidays: true, country: 'CZ', subdivision: null };
 
 export function setCalendarConfig(cfg: Partial<CalendarConfig>): void {
   calendarConfig = { ...calendarConfig, ...cfg };

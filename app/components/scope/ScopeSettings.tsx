@@ -27,7 +27,7 @@ export function ScopeSettings({ scopeId }: Props) {
   const [jiraEmail, setJiraEmail] = useState('');
   const [jiraApiToken, setJiraApiToken] = useState('');
   const [debugEnabled, setDebugEnabled] = useState(false);
-  const [includeHolidays, setIncludeHolidays] = useState<boolean>(false);
+  const [includeHolidays, setIncludeHolidays] = useState<boolean>(true);
   const [holidayCountry, setHolidayCountry] = useState<string>('CZ');
   const [holidaySubdivision, setHolidaySubdivision] = useState<string>('');
   const [saved, setSaved] = useState<string | null>(null);
@@ -67,7 +67,9 @@ export function ScopeSettings({ scopeId }: Props) {
           setJiraApiToken(cfg.jira.apiToken || '');
         }
         setDebugEnabled(Boolean(cfg.debug?.enabled));
-        const include = typeof cfg.calendar?.includeHolidays === 'boolean' ? cfg.calendar?.includeHolidays : Boolean(cfg.calendar?.includeCzechHolidays);
+        const include = typeof cfg.calendar?.includeHolidays === 'boolean'
+          ? cfg.calendar?.includeHolidays
+          : (cfg.calendar?.includeCzechHolidays ?? true);
         setIncludeHolidays(include);
         setHolidayCountry(cfg.calendar?.country || 'CZ');
         setHolidaySubdivision(cfg.calendar?.subdivision || '');

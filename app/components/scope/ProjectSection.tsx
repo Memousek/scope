@@ -152,17 +152,15 @@ export function ProjectSection({
         try {
           const cfg = await ScopeSettingsService.get(scopeId);
           if (cfg?.calendar) {
-            const include = typeof cfg.calendar.includeHolidays === 'boolean' ? cfg.calendar.includeHolidays : !!cfg.calendar.includeCzechHolidays;
+            const include = typeof cfg.calendar.includeHolidays === 'boolean' ? cfg.calendar.includeHolidays : (cfg.calendar.includeCzechHolidays ?? true);
             const country = cfg.calendar.country || 'CZ';
             const subdivision = cfg.calendar.subdivision || null;
             setCalendarConfig({ includeHolidays: include, country, subdivision });
           } else {
-            const loc = Intl.DateTimeFormat().resolvedOptions().locale || 'cs';
-            setCalendarConfig({ includeHolidays: loc.startsWith('cs'), country: 'CZ', subdivision: null });
+            setCalendarConfig({ includeHolidays: true, country: 'CZ', subdivision: null });
           }
         } catch {
-          const loc = Intl.DateTimeFormat().resolvedOptions().locale || 'cs';
-          setCalendarConfig({ includeHolidays: loc.startsWith('cs'), country: 'CZ', subdivision: null });
+          setCalendarConfig({ includeHolidays: true, country: 'CZ', subdivision: null });
         }
         await Promise.all([
           loadProjects(),

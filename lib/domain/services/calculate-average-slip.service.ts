@@ -183,7 +183,9 @@ export class CalculateAverageSlipService {
       .eq('id', scopeId)
       .maybeSingle();
     const settings = (scopeRow?.settings || {}) as { calendar?: { includeHolidays?: boolean; includeCzechHolidays?: boolean; country?: string; subdivision?: string | null } };
-    const includeHolidays = typeof settings.calendar?.includeHolidays === 'boolean' ? settings.calendar?.includeHolidays : !!settings.calendar?.includeCzechHolidays;
+    const includeHolidays = typeof settings.calendar?.includeHolidays === 'boolean'
+      ? settings.calendar?.includeHolidays
+      : (settings.calendar?.includeCzechHolidays ?? true); // default: true
     const country = settings.calendar?.country || 'CZ';
     const subdivision = settings.calendar?.subdivision || null;
     const [projects, team] = await Promise.all([
