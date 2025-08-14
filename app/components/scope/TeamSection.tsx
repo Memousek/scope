@@ -20,14 +20,13 @@ import { ScopeSettingsService } from "@/app/services/scopeSettingsService";
 import { ContainerService } from "@/lib/container.service";
 import { ManageProjectTeamAssignmentsService, ProjectTeamAssignmentWithDetails } from "@/lib/domain/services/manage-project-team-assignments.service";
 import { SettingsIcon, FilterIcon, XIcon, ChevronDownIcon } from "lucide-react";
-import { FiUpload, FiCalendar, FiBarChart2 } from 'react-icons/fi';
+import { FiUpload, FiCalendar } from 'react-icons/fi';
 import { useSWRConfig } from "swr";
 import { FiUsers, FiSearch } from 'react-icons/fi';
 import { VacationModal } from "./VacationModal";
 import { TimesheetImportModal } from "./TimesheetImportModal";
 import { ReportsModal } from "./ReportsModal";
 import TeamAvailabilityModal from "./TeamAvailabilityModal";
-import { Badge } from "../ui/Badge";
 
 interface TeamSectionProps {
   scopeId: string;
