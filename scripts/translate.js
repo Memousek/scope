@@ -262,8 +262,7 @@ async function translateAllKeys(sourceTranslations, targetLang, startFromKey = n
     const value = sourceTranslations[key];
     if (typeof value === 'string') {
       if (value.trim() !== '') {
-        // Prepare container in translated structure
-        translated[key] = value;
+        // Don't set the value yet - wait for translation
         pathsToTranslate.push([key]);
         textsToTranslate.push(value);
       } else {
@@ -294,7 +293,10 @@ async function translateAllKeys(sourceTranslations, targetLang, startFromKey = n
     console.log(`Successfully translated ${translatedTexts.length} texts`);
   } else {
     console.log('Batch translation failed, keeping original texts for remaining keys');
-    // Keep translated object as the original clone for nested keys
+    // Set original Czech texts for failed translations
+    for (let i = 0; i < pathsToTranslate.length; i++) {
+      setValueAtPath(translated, pathsToTranslate[i], textsToTranslate[i]);
+    }
   }
 
   console.log('\n');
