@@ -11,67 +11,102 @@ import { ContainerService } from "@/lib/container.service";
 import { UserRepository } from "@/lib/domain/repositories/user.repository";
 import { User } from "@/lib/domain/models/user.model";
 import { useTranslation } from "@/lib/translation";
-import { Settings, Palette, Globe, Sun, Moon, Monitor, Info, ChevronDown, Key } from "lucide-react";
-import { getCurrentLanguage, setCurrentLanguage, getLanguages } from "@/lib/translation";
+import {
+  Settings,
+  Palette,
+  Globe,
+  Sun,
+  Moon,
+  Monitor,
+  Info,
+  ChevronDown,
+  Key,
+} from "lucide-react";
+import {
+  getCurrentLanguage,
+  setCurrentLanguage,
+  getLanguages,
+} from "@/lib/translation";
 import Image from "next/image";
-import { BuildInfoDisplay } from '../components/ui/BuildInfoDisplay';
+import { BuildInfoDisplay } from "../components/ui/BuildInfoDisplay";
 
 const languages = getLanguages();
 
 export default function SettingsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [currentLang, setCurrentLang] = useState<string>('cs');
-  const [currentTheme, setCurrentTheme] = useState<string>('dark');
-  const [search, setSearch] = useState('');
+  const [currentLang, setCurrentLang] = useState<string>("cs");
+  const [currentTheme, setCurrentTheme] = useState<string>("dark");
+  const [search, setSearch] = useState("");
   const router = useRouter();
   const { t } = useTranslation();
   const [showBuildInfo, setShowBuildInfo] = useState(false);
-  const [apiKey, setApiKey] = useState('');
-  const [geminiApiKey, setGeminiApiKey] = useState('');
-  const [aiProvider, setAiProvider] = useState<'openai' | 'gemini'>('openai');
+  const [apiKey, setApiKey] = useState("");
+  const [geminiApiKey, setGeminiApiKey] = useState("");
+  const [aiProvider, setAiProvider] = useState<"openai" | "gemini">("openai");
   const [savingApiKey, setSavingApiKey] = useState(false);
   const [apiKeySuccess, setApiKeySuccess] = useState<string | null>(null);
   const [apiKeyError, setApiKeyError] = useState<string | null>(null);
   const themes = [
-    { code: 'light', labelKey: 'lightMode', icon: Sun },
-    { code: 'dark', labelKey: 'darkMode', icon: Moon },
-    { code: 'system', labelKey: 'systemMode', icon: Monitor },
+    { code: "light", labelKey: "lightMode", icon: Sun },
+    { code: "dark", labelKey: "darkMode", icon: Moon },
+    { code: "system", labelKey: "systemMode", icon: Monitor },
   ];
 
   useEffect(() => {
-    ContainerService.getInstance().get(UserRepository).getLoggedInUser().then((user) => {
-      setUser(user);
-      setLoading(false);
-      if (user === null) {
-        router.push("/auth/login");
-      }
-      // Dekódování klíče z Base64
-      if (user?.additional?.open_api_key && typeof user.additional.open_api_key === 'string') {
-        try {
-          setApiKey(atob(user.additional.open_api_key));
-        } catch {
-          setApiKey('');
+    ContainerService.getInstance()
+      .get(UserRepository)
+      .getLoggedInUser()
+      .then((user) => {
+        setUser(user);
+        setLoading(false);
+        if (user === null) {
+          router.push("/auth/login");
         }
-      }
-      if (user?.additional?.gemini_api_key && typeof user.additional.gemini_api_key === 'string') {
-        try {
-          setGeminiApiKey(atob(user.additional.gemini_api_key));
-        } catch {
-          setGeminiApiKey('');
+        // Dekódování klíče z Base64
+        if (
+          user?.additional?.open_api_key &&
+          typeof user.additional.open_api_key === "string"
+        ) {
+          try {
+            setApiKey(atob(user.additional.open_api_key));
+          } catch {
+            setApiKey("");
+          }
         }
-      }
-      if (user?.additional?.ai_provider && (user.additional.ai_provider === 'openai' || user.additional.ai_provider === 'gemini')) {
-        setAiProvider(user.additional.ai_provider);
-      }
-    });
+        if (
+          user?.additional?.gemini_api_key &&
+          typeof user.additional.gemini_api_key === "string"
+        ) {
+          try {
+            setGeminiApiKey(atob(user.additional.gemini_api_key));
+          } catch {
+            setGeminiApiKey("");
+          }
+        }
+        if (
+          user?.additional?.ai_provider &&
+          (user.additional.ai_provider === "openai" ||
+            user.additional.ai_provider === "gemini")
+        ) {
+          setAiProvider(user.additional.ai_provider);
+        }
+      });
 
     // Nastavit aktuální jazyk
     setCurrentLang(getCurrentLanguage());
 
     // Nastavit aktuální téma
-    const savedTheme = localStorage.getItem('theme') as "light" | "dark" | "system" | null;
-    if (savedTheme === "dark" || savedTheme === "light" || savedTheme === "system") {
+    const savedTheme = localStorage.getItem("theme") as
+      | "light"
+      | "dark"
+      | "system"
+      | null;
+    if (
+      savedTheme === "dark" ||
+      savedTheme === "light" ||
+      savedTheme === "system"
+    ) {
       setCurrentTheme(savedTheme);
     } else {
       // default: system
@@ -90,14 +125,16 @@ export default function SettingsPage() {
 
   const handleThemeChange = (themeCode: "light" | "dark" | "system") => {
     setCurrentTheme(themeCode);
-    localStorage.setItem('theme', themeCode);
+    localStorage.setItem("theme", themeCode);
 
     // Aplikovat téma na documentElement (html tag)
-    if (themeCode === 'system') {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      document.documentElement.classList.toggle('dark', prefersDark);
+    if (themeCode === "system") {
+      const prefersDark = window.matchMedia(
+        "(prefers-color-scheme: dark)"
+      ).matches;
+      document.documentElement.classList.toggle("dark", prefersDark);
     } else {
-      document.documentElement.classList.toggle('dark', themeCode === 'dark');
+      document.documentElement.classList.toggle("dark", themeCode === "dark");
     }
   };
 
@@ -113,7 +150,7 @@ export default function SettingsPage() {
     setApiKeyError(null);
   };
 
-  const handleAiProviderChange = (provider: 'openai' | 'gemini') => {
+  const handleAiProviderChange = (provider: "openai" | "gemini") => {
     setAiProvider(provider);
     setApiKeySuccess(null);
     setApiKeyError(null);
@@ -129,16 +166,16 @@ export default function SettingsPage() {
       const supabase = createClient();
       const encodedOpenaiKey = btoa(apiKey);
       const encodedGeminiKey = btoa(geminiApiKey);
-      
+
       const { error } = await supabase
         .from("user_meta")
-        .update({ 
+        .update({
           open_api_key: encodedOpenaiKey,
           gemini_api_key: encodedGeminiKey,
-          ai_provider: aiProvider
+          ai_provider: aiProvider,
         })
         .eq("user_id", user.id);
-      
+
       if (error) {
         setApiKeyError("Nepodařilo se uložit klíče.");
       } else {
@@ -149,8 +186,8 @@ export default function SettingsPage() {
             ...user.additional,
             open_api_key: encodedOpenaiKey,
             gemini_api_key: encodedGeminiKey,
-            ai_provider: aiProvider
-          }
+            ai_provider: aiProvider,
+          },
         });
       }
     } catch {
@@ -199,7 +236,7 @@ export default function SettingsPage() {
                     {t("language")}
                   </h2>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {t('languageDescription')}
+                    {t("languageDescription")}
                   </p>
                 </div>
               </div>
@@ -213,9 +250,12 @@ export default function SettingsPage() {
                 />
                 <div className="max-h-48 overflow-y-auto space-y-1">
                   {languages
-                    .filter(lang => 
-                      lang.label.toLowerCase().includes(search.toLowerCase()) ||
-                      lang.code.toLowerCase().includes(search.toLowerCase())
+                    .filter(
+                      (lang) =>
+                        lang.label
+                          .toLowerCase()
+                          .includes(search.toLowerCase()) ||
+                        lang.code.toLowerCase().includes(search.toLowerCase())
                     )
                     .map((lang) => (
                       <button
@@ -223,14 +263,16 @@ export default function SettingsPage() {
                         onClick={() => handleLanguageChange(lang.code)}
                         className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left"
                       >
-                                                 <Image
-                           src={`https://flagcdn.com/w20/${lang.flag}.png`}
-                           alt={lang.label}
-                           width={24}
-                           height={16}
-                           className="rounded-sm"
-                         />
-                        <span className="text-sm font-medium truncate">{lang.label}</span>
+                        <Image
+                          src={`https://flagcdn.com/w20/${lang.flag}.png`}
+                          alt={lang.label}
+                          width={24}
+                          height={16}
+                          className="rounded-sm"
+                        />
+                        <span className="text-sm font-medium truncate">
+                          {lang.label}
+                        </span>
                         {currentLang === lang.code && (
                           <div className="ml-auto">
                             <div className="w-2 h-2 bg-white rounded-full"></div>
@@ -253,7 +295,7 @@ export default function SettingsPage() {
                     {t("theme")}
                   </h2>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {t('themeDescription')}
+                    {t("themeDescription")}
                   </p>
                 </div>
               </div>
@@ -263,15 +305,21 @@ export default function SettingsPage() {
                   return (
                     <button
                       key={theme.code}
-                      onClick={() => handleThemeChange(theme.code as "system" | "dark" | "light")}
+                      onClick={() =>
+                        handleThemeChange(
+                          theme.code as "system" | "dark" | "light"
+                        )
+                      }
                       className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors text-left ${
                         currentTheme === theme.code
-                          ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
-                          : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                          ? "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300"
+                          : "hover:bg-gray-100 dark:hover:bg-gray-700"
                       }`}
                     >
                       <Icon className="w-5 h-5" />
-                      <span className="text-sm font-medium">{t(theme.labelKey)}</span>
+                      <span className="text-sm font-medium">
+                        {t(theme.labelKey)}
+                      </span>
                       {currentTheme === theme.code && (
                         <div className="ml-auto">
                           <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
@@ -294,24 +342,33 @@ export default function SettingsPage() {
                     {t("aboutApp")}
                   </h2>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {t('aboutAppDescription')}
+                    {t("aboutAppDescription")}
                   </p>
                 </div>
               </div>
               <div className="space-y-3">
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {t('aboutAppDescriptionLong')}
+                  {t("aboutAppDescriptionLong")}
                 </p>
                 <div className="text-sm text-gray-600 dark:text-gray-400">
-                  <button className="w-full transition-all duration-200 bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-600/50 rounded-lg p-3 flex items-center justify-between text-sm text-gray-600 dark:text-white" onClick={() => setShowBuildInfo(!showBuildInfo)}>
-                    {showBuildInfo ? t('hideBuildInfo') : t('showBuildInfo')} <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showBuildInfo ? 'rotate-180' : ''}`} />
+                  <button
+                    className="w-full transition-all duration-200 bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-600/50 rounded-lg p-3 flex items-center justify-between text-sm text-gray-600 dark:text-white"
+                    onClick={() => setShowBuildInfo(!showBuildInfo)}
+                  >
+                    {showBuildInfo ? t("hideBuildInfo") : t("showBuildInfo")}{" "}
+                    <ChevronDown
+                      className={`w-4 h-4 transition-transform duration-200 ${showBuildInfo ? "rotate-180" : ""}`}
+                    />
                   </button>
                 </div>
-                <div className={`mt-4 transition-all duration-200 ${showBuildInfo ? 'opacity-100 block' : 'opacity-0 hidden'}`}>
+                <div
+                  className={`mt-4 transition-all duration-200 ${showBuildInfo ? "opacity-100 block" : "opacity-0 hidden"}`}
+                >
                   <BuildInfoDisplay />
                 </div>
                 <p className="w-full text-center text-sm text-gray-600 dark:text-gray-400">
-                  &copy; {new Date().getFullYear()} {process.env.NEXT_PUBLIC_COPYRIGHT}
+                  &copy; {new Date().getFullYear()}{" "}
+                  {process.env.NEXT_PUBLIC_COPYRIGHT}
                 </p>
               </div>
             </div>
@@ -327,7 +384,7 @@ export default function SettingsPage() {
                     {t("aiSettings")}
                   </h2>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {t('aiSettingsDescription')}
+                    {t("aiSettingsDescription")}
                   </p>
                 </div>
               </div>
@@ -335,25 +392,25 @@ export default function SettingsPage() {
                 {/* AI Provider Selection */}
                 <div>
                   <label className="text-sm text-gray-600 dark:text-gray-400 mb-2 block">
-                    {t('aiProvider')}
+                    {t("aiProvider")}
                   </label>
                   <div className="flex gap-2">
                     <button
-                      onClick={() => handleAiProviderChange('openai')}
+                      onClick={() => handleAiProviderChange("openai")}
                       className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        aiProvider === 'openai'
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                        aiProvider === "openai"
+                          ? "bg-blue-500 text-white"
+                          : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
                       }`}
                     >
                       OpenAI
                     </button>
                     <button
-                      onClick={() => handleAiProviderChange('gemini')}
+                      onClick={() => handleAiProviderChange("gemini")}
                       className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        aiProvider === 'gemini'
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                        aiProvider === "gemini"
+                          ? "bg-blue-500 text-white"
+                          : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
                       }`}
                     >
                       Gemini
@@ -363,14 +420,17 @@ export default function SettingsPage() {
 
                 {/* OpenAI API Key */}
                 <div>
-                  <label htmlFor="openaiApiKey" className="text-sm text-gray-600 dark:text-gray-400 block mb-2">
-                    {t('openaiApiKey')}
+                  <label
+                    htmlFor="openaiApiKey"
+                    className="text-sm text-gray-600 dark:text-gray-400 block mb-2"
+                  >
+                    {t("openaiApiKey")}
                   </label>
                   <input
                     id="openaiApiKey"
                     type="password"
                     className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
-                    placeholder={t('yourOpenaiApiKey')}
+                    placeholder={t("yourOpenaiApiKey")}
                     value={apiKey}
                     onChange={(e) => handleApiKeyChange(e.target.value)}
                   />
@@ -378,14 +438,17 @@ export default function SettingsPage() {
 
                 {/* Gemini API Key */}
                 <div>
-                  <label htmlFor="geminiApiKey" className="text-sm text-gray-600 dark:text-gray-400 block mb-2">
-                    {t('geminiApiKey')}
+                  <label
+                    htmlFor="geminiApiKey"
+                    className="text-sm text-gray-600 dark:text-gray-400 block mb-2"
+                  >
+                    {t("geminiApiKey")}
                   </label>
                   <input
                     id="geminiApiKey"
                     type="password"
                     className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
-                    placeholder={t('yourGeminiApiKey')}
+                    placeholder={t("yourGeminiApiKey")}
                     value={geminiApiKey}
                     onChange={(e) => handleGeminiApiKeyChange(e.target.value)}
                   />
@@ -397,11 +460,13 @@ export default function SettingsPage() {
                   disabled={savingApiKey}
                   className="w-full px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg text-sm font-medium hover:from-blue-600 hover:to-purple-600 transition-all duration-200 disabled:opacity-50"
                 >
-                  {savingApiKey ? t('saving') : t('save')}
+                  {savingApiKey ? t("saving") : t("save")}
                 </button>
-                
+
                 {apiKeySuccess && (
-                  <div className="mt-2 text-green-600 text-sm">{apiKeySuccess}</div>
+                  <div className="mt-2 text-green-600 text-sm">
+                    {apiKeySuccess}
+                  </div>
                 )}
                 {apiKeyError && (
                   <div className="mt-2 text-red-600 text-sm">{apiKeyError}</div>
@@ -413,4 +478,4 @@ export default function SettingsPage() {
       </div>
     </div>
   );
-} 
+}
