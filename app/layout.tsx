@@ -88,7 +88,7 @@ export default function RootLayout({
         <SchemaOrgScript data={organizationSchema} id="organization-schema" />
         <SchemaOrgScript data={webApplicationSchema} id="webapp-schema" />
       </head>
-      <body className={`${geistSans.className} antialiased`} suppressHydrationWarning>
+      <body id="body" className={`${geistSans.className} antialiased`} suppressHydrationWarning>
         {/* Skip link for a11y */}
         <a
           href="#main-content"
