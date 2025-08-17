@@ -1,7 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
   images: {
     domains: [
       "lh3.googleusercontent.com",
@@ -10,6 +9,7 @@ const nextConfig: NextConfig = {
       // případně další domény
     ],
   },
+  output: 'standalone',
 };
 
 export default nextConfig;
