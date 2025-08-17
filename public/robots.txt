@@ -4,5 +4,4 @@ Disallow: /admin/
 Disallow: /profile/
 Disallow: /settings/
 Disallow: /api/
-
 Allow: /
