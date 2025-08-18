@@ -9,7 +9,7 @@
 
 import React from 'react';
 import { useToastFunctions, copyToClipboard, openExternalLink } from '../components/ui/Toast';
-import { FiCopy, FiExternalLink, FiDownload, FiTrash2 } from 'react-icons/fi';
+import { FiCopy, FiExternalLink, FiDownload } from 'react-icons/fi';
 
 export default function ToastDemoPage() {
   const toast = useToastFunctions();

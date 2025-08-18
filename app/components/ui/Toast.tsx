@@ -15,7 +15,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import { 
@@ -110,10 +110,8 @@ const Toast: React.FC<ToastProps> = ({
   closable = true 
 }) => {
   const { t } = useTranslation();
-  const [isVisible, setIsVisible] = useState(true);
 
   const handleDismiss = useCallback(() => {
-    setIsVisible(false);
     setTimeout(() => {
       onDismiss?.(id);
     }, 300); // Wait for exit animation
@@ -323,12 +321,11 @@ export const useToastFunctions = () => {
 };
 
 // Copy to clipboard utility
-export const copyToClipboard = async (text: string, successMessage = 'Copied to clipboard!') => {
+export const copyToClipboard = async (text: string) => {
   try {
     await navigator.clipboard.writeText(text);
-    // Note: This will need to be called from within a component that uses useToastFunctions
     return true;
-  } catch (error) {
+  } catch {
     return false;
   }
 };
