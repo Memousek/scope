@@ -32,7 +32,7 @@ import { TeamService } from "@/app/services/teamService";
 import { ProjectService } from "@/app/services/projectService";
 import { ScopeService } from "@/app/services/scopeService";
 import { ScopeEditorService } from "@/app/services/scopeEditorService";
-import { FiArrowLeft, FiShare2 } from "react-icons/fi";
+import { FiArrowLeft, FiCopy, FiShare2 } from "react-icons/fi";
 import { UserRepository } from "@/lib/domain/repositories/user.repository";
 import { User } from "@/lib/domain/models/user.model";
 import Link from "next/link";
@@ -495,8 +495,14 @@ export default function ScopePage({
                     {scope.name}
                   </h1>
                 </div>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Scope ID: {scope.id}
+                <p className="text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                  <button onClick={() => {
+                    navigator.clipboard.writeText(scope.id);
+                    alert('Scope ID copied to clipboard');
+                  }} className="text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                    Scope ID: {scope.id.slice(0, 8)}...{scope.id.slice(-8)}
+                    <FiCopy className="w-4 h-4" />
+                  </button>
                 </p>
               </div>
             </div>
