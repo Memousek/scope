@@ -22,6 +22,142 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
+// Type definitions for database responses
+interface ProjectNote {
+  id: string;
+  text: string;
+  created_at: string;
+}
+
+interface ProjectRoleDependency {
+  be_depends_on_fe: boolean;
+  fe_depends_on_be: boolean;
+  qa_depends_on_be: boolean;
+  qa_depends_on_fe: boolean;
+  parallel_mode: boolean;
+  current_active_roles: string[];
+  worker_states?: Array<{
+    role: string;
+    status: 'active' | 'waiting' | 'blocked';
+    team_member_id?: string;
+    allocation_fte?: number;
+  }>;
+}
+
+interface ProjectTeamAssignment {
+  project_id: string;
+  role: string;
+  allocation_fte: number;
+  team_members?: {
+    name: string;
+    role: string;
+    fte: number;
+  };
+  projects?: {
+    name: string;
+    priority: number;
+    status: string;
+  };
+}
+
+interface Project {
+  name: string;
+  priority: number;
+  status: string;
+  fe_mandays: number;
+  be_mandays: number;
+  qa_mandays: number;
+  pm_mandays: number;
+  dpl_mandays: number;
+  fe_done: number;
+  be_done: number;
+  qa_done: number;
+  pm_done: number;
+  dpl_done: number;
+  delivery_date: string | null;
+  created_at: string;
+  started_at: string | null;
+  project_notes?: ProjectNote[];
+  project_role_dependencies?: ProjectRoleDependency;
+  project_team_assignments?: ProjectTeamAssignment[];
+}
+
+interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  fte: number;
+  vacations?: Array<{
+    start: string;
+    end: string;
+    note?: string;
+  }>;
+  project_team_assignments?: ProjectTeamAssignment[];
+  timesheets?: Array<{
+    date: string;
+    project?: string;
+    role?: string;
+    hours: number;
+    note?: string;
+    externalId?: string;
+  }>;
+}
+
+interface ScopeRole {
+  key: string;
+  label: string;
+  color: string;
+  is_active: boolean;
+  order_index: number;
+}
+
+interface ScopeEditor {
+  id: string;
+  email: string;
+  accepted_at: string | null;
+  invited_at: string | null;
+  users?: {
+    id: string;
+    email: string;
+    full_name: string | null;
+    avatar_url: string | null;
+  };
+}
+
+interface ProjectProgress {
+  project_id: string;
+  date: string;
+  fe_done: number;
+  be_done: number;
+  qa_done: number;
+  pm_done: number;
+  dpl_done: number;
+  fe_mandays: number;
+  be_mandays: number;
+  qa_mandays: number;
+  pm_mandays: number;
+  dpl_mandays: number;
+  projects?: {
+    name: string;
+  };
+}
+
+interface MemberAssignment {
+  name: string;
+  role: string;
+  mappedRole: string;
+  fte: number;
+  assignedFte: number;
+  availableFte: number;
+  utilization: number;
+  isOnVacation: boolean;
+  assignments: Array<{
+    project: string;
+    role: string;
+    allocationFte: number;
+  }>;
+}
+
 type ChatMessage = { role: 'user' | 'assistant' | 'system'; content: string };
 
 export async function POST(req: NextRequest) {
@@ -162,17 +298,17 @@ function doneToSpentMd(planMd: number, doneField: number): number {
   return Math.max(doneField, 0);
 }
 
-function projectPlannedMd(p: any): number {
+function projectPlannedMd(p: Project): number {
   return (p.fe_mandays || 0) + (p.be_mandays || 0) + (p.qa_mandays || 0) + (p.pm_mandays || 0) + (p.dpl_mandays || 0);
 }
 
-function projectSpentMd(p: any): number {
+function projectSpentMd(p: Project): number {
   const map = (role: 'fe'|'be'|'qa'|'pm'|'dpl') =>
     doneToSpentMd(p[`${role}_mandays`] || 0, p[`${role}_done`] || 0);
   return map('fe') + map('be') + map('qa') + map('pm') + map('dpl');
 }
 
-function projectProgressPct(p: any): number {
+function projectProgressPct(p: Project): number {
   const plan = projectPlannedMd(p);
   if (plan <= 0) return 0;
   return Math.min(100, Math.round((projectSpentMd(p) / plan) * 100));
@@ -209,15 +345,16 @@ function todayIsoInTz(tz = 'Europe/Prague'): string {
     const topByPriority = (projects || []).slice(0, 12);
     const focusedProjects = Array.from(new Map([...matchedProjects, ...topByPriority].map(p => [p.name, p])).values());
 
-    const summarizeProjects = (focusedProjects || []).map(p => {
-      const progress = projectProgressPct(p);
-      const notes = ((p as any).project_notes || []).length;
-      const assignments = ((p as any).project_team_assignments || []);
-      const dependencies = (p as any).project_role_dependencies ? 'yes' : 'no';
-      const started = (p as any).started_at ? 'started' : 'not started';
+    const summarizeProjects = (focusedProjects || []).map((p: unknown) => {
+      const project = p as Project;
+      const progress = projectProgressPct(project);
+      const notes = (project.project_notes || []).length;
+      const assignments = (project.project_team_assignments || []) as ProjectTeamAssignment[];
+      const dependencies = project.project_role_dependencies ? 'yes' : 'no';
+      const started = project.started_at ? 'started' : 'not started';
       
       // Group assignments by role
-      const assignmentsByRole = assignments.reduce((acc: Record<string, string[]>, a: any) => {
+      const assignmentsByRole = assignments.reduce((acc: Record<string, string[]>, a: ProjectTeamAssignment) => {
         const role = a.role || 'unknown';
         const memberName = a.team_members?.name || 'unknown';
         if (!acc[role]) acc[role] = [];
@@ -225,26 +362,30 @@ function todayIsoInTz(tz = 'Europe/Prague'): string {
         return acc;
       }, {});
       
-      const roleInfo = Object.entries(assignmentsByRole).map(([role, members]) => `${role}: ${(members as string[]).join(', ')}`).join('; ');
+      const roleInfo = Object.entries(assignmentsByRole).map(([role, members]) => `${role}: ${members.join(', ')}`).join('; ');
       
-      return `• ${p.name} | prio ${p.priority} | status ${p.status} | progress ${progress}% | delivery ${p.delivery_date ?? '—'} | notes: ${notes} | roles: ${roleInfo || 'none'} | dependencies: ${dependencies} | ${started}`;
+      const statusEmoji = project.status === 'completed' ? '✅' : project.status === 'in_progress' ? '🔄' : project.status === 'paused' ? '⏸️' : project.status === 'cancelled' ? '❌' : '📋';
+      const priorityEmoji = project.priority <= 2 ? '🔴' : project.priority <= 4 ? '🟡' : '🟢';
+      
+      return `📋 **${project.name}** ${priorityEmoji}${statusEmoji}\n   📊 Progress: ${progress}% | 📅 Delivery: ${project.delivery_date ?? '—'} | 📝 Notes: ${notes}\n   👥 Roles: ${roleInfo || 'none'} | 🔗 Dependencies: ${dependencies} | 🚀 ${started}`;
     }).join('\n');
     
 
     const notesLines = wantsNotes
-      ? (focusedProjects || []).map(p => {
-          const ns = ((p as any).project_notes || []);
-          if (ns.length === 0) return `• ${p.name}: žádné poznámky`;
+      ? (focusedProjects || []).map((p: unknown) => {
+          const project = p as Project;
+          const ns = (project.project_notes || []) as ProjectNote[];
+          if (ns.length === 0) return `📋 **${project.name}**: Žádné poznámky`;
           
           const recentNotes = ns
-            .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+            .sort((a: ProjectNote, b: ProjectNote) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
             .slice(0, 3)
-            .map((n: any) => {
+            .map((n: ProjectNote) => {
               const date = new Date(n.created_at).toLocaleDateString('cs-CZ');
               return `"${n.text}" (${date})`;
             });
-          return `• ${p.name}: ${recentNotes.join(' | ')}`;
-        }).join('\n')
+          return `📋 **${project.name}**\n   📝 ${recentNotes.join('\n   📝 ')}`;
+        }).join('\n\n')
       : '';
 
     // Prepare comprehensive team analysis with availability and capacity metrics
@@ -274,15 +415,16 @@ function todayIsoInTz(tz = 'Europe/Prague'): string {
     }, 0);
     
     // Calculate project assignments and workload with role mapping
-    const memberAssignments = (team || []).map(m => {
-      const assignments = ((m as any).project_team_assignments || []);
-      const totalAssignedFte = assignments.reduce((sum: number, a: any) => sum + (a.allocation_fte || 0), 0);
-      const isOnVacation = activeVacations.some(v => v.name === m.name);
-      const availableFte = isOnVacation ? 0 : (m.fte || 0);
+    const memberAssignments = (team || []).map((m: unknown): MemberAssignment => {
+      const member = m as TeamMember;
+      const assignments = (member.project_team_assignments || []) as ProjectTeamAssignment[];
+      const totalAssignedFte = assignments.reduce((sum: number, a: ProjectTeamAssignment) => sum + (a.allocation_fte || 0), 0);
+      const isOnVacation = activeVacations.some(v => v.name === member.name);
+      const availableFte = isOnVacation ? 0 : (member.fte || 0);
       const utilization = availableFte > 0 ? Math.round((totalAssignedFte / availableFte) * 100) : 0;
       
       // Map role to standard development roles
-      const mapRole = (role: string) => {
+      const mapRole = (role: string): string => {
         const roleLower = role.toLowerCase();
         if (roleLower.includes('fe') || roleLower.includes('front') || roleLower.includes('ui') || roleLower.includes('react') || roleLower.includes('vue') || roleLower.includes('angular')) return 'FE';
         if (roleLower.includes('be') || roleLower.includes('back') || roleLower.includes('api') || roleLower.includes('server') || roleLower.includes('node') || roleLower.includes('java') || roleLower.includes('python')) return 'BE';
@@ -292,18 +434,18 @@ function todayIsoInTz(tz = 'Europe/Prague'): string {
         return role;
       };
       
-      const mappedRole = mapRole(m.role || '—');
+      const mappedRole = mapRole(member.role || '—');
       
       return {
-        name: m.name,
-        role: m.role || '—',
+        name: member.name,
+        role: member.role || '—',
         mappedRole,
-        fte: m.fte || 0,
+        fte: member.fte || 0,
         assignedFte: totalAssignedFte,
         availableFte,
         utilization,
         isOnVacation,
-        assignments: assignments.map((a: any) => ({
+        assignments: assignments.map((a: ProjectTeamAssignment) => ({
           project: a.projects?.name || 'unknown',
           role: a.role,
           allocationFte: a.allocation_fte
@@ -311,111 +453,129 @@ function todayIsoInTz(tz = 'Europe/Prague'): string {
       };
     });
     
-    // Create comprehensive team summary
+    // Create comprehensive team summary with better formatting
     const teamSummary = [
-      `📊 Tým: ${totalMembers} členů, ${totalFte.toFixed(1)} FTE celkem`,
-      `✅ Dnes dostupných: ${availableToday}/${totalMembers} členů, ${availableFteToday.toFixed(1)} FTE`,
-      `🏖️ Na dovolené: ${activeVacations.length} členů`,
-      `📈 Průměrné vytížení: ${Math.round(memberAssignments.reduce((sum, m) => sum + m.utilization, 0) / memberAssignments.length)}%`
-    ].join(' | ');
+      `👥 **Tým**: ${totalMembers} členů | ${totalFte.toFixed(1)} FTE celkem`,
+      `✅ **Dostupnost**: ${availableToday}/${totalMembers} členů | ${availableFteToday.toFixed(1)} FTE dnes`,
+      `🏖️ **Dovolené**: ${activeVacations.length} členů`,
+      `📈 **Vytížení**: ${Math.round(memberAssignments.reduce((sum, m) => sum + m.utilization, 0) / memberAssignments.length)}% průměr`
+    ].join('\n');
     
     // Create detailed team lines with availability and workload
     const teamLines = memberAssignments.map(m => {
-      const vacationInfo = m.isOnVacation ? ' (🏖️ dovolená)' : '';
-      const workloadInfo = m.utilization > 100 ? ' (⚠️ přetížen)' : m.utilization > 80 ? ' (🔴 vysoké vytížení)' : m.utilization > 50 ? ' (🟡 střední vytížení)' : ' (🟢 volný)';
+      const vacationInfo = m.isOnVacation ? ' 🏖️' : '';
+      const workloadInfo = m.utilization > 100 ? ' ⚠️' : m.utilization > 80 ? ' 🔴' : m.utilization > 50 ? ' 🟡' : ' 🟢';
       const roleInfo = m.mappedRole !== m.role ? ` (${m.role} → ${m.mappedRole})` : '';
       const assignmentInfo = m.assignments.length > 0 
-        ? ` | projekty: ${m.assignments.map((a: any) => `${a.project}(${a.role})`).join(', ')}`
-        : ' | žádné projekty';
+        ? `\n   📋 Projekty: ${m.assignments.map((a) => `**${a.project}** (${a.role})`).join(', ')}`
+        : '\n   📋 Žádné projekty';
       
-      return `• ${m.name} (${m.role}${roleInfo}, ${m.fte} FTE)${vacationInfo}${workloadInfo} | přiřazeno: ${m.assignedFte}/${m.availableFte} FTE (${m.utilization}%)${assignmentInfo}`;
-    }).join('\n');
+      return `👤 **${m.name}** (${m.role}${roleInfo}, ${m.fte} FTE)${vacationInfo}${workloadInfo}\n   📊 Vytížení: ${m.assignedFte}/${m.availableFte} FTE (${m.utilization}%)${assignmentInfo}`;
+    }).join('\n\n');
     
     const vacationsTodayLine = (() => {
-      if (activeVacations.length === 0) return 'Dnes na dovolené: nikdo';
+      if (activeVacations.length === 0) return '🏖️ **Dnes na dovolené**: Nikdo';
       const parts = activeVacations.map(v => {
         const start = new Date(v.start);
         const end = new Date(v.end);
         const totalDays = Math.floor((end.getTime() - start.getTime()) / (1000*60*60*24)) + 1;
         const remainingDays = Math.floor((end.getTime() - new Date(todayIso).getTime()) / (1000*60*60*24)) + 1;
-        return `${v.name}: ${v.start}..${v.end} (celkem ${totalDays} dní, zbývá ${Math.max(remainingDays,0)} dní)`;
-      }).join('; ');
-      return `Dnes na dovolené: ${parts}`;
+        return `👤 **${v.name}**: ${v.start} → ${v.end} (${totalDays} dní, zbývá ${Math.max(remainingDays,0)} dní)`;
+      }).join('\n   ');
+      return `🏖️ **Dnes na dovolené**:\n   ${parts}`;
     })();
 
     // Build enhanced JSON payload based on intent
     const payload: Record<string, unknown> = {};
     if (wantsProgress || wantsDeadlines) {
-      payload.projects = (focusedProjects || []).map(p => ({
-        name: p.name,
-        priority: p.priority,
-        status: p.status,
-        progress: projectProgressPct(p),
-        delivery: p.delivery_date,
-        started_at: (p as any).started_at,
-        created_at: (p as any).created_at
-      }));
+      payload.projects = (focusedProjects || []).map((p: unknown) => {
+        const project = p as Project;
+        return {
+          name: project.name,
+          priority: project.priority,
+          status: project.status,
+          progress: projectProgressPct(project),
+          delivery: project.delivery_date,
+          started_at: project.started_at,
+          created_at: project.created_at
+        };
+      });
     }
     
     if (wantsNotes) {
-      payload.notes = (focusedProjects || []).map(p => ({
-        project: p.name,
-        notes: ((p as any).project_notes || []).slice(0, 10).map((n: any) => ({
-          text: (n.text || '').slice(0, 300),
-          created_at: n.created_at
-        }))
-      }));
+      payload.notes = (focusedProjects || []).map((p: unknown) => {
+        const project = p as Project;
+        return {
+          project: project.name,
+          notes: (project.project_notes || []).slice(0, 10).map((n: ProjectNote) => ({
+            text: (n.text || '').slice(0, 300),
+            created_at: n.created_at
+          }))
+        };
+      });
     }
     
     if (wantsTeam || wantsVacations) {
-      payload.team = (team || []).map((m: any) => ({
-        name: m.name,
-        role: m.role,
-        fte: m.fte,
-        assignments: (m.project_team_assignments || []).map((a: any) => ({
-          project: a.projects?.name,
-          role: a.role,
-          allocation_fte: a.allocation_fte
-        }))
-      }));
+      payload.team = (team || []).map((m: unknown) => {
+        const member = m as TeamMember;
+        return {
+          name: member.name,
+          role: member.role,
+          fte: member.fte,
+          assignments: (member.project_team_assignments || []).map((a: ProjectTeamAssignment) => ({
+            project: a.projects?.name,
+            role: a.role,
+            allocation_fte: a.allocation_fte
+          }))
+        };
+      });
     }
     
     if (wantsVacations) {
       payload.vacationsToday = activeVacations;
-      payload.vacations = (team || []).map((m: any) => ({
-        name: m.name,
-        vacations: Array.isArray(m.vacations) ? m.vacations.slice(0, 20) : []
-      }));
+      payload.vacations = (team || []).map((m: unknown) => {
+        const member = m as TeamMember;
+        return {
+          name: member.name,
+          vacations: Array.isArray(member.vacations) ? member.vacations.slice(0, 20) : []
+        };
+      });
     }
     
     if (wantsDependencies || wantsAssignments) {
-      payload.dependencies = (focusedProjects || []).map(p => ({
-        project: p.name,
-        dependencies: (p as any).project_role_dependencies ? {
-          be_depends_on_fe: (p as any).project_role_dependencies.be_depends_on_fe,
-          fe_depends_on_be: (p as any).project_role_dependencies.fe_depends_on_be,
-          qa_depends_on_be: (p as any).project_role_dependencies.qa_depends_on_be,
-          qa_depends_on_fe: (p as any).project_role_dependencies.qa_depends_on_fe,
-          parallel_mode: (p as any).project_role_dependencies.parallel_mode,
-          current_active_roles: (p as any).project_role_dependencies.current_active_roles,
-          worker_states: (p as any).project_role_dependencies.worker_states
-        } : null
-      }));
+      payload.dependencies = (focusedProjects || []).map((p: unknown) => {
+        const project = p as Project;
+        return {
+          project: project.name,
+          dependencies: project.project_role_dependencies ? {
+            be_depends_on_fe: project.project_role_dependencies.be_depends_on_fe,
+            fe_depends_on_be: project.project_role_dependencies.fe_depends_on_be,
+            qa_depends_on_be: project.project_role_dependencies.qa_depends_on_be,
+            qa_depends_on_fe: project.project_role_dependencies.qa_depends_on_fe,
+            parallel_mode: project.project_role_dependencies.parallel_mode,
+            current_active_roles: project.project_role_dependencies.current_active_roles,
+            worker_states: project.project_role_dependencies.worker_states
+          } : null
+        };
+      });
     }
     
     if (wantsAssignments) {
-      payload.assignments = (focusedProjects || []).map(p => ({
-        project: p.name,
-        assignments: ((p as any).project_team_assignments || []).map((a: any) => ({
-          team_member: a.team_members?.name,
-          role: a.role,
-          allocation_fte: a.allocation_fte
-        }))
-      }));
+      payload.assignments = (focusedProjects || []).map((p: unknown) => {
+        const project = p as Project;
+        return {
+          project: project.name,
+          assignments: (project.project_team_assignments || []).map((a: ProjectTeamAssignment) => ({
+            team_member: a.team_members?.name,
+            role: a.role,
+            allocation_fte: a.allocation_fte
+          }))
+        };
+      });
     }
     
     if (wantsRoles) {
-      payload.scopeRoles = (scopeRoles || []).map(r => ({
+      payload.scopeRoles = (scopeRoles || []).map((r: ScopeRole) => ({
         key: r.key,
         label: r.label,
         color: r.color,
@@ -425,28 +585,34 @@ function todayIsoInTz(tz = 'Europe/Prague'): string {
     }
     
     if (wantsHistory) {
-      payload.progressHistory = (projectProgressHistory || []).map(h => ({
-        project: (h as any).projects?.name,
-        date: h.date,
-        fe_done: h.fe_done,
-        be_done: h.be_done,
-        qa_done: h.qa_done,
-        pm_done: h.pm_done,
-        dpl_done: h.dpl_done,
-        fe_mandays: h.fe_mandays,
-        be_mandays: h.be_mandays,
-        qa_mandays: h.qa_mandays,
-        pm_mandays: h.pm_mandays,
-        dpl_mandays: h.dpl_mandays
-      }));
+      payload.progressHistory = (projectProgressHistory || []).map((h: unknown) => {
+        const progress = h as ProjectProgress;
+        return {
+          project: progress.projects?.name,
+          date: progress.date,
+          fe_done: progress.fe_done,
+          be_done: progress.be_done,
+          qa_done: progress.qa_done,
+          pm_done: progress.pm_done,
+          dpl_done: progress.dpl_done,
+          fe_mandays: progress.fe_mandays,
+          be_mandays: progress.be_mandays,
+          qa_mandays: progress.qa_mandays,
+          pm_mandays: progress.pm_mandays,
+          dpl_mandays: progress.dpl_mandays
+        };
+      });
     }
     
     if (wantsTimesheets) {
-      payload.timesheets = (teamWithTimesheets || []).map(m => ({
-        name: m.name,
-        role: m.role,
-        timesheets: Array.isArray(m.timesheets) ? m.timesheets.slice(0, 20) : []
-      }));
+      payload.timesheets = (teamWithTimesheets || []).map((m: unknown) => {
+        const member = m as TeamMember;
+        return {
+          name: member.name,
+          role: member.role,
+          timesheets: Array.isArray(member.timesheets) ? member.timesheets.slice(0, 20) : []
+        };
+      });
     }
     
     if (wantsSettings) {
@@ -454,17 +620,20 @@ function todayIsoInTz(tz = 'Europe/Prague'): string {
     }
     
     if (wantsPermissions) {
-      payload.scopeEditors = (scopeEditors || []).map(e => ({
-        email: e.email,
-        accepted_at: e.accepted_at,
-        invited_at: e.invited_at,
-        user: (e as any).users ? {
-          id: (e as any).users.id,
-          email: (e as any).users.email,
-          full_name: (e as any).users.full_name,
-          avatar_url: (e as any).users.avatar_url
-        } : null
-      }));
+      payload.scopeEditors = (scopeEditors || []).map((e: unknown) => {
+        const editor = e as ScopeEditor;
+        return {
+          email: editor.email,
+          accepted_at: editor.accepted_at,
+          invited_at: editor.invited_at,
+          user: editor.users ? {
+            id: editor.users.id,
+            email: editor.users.email,
+            full_name: editor.users.full_name,
+            avatar_url: editor.users.avatar_url
+          } : null
+        };
+      });
     }
     
     if (wantsTeamCapacity || wantsTeamOverview) {
@@ -474,7 +643,7 @@ function todayIsoInTz(tz = 'Europe/Prague'): string {
         if (!acc[role]) acc[role] = [];
         acc[role].push(m);
         return acc;
-      }, {} as Record<string, typeof memberAssignments>);
+      }, {} as Record<string, MemberAssignment[]>);
       
       payload.teamCapacity = {
         summary: {
@@ -551,65 +720,107 @@ function todayIsoInTz(tz = 'Europe/Prague'): string {
 
     // Enhanced intent-aware system prompt with comprehensive context + JSON [DATA]
     const parts: string[] = [];
-    parts.push(`Jsi profesionální expert v projektovém managementu. Odpovídej česky, stručně (max 5 vět), s konkrétními doporučeními.`);
+    parts.push(`Jsi profesionální expert v projektovém managementu. Odpovídej česky, strukturovaně a přátelsky s emoji pro lepší čitelnost.`);
     parts.push(`Scope: ${scope?.name}`);
+    parts.push(`Formátování odpovědí:
+    • Používej emoji pro kategorizaci (📊, 👥, 🏖️, 📈, ⚠️, ✅, 🔴, 🟡, 🟢) případně jiné emoji podle situace
+    • Strukturované odpovědi s odrážkami
+    • Krátké, jasné věty
+    • Konkrétní doporučení s akčními kroky
+    • Používej Markdown formátování (**bold**, *italic*, \`kód\`)
+    • Používej Markdown tabulky pro přehlednost dat - VŽDY používej správný formát:
+      | Sloupec 1 | Sloupec 2 | Sloupec 3 |
+      | :-------- | :-------- | :-------- |
+      | Data 1    | Data 2    | Data 3    |
+    • Používej číslované seznamy pro kroky
+    • Používej kódové bloky pro technické informace
+    • VŽDY používej správné Markdown syntaxe pro tabulky`);
     
     if (wantsProgress || wantsDeadlines || summarizeProjects) {
-      parts.push(`Projekty (vybrané):\n${summarizeProjects}`);
+      parts.push(`📋 **Projekty (vybrané)**:\n${summarizeProjects}`);
+      parts.push(`📋 **Pro tabulky**: Používej Markdown tabulky pro zobrazení projektů s kolonkami: Projekt, Priorita, Status, Progress, Termín, Role.
+      Příklad formátu:
+      | Projekt | Priorita | Status | Progress | Termín | Role |
+      | :------- | :-------- | :------ | :-------- | :------ | :---- |
+      | Projekt A | 🔴 | 🔄 | 75% | 2025-09-15 | FE, BE |`);
     }
     
     if (wantsNotes && notesLines) {
-      parts.push(`Poznámky:\n${notesLines}`);
+      parts.push(`📝 **Poznámky**:\n${notesLines}`);
+      parts.push(`📋 **Pro tabulky**: Používej Markdown tabulky pro zobrazení poznámek s kolonkami: Projekt, Poznámka, Datum, Autor.`);
     }
     
     if (wantsTeam || wantsVacations) {
-      parts.push(`Tým:\n${teamLines}`);
+      parts.push(`👥 **Tým**:\n${teamLines}`);
+      parts.push(`📋 **Pro tabulky**: Používej Markdown tabulky pro zobrazení týmu s kolonkami: Člen, Role, FTE, Vytížení, Stav, Projekty.
+      Příklad formátu:
+      | Člen | Role | FTE | Vytížení | Stav | Projekty |
+      | :---- | :---- | :--- | :-------- | :---- | :-------- |
+      | Jan | FE | 1.0 | 85% | 🟡 | Projekt A, B |`);
     }
     
     if (wantsVacations) {
-      parts.push(vacationsTodayLine + '.');
-      parts.push(`Pokud se ptá: \"kdo má dnes dovolenou\", odpověz podle seznamu. Pokud \"na jak dlouho\", uveď rozsahy (od..do), celkový a zbývající počet dní.`);
+      parts.push(vacationsTodayLine);
+      parts.push(`💡 **Tip**: Při otázkách na dovolené uveď rozsahy (od → do), celkový a zbývající počet dní.`);
+      parts.push(`📋 **Pro tabulky**: Používej Markdown tabulky pro zobrazení dovolených s kolonkami: Člen, Od, Do, Celkem dní, Zbývá dní.
+      Příklad formátu:
+      | Člen | Od | Do | Celkem dní | Zbývá dní |
+      | :---- | :-- | :-- | :---------- | :---------- |
+      | Jan | 2025-08-13 | 2025-09-07 | 26 | 21 |`);
     }
     
     if (wantsDeadlines) {
-      parts.push(`Při otázkách na termíny/prioritu doporuč nejprve zrevidovat kapacitu (FTE), dovolené a blokace v pracovním toku.`);
+      parts.push(`⏰ **Tip pro termíny**: Při otázkách na termíny/prioritu doporuč nejprve zrevidovat kapacitu (FTE), dovolené a blokace v pracovním toku.`);
+      parts.push(`📋 **Pro tabulky**: Používej Markdown tabulky pro zobrazení termínů s kolonkami: Projekt, Priorita, Termín, Progress, Riziko.`);
     }
     
     if (wantsDependencies) {
-      parts.push(`Při otázkách na závislosti mezi rolemi zvaž workflow blokace a paralelní práci.`);
+      parts.push(`🔗 **Tip pro závislosti**: Při otázkách na závislosti mezi rolemi zvaž workflow blokace a paralelní práci.`);
+      parts.push(`📋 **Pro tabulky**: Používej Markdown tabulky pro zobrazení závislostí s kolonkami: Projekt, Role A, Role B, Typ závislosti, Stav.`);
     }
     
     if (wantsAssignments) {
-      parts.push(`Při otázkách na přiřazení členů týmu zvaž jejich FTE, role a současné vytížení.`);
+      parts.push(`👥 **Tip pro přiřazení**: Při otázkách na přiřazení členů týmu zvaž jejich FTE, role a současné vytížení.`);
+      parts.push(`📋 **Pro tabulky**: Používej Markdown tabulky pro zobrazení přiřazení členů k projektům s kolonkami: Člen, Projekt, Role, FTE, Stav.`);
     }
     
     if (wantsRoles) {
-      parts.push(`Dostupné role v scope: ${(scopeRoles || []).map(r => `${r.label} (${r.key})`).join(', ')}`);
+      const roleList = (scopeRoles || []).map(r => `**${r.label}** (${r.key})`).join(', ');
+      parts.push(`🎭 **Dostupné role v scope**:\n   ${roleList}`);
+      parts.push(`📋 **Pro tabulky**: Používej Markdown tabulky pro zobrazení rolí s kolonkami: Role, Klíč, Barva, Aktivní, Pořadí.`);
     }
     
     if (wantsHistory) {
-      parts.push(`Při otázkách na historii a trendy analyzuj vývoj progressu v čase a predikuj budoucí vývoj.`);
+      parts.push(`📈 **Tip pro historii**: Při otázkách na historii a trendy analyzuj vývoj progressu v čase a predikuj budoucí vývoj.`);
+      parts.push(`📋 **Pro tabulky**: Používej Markdown tabulky pro zobrazení historie progressu s kolonkami: Datum, Projekt, Progress, Změna.`);
     }
     
     if (wantsTimesheets) {
-      parts.push(`Při otázkách na timesheets porovnávej plánovanou vs. skutečnou odpracovanou dobu.`);
+      parts.push(`⏱️ **Tip pro timesheets**: Při otázkách na timesheets porovnávej plánovanou vs. skutečnou odpracovanou dobu.`);
+      parts.push(`📋 **Pro tabulky**: Používej Markdown tabulky pro zobrazení timesheetů s kolonkami: Člen, Datum, Projekt, Hodiny, Poznámka.`);
     }
     
     if (wantsSettings) {
       const settings = scopeSettings?.settings || {};
-      const calendarInfo = settings.calendar ? `Kalendář: ${settings.calendar.country || 'CZ'}${settings.calendar.subdivision ? ` (${settings.calendar.subdivision})` : ''}, svátky: ${settings.calendar.includeHolidays ? 'zapnuto' : 'vypnuto'}` : 'Kalendář: nenastaven';
-      const jiraInfo = settings.jira?.baseUrl ? `Jira: ${settings.jira.baseUrl}` : 'Jira: nenastaveno';
-      parts.push(`Scope nastavení: ${calendarInfo}, ${jiraInfo}`);
+      const calendarInfo = settings.calendar ? `📅 **Kalendář**: ${settings.calendar.country || 'CZ'}${settings.calendar.subdivision ? ` (${settings.calendar.subdivision})` : ''} | 🏖️ Svátky: ${settings.calendar.includeHolidays ? '✅ zapnuto' : '❌ vypnuto'}` : '📅 **Kalendář**: ❌ nenastaven';
+      const jiraInfo = settings.jira?.baseUrl ? `🔗 **Jira**: ${settings.jira.baseUrl}` : '🔗 **Jira**: ❌ nenastaveno';
+      parts.push(`⚙️ **Scope nastavení**:\n   ${calendarInfo}\n   ${jiraInfo}`);
     }
     
     if (wantsPermissions) {
       const editorsCount = scopeEditors?.length || 0;
       const acceptedCount = scopeEditors?.filter(e => e.accepted_at).length || 0;
-      parts.push(`Přístup ke scopu: ${editorsCount} editorů, ${acceptedCount} přijatých pozvánek`);
+      const pendingCount = editorsCount - acceptedCount;
+      parts.push(`🔐 **Přístup ke scopu**:\n   👥 Celkem editorů: ${editorsCount}\n   ✅ Přijatých pozvánek: ${acceptedCount}\n   ⏳ Čekajících pozvánek: ${pendingCount}`);
+      
+      if (scopeEditors && scopeEditors.length > 0) {
+        const editorList = scopeEditors.map(e => `   👤 **${e.email}**${e.accepted_at ? ' ✅' : ' ⏳'}`).join('\n');
+        parts.push(`📧 **Seznam editorů**:\n${editorList}`);
+      }
     }
     
     if (wantsTeamCapacity || wantsTeamOverview) {
-      parts.push(`Týmová kapacita:\n${teamSummary}`);
+      parts.push(`📊 **Týmová kapacita**:\n${teamSummary}`);
       
       // Add role-specific information
       const membersByMappedRole = memberAssignments.reduce((acc, m) => {
@@ -623,20 +834,42 @@ function todayIsoInTz(tz = 'Europe/Prague'): string {
         const totalFte = members.reduce((sum, m) => sum + m.fte, 0);
         const availableFte = members.reduce((sum, m) => sum + m.availableFte, 0);
         const names = members.map(m => m.name).join(', ');
-        return `${role}: ${members.length} členů (${totalFte} FTE, ${availableFte} dostupných) - ${names}`;
-      }).join('\n');
+        const roleEmoji = role === 'FE' ? '🎨' : role === 'BE' ? '⚙️' : role === 'QA' ? '🔍' : role === 'PM' ? '📊' : role === 'DPL' ? '🚀' : '👤';
+        return `${roleEmoji} **${role}**: ${members.length} členů | ${totalFte} FTE | ${availableFte} dostupných\n   👥 ${names}`;
+      }).join('\n\n');
       
       if (roleSummary) {
-        parts.push(`Rozdělení podle rolí:\n${roleSummary}`);
+        parts.push(`🎭 **Rozdělení podle rolí**:\n${roleSummary}`);
       }
       
-      parts.push(`Při otázkách na kapacitu analyzuj dostupnost, vytížení a možnosti přerozdělení práce.`);
-      parts.push(`Role jsou mapovány: FE (frontend), BE (backend), QA (testování), PM (management), DPL (devops).`);
+      parts.push(`💡 **Tip**: Při otázkách na kapacitu analyzuj dostupnost, vytížení a možnosti přerozdělení práce.`);
+      parts.push(`🔗 **Mapování rolí**: FE (frontend), BE (backend), QA (testování), PM (management), DPL (devops).`);
+      parts.push(`📋 **Pro tabulky**: Používej Markdown tabulky pro přehled dat o členech týmu, projektech a přiřazeních.`);
     }
-    
+
+    if (userMessage.toLowerCase().includes('kdo vytvořil aplikaci')) {
+      parts.push(`Aplikace byla vytvořena Scope Burndown týmem. Více informací nalezneš v nastavení profilu.`);
+    } else if (userMessage.toLowerCase().includes('kdo vytvořil scope burndown')) {
+      parts.push(`Scope Burndown byl vytvořen Scope Burndown týmem. Více informací nalezneš v nastavení profilu.`);
+    }
+
     if (dataJson && dataJson !== '{}' && dataJson.length < 8000) {
       parts.push(`[DATA] ${dataJson}`);
     }
+    
+    // Důležité instrukce pro formátování
+    parts.push(`🎯 **DŮLEŽITÉ**: VŽDY používej správné Markdown syntaxe pro tabulky. Každá tabulka musí mít:
+    1. Hlavičku s názvy sloupců oddělenými | 
+    2. Druhý řádek s zarovnáním (např. | :---- | :---- |)
+    3. Data řádky oddělené |
+    
+    Příklad správné tabulky:
+    | Název | Hodnota | Stav |
+    | :----- | :------ | :---- |
+    | Test | 123 | ✅ |
+    
+    NIKDY nepoužívej jiné formátování pro tabulky!`);
+    
     const systemPrompt = parts.join('\n\n');
 
     const messages: ChatMessage[] = chatHistory.length === 0

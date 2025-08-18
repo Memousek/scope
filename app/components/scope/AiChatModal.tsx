@@ -6,6 +6,8 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeHighlight from 'rehype-highlight';
 import { useProjects } from '@/app/hooks/useProjects';
 import { useScopeRoles } from '@/app/hooks/useScopeRoles';
 import { useTeam } from '@/app/hooks/useTeam';
@@ -353,7 +355,96 @@ function projectProgressPct(p: Project): number {
                       </div>
                     )
                     : (
-                      <ReactMarkdown>{message.content}</ReactMarkdown>
+                      <div className="prose prose-sm prose-invert max-w-none">
+                        <ReactMarkdown 
+                          remarkPlugins={[remarkGfm]}
+                          rehypePlugins={[rehypeHighlight]}
+                          components={{
+                          table: ({ children }) => (
+                            <div className="overflow-x-auto my-4">
+                              <table className="min-w-full border-collapse border border-gray-300 dark:border-gray-600">
+                                {children}
+                              </table>
+                            </div>
+                          ),
+                          th: ({ children }) => (
+                            <th className="border border-gray-300 dark:border-gray-600 px-3 py-2 bg-gray-100 dark:bg-gray-700 font-semibold text-left">
+                              {children}
+                            </th>
+                          ),
+                          td: ({ children }) => (
+                            <td className="border border-gray-300 dark:border-gray-600 px-3 py-2">
+                              {children}
+                            </td>
+                          ),
+                          code: ({ children, className }) => {
+                            const match = /language-(\w+)/.exec(className || '');
+                            return (
+                              <code className={`${className} bg-gray-800 dark:bg-gray-900 text-green-400 px-1 py-0.5 rounded text-sm`}>
+                                {children}
+                              </code>
+                            );
+                          },
+                          pre: ({ children }) => (
+                            <pre className="bg-gray-800 dark:bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto my-4">
+                              {children}
+                            </pre>
+                          ),
+                          ul: ({ children }) => (
+                            <ul className="list-disc list-inside my-2 space-y-1">
+                              {children}
+                            </ul>
+                          ),
+                          ol: ({ children }) => (
+                            <ol className="list-decimal list-inside my-2 space-y-1">
+                              {children}
+                            </ol>
+                          ),
+                          li: ({ children }) => (
+                            <li className="my-1">
+                              {children}
+                            </li>
+                          ),
+                          strong: ({ children }) => (
+                            <strong className="font-bold text-white">
+                              {children}
+                            </strong>
+                          ),
+                          em: ({ children }) => (
+                            <em className="italic text-white/90">
+                              {children}
+                            </em>
+                          ),
+                          h1: ({ children }) => (
+                            <h1 className="text-2xl font-bold text-white mb-4">
+                              {children}
+                            </h1>
+                          ),
+                          h2: ({ children }) => (
+                            <h2 className="text-xl font-bold text-white mb-3">
+                              {children}
+                            </h2>
+                          ),
+                          h3: ({ children }) => (
+                            <h3 className="text-lg font-bold text-white mb-2">
+                              {children}
+                            </h3>
+                          ),
+                          p: ({ children }) => (
+                            <p className="my-2 leading-relaxed">
+                              {children}
+                            </p>
+                          ),
+                          blockquote: ({ children }) => (
+                            <blockquote className="border-l-4 border-pink-400 pl-4 my-4 italic text-white/90">
+                              {children}
+                            </blockquote>
+                          ),
+                        }}
+                      >
+                        {message.content}
+                      </ReactMarkdown>
+                      </div>
                     )}
                   {message.error && (
                     <div className="text-xs text-red-500 mt-2">{message.error}</div>
@@ -423,9 +514,9 @@ function projectProgressPct(p: Project): number {
                     teamCount: team?.length || 0,
                     rolesCount: roles?.length || 0,
                     projectsWithNotes: projects?.filter(p => p.notes && p.notes.length > 0).length || 0,
-                    projectsWithAssignments: projects?.filter(p => (p as any).project_team_assignments && (p as any).project_team_assignments.length > 0).length || 0,
-                    projectsWithDependencies: projects?.filter(p => (p as any).project_role_dependencies).length || 0,
-                    teamWithTimesheets: team?.filter(m => (m as any).timesheets && (m as any).timesheets.length > 0).length || 0,
+                    projectsWithAssignments: projects?.filter(p => (p as unknown as { project_team_assignments?: unknown[] }).project_team_assignments && (p as unknown as { project_team_assignments?: unknown[] }).project_team_assignments!.length > 0).length || 0,
+                    projectsWithDependencies: projects?.filter(p => (p as unknown as { project_role_dependencies?: unknown }).project_role_dependencies).length || 0,
+                    teamWithTimesheets: team?.filter(m => (m as unknown as { timesheets?: unknown[] }).timesheets && (m as unknown as { timesheets?: unknown[] }).timesheets!.length > 0).length || 0,
                     teamCapacity: {
                       totalMembers: team?.length || 0,
                       totalFte: team?.reduce((sum, m) => sum + (m.fte || 0), 0) || 0,
@@ -460,8 +551,8 @@ function projectProgressPct(p: Project): number {
                         `Done: FE(${project.fe_done || 0}), BE(${project.be_done || 0}), QA(${project.qa_done || 0}), PM(${project.pm_done || 0}), DPL(${project.dpl_done || 0})`,
                         `Termín: ${project.delivery_date || 'Neuveden'}`,
                         `Poznámky: ${(project.notes && project.notes.length > 0) ? project.notes.map(note => note.text).join('; ') : 'Žádné poznámky'}`,
-                        `Přiřazení: ${((project as any).project_team_assignments && (project as any).project_team_assignments.length > 0) ? (project as any).project_team_assignments.map((a: any) => `${a.team_members?.name || 'unknown'} (${a.role}, ${a.allocation_fte} FTE)`).join('; ') : 'Žádná přiřazení'}`,
-                        `Závislosti: ${(project as any).project_role_dependencies ? 'Konfigurovány' : 'Žádné'}`,
+                        `Přiřazení: ${((project as unknown as { project_team_assignments?: unknown[] }).project_team_assignments && (project as unknown as { project_team_assignments?: unknown[] }).project_team_assignments!.length > 0) ? (project as unknown as { project_team_assignments?: Array<{ team_members?: { name: string }, role: string, allocation_fte: number }> }).project_team_assignments!.map((a) => `${a.team_members?.name || 'unknown'} (${a.role}, ${a.allocation_fte} FTE)`).join('; ') : 'Žádná přiřazení'}`,
+                        `Závislosti: ${(project as unknown as { project_role_dependencies?: unknown }).project_role_dependencies ? 'Konfigurovány' : 'Žádné'}`,
                         '---'
                       ].join('\n')
                     )).join('\n\n')
@@ -477,7 +568,7 @@ function projectProgressPct(p: Project): number {
                         return acc;
                       }, {} as Record<string, number>)).map(([role, count]) => `${role}: ${count}`).join(', ')}`,
                       `Mapování rolí: FE (frontend), BE (backend), QA (testování), PM (management), DPL (devops)`,
-                      `Členové s timesheets: ${team.filter(m => (m as any).timesheets && (m as any).timesheets.length > 0).length}`,
+                      `Členové s timesheets: ${team.filter(m => (m as unknown as { timesheets?: unknown[] }).timesheets && (m as unknown as { timesheets?: unknown[] }).timesheets!.length > 0).length}`,
                       '---'
                     ].join('\n')
                   : 'Žádný tým'}
