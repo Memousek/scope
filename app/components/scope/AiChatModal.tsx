@@ -102,7 +102,7 @@ export function AiChatModal({ onClose, scopeId, isOpen = true }: AiChatModalProp
   const { data: scopeUsage } = useScopeUsage(scopeId);
   const [chatMessage, setChatMessage] = useState<string>("");
   const [isAiTyping, setIsAiTyping] = useState<boolean>(false);
-  const [showTypingIndicator, setShowTypingIndicator] = useState<boolean>(true);
+  const [showTypingIndicator] = useState<boolean>(true);
   const [abortController, setAbortController] = useState<AbortController | null>(null);
   const [messages, setMessages] = useState<ChatMessageDisplay[]>([]);
 
