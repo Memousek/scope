@@ -62,6 +62,41 @@ export async function POST(req: NextRequest) {
         .replace(/\p{Diacritic}/gu, '')
         .trim();
 
+
+        // Convert mixed *_done (either % or MD) into spent mandays
+function doneToSpentMd(planMd: number, doneField: number): number {
+  if (!planMd || planMd <= 0) return 0;
+  // Heuristika: když je done výrazně větší než plán, ber to jako procenta.
+  if (doneField > planMd * 1.5) return Math.min(Math.max(doneField, 0), 100) / 100 * planMd;
+  // Jinak to ber jako odpracované MD (ohranič na >= 0)
+  return Math.max(doneField, 0);
+}
+
+function projectPlannedMd(p: any): number {
+  return (p.fe_mandays || 0) + (p.be_mandays || 0) + (p.qa_mandays || 0) + (p.pm_mandays || 0) + (p.dpl_mandays || 0);
+}
+
+function projectSpentMd(p: any): number {
+  const map = (role: 'fe'|'be'|'qa'|'pm'|'dpl') =>
+    doneToSpentMd(p[`${role}_mandays`] || 0, p[`${role}_done`] || 0);
+  return map('fe') + map('be') + map('qa') + map('pm') + map('dpl');
+}
+
+function projectProgressPct(p: any): number {
+  const plan = projectPlannedMd(p);
+  if (plan <= 0) return 0;
+  return Math.min(100, Math.round((projectSpentMd(p) / plan) * 100));
+}
+
+// Today in Europe/Prague as YYYY-MM-DD (for vacations)
+function todayIsoInTz(tz = 'Europe/Prague'): string {
+  const now = new Date();
+  const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' });
+  // en-CA gives YYYY-MM-DD directly
+  return fmt.format(now);
+}
+
+
     // Detect intent from user message
     const intentText = normalize(userMessage);
     const wantsVacations = /(dovol|vacat|holiday|volno)/.test(intentText);
@@ -76,11 +111,10 @@ export async function POST(req: NextRequest) {
     const focusedProjects = Array.from(new Map([...matchedProjects, ...topByPriority].map(p => [p.name, p])).values());
 
     const summarizeProjects = (focusedProjects || []).map(p => {
-      const totalMd = (p.fe_mandays || 0) + (p.be_mandays || 0) + (p.qa_mandays || 0) + (p.pm_mandays || 0) + (p.dpl_mandays || 0);
-      const totalDone = (p.fe_done || 0) + (p.be_done || 0) + (p.qa_done || 0) + (p.pm_done || 0) + (p.dpl_done || 0);
-      const progress = totalMd > 0 ? Math.round((totalDone / totalMd) * 100) : 0;
+      const progress = projectProgressPct(p);
       return `• ${p.name} | prio ${p.priority} | status ${p.status} | progress ${progress}% | delivery ${p.delivery_date ?? '—'}`;
     }).join('\n');
+    
 
     const notesLines = wantsNotes
       ? (focusedProjects || []).map(p => {
@@ -91,11 +125,7 @@ export async function POST(req: NextRequest) {
       : '';
 
     // Prepare team summaries incl. vacations today
-    const isoToday = new Date();
-    const yyyy = isoToday.getFullYear();
-    const mm = String(isoToday.getMonth() + 1).padStart(2, '0');
-    const dd = String(isoToday.getDate()).padStart(2, '0');
-    const todayIso = `${yyyy}-${mm}-${dd}`;
+    const todayIso = todayIsoInTz();
     const teamLines = (team || []).map(m => `• ${m.name} (${m.role || '—'}, ${m.fte ?? 0} FTE)`).join('\n');
     const activeVacations = (team || [])
       .flatMap((m: { name: string; vacations?: Array<{ start: string; end: string }> }) =>
@@ -118,19 +148,15 @@ export async function POST(req: NextRequest) {
     // Build compact JSON payload based on intent
     const payload: Record<string, unknown> = {};
     if (wantsProgress || wantsDeadlines) {
-      payload.projects = (focusedProjects || []).map(p => {
-        const totalMd = (p.fe_mandays || 0) + (p.be_mandays || 0) + (p.qa_mandays || 0) + (p.pm_mandays || 0) + (p.dpl_mandays || 0);
-        const totalDone = (p.fe_done || 0) + (p.be_done || 0) + (p.qa_done || 0) + (p.pm_done || 0) + (p.dpl_done || 0);
-        const progress = totalMd > 0 ? Math.round((totalDone / totalMd) * 100) : 0;
-        return {
-          name: p.name,
-          priority: p.priority,
-          status: p.status,
-          progress,
-          delivery: p.delivery_date
-        };
-      });
+      payload.projects = (focusedProjects || []).map(p => ({
+        name: p.name,
+        priority: p.priority,
+        status: p.status,
+        progress: projectProgressPct(p),
+        delivery: p.delivery_date
+      }));
     }
+    
     if (wantsNotes) {
       payload.notes = (focusedProjects || []).map(p => ({
         project: p.name,

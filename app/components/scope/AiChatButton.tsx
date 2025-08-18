@@ -55,9 +55,14 @@ export function AiChatButton({ onClick }: AiChatButtonProps) {
       onClick={onClick}
       className={`fixed bottom-6 right-24 w-16 h-16 text-white rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center justify-center group z-50 ${
         hasApiKey
-          ? 'bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 cursor-pointer opacity-100'
+          ? 'cursor-pointer opacity-100 outline outline-2 outline-gray-500'
           : 'bg-gradient-to-r from-gray-400 to-gray-500 cursor-not-allowed opacity-50'
       }`}
+          style={{
+            filter: 'drop-shadow(-8px -10px 46px #0000005f)',
+            backdropFilter: 'brightness(1.1) blur(2px) url(#displacementFilter)',
+            WebkitBackdropFilter: 'brightness(1.1) blur(2px) url(#displacementFilter)',
+          }}
       aria-label={hasApiKey ? t("askAi") : t("aiRequiresApiKey")}
       disabled={!hasApiKey}
       title={hasApiKey ? t("askAi") : t("setApiKeyInProfile")}

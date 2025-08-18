@@ -186,7 +186,7 @@ export function AiChatModal({ onClose, scopeId, isOpen = true }: AiChatModalProp
       {!panelOpen && (
         <button
           ref={chatButtonRef}
-          className="fixed bottom-6 right-24 w-16 h-16 text-white rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center justify-center group z-50 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 cursor-pointer opacity-100"
+          className="bottom-6 cursor-pointer duration-200 fixed flex h-16 hover:scale-105 hover:shadow-xl hover:to-blue-600 items-center justify-center opacity-100 right-24 shadow-lg text-white to-blue-500 transform transition-all w-16 z-50 rounded-full bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500"
           aria-label="Otevřít AI chat"
           title="Otevřít AI chat"
           onClick={() => setPanelOpen(true)}
