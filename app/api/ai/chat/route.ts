@@ -201,6 +201,8 @@ function todayIsoInTz(tz = 'Europe/Prague'): string {
     const wantsTimesheets = /(timesheet|odprac|skutec|real|plan.*real)/.test(intentText);
     const wantsSettings = /(nastav|config|kalendar|svat|holiday|jira)/.test(intentText);
     const wantsPermissions = /(pristup|editor|permission|kdo.*muze|kdo.*vid)/.test(intentText);
+    const wantsTeamCapacity = /(kapac|fte|dostup|vytiz|workload|utiliz)/.test(intentText);
+    const wantsTeamOverview = /(tym|team|celkem|pocet|members|overview)/.test(intentText);
 
     // Pick focused projects: match by name tokens + top by priority
     const matchedProjects = (projects || []).filter(p => intentText.includes(normalize(p.name)));
@@ -210,11 +212,22 @@ function todayIsoInTz(tz = 'Europe/Prague'): string {
     const summarizeProjects = (focusedProjects || []).map(p => {
       const progress = projectProgressPct(p);
       const notes = ((p as any).project_notes || []).length;
-      const assignments = ((p as any).project_team_assignments || []).length;
+      const assignments = ((p as any).project_team_assignments || []);
       const dependencies = (p as any).project_role_dependencies ? 'yes' : 'no';
       const started = (p as any).started_at ? 'started' : 'not started';
       
-      return `• ${p.name} | prio ${p.priority} | status ${p.status} | progress ${progress}% | delivery ${p.delivery_date ?? '—'} | notes: ${notes} | assignments: ${assignments} | dependencies: ${dependencies} | ${started}`;
+      // Group assignments by role
+      const assignmentsByRole = assignments.reduce((acc: Record<string, string[]>, a: any) => {
+        const role = a.role || 'unknown';
+        const memberName = a.team_members?.name || 'unknown';
+        if (!acc[role]) acc[role] = [];
+        acc[role].push(memberName);
+        return acc;
+      }, {});
+      
+      const roleInfo = Object.entries(assignmentsByRole).map(([role, members]) => `${role}: ${(members as string[]).join(', ')}`).join('; ');
+      
+      return `• ${p.name} | prio ${p.priority} | status ${p.status} | progress ${progress}% | delivery ${p.delivery_date ?? '—'} | notes: ${notes} | roles: ${roleInfo || 'none'} | dependencies: ${dependencies} | ${started}`;
     }).join('\n');
     
 
@@ -234,21 +247,90 @@ function todayIsoInTz(tz = 'Europe/Prague'): string {
         }).join('\n')
       : '';
 
-    // Prepare enhanced team summaries incl. vacations today and project assignments
+    // Prepare comprehensive team analysis with availability and capacity metrics
     const todayIso = todayIsoInTz();
-    const teamLines = (team || []).map(m => {
-      const assignments = ((m as any).project_team_assignments || []);
-      const assignmentInfo = assignments.length > 0 
-        ? ` | assigned to: ${assignments.map((a: any) => a.projects?.name || 'unknown').join(', ')}`
-        : ' | no assignments';
-      return `• ${m.name} (${m.role || '—'}, ${m.fte ?? 0} FTE)${assignmentInfo}`;
-    }).join('\n');
+    
+    // Calculate team capacity metrics
+    const totalFte = (team || []).reduce((sum, m) => sum + (m.fte || 0), 0);
+    const totalMembers = (team || []).length;
+    const membersByRole = (team || []).reduce((acc, m) => {
+      const role = m.role || 'Unassigned';
+      acc[role] = (acc[role] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    // Calculate availability today
     const activeVacations = (team || [])
       .flatMap((m: { name: string; vacations?: Array<{ start: string; end: string }> }) =>
         (Array.isArray(m.vacations) ? m.vacations : [])
           .filter((v: { start: string; end: string }) => v?.start <= todayIso && todayIso <= v?.end)
           .map((v: { start: string; end: string }) => ({ name: m.name, start: v.start, end: v.end }))
       );
+    
+    const availableToday = totalMembers - activeVacations.length;
+    const availableFteToday = (team || []).reduce((sum, m) => {
+      const isOnVacation = activeVacations.some(v => v.name === m.name);
+      return sum + (isOnVacation ? 0 : (m.fte || 0));
+    }, 0);
+    
+    // Calculate project assignments and workload with role mapping
+    const memberAssignments = (team || []).map(m => {
+      const assignments = ((m as any).project_team_assignments || []);
+      const totalAssignedFte = assignments.reduce((sum: number, a: any) => sum + (a.allocation_fte || 0), 0);
+      const isOnVacation = activeVacations.some(v => v.name === m.name);
+      const availableFte = isOnVacation ? 0 : (m.fte || 0);
+      const utilization = availableFte > 0 ? Math.round((totalAssignedFte / availableFte) * 100) : 0;
+      
+      // Map role to standard development roles
+      const mapRole = (role: string) => {
+        const roleLower = role.toLowerCase();
+        if (roleLower.includes('fe') || roleLower.includes('front') || roleLower.includes('ui') || roleLower.includes('react') || roleLower.includes('vue') || roleLower.includes('angular')) return 'FE';
+        if (roleLower.includes('be') || roleLower.includes('back') || roleLower.includes('api') || roleLower.includes('server') || roleLower.includes('node') || roleLower.includes('java') || roleLower.includes('python')) return 'BE';
+        if (roleLower.includes('qa') || roleLower.includes('test') || roleLower.includes('quality')) return 'QA';
+        if (roleLower.includes('pm') || roleLower.includes('project') || roleLower.includes('manager')) return 'PM';
+        if (roleLower.includes('dpl') || roleLower.includes('devops') || roleLower.includes('deploy') || roleLower.includes('ops')) return 'DPL';
+        return role;
+      };
+      
+      const mappedRole = mapRole(m.role || '—');
+      
+      return {
+        name: m.name,
+        role: m.role || '—',
+        mappedRole,
+        fte: m.fte || 0,
+        assignedFte: totalAssignedFte,
+        availableFte,
+        utilization,
+        isOnVacation,
+        assignments: assignments.map((a: any) => ({
+          project: a.projects?.name || 'unknown',
+          role: a.role,
+          allocationFte: a.allocation_fte
+        }))
+      };
+    });
+    
+    // Create comprehensive team summary
+    const teamSummary = [
+      `📊 Tým: ${totalMembers} členů, ${totalFte.toFixed(1)} FTE celkem`,
+      `✅ Dnes dostupných: ${availableToday}/${totalMembers} členů, ${availableFteToday.toFixed(1)} FTE`,
+      `🏖️ Na dovolené: ${activeVacations.length} členů`,
+      `📈 Průměrné vytížení: ${Math.round(memberAssignments.reduce((sum, m) => sum + m.utilization, 0) / memberAssignments.length)}%`
+    ].join(' | ');
+    
+    // Create detailed team lines with availability and workload
+    const teamLines = memberAssignments.map(m => {
+      const vacationInfo = m.isOnVacation ? ' (🏖️ dovolená)' : '';
+      const workloadInfo = m.utilization > 100 ? ' (⚠️ přetížen)' : m.utilization > 80 ? ' (🔴 vysoké vytížení)' : m.utilization > 50 ? ' (🟡 střední vytížení)' : ' (🟢 volný)';
+      const roleInfo = m.mappedRole !== m.role ? ` (${m.role} → ${m.mappedRole})` : '';
+      const assignmentInfo = m.assignments.length > 0 
+        ? ` | projekty: ${m.assignments.map((a: any) => `${a.project}(${a.role})`).join(', ')}`
+        : ' | žádné projekty';
+      
+      return `• ${m.name} (${m.role}${roleInfo}, ${m.fte} FTE)${vacationInfo}${workloadInfo} | přiřazeno: ${m.assignedFte}/${m.availableFte} FTE (${m.utilization}%)${assignmentInfo}`;
+    }).join('\n');
+    
     const vacationsTodayLine = (() => {
       if (activeVacations.length === 0) return 'Dnes na dovolené: nikdo';
       const parts = activeVacations.map(v => {
@@ -384,6 +466,53 @@ function todayIsoInTz(tz = 'Europe/Prague'): string {
         } : null
       }));
     }
+    
+    if (wantsTeamCapacity || wantsTeamOverview) {
+      // Group members by mapped roles
+      const membersByMappedRole = memberAssignments.reduce((acc, m) => {
+        const role = m.mappedRole;
+        if (!acc[role]) acc[role] = [];
+        acc[role].push(m);
+        return acc;
+      }, {} as Record<string, typeof memberAssignments>);
+      
+      payload.teamCapacity = {
+        summary: {
+          totalMembers,
+          totalFte,
+          availableToday,
+          availableFteToday,
+          onVacation: activeVacations.length,
+          averageUtilization: Math.round(memberAssignments.reduce((sum, m) => sum + m.utilization, 0) / memberAssignments.length)
+        },
+        membersByRole,
+        membersByMappedRole: Object.entries(membersByMappedRole).map(([role, members]) => ({
+          role,
+          count: members.length,
+          totalFte: members.reduce((sum, m) => sum + m.fte, 0),
+          availableFte: members.reduce((sum, m) => sum + m.availableFte, 0),
+          members: members.map(m => ({
+            name: m.name,
+            originalRole: m.role,
+            fte: m.fte,
+            availableFte: m.availableFte,
+            utilization: m.utilization,
+            isOnVacation: m.isOnVacation
+          }))
+        })),
+        memberDetails: memberAssignments.map(m => ({
+          name: m.name,
+          role: m.role,
+          mappedRole: m.mappedRole,
+          fte: m.fte,
+          assignedFte: m.assignedFte,
+          availableFte: m.availableFte,
+          utilization: m.utilization,
+          isOnVacation: m.isOnVacation,
+          assignments: m.assignments
+        }))
+      };
+    }
 
     // Minify and cap payload size
     let dataJson = '';
@@ -404,6 +533,7 @@ function todayIsoInTz(tz = 'Europe/Prague'): string {
           progressHistory?: unknown[];
           timesheets?: unknown[];
           scopeEditors?: unknown[];
+          teamCapacity?: unknown;
         };
         if (Array.isArray(temp.notes)) temp.notes = reduceArray(temp.notes, 5);
         if (Array.isArray(temp.projects)) temp.projects = reduceArray(temp.projects, 8);
@@ -476,6 +606,32 @@ function todayIsoInTz(tz = 'Europe/Prague'): string {
       const editorsCount = scopeEditors?.length || 0;
       const acceptedCount = scopeEditors?.filter(e => e.accepted_at).length || 0;
       parts.push(`Přístup ke scopu: ${editorsCount} editorů, ${acceptedCount} přijatých pozvánek`);
+    }
+    
+    if (wantsTeamCapacity || wantsTeamOverview) {
+      parts.push(`Týmová kapacita:\n${teamSummary}`);
+      
+      // Add role-specific information
+      const membersByMappedRole = memberAssignments.reduce((acc, m) => {
+        const role = m.mappedRole;
+        if (!acc[role]) acc[role] = [];
+        acc[role].push(m);
+        return acc;
+      }, {} as Record<string, typeof memberAssignments>);
+      
+      const roleSummary = Object.entries(membersByMappedRole).map(([role, members]) => {
+        const totalFte = members.reduce((sum, m) => sum + m.fte, 0);
+        const availableFte = members.reduce((sum, m) => sum + m.availableFte, 0);
+        const names = members.map(m => m.name).join(', ');
+        return `${role}: ${members.length} členů (${totalFte} FTE, ${availableFte} dostupných) - ${names}`;
+      }).join('\n');
+      
+      if (roleSummary) {
+        parts.push(`Rozdělení podle rolí:\n${roleSummary}`);
+      }
+      
+      parts.push(`Při otázkách na kapacitu analyzuj dostupnost, vytížení a možnosti přerozdělení práce.`);
+      parts.push(`Role jsou mapovány: FE (frontend), BE (backend), QA (testování), PM (management), DPL (devops).`);
     }
     
     if (dataJson && dataJson !== '{}' && dataJson.length < 8000) {

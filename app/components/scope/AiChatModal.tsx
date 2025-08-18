@@ -426,9 +426,25 @@ function projectProgressPct(p: Project): number {
                     projectsWithAssignments: projects?.filter(p => (p as any).project_team_assignments && (p as any).project_team_assignments.length > 0).length || 0,
                     projectsWithDependencies: projects?.filter(p => (p as any).project_role_dependencies).length || 0,
                     teamWithTimesheets: team?.filter(m => (m as any).timesheets && (m as any).timesheets.length > 0).length || 0,
+                    teamCapacity: {
+                      totalMembers: team?.length || 0,
+                      totalFte: team?.reduce((sum, m) => sum + (m.fte || 0), 0) || 0,
+                      membersByRole: team?.reduce((acc, m) => {
+                        const role = m.role || 'Unassigned';
+                        acc[role] = (acc[role] || 0) + 1;
+                        return acc;
+                      }, {} as Record<string, number>) || {},
+                      roleMapping: {
+                        'FE': 'Frontend developers',
+                        'BE': 'Backend developers', 
+                        'QA': 'Testers',
+                        'PM': 'Project managers',
+                        'DPL': 'DevOps/Deployment'
+                      }
+                    },
                     availableDataTypes: [
                       'projects', 'team', 'roles', 'notes', 'assignments', 'dependencies',
-                      'progress_history', 'timesheets', 'scope_settings', 'permissions'
+                      'progress_history', 'timesheets', 'scope_settings', 'permissions', 'team_capacity'
                     ]
                   }
                 }, null, 2)}
@@ -450,6 +466,21 @@ function projectProgressPct(p: Project): number {
                       ].join('\n')
                     )).join('\n\n')
                   : 'Žádné projekty'}
+                                {"\n---\nTýmové informace:\n"}
+                {team && team.length > 0
+                  ? [
+                      `Celkem členů: ${team.length}`,
+                      `Celkem FTE: ${team.reduce((sum, m) => sum + (m.fte || 0), 0).toFixed(1)}`,
+                      `Členové podle rolí: ${Object.entries(team.reduce((acc, m) => {
+                        const role = m.role || 'Unassigned';
+                        acc[role] = (acc[role] || 0) + 1;
+                        return acc;
+                      }, {} as Record<string, number>)).map(([role, count]) => `${role}: ${count}`).join(', ')}`,
+                      `Mapování rolí: FE (frontend), BE (backend), QA (testování), PM (management), DPL (devops)`,
+                      `Členové s timesheets: ${team.filter(m => (m as any).timesheets && (m as any).timesheets.length > 0).length}`,
+                      '---'
+                    ].join('\n')
+                  : 'Žádný tým'}
               </pre>
             </details>
           </div>
