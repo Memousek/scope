@@ -278,7 +278,7 @@ const ToastContainer: React.FC = () => {
   }
 
   return createPortal(
-    <div className="fixed bottom-20 right-24 z-50 space-y-3 max-w-sm w-full sm:max-w-md">
+    <div className="fixed bottom-6 left-6 z-50 space-y-3 max-w-sm w-full sm:max-w-md">
       <AnimatePresence mode="popLayout">
         {toasts.map((toast) => (
           <Toast
