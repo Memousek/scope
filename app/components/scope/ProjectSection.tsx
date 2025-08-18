@@ -52,6 +52,7 @@ import { FiUsers, FiFolder, FiFilter, FiChevronDown, FiDelete, FiEdit } from "re
 import { ProjectStatusFilter, ProjectStatus } from "./ProjectStatusFilter";
 import { ProjectStatusBadge } from "./ProjectStatusBadge";
 import { useToastFunctions } from '@/app/components/ui/Toast';
+import { UserAvatar } from "./UserAvatar";
 
 interface ProjectSectionProps {
   scopeId: string;
@@ -1764,17 +1765,27 @@ export function ProjectSection({
                                             const isScopeEditor =
                                               user &&
                                               user.role === "scope_editor";
+                                            const author = team.find((m) => m.id === note.author.id);
                                             return (
                                               <div
                                                 key={idx}
                                                 className="relative bg-gradient-to-br from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm rounded-xl p-4 border border-gray-200/50 dark:border-gray-600/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                                               >
-                                                <div className="flex items-center justify-between mb-2">
+                                                <div className="flex items-center justify-start gap-3 mb-2">
+                                                  <UserAvatar 
+                                                    user={{
+                                                      fullName: note.author.fullName,
+                                                      email: note.author.email,
+                                                      avatarUrl: note.author.additional?.avatar_url as string
+                                                    }}
+                                                    size="sm"
+                                                    showName={false}
+                                                  />
                                                   <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
                                                     {note.author.fullName ||
                                                       note.author.email}
                                                   </span>
-                                                  <div className="flex gap-2">
+                                                  <div className="flex gap-2 ml-auto">
                                                     {isAuthor && (
                                                       <>
                                                         <button

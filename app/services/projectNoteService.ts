@@ -48,7 +48,7 @@ export class ProjectNoteService {
     const supabase = createClient();
     const { data, error } = await supabase
       .from('project_notes')
-      .select('*, author:user_meta(user_id, full_name, email)')
+      .select('*, author:user_meta(user_id, full_name, email, avatar_url)')
       .eq('project_id', project_id);
     if (error) throw new Error(error.message);
     return (data || []).map(note => ({
@@ -60,7 +60,9 @@ export class ProjectNoteService {
         email: note.author.email || '',
         createdAt: new Date(0),
         updatedAt: new Date(0),
-        additional: {},
+        additional: {
+          avatar_url: note.author.avatar_url || undefined
+        },
       } : {
         id: note.author_id,
         fullName: '',
