@@ -14,7 +14,7 @@ import { useTeam } from '@/app/hooks/useTeam';
 import { useScopeUsage } from '@/app/hooks/useData';
 import { useTranslation } from '@/lib/translation';
 import { AiService, ChatMessage, AiAnalysisResult } from '@/app/services/aiService';
-import { FiMessageCircle, FiSend, FiMinus } from 'react-icons/fi';
+import { FiMessageCircle, FiSend, FiMinus, FiStopCircle } from 'react-icons/fi';
 
 interface Project {
   name: string;
@@ -102,6 +102,8 @@ export function AiChatModal({ onClose, scopeId, isOpen = true }: AiChatModalProp
   const { data: scopeUsage } = useScopeUsage(scopeId);
   const [chatMessage, setChatMessage] = useState<string>("");
   const [isAiTyping, setIsAiTyping] = useState<boolean>(false);
+  const [showTypingIndicator, setShowTypingIndicator] = useState<boolean>(true);
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
   const [messages, setMessages] = useState<ChatMessageDisplay[]>([]);
 
   const [hasApiKey, setHasApiKey] = useState<boolean | null>(null);
@@ -138,6 +140,17 @@ export function AiChatModal({ onClose, scopeId, isOpen = true }: AiChatModalProp
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const handleStopGeneration = () => {
+    if (abortController) {
+      console.log('Stopping AI generation...');
+      abortController.abort();
+      setAbortController(null);
+      setIsAiTyping(false);
+      // Remove the placeholder message if it exists
+      setMessages(prev => prev.filter(m => m.content !== '...'));
+    }
+  };
+
   const handleSendMessage = async () => {
     if (!chatMessage.trim() || isAiTyping) return;
 
@@ -161,6 +174,10 @@ export function AiChatModal({ onClose, scopeId, isOpen = true }: AiChatModalProp
     }));
 
     setIsAiTyping(true);
+    
+    // Create abort controller for this request
+    const controller = new AbortController();
+    setAbortController(controller);
 
     try {
       // Přidáme prázdný placeholder pro streaming/inkrementální update
@@ -174,9 +191,10 @@ export function AiChatModal({ onClose, scopeId, isOpen = true }: AiChatModalProp
         chatHistory,
         undefined,
         // onDelta: průběžné doplňování textu
-            (delta) => {
+        (delta) => {
           setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: ((m.content || '') === '...' ? '' : (m.content || '')) + delta } : m));
-        }
+        },
+        controller
       );
 
       // Finální obsah (pokud přišel jako celek)
@@ -185,6 +203,23 @@ export function AiChatModal({ onClose, scopeId, isOpen = true }: AiChatModalProp
       }
     } catch (error) {
       console.error('AI Chat error:', error);
+      
+      // Check if it was aborted - don't show error message for abort
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('AI Chat request was aborted');
+        // Remove the placeholder message if it exists
+        setMessages(prev => prev.filter(m => m.content !== '...'));
+        return;
+      }
+      
+      // Check if it's an abort-related error from our service
+      if (error instanceof Error && error.message.includes('signal is aborted')) {
+        console.log('AI Chat request was aborted (service level)');
+        // Remove the placeholder message if it exists
+        setMessages(prev => prev.filter(m => m.content !== '...'));
+        return;
+      }
+      
       const errorMessageDisplay: ChatMessageDisplay = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -196,6 +231,7 @@ export function AiChatModal({ onClose, scopeId, isOpen = true }: AiChatModalProp
       setMessages(prev => [...prev, errorMessageDisplay]);
     } finally {
       setIsAiTyping(false);
+      setAbortController(null);
     }
   };
 
@@ -323,10 +359,7 @@ function projectProgressPct(p: Project): number {
           <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-transparent">
             {messages.length === 0 && (
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg">
-                  <FiMessageCircle className="w-4 h-4 text-white" />
-                </div>
-                <div className="bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 rounded-xl p-4 text-white shadow-lg">
+                <div className="bg-gray-700 dark:bg-gray-800 rounded-xl p-4 text-white shadow-lg">
                   <p className="text-base font-medium">{t("aiHelpText")}</p>
                   {hasApiKey === false && (
                     <p className="text-sm mt-2 text-yellow-200">⚠️ {t("aiApiKeyRequired")}</p>
@@ -340,12 +373,7 @@ function projectProgressPct(p: Project): number {
                 key={message.id}
                 className={`flex items-start gap-2 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                {message.role === 'assistant' && (
-                  <div className="w-6 h-6 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg">
-                    <FiMessageCircle className="w-3 h-3 text-white" />
-                  </div>
-                )}
-                <div className={`max-w-[85%] rounded-xl p-3 ${message.role === 'assistant' ? 'bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-white' : 'bg-blue-500 text-white'} shadow-lg whitespace-pre-line font-medium`}>
+                <div className={`max-w-[85%] rounded-xl p-3 ${message.role === 'assistant' ? 'bg-gray-700 dark:bg-gray-800 text-white' : 'bg-blue-500 text-white'} shadow-lg whitespace-pre-line font-medium`}>
                   {message.content === '...'
                     ? (
                       <div className="flex items-center space-x-1" aria-live="polite" aria-label="AI píše">
@@ -452,12 +480,12 @@ function projectProgressPct(p: Project): number {
               </div>
             ))}
             <div ref={messagesEndRef} />
-            {isAiTyping && !messages.some(m => m.role === 'assistant' && m.content === '...') && (
+            {isAiTyping && showTypingIndicator && !messages.some(m => m.role === 'assistant' && m.content === '...') && (
               <div className="flex items-start gap-2 justify-start">
                 <div className="w-6 h-6 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg">
                   <FiMessageCircle className="w-3 h-3 text-white animate-pulse" />
                 </div>
-                <div className="bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 rounded-xl p-3 text-white shadow-lg">
+                <div className="bg-gray-700 dark:bg-gray-800 rounded-xl p-3 text-white shadow-lg">
                   <div className="flex items-center space-x-1">
                     <span className="inline-block w-1.5 h-1.5 bg-white rounded-full animate-bounce delay-75"></span>
                     <span className="inline-block w-1.5 h-1.5 bg-white rounded-full animate-bounce delay-150"></span>
@@ -488,13 +516,21 @@ function projectProgressPct(p: Project): number {
                 tabIndex={0}
               />
               <button
-                onClick={handleSendMessage}
-                disabled={!chatMessage.trim() || !hasApiKey || isAiTyping}
-                className="px-3 py-2 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-white rounded-xl hover:from-pink-600 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg"
-                aria-label="Odeslat zprávu AI"
+                onClick={isAiTyping ? handleStopGeneration : handleSendMessage}
+                disabled={!isAiTyping && (!chatMessage.trim() || !hasApiKey)}
+                className={`px-3 py-2 rounded-xl transition-all shadow-lg ${
+                  isAiTyping 
+                    ? 'bg-red-500 hover:bg-red-600 text-white' 
+                    : 'bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 hover:from-pink-600 hover:to-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed'
+                }`}
+                aria-label={isAiTyping ? "Zastavit generování" : "Odeslat zprávu AI"}
                 tabIndex={0}
               >
-                <FiSend className="w-4 h-4" />
+                {isAiTyping ? (
+                  <span className="w-4 h-4 flex items-center justify-center"><FiStopCircle className="w-4 h-4" /></span>
+                ) : (
+                  <FiSend className="w-4 h-4" />
+                )}
               </button>
             </div>
             {/* Debug sekce: výpis odesílaného kontextu do AI */}

@@ -161,7 +161,8 @@ export class AiService {
     userMessage: string,
     chatHistory: ChatMessage[] = [],
     onTyping?: (isTyping: boolean) => void,
-    onDelta?: (delta: string) => void
+    onDelta?: (delta: string) => void,
+    abortController?: AbortController
   ): Promise<AiAnalysisResult> {
     if (onTyping) onTyping(true);
     const aiSettings = await this.getUserAiSettings();
@@ -179,7 +180,8 @@ export class AiService {
       const res = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider, scopeId, userMessage, chatHistory: messages })
+        body: JSON.stringify({ provider, scopeId, userMessage, chatHistory: messages }),
+        signal: abortController?.signal
       });
       if (!res.ok) {
         const text = await res.text();
@@ -196,6 +198,17 @@ export class AiService {
       };
     } catch (error) {
       console.error('AI Service error:', error);
+      
+      // Check if it was aborted - don't throw error for abort
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('AI Service request was aborted');
+        return {
+          message: '',
+          suggestions: [],
+          insights: []
+        };
+      }
+      
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Chyba při komunikaci se serverovým AI endpointem: ${errorMessage}`);
     } finally {

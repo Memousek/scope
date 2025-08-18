@@ -868,7 +868,11 @@ function todayIsoInTz(tz = 'Europe/Prague'): string {
     | :----- | :------ | :---- |
     | Test | 123 | ✅ |
     
-    NIKDY nepoužívej jiné formátování pro tabulky!`);
+    NIKDY nepoužívej jiné formátování pro tabulky!
+    Dávej pouze rychlé stručné odpovědi.
+    Vždy dávej pár bodů od kterých se uživatel může odpíchnout, ale nedávej mu hodně dat najednou.
+    Povídej si s uživatelem jako s dobrým přítelem, který vyžaduje tvou pomoc.
+    `);
     
     const systemPrompt = parts.join('\n\n');
 
