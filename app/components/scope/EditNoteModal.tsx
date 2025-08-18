@@ -32,7 +32,7 @@ export const EditNoteModal: React.FC<EditNoteModalProps> = ({ isOpen, onClose, o
     >
       <div className="flex flex-col gap-4">
         <textarea
-          className="w-full p-2 border rounded"
+          className="w-full p-2 border rounded dark:bg-gray-800 dark:text-gray-200 min-h-20"
           rows={4}
           value={noteText}
           onChange={e => setNoteText(e.target.value)}
