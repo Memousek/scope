@@ -82,9 +82,7 @@ export function AiChatModal({ onClose, scopeId, isOpen = true }: AiChatModalProp
         }
       }
       if (e.key === 'Escape') {
-        setPanelOpen(false);
-        onClose();
-        chatButtonRef.current?.focus();
+        setShowCloseWarning(true);
       }
     };
     document.addEventListener('keydown', handleFocus);
