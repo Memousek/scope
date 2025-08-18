@@ -1,5 +1,23 @@
 /**
- * Server-side AI chat proxy to hide API keys and reduce token usage.
+ * Enhanced server-side AI chat proxy with comprehensive project context
+ * 
+ * Features:
+ * - Hides API keys and reduces token usage
+ * - Provides rich context including:
+ *   - Project details with progress, notes, and metadata
+ *   - Team assignments and member availability
+ *   - Role dependencies and workflow information
+ *   - Vacation tracking and capacity planning
+ *   - Scope roles and permissions
+ *   - Project progress history and trends
+ *   - Timesheet data and actual vs planned work
+ *   - Scope settings and configuration
+ *   - Access permissions and editors
+ *   - Calendar settings and holidays
+ *   - Jira integration status
+ * - Intent-aware context selection for optimal token usage
+ * - Real-time data from database with proper relationships
+ * - Smart payload size management to stay within token limits
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
@@ -34,25 +52,97 @@ export async function POST(req: NextRequest) {
     if (selectedProvider === 'openai' && !openaiKey) return NextResponse.json({ error: 'Missing OpenAI API key' }, { status: 400 });
     if (selectedProvider === 'gemini' && !geminiKey) return NextResponse.json({ error: 'Missing Gemini API key' }, { status: 400 });
 
-    // Load minimal scope context (token-optimized)
+    // Load comprehensive scope context with enhanced project data
     const { data: scope } = await supabase
       .from('scopes')
       .select('name, description, created_at')
       .eq('id', scopeId)
       .single();
 
+    // Enhanced projects with notes, role dependencies, and team assignments
     const { data: projects } = await supabase
       .from('projects')
-      .select('name, priority, status, fe_mandays, be_mandays, qa_mandays, pm_mandays, dpl_mandays, fe_done, be_done, qa_done, pm_done, dpl_done, delivery_date, project_notes(text)')
+      .select(`
+        name, priority, status, 
+        fe_mandays, be_mandays, qa_mandays, pm_mandays, dpl_mandays,
+        fe_done, be_done, qa_done, pm_done, dpl_done, 
+        delivery_date, created_at, started_at,
+        project_notes(id, text, created_at),
+        project_role_dependencies(
+          be_depends_on_fe, fe_depends_on_be, qa_depends_on_be, qa_depends_on_fe,
+          parallel_mode, current_active_roles, worker_states
+        ),
+        project_team_assignments(
+          team_member_id, role, allocation_fte,
+          team_members(name, role, fte)
+        )
+      `)
       .eq('scope_id', scopeId)
       .order('priority', { ascending: true });
 
-    // Team with vacations
+    // Enhanced team with vacations and project assignments
     const { data: team } = await supabase
       .from('team_members')
-      .select('name, role, fte, vacations')
+      .select(`
+        id, name, role, fte, vacations,
+        project_team_assignments(
+          project_id, role, allocation_fte,
+          projects(name, priority, status)
+        )
+      `)
       .eq('scope_id', scopeId)
       .order('name', { ascending: true });
+
+    // Load scope roles for better context
+    const { data: scopeRoles } = await supabase
+      .from('scope_roles')
+      .select('key, label, color, is_active, order_index')
+      .eq('scope_id', scopeId)
+      .eq('is_active', true)
+      .order('order_index', { ascending: true });
+
+    // Load scope settings for calendar, integrations, etc.
+    const { data: scopeSettings } = await supabase
+      .from('scopes')
+      .select('settings')
+      .eq('id', scopeId)
+      .single();
+
+    // Load scope editors for permissions context
+    const { data: scopeEditors } = await supabase
+      .from('scope_editors')
+      .select(`
+        id, email, accepted_at, invited_at,
+        users(id, email, full_name, avatar_url, user_meta)
+      `)
+      .eq('scope_id', scopeId);
+
+    // Load recent project progress history (last 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const { data: projectProgressHistory } = await supabase
+      .from('project_progress')
+      .select(`
+        project_id, date, fe_done, be_done, qa_done, pm_done, dpl_done,
+        fe_mandays, be_mandays, qa_mandays, pm_mandays, dpl_mandays,
+        projects(name)
+      `)
+      .gte('date', thirtyDaysAgo.toISOString())
+      .order('date', { ascending: false })
+      .limit(100);
+
+    // Load timesheet data for team members (last 14 days)
+    const fourteenDaysAgo = new Date();
+    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+    
+    const { data: teamWithTimesheets } = await supabase
+      .from('team_members')
+      .select(`
+        id, name, role, fte, vacations, timesheets
+      `)
+      .eq('scope_id', scopeId)
+      .not('timesheets', 'is', null);
 
     // Utility: normalize for intent and name matching
     const normalize = (s: string) =>
@@ -97,13 +187,20 @@ function todayIsoInTz(tz = 'Europe/Prague'): string {
 }
 
 
-    // Detect intent from user message
+    // Enhanced intent detection from user message
     const intentText = normalize(userMessage);
     const wantsVacations = /(dovol|vacat|holiday|volno)/.test(intentText);
     const wantsDeadlines = /(termin|deadline|priorit|kapac|fte|konec|start)/.test(intentText);
     const wantsProgress = /(burndown|progres|progress|prubeh|hotovo|%)/.test(intentText);
-    const wantsTeam = /(tym|team|role|clen|member)/.test(intentText);
-    const wantsNotes = /(poznam|pozn|note)/.test(intentText);
+    const wantsTeam = /(tym|team|role|clen|member|assignment|alokac)/.test(intentText);
+    const wantsNotes = /(poznam|pozn|note|koment)/.test(intentText);
+    const wantsDependencies = /(zavisl|depend|blok|block|paralel|workflow)/.test(intentText);
+    const wantsAssignments = /(assign|alokac|kdo.*del|kdo.*prac|member.*project)/.test(intentText);
+    const wantsRoles = /(role|pozic|position|scope.*role)/.test(intentText);
+    const wantsHistory = /(histori|trend|vyvoj|minul|predchoz|burndown)/.test(intentText);
+    const wantsTimesheets = /(timesheet|odprac|skutec|real|plan.*real)/.test(intentText);
+    const wantsSettings = /(nastav|config|kalendar|svat|holiday|jira)/.test(intentText);
+    const wantsPermissions = /(pristup|editor|permission|kdo.*muze|kdo.*vid)/.test(intentText);
 
     // Pick focused projects: match by name tokens + top by priority
     const matchedProjects = (projects || []).filter(p => intentText.includes(normalize(p.name)));
@@ -112,21 +209,40 @@ function todayIsoInTz(tz = 'Europe/Prague'): string {
 
     const summarizeProjects = (focusedProjects || []).map(p => {
       const progress = projectProgressPct(p);
-      return `• ${p.name} | prio ${p.priority} | status ${p.status} | progress ${progress}% | delivery ${p.delivery_date ?? '—'}`;
+      const notes = ((p as any).project_notes || []).length;
+      const assignments = ((p as any).project_team_assignments || []).length;
+      const dependencies = (p as any).project_role_dependencies ? 'yes' : 'no';
+      const started = (p as any).started_at ? 'started' : 'not started';
+      
+      return `• ${p.name} | prio ${p.priority} | status ${p.status} | progress ${progress}% | delivery ${p.delivery_date ?? '—'} | notes: ${notes} | assignments: ${assignments} | dependencies: ${dependencies} | ${started}`;
     }).join('\n');
     
 
     const notesLines = wantsNotes
       ? (focusedProjects || []).map(p => {
-          const ns = ((p as unknown as { project_notes?: Array<{ text: string }> }).project_notes || []);
-          const text = ns.length > 0 ? ns.slice(0, 3).map(n => n.text).join(' | ') : '—';
-          return `• ${p.name}: ${text}`;
+          const ns = ((p as any).project_notes || []);
+          if (ns.length === 0) return `• ${p.name}: žádné poznámky`;
+          
+          const recentNotes = ns
+            .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+            .slice(0, 3)
+            .map((n: any) => {
+              const date = new Date(n.created_at).toLocaleDateString('cs-CZ');
+              return `"${n.text}" (${date})`;
+            });
+          return `• ${p.name}: ${recentNotes.join(' | ')}`;
         }).join('\n')
       : '';
 
-    // Prepare team summaries incl. vacations today
+    // Prepare enhanced team summaries incl. vacations today and project assignments
     const todayIso = todayIsoInTz();
-    const teamLines = (team || []).map(m => `• ${m.name} (${m.role || '—'}, ${m.fte ?? 0} FTE)`).join('\n');
+    const teamLines = (team || []).map(m => {
+      const assignments = ((m as any).project_team_assignments || []);
+      const assignmentInfo = assignments.length > 0 
+        ? ` | assigned to: ${assignments.map((a: any) => a.projects?.name || 'unknown').join(', ')}`
+        : ' | no assignments';
+      return `• ${m.name} (${m.role || '—'}, ${m.fte ?? 0} FTE)${assignmentInfo}`;
+    }).join('\n');
     const activeVacations = (team || [])
       .flatMap((m: { name: string; vacations?: Array<{ start: string; end: string }> }) =>
         (Array.isArray(m.vacations) ? m.vacations : [])
@@ -145,7 +261,7 @@ function todayIsoInTz(tz = 'Europe/Prague'): string {
       return `Dnes na dovolené: ${parts}`;
     })();
 
-    // Build compact JSON payload based on intent
+    // Build enhanced JSON payload based on intent
     const payload: Record<string, unknown> = {};
     if (wantsProgress || wantsDeadlines) {
       payload.projects = (focusedProjects || []).map(p => ({
@@ -153,22 +269,120 @@ function todayIsoInTz(tz = 'Europe/Prague'): string {
         priority: p.priority,
         status: p.status,
         progress: projectProgressPct(p),
-        delivery: p.delivery_date
+        delivery: p.delivery_date,
+        started_at: (p as any).started_at,
+        created_at: (p as any).created_at
       }));
     }
     
     if (wantsNotes) {
       payload.notes = (focusedProjects || []).map(p => ({
         project: p.name,
-        notes: (((p as unknown as { project_notes?: Array<{ text: string }> }).project_notes) || []).slice(0, 10).map(n => (n.text || '').slice(0, 300))
+        notes: ((p as any).project_notes || []).slice(0, 10).map((n: any) => ({
+          text: (n.text || '').slice(0, 300),
+          created_at: n.created_at
+        }))
       }));
     }
+    
     if (wantsTeam || wantsVacations) {
-      payload.team = (team || []).map((m: { name: string; role: string; fte: number }) => ({ name: m.name, role: m.role, fte: m.fte }));
+      payload.team = (team || []).map((m: any) => ({
+        name: m.name,
+        role: m.role,
+        fte: m.fte,
+        assignments: (m.project_team_assignments || []).map((a: any) => ({
+          project: a.projects?.name,
+          role: a.role,
+          allocation_fte: a.allocation_fte
+        }))
+      }));
     }
+    
     if (wantsVacations) {
       payload.vacationsToday = activeVacations;
-      payload.vacations = (team || []).map((m: { name: string; vacations?: Array<{ start: string; end: string; note?: string }> }) => ({ name: m.name, vacations: Array.isArray(m.vacations) ? m.vacations.slice(0, 20) : [] }));
+      payload.vacations = (team || []).map((m: any) => ({
+        name: m.name,
+        vacations: Array.isArray(m.vacations) ? m.vacations.slice(0, 20) : []
+      }));
+    }
+    
+    if (wantsDependencies || wantsAssignments) {
+      payload.dependencies = (focusedProjects || []).map(p => ({
+        project: p.name,
+        dependencies: (p as any).project_role_dependencies ? {
+          be_depends_on_fe: (p as any).project_role_dependencies.be_depends_on_fe,
+          fe_depends_on_be: (p as any).project_role_dependencies.fe_depends_on_be,
+          qa_depends_on_be: (p as any).project_role_dependencies.qa_depends_on_be,
+          qa_depends_on_fe: (p as any).project_role_dependencies.qa_depends_on_fe,
+          parallel_mode: (p as any).project_role_dependencies.parallel_mode,
+          current_active_roles: (p as any).project_role_dependencies.current_active_roles,
+          worker_states: (p as any).project_role_dependencies.worker_states
+        } : null
+      }));
+    }
+    
+    if (wantsAssignments) {
+      payload.assignments = (focusedProjects || []).map(p => ({
+        project: p.name,
+        assignments: ((p as any).project_team_assignments || []).map((a: any) => ({
+          team_member: a.team_members?.name,
+          role: a.role,
+          allocation_fte: a.allocation_fte
+        }))
+      }));
+    }
+    
+    if (wantsRoles) {
+      payload.scopeRoles = (scopeRoles || []).map(r => ({
+        key: r.key,
+        label: r.label,
+        color: r.color,
+        is_active: r.is_active,
+        order_index: r.order_index
+      }));
+    }
+    
+    if (wantsHistory) {
+      payload.progressHistory = (projectProgressHistory || []).map(h => ({
+        project: (h as any).projects?.name,
+        date: h.date,
+        fe_done: h.fe_done,
+        be_done: h.be_done,
+        qa_done: h.qa_done,
+        pm_done: h.pm_done,
+        dpl_done: h.dpl_done,
+        fe_mandays: h.fe_mandays,
+        be_mandays: h.be_mandays,
+        qa_mandays: h.qa_mandays,
+        pm_mandays: h.pm_mandays,
+        dpl_mandays: h.dpl_mandays
+      }));
+    }
+    
+    if (wantsTimesheets) {
+      payload.timesheets = (teamWithTimesheets || []).map(m => ({
+        name: m.name,
+        role: m.role,
+        timesheets: Array.isArray(m.timesheets) ? m.timesheets.slice(0, 20) : []
+      }));
+    }
+    
+    if (wantsSettings) {
+      payload.scopeSettings = scopeSettings?.settings || {};
+    }
+    
+    if (wantsPermissions) {
+      payload.scopeEditors = (scopeEditors || []).map(e => ({
+        email: e.email,
+        accepted_at: e.accepted_at,
+        invited_at: e.invited_at,
+        user: (e as any).users ? {
+          id: (e as any).users.id,
+          email: (e as any).users.email,
+          full_name: (e as any).users.full_name,
+          avatar_url: (e as any).users.avatar_url
+        } : null
+      }));
     }
 
     // Minify and cap payload size
@@ -179,35 +393,91 @@ function todayIsoInTz(tz = 'Europe/Prague'): string {
       if (dataJson.length > MAX_LEN) {
         // Reduce arrays if needed
         const reduceArray = (arr: unknown[], keep: number) => arr.slice(0, keep);
-        const temp = payload as Record<string, unknown> & { notes?: unknown[]; projects?: unknown[]; team?: unknown[]; vacations?: unknown[] };
+        const temp = payload as Record<string, unknown> & { 
+          notes?: unknown[]; 
+          projects?: unknown[]; 
+          team?: unknown[]; 
+          vacations?: unknown[];
+          dependencies?: unknown[];
+          assignments?: unknown[];
+          scopeRoles?: unknown[];
+          progressHistory?: unknown[];
+          timesheets?: unknown[];
+          scopeEditors?: unknown[];
+        };
         if (Array.isArray(temp.notes)) temp.notes = reduceArray(temp.notes, 5);
         if (Array.isArray(temp.projects)) temp.projects = reduceArray(temp.projects, 8);
         if (Array.isArray(temp.team)) temp.team = reduceArray(temp.team, 20);
         if (Array.isArray(temp.vacations)) temp.vacations = reduceArray(temp.vacations, 20);
+        if (Array.isArray(temp.dependencies)) temp.dependencies = reduceArray(temp.dependencies, 10);
+        if (Array.isArray(temp.assignments)) temp.assignments = reduceArray(temp.assignments, 15);
+        if (Array.isArray(temp.scopeRoles)) temp.scopeRoles = reduceArray(temp.scopeRoles, 10);
+        if (Array.isArray(temp.progressHistory)) temp.progressHistory = reduceArray(temp.progressHistory, 30);
+        if (Array.isArray(temp.timesheets)) temp.timesheets = reduceArray(temp.timesheets, 15);
+        if (Array.isArray(temp.scopeEditors)) temp.scopeEditors = reduceArray(temp.scopeEditors, 10);
         dataJson = JSON.stringify(temp);
       }
     } catch {}
 
-    // Intent-aware system prompt with compact, relevant context + JSON [DATA]
+    // Enhanced intent-aware system prompt with comprehensive context + JSON [DATA]
     const parts: string[] = [];
     parts.push(`Jsi profesionální expert v projektovém managementu. Odpovídej česky, stručně (max 5 vět), s konkrétními doporučeními.`);
     parts.push(`Scope: ${scope?.name}`);
+    
     if (wantsProgress || wantsDeadlines || summarizeProjects) {
       parts.push(`Projekty (vybrané):\n${summarizeProjects}`);
     }
+    
     if (wantsNotes && notesLines) {
       parts.push(`Poznámky:\n${notesLines}`);
     }
+    
     if (wantsTeam || wantsVacations) {
       parts.push(`Tým:\n${teamLines}`);
     }
+    
     if (wantsVacations) {
       parts.push(vacationsTodayLine + '.');
       parts.push(`Pokud se ptá: \"kdo má dnes dovolenou\", odpověz podle seznamu. Pokud \"na jak dlouho\", uveď rozsahy (od..do), celkový a zbývající počet dní.`);
     }
+    
     if (wantsDeadlines) {
       parts.push(`Při otázkách na termíny/prioritu doporuč nejprve zrevidovat kapacitu (FTE), dovolené a blokace v pracovním toku.`);
     }
+    
+    if (wantsDependencies) {
+      parts.push(`Při otázkách na závislosti mezi rolemi zvaž workflow blokace a paralelní práci.`);
+    }
+    
+    if (wantsAssignments) {
+      parts.push(`Při otázkách na přiřazení členů týmu zvaž jejich FTE, role a současné vytížení.`);
+    }
+    
+    if (wantsRoles) {
+      parts.push(`Dostupné role v scope: ${(scopeRoles || []).map(r => `${r.label} (${r.key})`).join(', ')}`);
+    }
+    
+    if (wantsHistory) {
+      parts.push(`Při otázkách na historii a trendy analyzuj vývoj progressu v čase a predikuj budoucí vývoj.`);
+    }
+    
+    if (wantsTimesheets) {
+      parts.push(`Při otázkách na timesheets porovnávej plánovanou vs. skutečnou odpracovanou dobu.`);
+    }
+    
+    if (wantsSettings) {
+      const settings = scopeSettings?.settings || {};
+      const calendarInfo = settings.calendar ? `Kalendář: ${settings.calendar.country || 'CZ'}${settings.calendar.subdivision ? ` (${settings.calendar.subdivision})` : ''}, svátky: ${settings.calendar.includeHolidays ? 'zapnuto' : 'vypnuto'}` : 'Kalendář: nenastaven';
+      const jiraInfo = settings.jira?.baseUrl ? `Jira: ${settings.jira.baseUrl}` : 'Jira: nenastaveno';
+      parts.push(`Scope nastavení: ${calendarInfo}, ${jiraInfo}`);
+    }
+    
+    if (wantsPermissions) {
+      const editorsCount = scopeEditors?.length || 0;
+      const acceptedCount = scopeEditors?.filter(e => e.accepted_at).length || 0;
+      parts.push(`Přístup ke scopu: ${editorsCount} editorů, ${acceptedCount} přijatých pozvánek`);
+    }
+    
     if (dataJson && dataJson !== '{}' && dataJson.length < 8000) {
       parts.push(`[DATA] ${dataJson}`);
     }

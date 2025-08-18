@@ -14,6 +14,24 @@ import { useTranslation } from '@/lib/translation';
 import { AiService, ChatMessage, AiAnalysisResult } from '@/app/services/aiService';
 import { FiMessageCircle, FiSend, FiMinus } from 'react-icons/fi';
 
+interface Project {
+  name: string;
+  priority: number;
+  status: string;
+  fe_mandays: number;
+  be_mandays: number;
+  qa_mandays: number;
+  pm_mandays: number;
+  dpl_mandays: number;
+  fe_done: number;
+  be_done: number;
+  qa_done: number;
+  pm_done: number;
+  dpl_done: number;
+  delivery_date: string;
+  notes: { text: string }[];
+}
+
 interface AiChatModalProps {
   onClose: () => void;
   scopeId: string;
@@ -189,7 +207,7 @@ function doneToSpentMd(planMd: number, doneField: number): number {
   return Math.max(doneField, 0); // jinak bereme jako MD
 }
 
-function projectSpentMd(p: any): number {
+function projectSpentMd(p: Project): number {
   return (
     doneToSpentMd(p.fe_mandays || 0, p.fe_done || 0) +
     doneToSpentMd(p.be_mandays || 0, p.be_done || 0) +
@@ -199,7 +217,7 @@ function projectSpentMd(p: any): number {
   );
 }
 
-function projectPlannedMd(p: any): number {
+function projectPlannedMd(p: Project): number {
   return (
     (p.fe_mandays || 0) +
     (p.be_mandays || 0) +
@@ -209,7 +227,7 @@ function projectPlannedMd(p: any): number {
   );
 }
 
-function projectProgressPct(p: any): number {
+function projectProgressPct(p: Project): number {
   const plan = projectPlannedMd(p);
   if (plan <= 0) return 0;
   return Math.min(100, Math.round((projectSpentMd(p) / plan) * 100));
@@ -394,7 +412,26 @@ function projectProgressPct(p: any): number {
               <summary className="cursor-pointer font-semibold">Debug: Kontext odesílaný do AI</summary>
               <pre className="overflow-x-auto max-h-60 whitespace-pre-wrap break-words bg-gray-100 dark:bg-gray-800 p-2 rounded-xl border border-purple-200 dark:border-blue-900">
                 {/* JSON výpis */}
-                {JSON.stringify({ projects, roles, activeRoles, team, scopeUsage }, null, 2)}
+                {JSON.stringify({ 
+                  projects, 
+                  roles, 
+                  activeRoles, 
+                  team, 
+                  scopeUsage,
+                  enhancedContext: {
+                    projectCount: projects?.length || 0,
+                    teamCount: team?.length || 0,
+                    rolesCount: roles?.length || 0,
+                    projectsWithNotes: projects?.filter(p => p.notes && p.notes.length > 0).length || 0,
+                    projectsWithAssignments: projects?.filter(p => (p as any).project_team_assignments && (p as any).project_team_assignments.length > 0).length || 0,
+                    projectsWithDependencies: projects?.filter(p => (p as any).project_role_dependencies).length || 0,
+                    teamWithTimesheets: team?.filter(m => (m as any).timesheets && (m as any).timesheets.length > 0).length || 0,
+                    availableDataTypes: [
+                      'projects', 'team', 'roles', 'notes', 'assignments', 'dependencies',
+                      'progress_history', 'timesheets', 'scope_settings', 'permissions'
+                    ]
+                  }
+                }, null, 2)}
                 {"\n---\nTextový kontext pro AI:\n"}
                 {projects && projects.length > 0
                   ? projects.map(project => (
@@ -402,11 +439,13 @@ function projectProgressPct(p: any): number {
                         `Projekt: ${project.name}`,
                         `Priorita: ${project.priority}`,
                         `Status: ${project.status}`,
-                        `Progress: ${projectProgressPct(project)}%`,
+                        `Progress: ${projectProgressPct(project as unknown as Project)}%`,
                         `Mandays: FE(${project.fe_mandays || 0}), BE(${project.be_mandays || 0}), QA(${project.qa_mandays || 0}), PM(${project.pm_mandays || 0}), DPL(${project.dpl_mandays || 0})`,
                         `Done: FE(${project.fe_done || 0}), BE(${project.be_done || 0}), QA(${project.qa_done || 0}), PM(${project.pm_done || 0}), DPL(${project.dpl_done || 0})`,
                         `Termín: ${project.delivery_date || 'Neuveden'}`,
                         `Poznámky: ${(project.notes && project.notes.length > 0) ? project.notes.map(note => note.text).join('; ') : 'Žádné poznámky'}`,
+                        `Přiřazení: ${((project as any).project_team_assignments && (project as any).project_team_assignments.length > 0) ? (project as any).project_team_assignments.map((a: any) => `${a.team_members?.name || 'unknown'} (${a.role}, ${a.allocation_fte} FTE)`).join('; ') : 'Žádná přiřazení'}`,
+                        `Závislosti: ${(project as any).project_role_dependencies ? 'Konfigurovány' : 'Žádné'}`,
                         '---'
                       ].join('\n')
                     )).join('\n\n')
