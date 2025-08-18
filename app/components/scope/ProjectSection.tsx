@@ -1765,7 +1765,6 @@ export function ProjectSection({
                                             const isScopeEditor =
                                               user &&
                                               user.role === "scope_editor";
-                                            const author = team.find((m) => m.id === note.author.id);
                                             return (
                                               <div
                                                 key={idx}
