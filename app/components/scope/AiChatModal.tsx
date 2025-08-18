@@ -338,14 +338,14 @@ function projectProgressPct(p: Project): number {
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`flex items-start gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                className={`flex items-start gap-2 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 {message.role === 'assistant' && (
-                  <div className="w-8 h-8 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg">
-                    <FiMessageCircle className="w-4 h-4 text-white" />
+                  <div className="w-6 h-6 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg">
+                    <FiMessageCircle className="w-3 h-3 text-white" />
                   </div>
                 )}
-                <div className={`max-w-[70%] rounded-xl p-4 ${message.role === 'assistant' ? 'bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-white' : 'bg-blue-500 text-white'} shadow-lg whitespace-pre-line font-medium`}>
+                <div className={`max-w-[85%] rounded-xl p-3 ${message.role === 'assistant' ? 'bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-white' : 'bg-blue-500 text-white'} shadow-lg whitespace-pre-line font-medium`}>
                   {message.content === '...'
                     ? (
                       <div className="flex items-center space-x-1" aria-live="polite" aria-label="AI píše">
@@ -355,53 +355,52 @@ function projectProgressPct(p: Project): number {
                       </div>
                     )
                     : (
-                      <div className="prose prose-sm prose-invert max-w-none">
+                      <div className="prose prose-xs prose-invert max-w-none text-sm">
                         <ReactMarkdown 
                           remarkPlugins={[remarkGfm]}
                           rehypePlugins={[rehypeHighlight]}
                           components={{
                           table: ({ children }) => (
-                            <div className="overflow-x-auto my-4">
-                              <table className="min-w-full border-collapse border border-gray-300 dark:border-gray-600">
+                            <div className="overflow-x-auto my-2">
+                              <table className="min-w-full border-collapse border border-gray-400 dark:border-gray-500 text-xs">
                                 {children}
                               </table>
                             </div>
                           ),
                           th: ({ children }) => (
-                            <th className="border border-gray-300 dark:border-gray-600 px-3 py-2 bg-gray-100 dark:bg-gray-700 font-semibold text-left">
+                            <th className="border border-gray-400 dark:border-gray-500 px-2 py-1 bg-gray-200 dark:bg-gray-600 font-semibold text-left text-xs">
                               {children}
                             </th>
                           ),
                           td: ({ children }) => (
-                            <td className="border border-gray-300 dark:border-gray-600 px-3 py-2">
+                            <td className="border border-gray-400 dark:border-gray-500 px-2 py-1 text-xs">
                               {children}
                             </td>
                           ),
                           code: ({ children, className }) => {
-                            const match = /language-(\w+)/.exec(className || '');
                             return (
-                              <code className={`${className} bg-gray-800 dark:bg-gray-900 text-green-400 px-1 py-0.5 rounded text-sm`}>
+                              <code className={`${className} bg-gray-800 dark:bg-gray-900 text-green-400 px-1 py-0.5 rounded text-xs`}>
                                 {children}
                               </code>
                             );
                           },
                           pre: ({ children }) => (
-                            <pre className="bg-gray-800 dark:bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto my-4">
+                            <pre className="bg-gray-800 dark:bg-gray-900 text-green-400 p-2 rounded-lg overflow-x-auto my-2 text-xs">
                               {children}
                             </pre>
                           ),
                           ul: ({ children }) => (
-                            <ul className="list-disc list-inside my-2 space-y-1">
+                            <ul className="list-disc list-inside my-1 space-y-0.5 text-sm">
                               {children}
                             </ul>
                           ),
                           ol: ({ children }) => (
-                            <ol className="list-decimal list-inside my-2 space-y-1">
+                            <ol className="list-decimal list-inside my-1 space-y-0.5 text-sm">
                               {children}
                             </ol>
                           ),
                           li: ({ children }) => (
-                            <li className="my-1">
+                            <li className="my-0.5 leading-tight">
                               {children}
                             </li>
                           ),
@@ -416,27 +415,27 @@ function projectProgressPct(p: Project): number {
                             </em>
                           ),
                           h1: ({ children }) => (
-                            <h1 className="text-2xl font-bold text-white mb-4">
+                            <h1 className="text-lg font-bold text-white mb-2">
                               {children}
                             </h1>
                           ),
                           h2: ({ children }) => (
-                            <h2 className="text-xl font-bold text-white mb-3">
+                            <h2 className="text-base font-bold text-white mb-1.5">
                               {children}
                             </h2>
                           ),
                           h3: ({ children }) => (
-                            <h3 className="text-lg font-bold text-white mb-2">
+                            <h3 className="text-sm font-bold text-white mb-1">
                               {children}
                             </h3>
                           ),
                           p: ({ children }) => (
-                            <p className="my-2 leading-relaxed">
+                            <p className="my-1 leading-tight text-sm">
                               {children}
                             </p>
                           ),
                           blockquote: ({ children }) => (
-                            <blockquote className="border-l-4 border-pink-400 pl-4 my-4 italic text-white/90">
+                            <blockquote className="border-l-2 border-pink-400 pl-2 my-2 italic text-white/90 text-sm">
                               {children}
                             </blockquote>
                           ),
@@ -454,15 +453,15 @@ function projectProgressPct(p: Project): number {
             ))}
             <div ref={messagesEndRef} />
             {isAiTyping && !messages.some(m => m.role === 'assistant' && m.content === '...') && (
-              <div className="flex items-start gap-3 justify-start">
-                <div className="w-8 h-8 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg">
-                  <FiMessageCircle className="w-4 h-4 text-white animate-pulse" />
+              <div className="flex items-start gap-2 justify-start">
+                <div className="w-6 h-6 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg">
+                  <FiMessageCircle className="w-3 h-3 text-white animate-pulse" />
                 </div>
-                <div className="bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 rounded-xl p-4 text-white shadow-lg">
-                  <div className="flex items-center space-x-1 mt-2">
-                    <span className="inline-block w-2 h-2 bg-white rounded-full animate-bounce delay-75"></span>
-                    <span className="inline-block w-2 h-2 bg-white rounded-full animate-bounce delay-150"></span>
-                    <span className="inline-block w-2 h-2 bg-white rounded-full animate-bounce delay-225"></span>
+                <div className="bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 rounded-xl p-3 text-white shadow-lg">
+                  <div className="flex items-center space-x-1">
+                    <span className="inline-block w-1.5 h-1.5 bg-white rounded-full animate-bounce delay-75"></span>
+                    <span className="inline-block w-1.5 h-1.5 bg-white rounded-full animate-bounce delay-150"></span>
+                    <span className="inline-block w-1.5 h-1.5 bg-white rounded-full animate-bounce delay-225"></span>
                   </div>
                 </div>
               </div>
@@ -470,7 +469,7 @@ function projectProgressPct(p: Project): number {
           </div>
 
           {/* Input */}
-          <div className="p-5 border-t border-purple-300 dark:border-blue-900 bg-white/70 dark:bg-gray-900/70 rounded-b-3xl backdrop-blur-lg">
+          <div className="p-3 border-t border-purple-300 dark:border-blue-900 bg-white/70 dark:bg-gray-900/70 rounded-b-3xl backdrop-blur-lg">
             <div className="flex gap-2">
               <textarea
                 value={chatMessage}
@@ -483,24 +482,24 @@ function projectProgressPct(p: Project): number {
                 }}
                 placeholder={hasApiKey ? t("askAboutScope") : t("setApiKeyFirst")}
                 disabled={!hasApiKey || isAiTyping}
-                className="h-[50px] flex-1  p-2 flex items-center justify-center border border-purple-300 dark:border-blue-900 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-pink-400 dark:text-white disabled:opacity-50 shadow-md"
-                rows={2}
+                className="h-[40px] flex-1 p-2 flex items-center justify-center border border-purple-300 dark:border-blue-900 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-pink-400 dark:text-white disabled:opacity-50 shadow-md text-sm"
+                rows={1}
                 aria-label="Napiš zprávu AI"
                 tabIndex={0}
               />
               <button
                 onClick={handleSendMessage}
                 disabled={!chatMessage.trim() || !hasApiKey || isAiTyping}
-                className="px-4 py-2 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-white rounded-xl hover:from-pink-600 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg"
+                className="px-3 py-2 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-white rounded-xl hover:from-pink-600 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg"
                 aria-label="Odeslat zprávu AI"
                 tabIndex={0}
               >
-                <FiSend className="w-5 h-5" />
+                <FiSend className="w-4 h-4" />
               </button>
             </div>
             {/* Debug sekce: výpis odesílaného kontextu do AI */}
-            <details className="mt-4 text-xs select-all">
-              <summary className="cursor-pointer font-semibold">Debug: Kontext odesílaný do AI</summary>
+            <details className="mt-2 text-xs select-all">
+              <summary className="cursor-pointer font-semibold text-xs">Debug: Kontext odesílaný do AI</summary>
               <pre className="overflow-x-auto max-h-60 whitespace-pre-wrap break-words bg-gray-100 dark:bg-gray-800 p-2 rounded-xl border border-purple-200 dark:border-blue-900">
                 {/* JSON výpis */}
                 {JSON.stringify({ 
