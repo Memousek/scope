@@ -179,6 +179,43 @@ export function AiChatModal({ onClose, scopeId, isOpen = true }: AiChatModalProp
     }
   };
 
+  // --- Helpers pro výpočet progresu ---
+function doneToSpentMd(planMd: number, doneField: number): number {
+  if (!planMd || planMd <= 0) return 0;
+  // pokud done je evidentně % (větší než plán), převedeme na MD
+  if (doneField > planMd * 1.5) {
+    return Math.min(Math.max(doneField, 0), 100) / 100 * planMd;
+  }
+  return Math.max(doneField, 0); // jinak bereme jako MD
+}
+
+function projectSpentMd(p: any): number {
+  return (
+    doneToSpentMd(p.fe_mandays || 0, p.fe_done || 0) +
+    doneToSpentMd(p.be_mandays || 0, p.be_done || 0) +
+    doneToSpentMd(p.qa_mandays || 0, p.qa_done || 0) +
+    doneToSpentMd(p.pm_mandays || 0, p.pm_done || 0) +
+    doneToSpentMd(p.dpl_mandays || 0, p.dpl_done || 0)
+  );
+}
+
+function projectPlannedMd(p: any): number {
+  return (
+    (p.fe_mandays || 0) +
+    (p.be_mandays || 0) +
+    (p.qa_mandays || 0) +
+    (p.pm_mandays || 0) +
+    (p.dpl_mandays || 0)
+  );
+}
+
+function projectProgressPct(p: any): number {
+  const plan = projectPlannedMd(p);
+  if (plan <= 0) return 0;
+  return Math.min(100, Math.round((projectSpentMd(p) / plan) * 100));
+}
+
+
 
   return (
     <>
@@ -365,32 +402,7 @@ export function AiChatModal({ onClose, scopeId, isOpen = true }: AiChatModalProp
                         `Projekt: ${project.name}`,
                         `Priorita: ${project.priority}`,
                         `Status: ${project.status}`,
-                        `Progress: ${
-                          (
-                            Number(project.fe_mandays || 0) +
-                            Number(project.be_mandays || 0) +
-                            Number(project.qa_mandays || 0) +
-                            Number(project.pm_mandays || 0) +
-                            Number(project.dpl_mandays || 0)
-                          ) > 0
-                            ? Math.round(
-                                (
-                                  Number(project.fe_done || 0) +
-                                  Number(project.be_done || 0) +
-                                  Number(project.qa_done || 0) +
-                                  Number(project.pm_done || 0) +
-                                  Number(project.dpl_done || 0)
-                                ) /
-                                (
-                                  Number(project.fe_mandays || 0) +
-                                  Number(project.be_mandays || 0) +
-                                  Number(project.qa_mandays || 0) +
-                                  Number(project.pm_mandays || 0) +
-                                  Number(project.dpl_mandays || 0)
-                                ) * 100
-                              )
-                            : 0
-                          }%`,
+                        `Progress: ${projectProgressPct(project)}%`,
                         `Mandays: FE(${project.fe_mandays || 0}), BE(${project.be_mandays || 0}), QA(${project.qa_mandays || 0}), PM(${project.pm_mandays || 0}), DPL(${project.dpl_mandays || 0})`,
                         `Done: FE(${project.fe_done || 0}), BE(${project.be_done || 0}), QA(${project.qa_done || 0}), PM(${project.pm_done || 0}), DPL(${project.dpl_done || 0})`,
                         `Termín: ${project.delivery_date || 'Neuveden'}`,

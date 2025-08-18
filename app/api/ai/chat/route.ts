@@ -257,5 +257,3 @@ function todayIsoInTz(tz = 'Europe/Prague'): string {
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
-
-
