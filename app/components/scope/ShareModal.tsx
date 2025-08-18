@@ -6,6 +6,7 @@ import { GetScopeEditorsWithUsersService, ScopeEditorWithUser } from '@/lib/doma
 import { ScopeEditorService } from '@/app/services/scopeEditorService';
 import { Modal } from '@/app/components/ui/Modal';
 import Image from 'next/image';
+import { useToastFunctions } from '@/app/components/ui/Toast';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
    * Moderní design s animacemi a lepším UX.
    */
   const { t } = useTranslation();
+  const toast = useToastFunctions();
   const [editors, setEditors] = useState<ScopeEditorWithUser[]>([]);
   const [editorsLoading, setEditorsLoading] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
@@ -78,27 +80,35 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
       
       setInviteEmail('');
       await loadEditors(); // Refresh editorů
+      toast.success('Pozvánka odeslána', `Pozvánka byla úspěšně odeslána na ${inviteEmail}.`);
     } catch (error) {
       if (error instanceof Error) {
         if (error.message === 'EDITOR_ALREADY_EXISTS') {
           setInviteError('already_has_access');
+          toast.error('Uživatel již má přístup', 'Tento uživatel již má přístup k scope.');
         } else if (error.message === 'CANNOT_INVITE_OWNER') {
           setInviteError('cannot_invite_owner');
+          toast.error('Nelze pozvat vlastníka', 'Vlastníka scope nelze pozvat jako editora.');
         } else {
           setInviteError('invite_error');
+          toast.error('Chyba při pozvání', 'Nepodařilo se odeslat pozvánku. Zkuste to prosím znovu.');
         }
       } else {
         setInviteError('invite_error');
+        toast.error('Chyba při pozvání', 'Nepodařilo se odeslat pozvánku. Zkuste to prosím znovu.');
       }
     }
   };
 
   const handleRemoveEditor = async (editorId: string) => {
     try {
+      const editorToRemove = editors.find(e => e.id === editorId);
       await ScopeEditorService.removeEditor(editorId);
       await loadEditors(); // Refresh editorů
+      toast.success('Editor odebrán', `${editorToRemove?.email || 'Editor'} byl úspěšně odebrán ze scope.`);
     } catch (error) {
       console.error('Chyba při odstraňování editora:', error);
+      toast.error('Chyba při odebírání', 'Nepodařilo se odebrat editora. Zkuste to prosím znovu.');
     }
   };
 
@@ -127,8 +137,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, scopeId
       await navigator.clipboard.writeText(currentLink);
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);
+      toast.success('Odkaz zkopírován', 'Odkaz byl úspěšně zkopírován do schránky.');
     } catch (error) {
       console.error('Chyba při kopírování odkazu:', error);
+      toast.error('Chyba při kopírování', 'Nepodařilo se zkopírovat odkaz. Zkuste to prosím znovu.');
     }
   };
 

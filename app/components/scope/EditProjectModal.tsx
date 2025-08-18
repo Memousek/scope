@@ -14,6 +14,7 @@ import { Modal } from '@/app/components/ui/Modal';
 import { FiEdit } from 'react-icons/fi';
 import { ProjectStatusSelector } from './ProjectStatusSelector';
 import { ProjectStatus } from './ProjectStatusBadge';
+import { useToastFunctions } from '@/app/components/ui/Toast';
 
 interface EditProjectModalProps {
   isOpen: boolean;
@@ -37,6 +38,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
   projectRoles,
 }) => {
   const { t } = useTranslation();
+  const toast = useToastFunctions();
   const [editProject, setEditProject] = useState<Project>({ ...project });
   const initialEditState = useRef<Project>({ ...project });
 
@@ -97,9 +99,10 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
       onProjectChange(updatedProject);
       
       onClose();
+      toast.success('Projekt aktualizován', `Projekt "${editProject.name}" byl úspěšně aktualizován.`);
     } catch (error) {
       console.error('Chyba při ukládání projektu:', error);
-      alert('Chyba při ukládání projektu.');
+      toast.error('Chyba při ukládání', 'Nepodařilo se uložit změny projektu. Zkuste to prosím znovu.');
     }
   };
 

@@ -8,6 +8,7 @@ import { Modal } from '@/app/components/ui/Modal';
 import { useTranslation } from '@/lib/translation';
 import { TeamMember, TimesheetEntry } from './types';
 import { TeamService } from '@/app/services/teamService';
+import { useToastFunctions } from '@/app/components/ui/Toast';
 
 interface JiraImportModalProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ interface JiraImportModalProps {
 
 export function JiraImportModal({ isOpen, onClose, team, scopeId, defaultProjectKey }: JiraImportModalProps) {
   const { t } = useTranslation();
+  const toast = useToastFunctions();
   const [from, setFrom] = useState<string>('');
   const [to, setTo] = useState<string>('');
   const [projectKey, setProjectKey] = useState<string>(defaultProjectKey || '');
@@ -90,9 +92,11 @@ export function JiraImportModal({ isOpen, onClose, team, scopeId, defaultProject
         count += entries.length;
       }
       setImported(count);
+      toast.success('Jira import dokončen', `${count} worklogů bylo úspěšně importováno z Jiry.`);
     } catch (e) {
       setError('Import failed');
       if (debug) setLastPreview({ error: String(e) });
+      toast.error('Chyba při importu', 'Nepodařilo se importovat worklogy z Jiry. Zkuste to prosím znovu.');
     } finally {
       setLoading(false);
     }

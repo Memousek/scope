@@ -12,6 +12,7 @@ import { useTranslation } from '@/lib/translation';
 import { TimesheetEntry, TeamMember } from './types';
 import { TeamService } from '@/app/services/teamService';
 import { FiFilePlus } from 'react-icons/fi';
+import { useToastFunctions } from '@/app/components/ui/Toast';
 
 interface TimesheetImportModalProps {
   isOpen: boolean;
@@ -36,6 +37,7 @@ const parseCsv = async (file: File): Promise<Row[]> => {
 
 export function TimesheetImportModal({ isOpen, onClose, member }: TimesheetImportModalProps) {
   const { t } = useTranslation();
+  const toast = useToastFunctions();
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -105,8 +107,10 @@ export function TimesheetImportModal({ isOpen, onClose, member }: TimesheetImpor
       const merged = upsertTimesheets(member.timesheets, entries);
       await TeamService.updateTeamMember(member.id, { timesheets: merged } as Partial<TeamMember>);
       onClose();
+      toast.success('Timesheet importován', `${entries.length} záznamů bylo úspěšně importováno pro ${member.name}.`);
     } catch {
       setError('Save failed');
+      toast.error('Chyba při importu', 'Nepodařilo se importovat timesheet. Zkuste to prosím znovu.');
     } finally {
       setSaving(false);
     }

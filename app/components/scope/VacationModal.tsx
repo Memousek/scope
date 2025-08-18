@@ -11,6 +11,7 @@ import { useTranslation } from "@/lib/translation";
 import { FiCalendar, FiTag, FiTrash2, FiPlus, FiSave, FiX } from "react-icons/fi";
 import type { TeamMember, VacationRange } from "./types";
 import { TeamService } from "@/app/services/teamService";
+import { useToastFunctions } from '@/app/components/ui/Toast';
 
 interface VacationModalProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ interface VacationModalProps {
 
 export function VacationModal({ isOpen, member, scopeId, onClose, readOnly = false, onSaved }: VacationModalProps) {
   const { t } = useTranslation();
+  const toast = useToastFunctions();
   const storageKey = useMemo(
     () => (member ? `scope:${scopeId}:member:${member.id}:vacations` : ""),
     [member, scopeId]
@@ -81,14 +83,16 @@ export function VacationModal({ isOpen, member, scopeId, onClose, readOnly = fal
     if (!member) return;
     // Persist to Supabase (JSONB column vacations); fallback localStorage
     TeamService.updateTeamMember(member.id, { vacations: ranges } as Partial<TeamMember>)
-      .catch((e) => {
-        console.error('Failed to save vacations to DB, fallback localStorage', e);
-        try { localStorage.setItem(storageKey, JSON.stringify(ranges)); } catch {}
-      })
       .then(() => {
         try {
           onSaved?.(ranges);
         } catch {}
+        toast.success('Dovolené uloženy', `Dovolené pro ${member.name} byly úspěšně uloženy.`);
+      })
+      .catch((e) => {
+        console.error('Failed to save vacations to DB, fallback localStorage', e);
+        try { localStorage.setItem(storageKey, JSON.stringify(ranges)); } catch {}
+        toast.error('Chyba při ukládání', 'Nepodařilo se uložit dovolené. Zkuste to prosím znovu.');
       })
       .finally(() => onClose());
   };

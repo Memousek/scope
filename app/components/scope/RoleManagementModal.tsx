@@ -9,6 +9,7 @@ import { Modal } from '@/app/components/ui/Modal';
 import { ScopeRole } from '@/lib/domain/models/scope-role.model';
 import { FiPlus, FiEdit, FiTrash2, FiEyeOff } from 'react-icons/fi';
 import { useScopeRoles } from '@/app/hooks/useScopeRoles';
+import { useToastFunctions } from '@/app/components/ui/Toast';
 
 interface RoleManagementModalProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ export const RoleManagementModal: React.FC<RoleManagementModalProps> = ({
   onRolesChanged,
 }) => {
   const { t } = useTranslation();
+  const toast = useToastFunctions();
   const { roles, createRole, updateRole, deleteRole, initializeDefaultRoles, loading, error } = useScopeRoles(scopeId);
   
   const [editingRole, setEditingRole] = useState<ScopeRole | null>(null);
@@ -63,8 +65,10 @@ export const RoleManagementModal: React.FC<RoleManagementModalProps> = ({
         order: 0
       });
       setShowCreateForm(false);
+      toast.success('Role vytvořena', `Role "${formData.label}" byla úspěšně vytvořena.`);
     } catch (error) {
       console.error('Failed to create role:', error);
+      toast.error('Chyba při vytváření', 'Nepodařilo se vytvořit roli. Zkuste to prosím znovu.');
     }
   };
 
@@ -89,18 +93,23 @@ export const RoleManagementModal: React.FC<RoleManagementModalProps> = ({
         isActive: true,
         order: 0
       });
+      toast.success('Role aktualizována', `Role "${formData.label}" byla úspěšně aktualizována.`);
     } catch (error) {
       console.error('Failed to update role:', error);
+      toast.error('Chyba při aktualizaci', 'Nepodařilo se aktualizovat roli. Zkuste to prosím znovu.');
     }
   };
 
   const handleDeleteRole = async (id: string) => {
     if (!confirm(t('confirmDeleteRole'))) return;
 
+    const roleToDelete = roles.find(r => r.id === id);
     try {
       await deleteRole(id);
+      toast.success('Role smazána', `Role "${roleToDelete?.label || 'Role'}" byla úspěšně smazána.`);
     } catch (error) {
       console.error('Failed to delete role:', error);
+      toast.error('Chyba při mazání', 'Nepodařilo se smazat roli. Zkuste to prosím znovu.');
     }
   };
 
@@ -123,10 +132,11 @@ export const RoleManagementModal: React.FC<RoleManagementModalProps> = ({
       const result = await initializeDefaultRoles();
       if (result && result.createdKeys && result.createdKeys.length > 0) {
         const createdRolesText = result.createdKeys.join(', ').toUpperCase();
-        alert(`${t('rolesCreatedSuccessfully')}: ${createdRolesText}`);
+        toast.success('Výchozí role vytvořeny', `Role ${createdRolesText} byly úspěšně vytvořeny.`);
       }
     } catch (error) {
       console.error('Failed to initialize defaults:', error);
+      toast.error('Chyba při vytváření', 'Nepodařilo se vytvořit výchozí role. Zkuste to prosím znovu.');
     }
   };
 
