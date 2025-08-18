@@ -35,7 +35,8 @@ import { ScopeEditorService } from "@/app/services/scopeEditorService";
 import { FiArrowLeft, FiShare2 } from "react-icons/fi";
 import { UserRepository } from "@/lib/domain/repositories/user.repository";
 import { User } from "@/lib/domain/models/user.model";
-import { Link } from "lucide-react";
+import Link from "next/link";
+
 
 export default function ScopePage({
   params,
@@ -513,8 +514,7 @@ export default function ScopePage({
                 </button>
               )}
               {/* Back to all scopes */}
-              <Link href="/" className="relative relative group bg-gradient-to-r from-pink-500 via-rose-500 to-red-500 text-white px-4 py-2 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-pink-500/25 active:scale-95">
-                
+              <Link href="/" className="relative group bg-gradient-to-r from-pink-500 via-rose-500 to-red-500 text-white px-4 py-2 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-pink-500/25 active:scale-95">
                 <div className="absolute inset-0 bg-gradient-to-r from-pink-600 via-rose-600 to-red-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 <div className="relative z-10 flex items-center gap-2 ">
                   <FiArrowLeft className="text-sm" /> {t('back')}
