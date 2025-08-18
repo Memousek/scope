@@ -9,6 +9,7 @@ import { ConditionalHeader } from "../components/conditional-header";
 import { SchemaOrgScript } from "../components/schema-org-script";
 import { generateOrganizationSchema, generateWebApplicationSchema } from "@/lib/utils/schemaOrg";
 import { RTLProvider } from "./components/RTLProvider";
+import { ToastProvider } from "./components/ui/Toast";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -106,13 +107,15 @@ export default function RootLayout({
           key="theme-provider"
         >
           <RTLProvider>
-            <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-              <ConditionalHeader />
-              <main className="flex-1 flex flex-col" view-transition-name="main" id="main-content">
-                {children}
-              </main>
-            </div>
-             <BugReportButton />
+            <ToastProvider>
+              <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+                <ConditionalHeader />
+                <main className="flex-1 flex flex-col" view-transition-name="main" id="main-content">
+                  {children}
+                </main>
+              </div>
+               <BugReportButton />
+            </ToastProvider>
           </RTLProvider>
         </ThemeProvider>
         <Analytics />

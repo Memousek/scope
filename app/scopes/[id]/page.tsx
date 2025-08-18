@@ -36,6 +36,7 @@ import { FiArrowLeft, FiCopy, FiShare2 } from "react-icons/fi";
 import { UserRepository } from "@/lib/domain/repositories/user.repository";
 import { User } from "@/lib/domain/models/user.model";
 import Link from "next/link";
+import { useToastFunctions } from "@/app/components/ui/Toast";
 
 
 export default function ScopePage({
@@ -45,6 +46,7 @@ export default function ScopePage({
 }) {
   const { id } = use(params);
   const { userId } = useAuth();
+  const toast = useToastFunctions();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -498,8 +500,8 @@ export default function ScopePage({
                 <p className="text-gray-600 dark:text-gray-400 flex items-center gap-2">
                   <button onClick={() => {
                     navigator.clipboard.writeText(scope.id);
-                    alert('Scope ID copied to clipboard');
-                  }} className="text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                    toast.success('Scope ID copied to clipboard');
+                  }} className="text-gray-600 dark:text-gray-400 flex items-center gap-2 hover:text-gray-800 dark:hover:text-gray-200 transition-colors">
                     Scope ID: {scope.id.slice(0, 8)}...{scope.id.slice(-8)}
                     <FiCopy className="w-4 h-4" />
                   </button>
