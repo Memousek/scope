@@ -12,6 +12,7 @@ import { useScopeRoles } from "@/app/hooks/useScopeRoles";
 import { ContainerService } from "@/lib/container.service";
 import { ManageProjectTeamAssignmentsService } from "@/lib/domain/services/manage-project-team-assignments.service";
 import { Modal } from "@/app/components/ui/Modal";
+import { useToastFunctions } from '@/app/components/ui/Toast';
 
 interface ProjectTeamAssignmentModalProps {
   isOpen: boolean;
@@ -37,6 +38,7 @@ export function ProjectTeamAssignmentModal({
 }: ProjectTeamAssignmentModalProps) {
   const [assignments, setAssignments] = useState<AssignmentWithDetails[]>([]);
   const [loading, setLoading] = useState(false);
+  const toast = useToastFunctions();
 
   const [selectedTeamMember, setSelectedTeamMember] = useState<string>("");
   const [selectedRole, setSelectedRole] = useState<string>("");
@@ -97,8 +99,12 @@ export function ProjectTeamAssignmentModal({
       
       // Notify parent
       onAssignmentsChange?.();
+      
+      const teamMember = team.find(tm => tm.id === selectedTeamMember);
+      toast.success('Člen přiřazen', `${teamMember?.name || 'Člen týmu'} byl úspěšně přiřazen k projektu.`);
     } catch (error) {
       console.error("Chyba při přidávání přiřazení:", error);
+      toast.error('Chyba při přiřazování', 'Nepodařilo se přiřadit člena týmu k projektu. Zkuste to prosím znovu.');
     } finally {
       setLoading(false);
     }
@@ -107,11 +113,14 @@ export function ProjectTeamAssignmentModal({
   const handleRemoveAssignment = async (assignmentId: string) => {
     setLoading(true);
     try {
+      const assignment = assignments.find(a => a.id === assignmentId);
       await manageAssignmentsService.deleteAssignment(assignmentId);
       await loadAssignments();
       onAssignmentsChange?.();
+      toast.success('Přiřazení odstraněno', `${assignment?.teamMember.name || 'Člen týmu'} byl úspěšně odebrán z projektu.`);
     } catch (error) {
       console.error("Chyba při odstraňování přiřazení:", error);
+      toast.error('Chyba při odstraňování', 'Nepodařilo se odebrat přiřazení. Zkuste to prosím znovu.');
     } finally {
       setLoading(false);
     }

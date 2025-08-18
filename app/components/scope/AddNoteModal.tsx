@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Modal } from "@/app/components/ui/Modal";
 import { FiEdit } from "react-icons/fi";
 import { useTranslation } from "@/lib/translation";
+import { useToastFunctions } from '@/app/components/ui/Toast';
 
 interface AddNoteModalProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ interface AddNoteModalProps {
 export const AddNoteModal: React.FC<AddNoteModalProps> = ({ isOpen, onClose, onSave, currentUser }) => {
   const [noteText, setNoteText] = useState("");
   const { t } = useTranslation();
+  const toast = useToastFunctions();
 
   const handleSave = () => {
     if (noteText.trim()) {
@@ -29,6 +31,7 @@ export const AddNoteModal: React.FC<AddNoteModalProps> = ({ isOpen, onClose, onS
       });
       setNoteText("");
       onClose();
+      toast.success('Poznámka přidána', 'Poznámka byla úspěšně přidána k projektu.');
     }
   };
 

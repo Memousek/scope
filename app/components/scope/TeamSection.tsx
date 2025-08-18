@@ -27,6 +27,7 @@ import { VacationModal } from "./VacationModal";
 import { TimesheetImportModal } from "./TimesheetImportModal";
 import { ReportsModal } from "./ReportsModal";
 import TeamAvailabilityModal from "./TeamAvailabilityModal";
+import { useToastFunctions } from '@/app/components/ui/Toast';
 
 interface TeamSectionProps {
   scopeId: string;
@@ -42,6 +43,7 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
   const [importModalOpen, setImportModalOpen] = useState(false);
   const { t } = useTranslation();
   const { mutate } = useSWRConfig();
+  const toast = useToastFunctions();
   const rolesToUse = useMemo(() => {
     if (activeRolesProp && activeRolesProp.length > 0) return activeRolesProp;
     const labels = Array.from(new Set(team.map(m => m.role)));
@@ -154,8 +156,10 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
       const newMember = await TeamService.createTeamMember(scopeId, member);
       onTeamChange([...team, newMember]);
       try { await mutate(["scopeUsage", scopeId]); } catch { }
+      toast.success('Člen týmu přidán', `${member.name} byl úspěšně přidán do týmu.`);
     } catch (error) {
       console.error('Chyba při přidávání člena týmu:', error);
+      toast.error('Chyba při přidávání', 'Nepodařilo se přidat člena týmu. Zkuste to prosím znovu.');
     } finally {
       setSavingMember(false);
     }
@@ -169,12 +173,14 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
     setSavingMember(true);
     try {
       await TeamService.updateTeamMember(memberId, { [field]: value } as Partial<TeamMember>);
+      toast.success('Změny uloženy', 'Informace o členovi týmu byly úspěšně aktualizovány.');
     } catch (error) {
       console.error('Chyba při ukládání člena týmu:', error);
+      toast.error('Chyba při ukládání', 'Nepodařilo se uložit změny. Zkuste to prosím znovu.');
     } finally {
       setSavingMember(false);
     }
-  }, []);
+  }, [toast]);
 
   const handleEditMember = useCallback((
     memberId: string,
@@ -415,8 +421,10 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
                           }
                           onTeamChange(updatedTeam);
                           try { await mutate(["scopeUsage", scopeId]); } catch { }
+                          toast.success('Import dokončen', `${members.length} členů týmu bylo úspěšně importováno.`);
                         } catch (error) {
                           console.error('Chyba při importu členů týmu:', error);
+                          toast.error('Chyba při importu', 'Nepodařilo se importovat členy týmu. Zkuste to prosím znovu.');
                         } finally {
                           setSavingMember(false);
                         }

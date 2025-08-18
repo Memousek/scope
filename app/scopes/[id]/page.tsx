@@ -132,8 +132,10 @@ export default function ScopePage({
 
       // Refresh team data
       await fetchTeam();
+      toast.success('Člen týmu přidán', `${member.name} byl úspěšně přidán do týmu.`);
     } catch (error) {
       console.error("Chyba při přidávání člena týmu:", error);
+      toast.error('Chyba při přidávání', 'Nepodařilo se přidat člena týmu. Zkuste to prosím znovu.');
     }
   };
 
@@ -170,8 +172,10 @@ export default function ScopePage({
 
       // Refresh project data
       await fetchProjects();
+      toast.success('Projekt vytvořen', `Projekt "${project.name}" byl úspěšně vytvořen.`);
     } catch (error) {
       console.error("Chyba při přidávání projektu:", error);
+      toast.error('Chyba při vytváření', 'Nepodařilo se vytvořit projekt. Zkuste to prosím znovu.');
     }
   };
 

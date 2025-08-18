@@ -51,6 +51,7 @@ import { Badge } from "@/app/components/ui/Badge";
 import { FiUsers, FiFolder, FiFilter, FiChevronDown, FiDelete, FiEdit } from "react-icons/fi";
 import { ProjectStatusFilter, ProjectStatus } from "./ProjectStatusFilter";
 import { ProjectStatusBadge } from "./ProjectStatusBadge";
+import { useToastFunctions } from '@/app/components/ui/Toast';
 
 interface ProjectSectionProps {
   scopeId: string;
@@ -65,6 +66,7 @@ export function ProjectSection({
 }: ProjectSectionProps) {
   // SWR cache invalidation for usage after mutations
   const { mutate } = useSWRConfig();
+  const toast = useToastFunctions();
   const [editNoteModalOpen, setEditNoteModalOpen] = useState(false);
   const [noteToEdit, setNoteToEdit] = useState<ProjectNote | null>(null);
   // Funkce pro editaci a mazání poznámek
@@ -78,8 +80,14 @@ export function ProjectSection({
       "@/app/services/projectNoteService"
     );
     if (note.id) {
-      await ProjectNoteService.deleteNote(note.id);
-      await loadProjects();
+      try {
+        await ProjectNoteService.deleteNote(note.id);
+        await loadProjects();
+        toast.success('Poznámka smazána', 'Poznámka byla úspěšně odstraněna.');
+      } catch (error) {
+        console.error('Chyba při mazání poznámky:', error);
+        toast.error('Chyba při mazání', 'Nepodařilo se smazat poznámku. Zkuste to prosím znovu.');
+      }
     }
   };
   const [addNoteModalOpen, setAddNoteModalOpen] = useState(false);
@@ -365,8 +373,10 @@ export function ProjectSection({
       try { await mutate(["scopeUsage", scopeId]); } catch { }
       // Reload projects to get updated data
       await loadProjects();
+      toast.success('Projekt vytvořen', `Projekt "${project.name}" byl úspěšně vytvořen.`);
     } catch (error) {
       console.error("Failed to add project:", error);
+      toast.error('Chyba při vytváření', 'Nepodařilo se vytvořit projekt. Zkuste to prosím znovu.');
     }
   };
 
@@ -397,8 +407,10 @@ export function ProjectSection({
       try { await mutate(["scopeUsage", scopeId]); } catch { }
       // Reload projects to get updated order
       await loadProjects();
+      toast.success('Projekt smazán', `Projekt "${projectToDelete.name}" byl úspěšně smazán.`);
     } catch (error) {
       console.error("Failed to delete project:", error);
+      toast.error('Chyba při mazání', 'Nepodařilo se smazat projekt. Zkuste to prosím znovu.');
     }
   };
 
