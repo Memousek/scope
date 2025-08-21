@@ -720,7 +720,7 @@ function todayIsoInTz(tz = 'Europe/Prague'): string {
 
     // Enhanced intent-aware system prompt with comprehensive context + JSON [DATA]
     const parts: string[] = [];
-    parts.push(`Jsi profesionální expert v projektovém managementu. Odpovídej česky, strukturovaně a přátelsky s emoji pro lepší čitelnost.`);
+    parts.push(`Jsi profesionální expert v projektovém managementu. Odpovídej v jazyce, kterým se uživatel baví, strukturovaně a přátelsky s emoji pro lepší čitelnost.`);
     parts.push(`Scope: ${scope?.name}`);
     parts.push(`Formátování odpovědí:
     • Používej emoji pro kategorizaci (📊, 👥, 🏖️, 📈, ⚠️, ✅, 🔴, 🟡, 🟢) případně jiné emoji podle situace
