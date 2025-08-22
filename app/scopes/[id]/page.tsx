@@ -488,50 +488,56 @@ export default function ScopePage({
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-4 relative">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-lg hidden md:flex">
-                <span className="text-white text-2xl font-bold">
-                  {scope.name.charAt(0).toUpperCase()}
-                </span>
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-3xl font-bold text-whte dark:text-gray-100">
-                    {scope.name}
-                  </h1>
+          <div className="mb-4">
+            {/* Back button - positioned above the main header */}
+            <div className="mb-4">
+              <Link href="/" className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors duration-200 group">
+                <div className="p-2 rounded-lg bg-white/50 dark:bg-gray-800/50 group-hover:bg-white/80 dark:group-hover:bg-gray-700/80 transition-all duration-200">
+                  <FiArrowLeft className="w-4 h-4" />
                 </div>
-                <p className="text-gray-600 dark:text-gray-400 flex items-center gap-2">
-                  <button onClick={() => {
-                    navigator.clipboard.writeText(scope.id);
-                    toast.success('Scope ID copied to clipboard');
-                  }} className="text-gray-600 dark:text-gray-400 flex items-center gap-2 hover:text-gray-800 dark:hover:text-gray-200 transition-colors">
-                    Scope ID: {scope.id.slice(0, 8)}...{scope.id.slice(-8)}
-                    <FiCopy className="w-4 h-4" />
-                  </button>
-                </p>
-              </div>
+                <span className="font-medium">{t('back')}</span>
+              </Link>
             </div>
 
-            <div className="flex items-center gap-3 absolute -top-5 right-0 md:relative">
-              {(isOwner || isEditor) && (
-                <button
-                  onClick={() => setShareModalOpen(true)}
-                  className="flex items-center gap-2 relative group bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white px-4 py-2 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/25 active:scale-95"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  <div className="relative z-10 flex items-center gap-2 ">
-                    <FiShare2 className="text-sm" /> {t('share')}
-                  </div>
-                </button>
-              )}
-              {/* Back to all scopes */}
-              <Link href="/" className="relative group bg-gradient-to-r from-pink-500 via-rose-500 to-red-500 text-white px-4 py-2 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-pink-500/25 active:scale-95">
-                <div className="absolute inset-0 bg-gradient-to-r from-pink-600 via-rose-600 to-red-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <div className="relative z-10 flex items-center gap-2 ">
-                  <FiArrowLeft className="text-sm" /> {t('back')}
+            {/* Main header with scope info and share button */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-lg hidden md:flex">
+                  <span className="text-white text-2xl font-bold">
+                    {scope.name.charAt(0).toUpperCase()}
+                  </span>
                 </div>
-              </Link>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                      {scope.name}
+                    </h1>
+                  </div>
+                  <p className="text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                    <button onClick={() => {
+                      navigator.clipboard.writeText(scope.id);
+                      toast.success('Scope ID copied to clipboard');
+                    }} className="text-gray-600 dark:text-gray-400 flex items-center gap-2 hover:text-gray-800 dark:hover:text-gray-200 transition-colors">
+                      Scope ID: {scope.id.slice(0, 8)}...{scope.id.slice(-8)}
+                      <FiCopy className="w-4 h-4" />
+                    </button>
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                {(isOwner || isEditor) && (
+                  <button
+                    onClick={() => setShareModalOpen(true)}
+                    className="flex items-center gap-2 relative group bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white px-4 py-2 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/25 active:scale-95"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div className="relative z-10 flex items-center gap-2 ">
+                      <FiShare2 className="text-sm" /> {t('share')}
+                    </div>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
