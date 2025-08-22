@@ -632,5 +632,6 @@
       "baseUrl": "URL musí začínat http(s)://",
       "countryIso": "Použijte 2-písmenný ISO kód (např. CZ, DE, US)"
     }
-  }
+  },
+  "progressChart": "Progress graf"
 }

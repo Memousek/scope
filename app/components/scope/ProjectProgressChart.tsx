@@ -190,7 +190,7 @@ const ProjectProgressChartComponent: React.FC<ProjectProgressChartProps> = ({
       <div className="flex items-center justify-between mb-4">
         <div>
           <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-            <FiBarChart2 className="inline mr-2" /> Progress grafy
+            <FiBarChart2 className="inline mr-2" /> {t("progressChart")}
           </h4>
           <p className="text-sm text-gray-600 dark:text-gray-400">
             {project.name}
