@@ -718,23 +718,36 @@ function todayIsoInTz(tz = 'Europe/Prague'): string {
       }
     } catch {}
 
+    // Funkce pro vytvoření základních instrukcí
+    const createBasicInstructions = (includeData = false) => {
+      const instructions = [
+        `Jsi profesionální expert v projektovém managementu. Odpovídej v jazyce, kterým se uživatel baví, strukturovaně a přátelsky s emoji pro lepší čitelnost.`,
+        `Scope: ${scope?.name}`,
+        `Formátování odpovědí:
+        • Používej emoji pro kategorizaci (📊, 👥, 🏖️, 📈, ⚠️, ✅, 🔴, 🟡, 🟢) případně jiné emoji podle situace
+        • Strukturované odpovědi s odrážkami
+        • Krátké, jasné věty
+        • Konkrétní doporučení s akčními kroky
+        • Používej Markdown formátování (**bold**, *italic*, \`kód\`)
+        • Používej Markdown tabulky pro přehlednost dat - VŽDY používej správný formát:
+          | Sloupec 1 | Sloupec 2 | Sloupec 3 |
+          | :-------- | :-------- | :-------- |
+          | Data 1    | Data 2    | Data 3    |
+        • Používej číslované seznamy pro kroky
+        • Používej kódové bloky pro technické informace
+        • VŽDY používej správné Markdown syntaxe pro tabulky`
+      ];
+      
+      if (includeData && dataJson && dataJson !== '{}' && dataJson.length < 8000) {
+        instructions.push(`[DATA] ${dataJson}`);
+      }
+      
+      return instructions;
+    };
+
     // Enhanced intent-aware system prompt with comprehensive context + JSON [DATA]
     const parts: string[] = [];
-    parts.push(`Jsi profesionální expert v projektovém managementu. Odpovídej v jazyce, kterým se uživatel baví, strukturovaně a přátelsky s emoji pro lepší čitelnost.`);
-    parts.push(`Scope: ${scope?.name}`);
-    parts.push(`Formátování odpovědí:
-    • Používej emoji pro kategorizaci (📊, 👥, 🏖️, 📈, ⚠️, ✅, 🔴, 🟡, 🟢) případně jiné emoji podle situace
-    • Strukturované odpovědi s odrážkami
-    • Krátké, jasné věty
-    • Konkrétní doporučení s akčními kroky
-    • Používej Markdown formátování (**bold**, *italic*, \`kód\`)
-    • Používej Markdown tabulky pro přehlednost dat - VŽDY používej správný formát:
-      | Sloupec 1 | Sloupec 2 | Sloupec 3 |
-      | :-------- | :-------- | :-------- |
-      | Data 1    | Data 2    | Data 3    |
-    • Používej číslované seznamy pro kroky
-    • Používej kódové bloky pro technické informace
-    • VŽDY používej správné Markdown syntaxe pro tabulky`);
+    parts.push(...createBasicInstructions(true));
     
     if (wantsProgress || wantsDeadlines || summarizeProjects) {
       parts.push(`📋 **Projekty (vybrané)**:\n${summarizeProjects}`);
@@ -923,41 +936,7 @@ function todayIsoInTz(tz = 'Europe/Prague'): string {
         systemText = systemPrompt;
       } else {
         // Pro pokračující konverzaci použijeme základní instrukce bez pozdravů
-        // Vytvoříme základní instrukce bez pozdravů
-        const basicInstructions = [
-          `Jsi profesionální expert v projektovém managementu. Odpovídej v jazyce, kterým se uživatel baví, strukturovaně a přátelsky s emoji pro lepší čitelnost.`,
-          `Scope: ${scope?.name}`,
-          `Formátování odpovědí:
-          • Používej emoji pro kategorizaci (📊, 👥, 🏖️, 📈, ⚠️, ✅, 🔴, 🟡, 🟢) případně jiné emoji podle situace
-          • Strukturované odpovědi s odrážkami
-          • Krátké, jasné věty
-          • Konkrétní doporučení s akčními kroky
-          • Používej Markdown formátování (**bold**, *italic*, \`kód\`)
-          • Používej Markdown tabulky pro přehlednost dat
-          • Používej číslované seznamy pro kroky
-          • Používej kódové bloky pro technické informace`,
-          `🎯 **DŮLEŽITÉ**: VŽDY používej správné Markdown syntaxe pro tabulky. Každá tabulka musí mít:
-          1. Hlavičku s názvy sloupců oddělenými | 
-          2. Druhý řádek s zarovnáním (např. | :---- | :---- |)
-          3. Data řádky oddělené |
-          
-          Příklad správné tabulky:
-          | Název | Hodnota | Stav |
-          | :----- | :------ | :---- |
-          | Test | 123 | ✅ |
-          
-          NIKDY nepoužívej jiné formátování pro tabulky!
-          Dávej pouze rychlé stručné odpovědi.
-          Vždy dávej pár bodů od kterých se uživatel může odpíchnout, ale nedávej mu hodně dat najednou.
-          Povídej si s uživatelem jako s dobrým přítelem, který vyžaduje tvou pomoc.`
-        ];
-        
-        // Přidáme data pokud existují
-        if (dataJson && dataJson !== '{}' && dataJson.length < 8000) {
-          basicInstructions.push(`[DATA] ${dataJson}`);
-        }
-        
-        systemText = basicInstructions.join('\n\n');
+        systemText = createBasicInstructions(true).join('\n\n');
       }
       
       const nonSystem = messages.filter(m => m.role !== 'system');
