@@ -876,9 +876,19 @@ function todayIsoInTz(tz = 'Europe/Prague'): string {
     
     const systemPrompt = parts.join('\n\n');
 
-    const messages: ChatMessage[] = chatHistory.length === 0
-      ? [{ role: 'system', content: systemPrompt }, { role: 'user', content: userMessage }]
-      : [...chatHistory, { role: 'user', content: userMessage }];
+    // Přidáme systémový prompt pouze pokud je to první zpráva v konverzaci
+    const isFirstMessage = chatHistory.length === 0;
+    
+    let messages: ChatMessage[];
+    if (selectedProvider === 'openai') {
+      // Pro OpenAI přidáme systémový prompt pouze při první zprávě
+      messages = isFirstMessage 
+        ? [{ role: 'system', content: systemPrompt }, { role: 'user', content: userMessage }]
+        : [...chatHistory, { role: 'user', content: userMessage }];
+    } else {
+      // Pro Gemini vždy použijeme chat historii, ale systémový prompt přidáme pouze při první zprávě
+      messages = [...chatHistory, { role: 'user', content: userMessage }];
+    }
 
     let message = '';
     if (selectedProvider === 'openai') {
@@ -894,16 +904,26 @@ function todayIsoInTz(tz = 'Europe/Prague'): string {
       const data = await resp.json();
       message = data.choices?.[0]?.message?.content || '';
     } else {
-      // Gemini – nemá system roli, proto systémový kontext vždy vložíme do první user zprávy
-      let systemText = messages.filter(m => m.role === 'system').map(m => m.content).join('\n');
-      if (!systemText) systemText = systemPrompt;
-      const nonSystem = messages.filter(m => m.role !== 'system');
-      const firstUserIndex = nonSystem.findIndex(m => m.role === 'user');
-      if (firstUserIndex !== -1) {
-        nonSystem[firstUserIndex] = { ...nonSystem[firstUserIndex], content: `${systemText}\n${nonSystem[firstUserIndex].content}` };
+      // Gemini – nemá system roli, proto systémový kontext vložíme pouze při první zprávě
+      let systemText = '';
+      if (isFirstMessage) {
+        systemText = systemPrompt;
       } else {
-        nonSystem.unshift({ role: 'user', content: `${systemText}\n${userMessage}` });
+        // Pro pokračující konverzaci zkusíme najít systémový prompt v historii
+        systemText = messages.filter(m => m.role === 'system').map(m => m.content).join('\n');
       }
+      
+      const nonSystem = messages.filter(m => m.role !== 'system');
+      if (systemText && isFirstMessage) {
+        // Při první zprávě vložíme systémový prompt do první user zprávy
+        const firstUserIndex = nonSystem.findIndex(m => m.role === 'user');
+        if (firstUserIndex !== -1) {
+          nonSystem[firstUserIndex] = { ...nonSystem[firstUserIndex], content: `${systemText}\n${nonSystem[firstUserIndex].content}` };
+        } else {
+          nonSystem.unshift({ role: 'user', content: `${systemText}\n${userMessage}` });
+        }
+      }
+      
       const geminiMessages = nonSystem.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }));
       const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
