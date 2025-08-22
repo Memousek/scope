@@ -876,17 +876,27 @@ function todayIsoInTz(tz = 'Europe/Prague'): string {
     
     const systemPrompt = parts.join('\n\n');
 
-    // Přidáme systémový prompt pouze pokud je to první zpráva v konverzaci
+    // Pro OpenAI přidáme systémový prompt pouze při první zprávě
+    // Pro Gemini musíme systémový prompt předávat vždy, ale bez opakování pozdravů
     const isFirstMessage = chatHistory.length === 0;
     
     let messages: ChatMessage[];
     if (selectedProvider === 'openai') {
-      // Pro OpenAI přidáme systémový prompt pouze při první zprávě
-      messages = isFirstMessage 
-        ? [{ role: 'system', content: systemPrompt }, { role: 'user', content: userMessage }]
-        : [...chatHistory, { role: 'user', content: userMessage }];
+      // Pro OpenAI přidáme systémový prompt při první zprávě, nebo pokud už existuje v historii
+      if (isFirstMessage) {
+        messages = [{ role: 'system', content: systemPrompt }, { role: 'user', content: userMessage }];
+      } else {
+        // Zkontrolujeme, jestli už máme systémový prompt v historii
+        const hasSystemPrompt = chatHistory.some(m => m.role === 'system');
+        if (hasSystemPrompt) {
+          messages = [...chatHistory, { role: 'user', content: userMessage }];
+        } else {
+          // Pokud nemáme systémový prompt v historii, přidáme ho
+          messages = [{ role: 'system', content: systemPrompt }, ...chatHistory, { role: 'user', content: userMessage }];
+        }
+      }
     } else {
-      // Pro Gemini vždy použijeme chat historii, ale systémový prompt přidáme pouze při první zprávě
+      // Pro Gemini vždy použijeme chat historii
       messages = [...chatHistory, { role: 'user', content: userMessage }];
     }
 
@@ -904,24 +914,60 @@ function todayIsoInTz(tz = 'Europe/Prague'): string {
       const data = await resp.json();
       message = data.choices?.[0]?.message?.content || '';
     } else {
-      // Gemini – nemá system roli, proto systémový kontext vložíme pouze při první zprávě
+      // Gemini – nemá system roli, proto systémový kontext vložíme do první user zprávy
+      // Ale bez opakování pozdravů - použijeme základní instrukce bez pozdravů
       let systemText = '';
+      
       if (isFirstMessage) {
+        // Při první zprávě použijeme celý systémový prompt
         systemText = systemPrompt;
       } else {
-        // Pro pokračující konverzaci zkusíme najít systémový prompt v historii
-        systemText = messages.filter(m => m.role === 'system').map(m => m.content).join('\n');
+        // Pro pokračující konverzaci použijeme základní instrukce bez pozdravů
+        // Vytvoříme základní instrukce bez pozdravů
+        const basicInstructions = [
+          `Jsi profesionální expert v projektovém managementu. Odpovídej v jazyce, kterým se uživatel baví, strukturovaně a přátelsky s emoji pro lepší čitelnost.`,
+          `Scope: ${scope?.name}`,
+          `Formátování odpovědí:
+          • Používej emoji pro kategorizaci (📊, 👥, 🏖️, 📈, ⚠️, ✅, 🔴, 🟡, 🟢) případně jiné emoji podle situace
+          • Strukturované odpovědi s odrážkami
+          • Krátké, jasné věty
+          • Konkrétní doporučení s akčními kroky
+          • Používej Markdown formátování (**bold**, *italic*, \`kód\`)
+          • Používej Markdown tabulky pro přehlednost dat
+          • Používej číslované seznamy pro kroky
+          • Používej kódové bloky pro technické informace`,
+          `🎯 **DŮLEŽITÉ**: VŽDY používej správné Markdown syntaxe pro tabulky. Každá tabulka musí mít:
+          1. Hlavičku s názvy sloupců oddělenými | 
+          2. Druhý řádek s zarovnáním (např. | :---- | :---- |)
+          3. Data řádky oddělené |
+          
+          Příklad správné tabulky:
+          | Název | Hodnota | Stav |
+          | :----- | :------ | :---- |
+          | Test | 123 | ✅ |
+          
+          NIKDY nepoužívej jiné formátování pro tabulky!
+          Dávej pouze rychlé stručné odpovědi.
+          Vždy dávej pár bodů od kterých se uživatel může odpíchnout, ale nedávej mu hodně dat najednou.
+          Povídej si s uživatelem jako s dobrým přítelem, který vyžaduje tvou pomoc.`
+        ];
+        
+        // Přidáme data pokud existují
+        if (dataJson && dataJson !== '{}' && dataJson.length < 8000) {
+          basicInstructions.push(`[DATA] ${dataJson}`);
+        }
+        
+        systemText = basicInstructions.join('\n\n');
       }
       
       const nonSystem = messages.filter(m => m.role !== 'system');
-      if (systemText && isFirstMessage) {
-        // Při první zprávě vložíme systémový prompt do první user zprávy
-        const firstUserIndex = nonSystem.findIndex(m => m.role === 'user');
-        if (firstUserIndex !== -1) {
-          nonSystem[firstUserIndex] = { ...nonSystem[firstUserIndex], content: `${systemText}\n${nonSystem[firstUserIndex].content}` };
-        } else {
-          nonSystem.unshift({ role: 'user', content: `${systemText}\n${userMessage}` });
-        }
+      
+      // Vložíme systémový prompt do první user zprávy
+      const firstUserIndex = nonSystem.findIndex(m => m.role === 'user');
+      if (firstUserIndex !== -1) {
+        nonSystem[firstUserIndex] = { ...nonSystem[firstUserIndex], content: `${systemText}\n\n${nonSystem[firstUserIndex].content}` };
+      } else {
+        nonSystem.unshift({ role: 'user', content: `${systemText}\n\n${userMessage}` });
       }
       
       const geminiMessages = nonSystem.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }));
