@@ -17,7 +17,6 @@ import { UserRepository } from "@/lib/domain/repositories/user.repository";
 import { ScopeEditorRepository } from "@/lib/domain/repositories/scope-editor.repository";
 import { Scope } from "@/lib/domain/models/scope.model";
 import { handleErrorMessage } from "@/lib/utils";
-import { ConditionalHeader } from "@/components/conditional-header";
 
 const useAuth = () => {
   const [loading, setLoading] = useState(true);
@@ -109,40 +108,52 @@ export default function ScopesListPage() {
 
   if (loading || !user) {
     return (
-      <>
-        <ConditionalHeader />
-        <div className="flex items-center justify-center">Načítání…</div>
-      </>
+      <div className="h-[90vh] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
+      </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-center bg-gray-50 dark:bg-gray-900 min-h-full">
-      <div className="flex-1 w-full flex flex-col gap-20 items-center">
-        <div className="flex-1 flex flex-col gap-20 max-w-5xl p-5">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Vaše scopy</h1>
-            <div className="w-full md:w-auto flex flex-col sm:flex-row gap-3 items-stretch md:items-center">
-              <div className="relative flex-1 min-w-[220px] sticky top-2 z-10">
-                <input
-                  id="scopes-search"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Hledat scopy..."
-                  aria-label="Hledat"
-                  className="w-full bg-white/80 dark:bg-gray-800/80 border border-gray-200/50 dark:border-gray-700/50 rounded-xl pl-10 pr-3 py-3 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"/></svg>
+    <div>
+      <div className="container mx-auto px-4 py-8">
+        {/* Header Section */}
+        <div className="mb-8">
+          <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border border-white/20 rounded-2xl p-6 shadow-xl">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+              <div className="flex-1">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                  Vaše scopy
+                </h1>
+                <p className="text-gray-600 dark:text-gray-400 text-lg">
+                  Moderní nástroj pro sledování průběhu projektů a efektivní správu týmových zdrojů s vizuálními přehledy a real-time spoluprácí.
+                </p>
               </div>
-              <button
-                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl text-base font-semibold hover:from-blue-700 hover:to-purple-700 transition"
-                onClick={() => router.push('/scopes/new')}
-              >
-                Vytvořit nový scope
-              </button>
+              <div className="w-full md:w-auto flex flex-col sm:flex-row gap-3 items-stretch md:items-center">
+                <div className="relative flex-1 min-w-[220px] sticky top-2 z-10">
+                  <input
+                    id="scopes-search"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Hledat scopy..."
+                    aria-label="Hledat"
+                    className="w-full bg-white/80 dark:bg-gray-800/80 border border-gray-200/50 dark:border-gray-700/50 rounded-xl pl-10 pr-3 py-3 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"/></svg>
+                </div>
+                <button
+                  onClick={() => router.push('/scopes/new')}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 hover:scale-105 shadow-lg font-medium"
+                >
+                  Vytvořit nový scope
+                </button>
+              </div>
             </div>
           </div>
+        </div>
 
+        {/* Scopes List */}
+        <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border border-white/20 rounded-2xl p-6 shadow-xl">
           <ScopeList
             scopes={filteredScopes}
             user={user}
