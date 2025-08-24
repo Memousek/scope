@@ -142,7 +142,7 @@ export default function AdminPage() {
   };
 
   return (
-    <main className="container mx-auto p-6">
+    <div className="container mx-auto p-6">
       <h1 className="text-2xl font-bold mb-4">Admin</h1>
       <div className="space-y-6">
         {!allowed && (
@@ -260,7 +260,7 @@ export default function AdminPage() {
           </div>
         </div>
       </div>
-    </main>
+    </div>
   );
 }
 
