@@ -993,7 +993,14 @@ export function ProjectSection({
                                     {/* Project name and priority */}
 
                                     <div className="flex items-center gap-3">
-                                      <h4 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                                      <h4 
+                                        className="text-xl font-bold text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200"
+                                        onClick={() =>
+                                          setExpandedProject(
+                                            isExpanded ? null : project.id
+                                          )
+                                        }
+                                      >
                                         {project.name}
                                       </h4>
                                       {project.status && (
@@ -1221,7 +1228,14 @@ export function ProjectSection({
                                       )}
 
                                       <div className="flex items-center gap-2">
-                                        <h4 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                                        <h4 
+                                          className="text-lg font-bold text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200"
+                                          onClick={() =>
+                                            setExpandedProject(
+                                              isExpanded ? null : project.id
+                                            )
+                                          }
+                                        >
                                           {project.name}
                                         </h4>
                                         <span
