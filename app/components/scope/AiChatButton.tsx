@@ -1,7 +1,7 @@
 /**
  * AI Chat Button Component
- * Floating action button to open AI chat modal
- * Shows different states based on API key availability
+ * Floating action button with authentic Apple Liquid Glass design
+ * Subtle glass effects with real transparency and reflections
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -19,8 +19,7 @@ export function AiChatButton({ onClick }: AiChatButtonProps) {
 
   const aiService = useMemo(() => new AiService(), []);
 
-  // případné další hooky nebo logika
-
+  // Check API key availability
   const checkApiKey = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -53,28 +52,117 @@ export function AiChatButton({ onClick }: AiChatButtonProps) {
   return (
     <button
       onClick={onClick}
-      className={`fixed bottom-6 right-24 w-16 h-16 text-white rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center justify-center group z-50 ${
+      className={`fixed bottom-6 right-24 w-16 h-16 text-white rounded-full transition-all duration-500 flex items-center justify-center group z-50 ${
         hasApiKey
-          ? 'cursor-pointer opacity-100 outline outline-2 outline-gray-500'
+          ? 'cursor-pointer'
           : 'bg-gradient-to-r from-gray-400 to-gray-500 cursor-not-allowed opacity-50'
       }`}
-          style={{
-            filter: 'drop-shadow(-8px -10px 46px #0000005f)',
-            backdropFilter: 'brightness(1.1) blur(2px) url(#displacementFilter)',
-            WebkitBackdropFilter: 'brightness(1.1) blur(2px) url(#displacementFilter)',
-          }}
+      style={{
+        background: hasApiKey ? 'transparent' : undefined,
+        backdropFilter: hasApiKey ? 'blur(40px) saturate(180%)' : undefined,
+        WebkitBackdropFilter: hasApiKey ? 'blur(40px) saturate(180%)' : undefined,
+      }}
       aria-label={hasApiKey ? t("askAi") : t("aiRequiresApiKey")}
       disabled={!hasApiKey}
       title={hasApiKey ? t("askAi") : t("setApiKeyInProfile")}
     >
-      <span className="sr-only">Ask AI</span>
+      {/* Authentic Apple Liquid Glass */}
+      {hasApiKey && (
+        <>
+          {/* Subtle purple-blue tint */}
+          <div 
+            className="absolute inset-0 rounded-full"
+            style={{
+              background: `
+                linear-gradient(135deg, 
+                  rgba(147, 51, 234, 0.08) 0%, 
+                  rgba(59, 130, 246, 0.06) 50%, 
+                  rgba(147, 51, 234, 0.04) 100%)
+              `,
+            }}
+          />
+
+          {/* Real background reflection */}
+          <div className="absolute inset-0 rounded-full overflow-hidden">
+            {/* Primary light reflection */}
+            <div 
+              className="absolute inset-0"
+              style={{
+                background: `
+                  radial-gradient(circle at 30% 25%, rgba(255,255,255,0.3) 0%, transparent 40%),
+                  radial-gradient(circle at 70% 75%, rgba(255,255,255,0.2) 0%, transparent 45%)
+                `,
+                filter: 'blur(0.5px)',
+                animation: 'subtleReflection 8s ease-in-out infinite',
+              }}
+            />
+            
+            {/* Secondary reflection */}
+            <div 
+              className="absolute inset-0"
+              style={{
+                background: `
+                  linear-gradient(135deg, rgba(255,255,255,0.12) 0%, transparent 35%),
+                  radial-gradient(circle at 60% 40%, rgba(255,255,255,0.08) 0%, transparent 50%)
+                `,
+                filter: 'blur(1px)',
+                animation: 'secondaryReflection 12s ease-in-out infinite',
+              }}
+            />
+          </div>
+
+          {/* Glass surface with depth */}
+          <div 
+            className="absolute inset-0 rounded-full"
+            style={{
+              background: `
+                linear-gradient(135deg, 
+                  rgba(255,255,255,0.18) 0%, 
+                  rgba(255,255,255,0.08) 25%, 
+                  rgba(255,255,255,0.04) 50%, 
+                  rgba(0,0,0,0.01) 75%, 
+                  rgba(255,255,255,0.06) 100%)
+              `,
+              border: '1px solid rgba(255,255,255,0.18)',
+              boxShadow: `
+                0 0 0 1px rgba(255,255,255,0.12),
+                inset 0 2px 0 rgba(255,255,255,0.25),
+                inset 0 -1px 0 rgba(0,0,0,0.05),
+                0 10px 35px rgba(0,0,0,0.18),
+                0 5px 20px rgba(0,0,0,0.12)
+              `,
+            }}
+          />
+
+          {/* Hover light interaction */}
+          <div 
+            className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+            style={{
+              background: `
+                radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
+                  rgba(255,255,255,0.25) 0%, 
+                  rgba(255,255,255,0.08) 30%, 
+                  transparent 60%)
+              `,
+              filter: 'blur(2px)',
+            }}
+          />
+        </>
+      )}
+
+      {/* Icon with glass-appropriate styling */}
       <svg
-        className={`w-6 h-6 transition-transform duration-200 ${
-          hasApiKey ? 'group-hover:rotate-12' : ''
+        className={`w-6 h-6 transition-all duration-500 relative z-10 ${
+          hasApiKey 
+            ? 'group-hover:scale-105 drop-shadow-lg' 
+            : ''
         }`}
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
+        style={{
+          filter: hasApiKey ? 'drop-shadow(0 3px 8px rgba(0,0,0,0.3))' : undefined,
+        }}
       >
         <path
           strokeLinecap="round"
@@ -84,11 +172,42 @@ export function AiChatButton({ onClick }: AiChatButtonProps) {
         />
       </svg>
 
+      {/* Warning indicator for missing API key */}
       {!hasApiKey && (
-        <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
-          <span className="text-white text-xs">!</span>
+        <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center shadow-lg">
+          <span className="text-white text-xs font-bold">!</span>
         </div>
       )}
+
+      <style jsx>{`
+        @keyframes subtleReflection {
+          0%, 100% {
+            transform: translateX(0) translateY(0);
+            opacity: 0.3;
+          }
+          50% {
+            transform: translateX(-0.3px) translateY(-0.2px);
+            opacity: 0.4;
+          }
+        }
+
+        @keyframes secondaryReflection {
+          0%, 100% {
+            transform: translateX(0) translateY(0) scale(1);
+            opacity: 0.12;
+          }
+          50% {
+            transform: translateX(0.2px) translateY(-0.1px) scale(1.01);
+            opacity: 0.16;
+          }
+        }
+
+        /* Mouse tracking for light interaction */
+        button:hover {
+          --mouse-x: 50%;
+          --mouse-y: 50%;
+        }
+      `}</style>
     </button>
   );
 } 
