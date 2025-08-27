@@ -378,6 +378,7 @@
   "readOnly": "Read-only",
   "copyLink": "Copy link",
   "reserveOrSlip": "Reserve/Slip",
+  "explainReserveOrSlip": "Explain what Reserve/Slip means",
   "noTeamMember": "Missing member",
   "projectChangeHistory": "Project change history",
   "roleAndProgress": "Role and progress",
@@ -458,5 +459,9 @@
   "upgradeToIncreaseLimits": "Upgrade your plan to increase limits",
   "projectsLimit": "Projects",
   "teamLimit": "Team members",
-  "scopesLimit": "Scopes"
+  "scopesLimit": "Scopes",
+  "projectStatusAhead": "Project is ahead by {days} working days",
+  "projectStatusOnTime": "Project is on time",
+  "projectStatusBehind": "Project is behind by {days} working days",
+  "projectStatusCritical": "Project is critically behind by {days} working days"
 }

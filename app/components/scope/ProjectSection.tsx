@@ -1,4 +1,5 @@
 import { EditNoteModal } from "./EditNoteModal";
+import { ExplanationModal } from "./ExplanationModal";
 /**
  * Modern Project Section Component
  * - Glass-like design s animacemi
@@ -48,7 +49,7 @@ import { setCalendarConfig } from "@/app/utils/dateUtils";
 import { ScopeSettingsService } from "@/app/services/scopeSettingsService";
 
 import { Badge } from "@/app/components/ui/Badge";
-import { FiUsers, FiFolder, FiFilter, FiChevronDown, FiDelete, FiEdit } from "react-icons/fi";
+import { FiUsers, FiFolder, FiFilter, FiChevronDown, FiDelete, FiEdit, FiInfo } from "react-icons/fi";
 import { ProjectStatusFilter, ProjectStatus } from "./ProjectStatusFilter";
 import { ProjectStatusBadge } from "./ProjectStatusBadge";
 import { useToastFunctions } from '@/app/components/ui/Toast';
@@ -119,6 +120,8 @@ export function ProjectSection({
     useState<Project | null>(null);
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const [selectedStatuses, setSelectedStatuses] = useState<ProjectStatus[]>([]);
+  const [explanationPopupOpen, setExplanationPopupOpen] = useState(false);
+  const [currentProjectSlippage, setCurrentProjectSlippage] = useState<number | null>(null);
 
   // Project assignments state
   const [projectAssignments, setProjectAssignments] = useState<
@@ -658,16 +661,16 @@ export function ProjectSection({
         return selectedStatuses.includes(projectStatus);
       });
     } else {
-      // Pokud nejsou vybrané žádné statusy, skryjeme dokončené, zrušené, přerušené a archivované projekty úplně
+      // Pokud nejsou vybrané žádné statusy, zobrazíme aktivní projekty (not_started, in_progress, paused)
+      // Umožníme uživateli vidět více aktivních projektů současně
       filteredProjects = projects.filter((project) => {
         const projectStatus =
           (project.status as ProjectStatus) || "not_started";
-        const shouldHide =
-          projectStatus === "completed" ||
-          projectStatus === "cancelled" ||
-          projectStatus === "suspended" ||
-          projectStatus === "archived";
-        return !shouldHide;
+        const isActive =
+          projectStatus === "not_started" ||
+          projectStatus === "in_progress" ||
+          projectStatus === "paused";
+        return isActive;
       });
     }
 
@@ -1031,8 +1034,18 @@ export function ProjectSection({
 
                                     {/* Deadline and Slip */}
                                     <div className="text-right">
-                                      <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                                        {t("reserveOrSlip")}
+                                      <div className="text-sm text-gray-600 dark:text-gray-400 mb-1 flex items-center justify-end gap-1">
+                                        <span>{t("reserveOrSlip")}</span>
+                                        <button
+                                          onClick={() => {
+                                            setCurrentProjectSlippage(prioritySlippage);
+                                            setExplanationPopupOpen(true);
+                                          }}
+                                          className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200"
+                                          title={t("explainReserveOrSlip")}
+                                        >
+                                          <FiInfo className="w-4 h-4" />
+                                        </button>
                                       </div>
                                       <div
                                         className={`text-lg font-bold ${!hasTeamAssignments(project.id)
@@ -1376,8 +1389,18 @@ export function ProjectSection({
 
                                     {/* Deadline + Lost workdays */}
                                     <div className="text-center">
-                                      <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">
-                                        {t("reserveOrSlip")}
+                                      <div className="text-xs text-gray-600 dark:text-gray-400 mb-1 flex items-center justify-center gap-1">
+                                        <span>{t("reserveOrSlip")}</span>
+                                        <button
+                                          onClick={() => {
+                                            setCurrentProjectSlippage(prioritySlippage);
+                                            setExplanationPopupOpen(true);
+                                          }}
+                                          className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200"
+                                          title={t("explainReserveOrSlip")}
+                                        >
+                                          <FiInfo className="w-3 h-3" />
+                                        </button>
                                       </div>
                                       <div
                                         className={`text-sm font-bold ${!hasTeamAssignments(project.id)
@@ -2134,6 +2157,13 @@ export function ProjectSection({
           }}
         />
       )}
+
+      {/* Explanation Modal */}
+      <ExplanationModal
+        isOpen={explanationPopupOpen}
+        onClose={() => setExplanationPopupOpen(false)}
+        currentProjectSlippage={currentProjectSlippage}
+      />
     </>
   );
 }

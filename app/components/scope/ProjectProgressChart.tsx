@@ -14,7 +14,8 @@ import { Payload } from "recharts/types/component/DefaultLegendContent";
 import { useTranslation } from "@/lib/translation";
 import { useScopeRoles } from '@/app/hooks/useScopeRoles';
 import ProjectDetailVisualizations from './ProjectDetailVisualizations';
-import { FiTrendingUp, FiAlertTriangle, FiAlertCircle, FiBarChart2 } from 'react-icons/fi';
+import { FiTrendingUp, FiAlertTriangle, FiAlertCircle, FiBarChart2, FiInfo } from 'react-icons/fi';
+import { ExplanationModal } from './ExplanationModal';
 
 interface ProjectProgressChartProps {
   project: Project;
@@ -48,6 +49,8 @@ const ProjectProgressChartComponent: React.FC<ProjectProgressChartProps> = ({
   const { activeRoles } = useScopeRoles(scopeId);
   const [progressData, setProgressData] = React.useState<ProgressData[]>([]);
   const [activeLegend, setActiveLegend] = React.useState<string | null>(null); // Přidáno
+  const [explanationPopupOpen, setExplanationPopupOpen] = React.useState(false);
+const [currentProjectSlippage, setCurrentProjectSlippage] = React.useState<number | null>(null);
 
   const getCurrentProgress = useCallback((project: Project) => {
     let totalDone = 0;
@@ -213,7 +216,19 @@ const ProjectProgressChartComponent: React.FC<ProjectProgressChartProps> = ({
                 return v >= 0 ? `+${v} ${t("days")}` : `${v} ${t("days")}`;
               })()}
             </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">{t("reserveOrSlip")}</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+              <span>{t("reserveOrSlip")}</span>
+                        <button
+            onClick={() => {
+              setCurrentProjectSlippage(prioritySlippage || 0);
+              setExplanationPopupOpen(true);
+            }}
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200"
+            title={t("explainReserveOrSlip")}
+          >
+                <FiInfo className="w-3 h-3" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -297,6 +312,13 @@ const ProjectProgressChartComponent: React.FC<ProjectProgressChartProps> = ({
         scopeId={scopeId}
         projectAssignments={projectAssignments}
         className="mt-6"
+      />
+
+      {/* Explanation Modal */}
+      <ExplanationModal
+        isOpen={explanationPopupOpen}
+        onClose={() => setExplanationPopupOpen(false)}
+        currentProjectSlippage={currentProjectSlippage}
       />
     </div>
   );
