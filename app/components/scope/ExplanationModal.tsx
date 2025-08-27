@@ -79,6 +79,12 @@ export function ExplanationModal({
               </>
             )}
           </p>
+          <p className="text-sm leading-relaxed mt-2 text-gray-600 dark:text-gray-400">
+            <strong>Jak se počítá rezerva?</strong> Rezerva = Priority End Date - Calculated Delivery Date
+          </p>
+          <p className="text-sm leading-relaxed mt-2 text-gray-600 dark:text-gray-400">
+            <strong>Projekt s prioritou 1:</strong> Priority End Date se počítá automaticky jako &ldquo;dnes + doba trvání&rdquo;. I když nemáte nastavený termín, aplikace vytvoří plán na základě práce a dostupné kapacity.
+          </p>
         </div>
 
         {/* Project Status */}
@@ -124,14 +130,14 @@ export function ExplanationModal({
               <strong className="text-blue-600 dark:text-blue-400">Delivery Date:</strong>
               <p className="text-sm mt-1">Původní termín dodání zadaný při vytvoření projektu</p>
             </div>
-            <div>
-              <strong className="text-purple-600 dark:text-purple-400">Priority Date:</strong>
-              <p className="text-sm mt-1">Termín upravený podle priority a závislostí mezi projekty</p>
-            </div>
-            <div>
-              <strong className="text-green-600 dark:text-green-400">Calculated Date:</strong>
-              <p className="text-sm mt-1">Skutečný termín dokončení vypočítaný na základě práce a kapacity týmu</p>
-            </div>
+                      <div>
+            <strong className="text-purple-600 dark:text-purple-400">Priority End Date:</strong>
+            <p className="text-sm mt-1">Automaticky vypočítaný termín dokončení podle priority projektu. Pro prioritu 1 = dnes + doba trvání (mandays/FTE). Pro vyšší priority = po dokončení předchozích projektů + doba trvání</p>
+          </div>
+                      <div>
+            <strong className="text-green-600 dark:text-green-400">Calculated Delivery Date:</strong>
+            <p className="text-sm mt-1">Skutečný termín dokončení vypočítaný na základě zbývající práce a skutečné dostupnosti týmu (včetně dovolených a nepřítomností)</p>
+          </div>
           </div>
         </div>
 
