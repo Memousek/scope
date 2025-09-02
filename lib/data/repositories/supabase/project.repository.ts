@@ -25,9 +25,7 @@ export class SupabaseProjectRepository implements ProjectRepository {
       .from('projects')
       .select('*')
       .eq('scope_id', scopeId);
-
     if (error || !data) return [];
-
     return data.map(this.mapToModel);
   }
 
@@ -82,6 +80,7 @@ export class SupabaseProjectRepository implements ProjectRepository {
       pm_done: pmDone,
       dpl_done: dplDone,
       delivery_date: project.deliveryDate?.toISOString(),
+      start_day: project.startDay?.toISOString(),
       status: project.status || 'not_started'
     };
 
@@ -127,6 +126,7 @@ export class SupabaseProjectRepository implements ProjectRepository {
     if (project.pmDone !== undefined) updateData.pm_done = project.pmDone;
     if (project.dplDone !== undefined) updateData.dpl_done = project.dplDone;
     if (project.deliveryDate !== undefined) updateData.delivery_date = project.deliveryDate?.toISOString();
+    if (project.startDay !== undefined) updateData.start_day = project.startDay ? project.startDay.toISOString() : null;
     if (project.status !== undefined) {
       updateData.status = project.status;
     }
@@ -162,7 +162,7 @@ export class SupabaseProjectRepository implements ProjectRepository {
       .select()
       .single();
 
-    if (error || !data) {
+    if (error) {
       throw new Error(`Failed to update project: ${error?.message}`);
     }
 
@@ -201,6 +201,7 @@ export class SupabaseProjectRepository implements ProjectRepository {
       deliveryDate: data.delivery_date ? new Date(data.delivery_date as string) : undefined,
       createdAt: new Date(data.created_at as string),
       startedAt: data.started_at ? new Date(data.started_at as string) : undefined,
+      startDay: data.start_day ? new Date(data.start_day as string) : undefined,
       status: (data.status as 'not_started' | 'in_progress' | 'paused' | 'completed' | 'cancelled' | 'archived' | 'suspended') || 'not_started'
     };
 

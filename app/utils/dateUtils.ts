@@ -489,7 +489,8 @@ export function calculatePriorityDatesWithAssignments(
 
     // Pokud máme workflow závislosti, použijeme sekvenční plánování rolí
     if (wf) {
-      const priorityStartDate = new Date(chainCursor);
+      // Použij start_day pokud je nastaven, jinak chainCursor
+      const priorityStartDate = project.start_day ? new Date(project.start_day) : new Date(chainCursor);
 
       // 1) Dny pro jednotlivé role dle přiřazení (allocationFte)
       const roleDays: Record<string, number> = {};
@@ -621,7 +622,12 @@ export function calculatePriorityDatesWithAssignments(
         lostWorkdaysDueToVacations: Math.max(0, getWorkdaysDiff(projectEndDateNoVac, projectEndDate)),
       };
 
-      chainCursor = nextWorkday(projectEndDate);
+      // VŽDY posuň kurzor na další pracovní den po konci projektu
+      // Tím zajistíme, že další projekty bez start_day začnou od správného bodu
+      // chainCursor = nextWorkday(projectEndDate);
+      
+      // Posuň chainCursor na největší končící datum (z předchozího chainCursor a aktuálního projektu)
+      chainCursor = nextWorkday(new Date(Math.max(chainCursor.getTime(), projectEndDate.getTime())));
       lastProjectName = project.name;
       continue;
     } else if (assignments.length === 0) {
@@ -670,8 +676,8 @@ export function calculatePriorityDatesWithAssignments(
 
     const projectWorkdays = Math.ceil(maxDays);
 
-    // --- ŘETĚZENÝ START: vždy z chainCursor
-    const priorityStartDate = new Date(chainCursor);
+    // --- ŘETĚZENÝ START: použij start_day pokud je nastaven, jinak chainCursor
+    const priorityStartDate = project.start_day ? new Date(project.start_day) : new Date(chainCursor);
     const priorityEndDate = addWorkdays(priorityStartDate, projectWorkdays);
 
     const baselineNoVac = (result as Record<string, { __baselineNoVac?: Date }>)[project.id]?.__baselineNoVac;
@@ -682,8 +688,12 @@ export function calculatePriorityDatesWithAssignments(
       lostWorkdaysDueToVacations: baselineNoVac ? Math.max(0, getWorkdaysDiff(baselineNoVac, priorityEndDate)) : 0,
     };
 
-    // posuň kurzor na další pracovní den po konci
-    chainCursor = nextWorkday(priorityEndDate);
+    // VŽDY posuň kurzor na další pracovní den po konci projektu
+    // Tím zajistíme, že další projekty bez start_day začnou od správného bodu
+    // chainCursor = nextWorkday(priorityEndDate);
+    
+    // Posuň chainCursor na největší končící datum (z předchozího chainCursor a aktuálního projektu)
+    chainCursor = nextWorkday(new Date(Math.max(chainCursor.getTime(), priorityEndDate.getTime())));
     lastProjectName = project.name;
   }
 

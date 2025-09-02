@@ -322,65 +322,48 @@ export function ProjectSection({
     project: Omit<Project, "id" | "scope_id" | "created_at">
   ) => {
     try {
-      // Najdeme nejvyšší dostupnou priority
-      const existingPriorities = projects.map((p) => p.priority);
-      const maxPriority =
-        existingPriorities.length > 0 ? Math.max(...existingPriorities) : 0;
-      const newPriority = maxPriority + 1;
+      // Získáme aktuální priority
+      const currentPriorities = projects.map(p => p.priority).filter(p => p !== null) as number[];
+      const newPriority = currentPriorities.length > 0 ? Math.max(...currentPriorities) + 1 : 1;
 
-      // Rozdělíme data na standardní a custom role
-      const standardRoleKeys = ["fe", "be", "qa", "pm", "dpl"];
+      // Rozdělíme data na standardní a custom
       const standardData: Record<string, unknown> = {};
-      const customData: Record<string, number> = {};
+      const customData: Record<string, unknown> = {};
 
-      activeRoles.forEach((role) => {
-        let cleanKey: string;
+      // Standardní role data
+      if (project.fe_mandays !== undefined) standardData.fe_mandays = project.fe_mandays;
+      if (project.be_mandays !== undefined) standardData.be_mandays = project.be_mandays;
+      if (project.qa_mandays !== undefined) standardData.qa_mandays = project.qa_mandays;
+      if (project.pm_mandays !== undefined) standardData.pm_mandays = project.pm_mandays;
+      if (project.dpl_mandays !== undefined) standardData.dpl_mandays = project.dpl_mandays;
+      if (project.fe_done !== undefined) standardData.fe_done = project.fe_done;
+      if (project.be_done !== undefined) standardData.be_done = project.be_done;
+      if (project.qa_done !== undefined) standardData.qa_done = project.qa_done;
+      if (project.pm_done !== undefined) standardData.pm_done = project.pm_done;
+      if (project.dpl_done !== undefined) standardData.dpl_done = project.dpl_done;
 
-        if (standardRoleKeys.includes(role.key)) {
-          // Standardní role - klíč je přímo fe, be, atd.
-          cleanKey = role.key;
-        } else {
-          // Custom role - klíč obsahuje suffix, extrahujeme základní název
-          cleanKey = role.key.replace(/_mandays$/, "").replace(/_done$/, "");
-        }
-
-        const mandaysKey = `${cleanKey}_mandays`;
-        const doneKey = `${cleanKey}_done`;
-        const mandaysValue =
-          ((project as Record<string, unknown>)[mandaysKey] as number) || 0;
-        const doneValue =
-          ((project as Record<string, unknown>)[doneKey] as number) || 0;
-
-        if (standardRoleKeys.includes(role.key)) {
-          // Standardní role - přidáme do standardních sloupců
-          standardData[mandaysKey] = mandaysValue;
-          standardData[doneKey] = doneValue;
-        } else {
-          // Custom role - přidáme do custom data
-          customData[mandaysKey] = mandaysValue;
-          customData[doneKey] = doneValue;
+      // Custom role data - vše co není standardní
+      Object.entries(project).forEach(([key, value]) => {
+        if ((key.includes('_mandays') || key.includes('_done')) && 
+            !['fe_mandays', 'be_mandays', 'qa_mandays', 'pm_mandays', 'dpl_mandays', 'fe_done', 'be_done', 'qa_done', 'pm_done', 'dpl_done'].includes(key)) {
+          customData[key] = value;
         }
       });
 
-      // Vytvoříme CreateProjectData objekt
       const projectData: CreateProjectData = {
         name: project.name as string,
         priority: newPriority,
         delivery_date: project.delivery_date as string | null,
+        start_day: project.start_day as string | null,
         ...standardData,
-        // Přidáme custom role data jako jednotlivé vlastnosti
         ...customData,
       };
 
       await addProject(projectData);
-      // Refresh usage cache for this scope
-      try { await mutate(["scopeUsage", scopeId]); } catch { }
-      // Reload projects to get updated data
-      await loadProjects();
-      toast.success('Projekt vytvořen', `Projekt "${project.name}" byl úspěšně vytvořen.`);
+      toast.success('Projekt přidán', `Projekt "${project.name}" byl úspěšně přidán.`);
     } catch (error) {
       console.error("Failed to add project:", error);
-      toast.error('Chyba při vytváření', 'Nepodařilo se vytvořit projekt. Zkuste to prosím znovu.');
+      toast.error('Chyba při přidávání', 'Nepodařilo se přidat projekt. Zkuste to prosím znovu.');
     }
   };
 
@@ -435,6 +418,7 @@ export function ProjectSection({
       if (updates.startedAt === null) {
         delete updates.startedAt;
       }
+      
       await updateProject(updatedProject.id, updates);
     } catch (error) {
       console.error("Failed to update project:", error);
@@ -1016,7 +1000,7 @@ export function ProjectSection({
                                     </div>
                                   </div>
 
-                                  <div className="flex items-center gap-6">
+                                  <div className="flex items-center gap-6 ml-auto">
                                     {/* Workflow status circle */}
                                     <div className="relative">
                                       {(() => {
@@ -1031,7 +1015,6 @@ export function ProjectSection({
                                         );
                                       })()}
                                     </div>
-
                                     {/* Deadline and Slip */}
                                     <div className="text-right">
                                       <div className="text-sm text-gray-600 dark:text-gray-400 mb-1 flex items-center justify-end gap-1">
@@ -1060,6 +1043,202 @@ export function ProjectSection({
                                           : prioritySlippage >= 0
                                             ? `+${prioritySlippage} ${t("days")}`
                                             : `${prioritySlippage} ${t("days")}`}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Akce */}
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      onClick={() =>
+                                        setExpandedProject(
+                                          isExpanded ? null : project.id
+                                        )
+                                      }
+                                      className="p-3 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-xl"
+                                    >
+                                      <svg
+                                        className={`w-5 h-5 transform transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`}
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M19 9l-7 7-7-7"
+                                        />
+                                      </svg>
+                                    </button>
+
+                                    <div className="flex items-center gap-1">
+                                      {!readOnlyMode && (
+                                        <button
+                                          onClick={() =>
+                                            setTeamAssignmentModalProject(
+                                              project
+                                            )
+                                          }
+                                          className="p-3 text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 transition-all duration-200 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-xl group"
+                                          title={t("assignTeam")}
+                                        >
+                                          <FiUsers
+                                            size={18}
+                                            className="text-green-600"
+                                          />
+                                        </button>
+                                      )}
+
+                                      {!readOnlyMode && (
+                                        <button
+                                          onClick={() =>
+                                            handleOpenEditModal(project)
+                                          }
+                                          className="p-3 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-all duration-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl group"
+                                          title={t("edit")}
+                                        >
+                                          <svg
+                                            className="w-5 h-5 group-hover:scale-110 transition-transform duration-200"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              strokeWidth={2}
+                                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                            />
+                                          </svg>
+                                        </button>
+                                      )}
+
+                                      {!readOnlyMode && (
+                                        <button
+                                          onClick={() =>
+                                            setDependenciesModalProject(
+                                              project
+                                            )
+                                          }
+                                          className="p-3 text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 transition-all duration-200 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-xl group"
+                                          title={t("roleDependencies")}
+                                        >
+                                          <svg
+                                            className="w-5 h-5 group-hover:scale-110 transition-transform duration-200"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              strokeWidth={2}
+                                              d="M13 10V3L4 14h7v7l9-11h-7z"
+                                            />
+                                          </svg>
+                                        </button>
+                                      )}
+
+                                      {!readOnlyMode && (
+                                        <button
+                                          onClick={() =>
+                                            setHistoryModalProject(project)
+                                          }
+                                          className="p-3 text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-xl group"
+                                          title={t("projectHistory")}
+                                        >
+                                          <svg
+                                            className="w-5 h-5 group-hover:scale-110 transition-transform duration-200"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              strokeWidth={2}
+                                              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                            />
+                                          </svg>
+                                        </button>
+                                      )}
+
+                                      {!readOnlyMode && (
+                                        <button
+                                          onClick={() =>
+                                            handleDeleteProject(project.id)
+                                          }
+                                          className="p-3 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-all duration-200 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl group"
+                                          title={t("delete")}
+                                        >
+                                          <svg
+                                            className="w-5 h-5 group-hover:scale-110 transition-transform duration-200"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              strokeWidth={2}
+                                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                            />
+                                          </svg>
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Mobile layout */}
+                                <div className="md:hidden space-y-4">
+                                  {/* Header s názvem a akcemi */}
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                      {/* Drag handle */}
+                                      {!readOnlyMode && (
+                                        <div
+                                          draggable={true}
+                                          onDragStart={(e) =>
+                                            handleDragStart(e, project)
+                                          }
+                                          onDragEnd={handleDragEnd}
+                                          className="flex items-center justify-center w-6 h-6 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg"
+                                          title={t("dragToChangePriority")}
+                                        >
+                                          <svg
+                                            className="w-4 h-4"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              strokeWidth={2}
+                                              d="M4 8h16M4 16h16"
+                                            />
+                                          </svg>
+                                        </div>
+                                      )}
+
+                                      <div className="flex items-center gap-2">
+                                        <h4 
+                                          className="text-lg font-bold text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200"
+                                          onClick={() =>
+                                            setExpandedProject(
+                                              isExpanded ? null : project.id
+                                            )
+                                          }
+                                        >
+                                          {project.name}
+                                        </h4>
+                                        <span
+                                          className={`bg-gradient-to-r ${getPriorityColor(priority)} text-white px-2 py-1 rounded-full text-xs font-semibold shadow-lg`}
+                                        >
+                                          {t("priority")} {project.priority}
+                                        </span>
                                       </div>
                                     </div>
 
@@ -1206,160 +1385,9 @@ export function ProjectSection({
                                       </div>
                                     </div>
                                   </div>
-                                </div>
-
-                                {/* Mobile layout */}
-                                <div className="md:hidden space-y-4">
-                                  {/* Header s názvem a akcemi */}
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                      {/* Drag handle */}
-                                      {!readOnlyMode && (
-                                        <div
-                                          draggable={true}
-                                          onDragStart={(e) =>
-                                            handleDragStart(e, project)
-                                          }
-                                          onDragEnd={handleDragEnd}
-                                          className="flex items-center justify-center w-6 h-6 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg"
-                                          title={t("dragToChangePriority")}
-                                        >
-                                          <svg
-                                            className="w-4 h-4"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                          >
-                                            <path
-                                              strokeLinecap="round"
-                                              strokeLinejoin="round"
-                                              strokeWidth={2}
-                                              d="M4 8h16M4 16h16"
-                                            />
-                                          </svg>
-                                        </div>
-                                      )}
-
-                                      <div className="flex items-center gap-2">
-                                        <h4 
-                                          className="text-lg font-bold text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200"
-                                          onClick={() =>
-                                            setExpandedProject(
-                                              isExpanded ? null : project.id
-                                            )
-                                          }
-                                        >
-                                          {project.name}
-                                        </h4>
-                                        <span
-                                          className={`bg-gradient-to-r ${getPriorityColor(priority)} text-white px-2 py-1 rounded-full text-xs font-semibold shadow-lg`}
-                                        >
-                                          {t("priority")} {project.priority}
-                                        </span>
-                                      </div>
-                                    </div>
-
-                                    {/* Akce */}
-                                    <div className="flex items-center gap-1">
-                                      <button
-                                        onClick={() =>
-                                          setExpandedProject(
-                                            isExpanded ? null : project.id
-                                          )
-                                        }
-                                        className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg"
-                                      >
-                                        <svg
-                                          className={`w-4 h-4 transform transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`}
-                                          fill="none"
-                                          stroke="currentColor"
-                                          viewBox="0 0 24 24"
-                                        >
-                                          <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M19 9l-7 7-7-7"
-                                          />
-                                        </svg>
-                                      </button>
-
-                                      {!readOnlyMode && (
-                                        <button
-                                          onClick={() =>
-                                            setDependenciesModalProject(project)
-                                          }
-                                          className="p-2 text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 transition-all duration-200 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg"
-                                          title={t("roleDependencies")}
-                                        >
-                                          <svg
-                                            className="w-4 h-4"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                          >
-                                            <path
-                                              strokeLinecap="round"
-                                              strokeLinejoin="round"
-                                              strokeWidth={2}
-                                              d="M13 10V3L4 14h7v7l9-11h-7z"
-                                            />
-                                          </svg>
-                                        </button>
-                                      )}
-
-                                      {!readOnlyMode && (
-                                        <button
-                                          onClick={() =>
-                                            handleOpenEditModal(project)
-                                          }
-                                          className="p-2 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-all duration-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
-                                          title={t("edit")}
-                                        >
-                                          <svg
-                                            className="w-4 h-4"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                          >
-                                            <path
-                                              strokeLinecap="round"
-                                              strokeLinejoin="round"
-                                              strokeWidth={2}
-                                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                            />
-                                          </svg>
-                                        </button>
-                                      )}
-
-                                      {!readOnlyMode && (
-                                        <button
-                                          onClick={() =>
-                                            handleDeleteProject(project.id)
-                                          }
-                                          className="p-2 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-all duration-200 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
-                                          title={t("delete")}
-                                        >
-                                          <svg
-                                            className="w-4 h-4"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                          >
-                                            <path
-                                              strokeLinecap="round"
-                                              strokeLinejoin="round"
-                                              strokeWidth={2}
-                                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                            />
-                                          </svg>
-                                        </button>
-                                      )}
-                                    </div>
-                                  </div>
 
                                   {/* Progress a termín */}
-                                  <div className="grid grid-cols-2 gap-4">
+                                  <div className="grid grid-cols-3 gap-4">
                                     {/* Progress circle */}
                                     <div className="flex items-center justify-center">
                                       <div className="relative">
@@ -1386,6 +1414,40 @@ export function ProjectSection({
                                         </div>
                                       </div>
                                     </div>
+
+                                    {/* Start Day */}
+                                    {project.start_day ? (
+                                      <div className="text-center">
+                                        <div className="text-xs text-gray-600 dark:text-gray-400 mb-1 flex items-center justify-center gap-1">
+                                          <svg
+                                            className="w-3 h-3 text-orange-500"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              strokeWidth={2}
+                                              d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                                            />
+                                          </svg>
+                                          <span className="text-xs">{t("startDay")}</span>
+                                        </div>
+                                        <div className="text-sm font-bold text-orange-600 dark:text-orange-400">
+                                          {new Date(project.start_day).toLocaleDateString()}
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="text-center">
+                                        <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">
+                                          {t("startDay")}
+                                        </div>
+                                        <div className="text-sm font-bold text-gray-400 dark:text-gray-500">
+                                          {t("notSet")}
+                                        </div>
+                                      </div>
+                                    )}
 
                                     {/* Deadline + Lost workdays */}
                                     <div className="text-center">
@@ -1912,6 +1974,31 @@ export function ProjectSection({
 
                                     {/* Deadlines */}
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                                      {/* Start Day */}
+                                      {project.start_day && (
+                                        <div className="bg-gradient-to-br from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-gray-200/50 dark:border-gray-600/50 shadow-lg">
+                                          <div className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                                            <svg
+                                              className="w-3 h-3 sm:w-4 sm:h-4 text-orange-500"
+                                              fill="none"
+                                              stroke="currentColor"
+                                              viewBox="0 0 24 24"
+                                            >
+                                              <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                                              />
+                                            </svg>
+                                            {t("startDay")}
+                                          </div>
+                                          <div className="text-gray-900 dark:text-gray-100 font-medium text-sm">
+                                            {new Date(project.start_day).toLocaleDateString()}
+                                          </div>
+                                        </div>
+                                      )}
+                                      
                                       {/* Zobrazíme plánovaný a vypočítaný termín pouze pokud je vyplněn delivery_date */}
                                       {project.delivery_date && (
                                         <>
@@ -1963,7 +2050,7 @@ export function ProjectSection({
                                       )}
                                       {priorityDates && (
                                         <div
-                                          className={`bg-gradient-to-br from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-gray-200/50 dark:border-gray-600/50 shadow-lg ${!project.delivery_date ? "sm:col-span-2 lg:col-span-3" : ""}`}
+                                          className={`bg-gradient-to-br from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-gray-200/50 dark:border-gray-600/50 shadow-lg ${!project.delivery_date && !project.start_day ? "sm:col-span-2 lg:col-span-3" : ""}`}
                                         >
                                           <div className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
                                             <svg

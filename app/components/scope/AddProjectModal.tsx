@@ -207,6 +207,18 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
             />
           </div>
         </div>
+
+        {/* Start Day */}
+        <div>
+          <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">{t('startDay')}</label>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{t('startDayDescription')}</p>
+          <input
+            type="date"
+            className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
+            value={(newProject.start_day as string) || ''}
+            onChange={e => setNewProject(p => ({ ...p, start_day: e.target.value || null }))}
+          />
+        </div>
         
         {/* Project Status */}
         <div>

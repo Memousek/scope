@@ -12,6 +12,7 @@ export interface CreateProjectData {
   name: string;
   priority: number;
   delivery_date: string | null;
+  start_day?: string | null; // Vlastní startovní den projektu pro souběžnou práci
   status?: 'not_started' | 'in_progress' | 'paused' | 'completed' | 'cancelled' | 'archived' | 'suspended';
   custom_role_data?: Record<string, number> | null;
   // Dynamické role data - klíče budou generovány z scope_roles
@@ -25,17 +26,14 @@ export class ProjectService {
   static async loadProjects(scopeId: string): Promise<Project[]> {
     const projectRepository = ContainerService.getInstance().get(ProjectRepository);
     const domainProjects = await projectRepository.findByScopeId(scopeId);
-
-    // Načteme poznámky pro všechny projekty
-    const { ProjectNoteService } = await import('@/app/services/projectNoteService');
-
-    // Pro každý projekt stáhneme poznámky a připojíme je do pole notes
+    
     const componentProjects = await Promise.all(domainProjects.map(async domainProject => {
       const componentProject = {
         id: domainProject.id,
         name: domainProject.name,
         priority: domainProject.priority,
         delivery_date: domainProject.deliveryDate?.toISOString() || null,
+        start_day: domainProject.startDay?.toISOString() || null,
         created_at: domainProject.createdAt.toISOString(),
         status: domainProject.status || 'not_started',
         // Map standard role data
@@ -49,38 +47,16 @@ export class ProjectService {
         qa_done: domainProject.qaDone,
         pm_done: domainProject.pmDone,
         dpl_done: domainProject.dplDone,
-        // Map custom role data from top-level properties
-        ...(domainProject as unknown as Record<string, unknown>)
+        // Map custom role data from customRoleData property
+        ...(domainProject.customRoleData || {})
       } as Project;
-
-      // Odstraníme standardní vlastnosti, které už jsme explicitně namapovali
-  delete (componentProject as unknown as Record<string, unknown>).feMandays;
-  delete (componentProject as unknown as Record<string, unknown>).beMandays;
-  delete (componentProject as unknown as Record<string, unknown>).qaMandays;
-  delete (componentProject as unknown as Record<string, unknown>).pmMandays;
-  delete (componentProject as unknown as Record<string, unknown>).dplMandays;
-  delete (componentProject as unknown as Record<string, unknown>).feDone;
-  delete (componentProject as unknown as Record<string, unknown>).beDone;
-  delete (componentProject as unknown as Record<string, unknown>).qaDone;
-  delete (componentProject as unknown as Record<string, unknown>).pmDone;
-  delete (componentProject as unknown as Record<string, unknown>).dplDone;
-  delete (componentProject as unknown as Record<string, unknown>).scopeId;
-  delete (componentProject as unknown as Record<string, unknown>).deliveryDate;
-  delete (componentProject as unknown as Record<string, unknown>).createdAt;
-      // Keep status - don't delete it
-
-      // Načteme poznámky pro tento projekt
-      try {
-        const notes = await ProjectNoteService.getNotes(domainProject.id);
-        componentProject.notes = notes || [];
-      } catch (e) {
-        console.log(e)
-        componentProject.notes = [];
-      }
-
+      
+      // Remove domain-specific properties to avoid conflicts
+      delete (componentProject as unknown as Record<string, unknown>).startDay;
+      
       return componentProject;
     }));
-
+    
     return componentProjects;
   }
 
@@ -88,6 +64,9 @@ export class ProjectService {
    * Create a new project
    */
   static async createProject(scopeId: string, projectData: CreateProjectData): Promise<Project> {
+    console.log('ProjectService.createProject - projectData:', projectData);
+    console.log('ProjectService.createProject - start_day:', projectData.start_day);
+    
     const projectRepository = ContainerService.getInstance().get(ProjectRepository);
     
     // Explicitní mapování standardních rolí
@@ -128,6 +107,7 @@ export class ProjectService {
       name: projectData.name,
       priority: projectData.priority,
       deliveryDate: projectData.delivery_date ? new Date(projectData.delivery_date) : undefined,
+      startDay: projectData.start_day && typeof projectData.start_day === 'string' ? new Date(projectData.start_day) : undefined,
       status: projectData.status || 'not_started',
       feMandays,
       beMandays,
@@ -149,6 +129,7 @@ export class ProjectService {
       name: domainProject.name,
       priority: domainProject.priority,
       delivery_date: domainProject.deliveryDate?.toISOString() || null,
+      start_day: domainProject.startDay?.toISOString() || null,
       created_at: domainProject.createdAt.toISOString(),
       status: domainProject.status || 'not_started',
       // Map standard role data
@@ -179,6 +160,7 @@ export class ProjectService {
     if (updates.name !== undefined) domainUpdates.name = updates.name;
     if (updates.priority !== undefined) domainUpdates.priority = updates.priority;
     if (updates.delivery_date !== undefined) domainUpdates.deliveryDate = updates.delivery_date ? new Date(updates.delivery_date) : undefined;
+    if (updates.start_day !== undefined) domainUpdates.startDay = updates.start_day ? new Date(updates.start_day) : null;
     if (updates.status !== undefined) domainUpdates.status = updates.status;
     // startedAt logika
     if ((updates.status as string) === 'in_progress') {
@@ -237,6 +219,7 @@ export class ProjectService {
       priority: domainProject.priority,
       delivery_date: domainProject.deliveryDate?.toISOString() || null,
       created_at: domainProject.createdAt.toISOString(),
+      start_day: domainProject.startDay?.toISOString() || null,
       status: domainProject.status || 'not_started',
       // Map standard role data
       fe_mandays: domainProject.feMandays,

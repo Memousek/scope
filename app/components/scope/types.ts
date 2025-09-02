@@ -46,6 +46,7 @@ export interface Project {
   delivery_date: string | null;
   created_at: string;
   startedAt?: string | null;
+  start_day?: string | null; // Vlastní startovní den projektu pro souběžnou práci
   status?: 'not_started' | 'in_progress' | 'paused' | 'completed' | 'cancelled' | 'archived' | 'suspended';
   custom_role_data?: Record<string, number> | null;
   notes?: ProjectNote[];

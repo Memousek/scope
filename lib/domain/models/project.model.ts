@@ -27,6 +27,7 @@ export interface Project {
   deliveryDate?: Date;
   createdAt: Date;
   startedAt?: Date;
+  startDay?: Date; // Vlastní startovní den projektu pro souběžnou práci
   customRoleData?: Record<string, number>;
   notes?: ProjectNote[];
   status?: 'not_started' | 'in_progress' | 'paused' | 'completed' | 'cancelled' | 'archived' | 'suspended';
