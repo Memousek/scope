@@ -13,6 +13,7 @@ import { useTranslation } from "@/lib/translation";
 import { useToastFunctions } from '@/app/components/ui/Toast';
 import { ScopeSettingsService } from "@/app/services/scopeSettingsService";
 import { getDefaultCurrencyForLocation, getAvailableCurrenciesForLocation, convertCurrency } from "@/app/utils/currencyUtils";
+import { TimesheetService } from "@/lib/domain/services/timesheet-service";
 import { 
   FiDollarSign, 
   FiFileText, 
@@ -26,23 +27,24 @@ interface BillingSectionProps {
   team: TeamMember[];
   projects: Project[];
   readOnlyMode?: boolean;
-  activeRoles?: Array<{ id: string; key: string; label: string }>;
 }
 
 interface ProjectCost {
   projectId: string;
   projectName: string;
-  estimatedCost: number;
-  actualCost: number;
-  progress: number;
-  remainingCost: number;
+  estimatedCost: number;      // Odhadované náklady (role-based × průměrný MD Rate)
+  actualCost: number;         // Reálné náklady (podle výkazů práce)
+  progress: number;           // Procento dokončení
+  remainingCost: number;      // Zbývající rozpočet
   teamMembers: Array<{
     memberId: string;
     memberName: string;
     role: string;
     mdRate: number;
-    allocation: number;
-    cost: number;
+    estimatedAllocation: number;  // Odhadované mandays pro roli
+    actualAllocation: number;     // Skutečně odpracované hodiny
+    estimatedCost: number;        // Odhadované náklady
+    actualCost: number;           // Skutečné náklady
   }>;
 }
 
@@ -50,8 +52,7 @@ export function BillingSection({
   scopeId,
   team, 
   projects, 
-  readOnlyMode = false,
-  activeRoles = []
+  readOnlyMode = false
 }: BillingSectionProps) {
   const { t } = useTranslation();
   const { success, error } = useToastFunctions();
@@ -60,6 +61,29 @@ export function BillingSection({
   const [selectedExportFormat, setSelectedExportFormat] = useState<'JSON' | 'CSV' | ''>('');
   const [locationInfo, setLocationInfo] = useState<{ country: string; subdivision: string | null }>({ country: 'CZ', subdivision: null });
   const [availableCurrencies, setAvailableCurrencies] = useState<string[]>(['CZK', 'EUR', 'USD']);
+  const [timesheetData, setTimesheetData] = useState<import('@/lib/domain/models/timesheet').TimesheetEntry[]>([]);
+  const [loadingTimesheets, setLoadingTimesheets] = useState(false);
+
+  // Load timesheet data for real cost calculations
+  useEffect(() => {
+    const loadTimesheetData = async () => {
+      setLoadingTimesheets(true);
+      try {
+        const timesheetService = new TimesheetService();
+        const now = new Date();
+        const startOfYear = new Date(now.getFullYear(), 0, 1);
+        
+        const data = await timesheetService.getTimesheetsByScope(scopeId, startOfYear, now);
+        setTimesheetData(data);
+      } catch (err) {
+        console.error('Failed to load timesheet data:', err);
+      } finally {
+        setLoadingTimesheets(false);
+      }
+    };
+    
+    loadTimesheetData();
+  }, [scopeId]);
 
   // Load location from scope settings and set default currency
   useEffect(() => {
@@ -95,80 +119,116 @@ export function BillingSection({
   // Calculate project costs based on team assignments and MD rates
   const projectCosts = useMemo((): ProjectCost[] => {
     return projects.map(project => {
-      const projectTeamMembers = team.map(member => {
-        // Get role-specific data for this project
-        const roleKey = member.role.toLowerCase().replace(/\s+/g, '');
-        const mandaysKey = `${roleKey}_mandays`;
-        
-        const mandays = Number(project[mandaysKey] || 0);
-        const mdRate = member.mdRate || 0;
-        
-        const memberCost = mandays * mdRate;
-        
-        return {
-          memberId: member.id,
-          memberName: member.name,
-          role: member.role,
-          mdRate,
-          allocation: mandays,
-          cost: memberCost
-        };
-      }).filter(member => member.allocation > 0);
+      // Group team members by role to calculate average MD rates
+      const roleGroups = team.reduce((groups, member) => {
+        if (!groups[member.role]) {
+          groups[member.role] = [];
+        }
+        groups[member.role].push(member);
+        return groups;
+      }, {} as Record<string, typeof team>);
 
-      const estimatedCost = projectTeamMembers.reduce((sum, member) => sum + member.cost, 0);
+      const projectTeamMembers = Object.entries(roleGroups)
+        .filter(([role]) => {
+          // Zobrazuj jen role, které mají nějaké mandays na projektu
+          const roleKey = role.toLowerCase().replace(/\s+/g, '');
+          const mandaysKey = `${roleKey}_mandays`;
+          const estimatedMandays = Number(project[mandaysKey] || 0);
+          return estimatedMandays > 0; // Filtruj jen role s mandays > 0
+        })
+        .map(([role, members]) => {
+          // Get role-specific data for this project
+          const roleKey = role.toLowerCase().replace(/\s+/g, '');
+          const mandaysKey = `${roleKey}_mandays`;
+          
+          const estimatedMandays = Number(project[mandaysKey] || 0);
+          
+          // Calculate average MD rate for this role
+          const totalMdRate = members.reduce((sum, m) => sum + (m.mdRate || 0), 0);
+          const avgMdRate = members.length > 0 ? totalMdRate / members.length : 0;
+          
+          // Estimated cost based on role mandays and average MD rate
+          const estimatedCost = estimatedMandays * avgMdRate;
+          
+                  // Get actual hours from timesheets for each member
+        const projectTimesheets = timesheetData.filter(ts => 
+          ts.projectId === project.id && ts.role === role
+        );
+        
+        // Calculate actual hours from timesheets (for future use)
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const actualHours = projectTimesheets.reduce((sum, ts) => sum + ts.hours, 0);
+        
+        // Calculate actual costs for each member based on their individual MD rates and actual hours
+        const memberActualCosts = members.map(member => {
+          // Get member's actual hours from timesheets
+          const memberTimesheets = projectTimesheets.filter(ts => ts.memberId === member.id);
+          const memberActualHours = memberTimesheets.reduce((sum, ts) => sum + ts.hours, 0);
+          const memberActualMandays = memberActualHours / 8;
+          return {
+            memberId: member.id,
+            memberName: member.name,
+            role: member.role,
+            mdRate: member.mdRate || 0,
+            estimatedAllocation: estimatedMandays,
+            actualAllocation: memberActualMandays,
+            estimatedCost: estimatedCost / members.length, // Distribute estimated cost equally
+            actualCost: memberActualMandays * (member.mdRate || 0)
+          };
+        });
+          
+          return memberActualCosts;
+        }).flat();
+
+      const estimatedCost = projectTeamMembers.reduce((sum, member) => sum + member.estimatedCost, 0);
+      const actualCost = projectTeamMembers.reduce((sum, member) => sum + member.actualCost, 0);
       
-      // Calculate overall project progress
-      const totalMandays = projectTeamMembers.reduce((sum, member) => sum + member.allocation, 0);
-      const totalDone = activeRoles.reduce((sum, role) => {
-        const doneKey = `${role.key}_done`;
-        const mandaysKey = `${role.key}_mandays`;
-        const done = Number(project[doneKey] || 0);
-        const mandays = Number(project[mandaysKey] || 0);
-        return sum + (done * mandays / 100);
-      }, 0);
-      
-      const progress = totalMandays > 0 ? (totalDone / totalMandays) * 100 : 0;
+      // Calculate overall project progress based on COSTS, not mandays
+      // This ensures consistency between progress % and actual vs estimated costs
+      const progress = estimatedCost > 0 ? (actualCost / estimatedCost) * 100 : 0;
       
       // Apply period filtering
-      let actualCost = (progress / 100) * estimatedCost;
-      let remainingCost = estimatedCost - actualCost;
+      let periodActualCost = actualCost;
+      let periodEstimatedCost = estimatedCost;
       
       if (selectedPeriod === 'monthly') {
         // Monthly view - show 1/12 of costs
-        actualCost = actualCost / 12;
-        remainingCost = remainingCost / 12;
+        periodActualCost = actualCost / 12;
+        periodEstimatedCost = estimatedCost / 12;
       } else if (selectedPeriod === 'quarterly') {
         // Quarterly view - show 1/4 of costs
-        actualCost = actualCost / 4;
-        remainingCost = remainingCost / 4;
+        periodActualCost = actualCost / 4;
+        periodEstimatedCost = estimatedCost / 4;
       }
       // 'current' shows full costs
+
+      const remainingCost = periodEstimatedCost - periodActualCost;
 
       return {
         projectId: project.id,
         projectName: project.name,
-        estimatedCost,
-        actualCost,
+        estimatedCost: periodEstimatedCost,
+        actualCost: periodActualCost,
         progress,
         remainingCost,
         teamMembers: projectTeamMembers
       };
     });
-  }, [projects, team, activeRoles, selectedPeriod]);
+  }, [projects, team, selectedPeriod, timesheetData]);
 
   const totalStats = useMemo(() => {
     const totalEstimated = projectCosts.reduce((sum, p) => sum + p.estimatedCost, 0);
     const totalActual = projectCosts.reduce((sum, p) => sum + p.actualCost, 0);
     const totalRemaining = projectCosts.reduce((sum, p) => sum + p.remainingCost, 0);
-    const avgProgress = projectCosts.length > 0 
-      ? projectCosts.reduce((sum, p) => sum + p.progress, 0) / projectCosts.length 
-      : 0;
+    
+    // Calculate overall progress based on costs, not individual project progress
+    const overallProgress = totalEstimated > 0 ? (totalActual / totalEstimated) * 100 : 0;
 
     return {
       totalEstimated,
       totalActual,
       totalRemaining,
-      avgProgress,
+      avgProgress: overallProgress, // Use overall cost-based progress
       budgetUtilization: totalEstimated > 0 ? (totalActual / totalEstimated) * 100 : 0
     };
   }, [projectCosts]);
@@ -408,6 +468,17 @@ export function BillingSection({
             <>
               {/* Summary Stats */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                {/* Timesheet Loading Indicator */}
+                {loadingTimesheets && (
+                  <div className="col-span-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-4 mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                      <span className="text-blue-800 dark:text-blue-200 text-sm font-medium">
+                        Načítání skutečných nákladů z timesheetů...
+                      </span>
+                    </div>
+                  </div>
+                )}
                 <div className="relative group bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-700/90 dark:via-gray-700/70 dark:to-gray-700/50 backdrop-blur-lg rounded-2xl border border-white/40 dark:border-gray-600/40 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-emerald-500/10">
                   <div className="p-6">
                     <div className="flex items-center gap-4">
@@ -439,6 +510,16 @@ export function BillingSection({
                         <div className="text-2xl font-bold text-gray-900 dark:text-white">
                           {formatCurrency(totalStats.totalActual)}
                         </div>
+                        {timesheetData.length > 0 && (
+                          <div className="text-xs text-green-600 dark:text-green-400 font-medium">
+                            📊 Ze timesheetů
+                          </div>
+                        )}
+                        {timesheetData.length === 0 && !loadingTimesheets && (
+                          <div className="text-xs text-orange-600 dark:text-orange-400 font-medium">
+                            ⚠️ Pouze odhady
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -588,10 +669,18 @@ export function BillingSection({
                                   </div>
                                   <div className="flex items-center justify-between mt-1">
                                     <span className="text-gray-600 dark:text-gray-400">
-                                      {member.allocation} MD × {formatCurrency(member.mdRate)}
+                                      {member.estimatedAllocation.toFixed(1)} MD × {formatCurrency(member.mdRate)}
                                     </span>
                                     <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                                      {formatCurrency(member.cost)}
+                                      {formatCurrency(member.estimatedCost)}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center justify-between mt-1 text-xs">
+                                    <span className="text-gray-500 dark:text-gray-400">
+                                      Skutečné: {member.actualAllocation.toFixed(1)} MD
+                                    </span>
+                                    <span className="font-medium text-blue-600 dark:text-blue-400">
+                                      {formatCurrency(member.actualCost)}
                                     </span>
                                   </div>
                                 </div>

@@ -15,16 +15,16 @@ import TeamImportModal from "../TeamImportModal";
 import { RoleManagementModal } from "./RoleManagementModal";
 import { useTranslation } from "@/lib/translation";
 import { TeamService } from "@/app/services/teamService";
-import { isHoliday, getHolidays } from "@/app/utils/holidays";
+import { getHolidays } from "@/app/utils/holidays";
 import { ScopeSettingsService } from "@/app/services/scopeSettingsService";
-import { ContainerService } from "@/lib/container.service";
-import { ManageProjectTeamAssignmentsService, ProjectTeamAssignmentWithDetails } from "@/lib/domain/services/manage-project-team-assignments.service";
+import { TimesheetService } from "@/lib/domain/services/timesheet-service";
+
 import { SettingsIcon, FilterIcon, XIcon, ChevronDownIcon } from "lucide-react";
-import { FiUpload, FiCalendar } from 'react-icons/fi';
+import { FiUpload, FiCalendar, FiClock } from 'react-icons/fi';
 import { useSWRConfig } from "swr";
 import { FiUsers, FiSearch } from 'react-icons/fi';
 import { VacationModal } from "./VacationModal";
-import { TimesheetImportModal } from "./TimesheetImportModal";
+import { TimesheetEntryModal } from "./TimesheetEntryModal";
 import { ReportsModal } from "./ReportsModal";
 import TeamAvailabilityModal from "./TeamAvailabilityModal";
 import { useToastFunctions } from '@/app/components/ui/Toast';
@@ -32,6 +32,7 @@ import { useToastFunctions } from '@/app/components/ui/Toast';
 interface TeamSectionProps {
   scopeId: string;
   team: TeamMember[];
+  projects: Array<{ id: string; name: string }>;
   onTeamChange: (team: TeamMember[]) => void;
   readOnlyMode?: boolean;
   activeRoles?: Array<{ id: string; key: string; label: string }>;
@@ -39,7 +40,7 @@ interface TeamSectionProps {
   onRolesChanged?: (roles: Array<{ id: string; key: string; label: string }>) => void;
 }
 
-export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false, activeRoles: activeRolesProp, loading = false, onRolesChanged }: TeamSectionProps) {
+export function TeamSection({ scopeId, team, projects, onTeamChange, readOnlyMode = false, activeRoles: activeRolesProp, loading = false, onRolesChanged }: TeamSectionProps) {
   const [importModalOpen, setImportModalOpen] = useState(false);
   const { t } = useTranslation();
   const { mutate } = useSWRConfig();
@@ -62,10 +63,9 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
   const [timesheetModal, setTimesheetModal] = useState<{ open: boolean; member: TeamMember | null }>({ open: false, member: null });
   const [reportsOpen, setReportsOpen] = useState(false);
   const [availabilityOpen, setAvailabilityOpen] = useState(false);
-  const [holidayRegion, setHolidayRegion] = useState<{ country: string; subdivision: string | null }>({ country: 'CZ', subdivision: null });
-  const [allocByMember, setAllocByMember] = useState<Record<string, number>>({});
-  const [allocProjectsByMember, setAllocProjectsByMember] = useState<Record<string, string[]>>({});
-  const manageAssignmentsService = useMemo(() => ContainerService.getInstance().get(ManageProjectTeamAssignmentsService, { autobind: true }), []);
+
+
+  // const manageAssignmentsService = useMemo(() => new ManageProjectTeamAssignmentsService(), []);
 
 
   const isOnVacationToday = useCallback((member: TeamMember): boolean => {
@@ -95,7 +95,7 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
         const settings = await ScopeSettingsService.get(scopeId);
         const c = settings?.calendar?.country || 'CZ';
         const s = settings?.calendar?.subdivision ?? null;
-        setHolidayRegion({ country: c, subdivision: s });
+        // setHolidayRegion({ country: c, subdivision: s });
         try { getHolidays(c, s ?? undefined); } catch {}
       } catch {}
     };
@@ -103,28 +103,28 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
   }, [scopeId]);
 
   // Načti souhrnnou alokaci FTE a seznam projektů pro mini heatmapu
-  useEffect(() => {
-    const run = async () => {
-      try {
-        const assignments: ProjectTeamAssignmentWithDetails[] = await manageAssignmentsService.getScopeAssignments(scopeId);
-        const totals: Record<string, number> = {};
-        const projects: Record<string, Set<string>> = {};
-        for (const a of assignments) {
-          totals[a.teamMemberId] = (totals[a.teamMemberId] || 0) + Number(a.allocationFte || 0);
-          if (!projects[a.teamMemberId]) projects[a.teamMemberId] = new Set<string>();
-          if (a.project?.name) projects[a.teamMemberId].add(a.project.name);
-        }
-        setAllocByMember(totals);
-        const projectNames: Record<string, string[]> = {};
-        Object.entries(projects).forEach(([id, set]) => { projectNames[id] = Array.from(set); });
-        setAllocProjectsByMember(projectNames);
-      } catch {
-        setAllocByMember({});
-        setAllocProjectsByMember({});
-      }
-    };
-    void run();
-  }, [manageAssignmentsService, scopeId]);
+  // useEffect(() => {
+  //   const run = async () => {
+  //     try {
+  //       // const assignments: ProjectTeamAssignmentWithDetails[] = await manageAssignmentsService.getScopeAssignments(scopeId);
+  //       const totals: Record<string, number> = {};
+  //       const projects: Record<string, Set<string>> = {};
+  //       for (const a of assignments) {
+  //         totals[a.teamMemberId] = (totals[a.teamMemberId] || 0) + Number(a.allocationFte || 0);
+  //         if (!projects[a.teamMemberId]) projects[a.teamMemberId] = new Set<string>();
+  //         if (a.project?.name) projects[a.teamMemberId].add(a.project.name);
+  //       }
+  //       setAllocByMember(totals);
+  //       const projectNames: Record<string, string[]> = {};
+  //       Object.entries(projects).forEach(([id, set]) => { projectNames[id] = Array.from(set); });
+  //       setAllocProjectsByMember(projectNames);
+  //     } catch {
+  //       setAllocByMember({});
+  //       setAllocProjectsByMember({});
+  //     }
+  //   };
+  //   void run();
+  // }, [manageAssignmentsService, scopeId]);
 
   // Filtrování členů týmu
   const filteredTeam = team.filter((member) => {
@@ -868,71 +868,7 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
                             </div>
                           )}
 
-                          {/* Weekly availability heatmap (2 weeks, Mon-Fri) */}
-                          <div className="hidden lg:flex items-center gap-2 ml-6" title={t("availabilityWeek")}>
-                            {(() => {
-                              const today = new Date();
-                              const dow = today.getDay();
-                              const monday = new Date(today);
-                              const diffToMonday = ((dow + 6) % 7);
-                              monday.setDate(today.getDate() - diffToMonday);
-                              const days: Date[] = [];
-                              for (let i = 0; i < 10; i++) {
-                                const d = new Date(monday);
-                                d.setDate(monday.getDate() + i);
-                                days.push(d);
-                              }
-                              const isVac = (d: Date) => {
-                                const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-                                return Array.isArray(member.vacations) && member.vacations.some(v => v.start <= iso && iso <= v.end);
-                              };
-                              const fteVal = Number(member.fte || 0);
-                              const allocatedTotal = Number(allocByMember[member.id] || 0);
-                              const availableTotal = fteVal - allocatedTotal;
-                              return (
-                                <div className="flex items-center gap-2">
-                          {days.map((d, idx) => {
-                                    const vac = isVac(d);
-                                    const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-                                    const isToday = (() => { const now = new Date(); return iso === `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`; })();
-                                    const holiday = isHoliday(d, holidayRegion.country, holidayRegion.subdivision ?? undefined);
-                                    const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-                                    const available = vac || holiday ? 0 : availableTotal;
-                                    const baseStyle = vac
-                                      ? 'bg-amber-400'
-                                      : holiday
-                                        ? 'bg-violet-500'
-                                        : available >= 1
-                                          ? 'bg-emerald-500'
-                                          : available >= 0.5
-                                            ? 'bg-emerald-400'
-                                            : available > 0
-                                              ? 'bg-emerald-300'
-                                              : available === 0
-                                                ? 'bg-gray-400 dark:bg-gray-600'
-                                                : 'bg-red-500';
-                                    const ring = isToday ? 'ring-2 ring-blue-500 ring-offset-0' : '';
-                                    const dim = isWeekend && !vac && !holiday && !(available > 0) ? 'opacity-70' : '';
-                                    const isSeparator = idx === 5;
-                                    const projectNames = (allocProjectsByMember[member.id] || []).slice(0, 3).join(', ');
-                                    const moreCount = Math.max(0, (allocProjectsByMember[member.id]?.length || 0) - 3);
-                                    const projectsLabel = projectNames ? `${projectNames}${moreCount > 0 ? `, +${moreCount}` : ''}` : '';
-                                    const title = vac
-                                      ? `${d.toLocaleDateString('cs-CZ')} • ${t('onVacation')}`
-                                      : holiday
-                                        ? `${d.toLocaleDateString('cs-CZ')} • ${t('holiday')}`
-                                        : `${d.toLocaleDateString('cs-CZ')} • ${t('available')}: ${(Math.max(0, available)).toFixed(1)} FTE • ${t('allocated')}: ${allocatedTotal.toFixed(1)} FTE${projectsLabel ? ` • ${projectsLabel}` : ''}`;
-                                    return (
-                                      <React.Fragment key={idx}>
-                                        {isSeparator && <div className="w-2 h-3 opacity-0" aria-hidden="true" />}
-                                        <div className={`w-3 h-3 rounded ${baseStyle} ${ring} ${dim}`} title={title}></div>
-                                      </React.Fragment>
-                                    );
-                                  })}
-                                </div>
-                              );
-                            })()}
-                          </div>
+                          {/* Weekly availability heatmap temporarily disabled */}
                         </div>
 
                         {/* Akce */}
@@ -948,12 +884,11 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
                             </button>
                             <button
                               type="button"
-                              className="p-3 text-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 transition-all duration-200 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-xl group"
+                              className="p-3 text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 transition-all duration-200 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-xl group"
                               onClick={() => setTimesheetModal({ open: true, member })}
-                              title={t("importTimesheets")}
-                              disabled={true}
+                              title={t("timesheetEntry")}
                             >
-                              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v12m0 0l-3-3m3 3l3-3M6 20h12" /></svg>
+                              <FiClock className="w-5 h-5" />
                             </button>
                             <button
                               onClick={() => handleDeleteMember(member.id)}
@@ -1228,12 +1163,48 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
         />
       )}
 
-      {/* Timesheet Import Modal */}
-      {timesheetModal.open && (
-        <TimesheetImportModal
+      {/* Timesheet Entry Modal */}
+      {timesheetModal.open && timesheetModal.member && (
+        <TimesheetEntryModal
           isOpen={timesheetModal.open}
           onClose={() => setTimesheetModal({ open: false, member: null })}
-          member={timesheetModal.member}
+          memberName={timesheetModal.member.name}
+          projects={projects}
+          roles={[timesheetModal.member.role]} // Use member's role
+          selectedDate={new Date()}
+          onSave={async (entries: Array<{ projectId: string; role: string; hours: number; description: string }>, date: Date) => {
+            try {
+              // Get timesheet service instance
+              const timesheetService = new TimesheetService();
+              
+              // Convert entries to CreateTimesheetData format
+              const timesheetData = entries.map(entry => ({
+                memberId: timesheetModal.member!.id,
+                projectId: entry.projectId,
+                scopeId: scopeId,
+                date: date,
+                hours: entry.hours,
+                role: entry.role,
+                description: entry.description || undefined
+              }));
+
+              // Save to database
+              await timesheetService.createManyTimesheets(timesheetData);
+              
+              // Show success message
+              toast.success(t("timesheetSaved"), t("timesheetSavedDescription"));
+              
+              // Close modal
+              setTimesheetModal({ open: false, member: null });
+              
+              // Refresh team data to show updated timesheets
+              // This will trigger a re-render and show the new data
+              
+            } catch (error) {
+              console.error('Failed to save timesheet:', error);
+              toast.error(t("timesheetSaveError"), t("timesheetSaveErrorDescription"));
+            }
+          }}
         />
       )}
 

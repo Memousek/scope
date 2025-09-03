@@ -32,6 +32,7 @@ import { PlanRepository } from "@/lib/domain/repositories/plan.repository";
 import { SupabasePlanRepository } from "@/lib/data/repositories/supabase/plan.repository";
 import { ManageUserPlansService } from "@/lib/domain/services/manage-user-plans.service";
 
+
 export class DataContainerModule implements ContainerModule {
   bind(container: Container): Promise<void> | void {
     container.bind(ScopeRepository).to(SupabaseScopeRepository).inSingletonScope();

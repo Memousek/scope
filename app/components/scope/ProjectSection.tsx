@@ -47,6 +47,7 @@ import { User } from "@/lib/domain/models/user.model";
 import { useSWRConfig } from "swr";
 import { setCalendarConfig } from "@/app/utils/dateUtils";
 import { ScopeSettingsService } from "@/app/services/scopeSettingsService";
+import { TimesheetService } from "@/lib/domain/services/timesheet-service";
 
 import { Badge } from "@/app/components/ui/Badge";
 import { FiUsers, FiFolder, FiFilter, FiChevronDown, FiDelete, FiEdit, FiInfo } from "react-icons/fi";
@@ -147,13 +148,56 @@ export function ProjectSection({
     >
   >({});
 
+  // Timesheet data for real progress tracking
+  const [timesheetData, setTimesheetData] = useState<import('@/lib/domain/models/timesheet').TimesheetEntry[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [loadingTimesheets, setLoadingTimesheets] = useState(false); // Used in future UI updates
+
   // Note: skeleton rendering should happen in parent/layout to keep hooks order stable
+
+  // Helper function to calculate real progress from timesheets (for future use)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const getRealProgressFromTimesheets = useCallback((projectId: string, role: string) => {
+    if (timesheetData.length === 0) return null;
+    
+    const projectTimesheets = timesheetData.filter(ts => 
+      ts.projectId === projectId && ts.role === role
+    );
+    
+    if (projectTimesheets.length === 0) return null;
+    
+    const totalHours = projectTimesheets.reduce((sum, ts) => sum + ts.hours, 0);
+    const totalMandays = totalHours / 8;
+    
+    return {
+      hours: totalHours,
+      mandays: totalMandays,
+      hasRealData: true
+    };
+  }, [timesheetData]);
 
   // Drag and drop state
   const [draggedProject, setDraggedProject] = useState<Project | null>(null);
   const [dragOverProject, setDragOverProject] = useState<string | null>(null);
   const [isUpdatingPriority, setIsUpdatingPriority] = useState(false);
   const dragRef = useRef<HTMLDivElement>(null);
+
+  // Load timesheet data for real progress tracking
+  const loadTimesheetData = useCallback(async () => {
+    setLoadingTimesheets(true);
+    try {
+      const timesheetService = new TimesheetService();
+      const now = new Date();
+      const startOfYear = new Date(now.getFullYear(), 0, 1);
+      
+      const data = await timesheetService.getTimesheetsByScope(scopeId, startOfYear, now);
+      setTimesheetData(data);
+    } catch (err) {
+      console.error('Failed to load timesheet data:', err);
+    } finally {
+      setLoadingTimesheets(false);
+    }
+  }, [scopeId]);
 
   // Load data on component mount
   useEffect(() => {
@@ -177,13 +221,14 @@ export function ProjectSection({
         await Promise.all([
           loadProjects(),
           loadTeam(),
+          loadTimesheetData(),
         ]);
       } catch {
         // noop – chyby se již logují v jednotlivých loader funkcích
       }
     };
     fetchProjectsAndNotes();
-  }, [loadProjects, loadTeam, scopeId]);
+  }, [loadProjects, loadTeam, loadTimesheetData, scopeId]);
 
   // Load workflow dependencies for all projects
   const loadWorkflowDependencies = useCallback(async () => {

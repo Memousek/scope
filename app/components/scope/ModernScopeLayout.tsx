@@ -13,6 +13,7 @@ import { TeamSection } from "./TeamSection";
 import { ProjectSection } from "./ProjectSection";
 import { BurndownChart } from "./BurndownChart";
 import { BillingSection } from "./BillingSection";
+import { TimesheetOverview } from "./TimesheetOverview";
 import { AddMemberModal } from "./AddMemberModal";
 import { AddProjectModal } from "./AddProjectModal";
 import { AiChatModal } from "./AiChatModal";
@@ -32,6 +33,7 @@ import {
   FiSettings,
   FiExternalLink,
   FiDollarSign,
+  FiClock
 } from "react-icons/fi";
 import TeamImportModal from "../TeamImportModal";
 import { mutate } from "swr";
@@ -87,7 +89,7 @@ interface ModernScopeLayoutProps {
   isOwner?: boolean;
 }
 
-type TabType = "overview" | "team" | "projects" | "billing" | "burndown" | "jira" | "settings";
+type TabType = "overview" | "team" | "projects" | "billing" | "timesheets" | "burndown" | "jira" | "settings";
 
 export function ModernScopeLayout({
   scopeId,
@@ -123,6 +125,8 @@ export function ModernScopeLayout({
     const base: TabType[] = ["overview", "team", "projects", "burndown"];
     // Přidej billing tab pouze pokud není readOnlyMode
     if (!readOnlyMode) base.push("billing");
+    // Přidej timesheets tab pro všechny uživatele
+    base.push("timesheets");
     if (isGod && integrations?.jiraApiToken && integrations?.jiraBaseUrl) base.push("jira");
     if (isGod) base.push("settings");
     return base;
@@ -238,6 +242,7 @@ export function ModernScopeLayout({
     { id: "projects", label: t("projects"), icon: <FiFolder /> },
     // Skryj billing tab pro readOnlyMode
     ...(readOnlyMode ? [] : [{ id: "billing", label: t("billing"), icon: <FiDollarSign /> }]),
+    { id: "timesheets", label: t("timesheets"), icon: <FiClock /> },
     { id: "burndown", label: t("burndown"), icon: <FiTrendingUp />},
     ...(isGod && integrations?.jiraApiToken && integrations?.jiraBaseUrl ? [{ id: "jira", label: t("jira"), icon: <FiExternalLink /> }] : []),
     ...(isGod ? [{ id: "settings", label: t("settings"), icon: <FiSettings /> }] : []),
@@ -492,6 +497,7 @@ export function ModernScopeLayout({
           <TeamSection
             scopeId={scopeId}
             team={team}
+            projects={projects}
             onTeamChange={onTeamChange}
             readOnlyMode={readOnlyMode}
             activeRoles={activeRoles}
@@ -524,8 +530,23 @@ export function ModernScopeLayout({
             team={team}
             projects={projects}
             readOnlyMode={readOnlyMode}
-            activeRoles={activeRoles}
           />
+          </div>
+        );
+
+      case "timesheets":
+        return (
+          <div className="relative">
+            <Badge
+              label={t("experimental")}
+              variant="info"
+              position="top-right"
+            />
+            <TimesheetOverview
+              scopeId={scopeId}
+              team={team}
+              projects={projects}
+            />
           </div>
         );
 
