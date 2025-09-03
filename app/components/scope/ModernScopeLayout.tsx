@@ -238,7 +238,7 @@ export function ModernScopeLayout({
     { id: "projects", label: t("projects"), icon: <FiFolder /> },
     // Skryj billing tab pro readOnlyMode
     ...(readOnlyMode ? [] : [{ id: "billing", label: t("billing"), icon: <FiDollarSign /> }]),
-    { id: "burndown", label: t("burndown"), icon: <FiTrendingUp /> },
+    { id: "burndown", label: t("burndown"), icon: <FiTrendingUp />},
     ...(isGod && integrations?.jiraApiToken && integrations?.jiraBaseUrl ? [{ id: "jira", label: t("jira"), icon: <FiExternalLink /> }] : []),
     ...(isGod ? [{ id: "settings", label: t("settings"), icon: <FiSettings /> }] : []),
   ];
@@ -513,6 +513,12 @@ export function ModernScopeLayout({
 
       case "billing":
         return (
+          <div className="relative">
+            <Badge
+              label={t("experimental")}
+              variant="info"
+              position="top-right"
+            />
           <BillingSection
             scopeId={scopeId}
             team={team}
@@ -520,6 +526,7 @@ export function ModernScopeLayout({
             readOnlyMode={readOnlyMode}
             activeRoles={activeRoles}
           />
+          </div>
         );
 
       case "burndown":
@@ -593,7 +600,7 @@ export function ModernScopeLayout({
             <button
               key={tab.id}
               onClick={() => handleSelectTab(tab.id as TabType)}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold transition-all duration-300 ${
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold transition-all duration-300 relative ${
                 activeTab === tab.id
                   ? "z-10 relative bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 text-white shadow-2xl shadow-blue-500/25 scale-105"
                   : "text-gray-600 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-700/50 hover:scale-105 hover:shadow-lg motion-reduce:scale-100 motion-reduce:transition-none"
