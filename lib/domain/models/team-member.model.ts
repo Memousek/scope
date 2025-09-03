@@ -6,6 +6,7 @@ export interface TeamMember {
   name: string;
   role: string;
   fte: number;
+  mdRate?: number;
   vacations?: VacationRange[];
   createdAt: Date;
 }

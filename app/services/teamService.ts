@@ -10,6 +10,7 @@ export interface CreateTeamMemberData {
   name: string;
   role: string;
   fte: number;
+  mdRate?: number;
   vacations?: Array<{ start: string; end: string; note?: string }>;
 }
 
@@ -26,7 +27,18 @@ export class TeamService {
       .order('name', { ascending: true });
 
     if (error) throw error;
-    return data || [];
+    
+    // Map database data to TeamMember objects with proper field mapping
+    return (data || []).map(item => ({
+      id: item.id,
+      scopeId: item.scope_id,
+      name: item.name,
+      role: item.role,
+      fte: item.fte,
+      mdRate: item.md_rate,
+      vacations: item.vacations,
+      createdAt: new Date(item.created_at)
+    }));
   }
 
   /**
@@ -44,7 +56,20 @@ export class TeamService {
       console.error('teamService.getTeamMemberById error', error);
       return null;
     }
-    return (data as unknown as TeamMember) || null;
+    
+    if (!data) return null;
+    
+    // Map database data to TeamMember object with proper field mapping
+    return {
+      id: data.id,
+      scopeId: data.scope_id,
+      name: data.name,
+      role: data.role,
+      fte: data.fte,
+      mdRate: data.md_rate,
+      vacations: data.vacations,
+      createdAt: new Date(data.created_at)
+    };
   }
 
   /**
@@ -52,9 +77,23 @@ export class TeamService {
    */
   static async createTeamMember(scopeId: string, memberData: CreateTeamMemberData): Promise<TeamMember> {
     const supabase = createClient();
+    
+    // Map camelCase fields to snake_case for database
+    const dbData: Record<string, unknown> = {
+      scope_id: scopeId,
+      name: memberData.name,
+      role: memberData.role,
+      fte: memberData.fte,
+      vacations: memberData.vacations
+    };
+    
+    if (memberData.mdRate !== undefined) {
+      dbData.md_rate = memberData.mdRate;
+    }
+
     const { data, error } = await supabase
       .from('team_members')
-      .insert([{ ...memberData, scope_id: scopeId }])
+      .insert([dbData])
       .select()
       .single();
 
@@ -67,9 +106,22 @@ export class TeamService {
    */
   static async updateTeamMember(memberId: string, updates: Partial<TeamMember>): Promise<TeamMember> {
     const supabase = createClient();
+    
+    // Map camelCase fields to snake_case for database
+    const dbUpdates: Record<string, unknown> = {};
+    Object.entries(updates).forEach(([key, value]) => {
+      if (key === 'mdRate') {
+        dbUpdates.md_rate = value;
+      } else if (key === 'scopeId') {
+        dbUpdates.scope_id = value;
+      } else {
+        dbUpdates[key] = value;
+      }
+    });
+
     const { data, error } = await supabase
       .from('team_members')
-      .update(updates as Record<string, unknown>)
+      .update(dbUpdates)
       .eq('id', memberId)
       .select()
       .single();

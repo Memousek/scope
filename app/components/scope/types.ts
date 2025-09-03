@@ -9,6 +9,7 @@ export interface TeamMember {
   name: string;
   role: string;
   fte: number;
+  mdRate?: number; // MD Rate (daily rate) for billing calculations
   vacations?: VacationRange[]; // optional UI-level metadata (persisted in localStorage)
   timesheets?: TimesheetEntry[]; // optional: stored per member as JSON
 }

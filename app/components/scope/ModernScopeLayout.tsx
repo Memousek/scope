@@ -12,6 +12,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { TeamSection } from "./TeamSection";
 import { ProjectSection } from "./ProjectSection";
 import { BurndownChart } from "./BurndownChart";
+import { BillingSection } from "./BillingSection";
 import { AddMemberModal } from "./AddMemberModal";
 import { AddProjectModal } from "./AddProjectModal";
 import { AiChatModal } from "./AiChatModal";
@@ -30,6 +31,7 @@ import {
   FiUpload,
   FiSettings,
   FiExternalLink,
+  FiDollarSign,
 } from "react-icons/fi";
 import TeamImportModal from "../TeamImportModal";
 import { mutate } from "swr";
@@ -85,7 +87,7 @@ interface ModernScopeLayoutProps {
   isOwner?: boolean;
 }
 
-type TabType = "overview" | "team" | "projects" | "burndown" | "jira" | "settings";
+type TabType = "overview" | "team" | "projects" | "billing" | "burndown" | "jira" | "settings";
 
 export function ModernScopeLayout({
   scopeId,
@@ -119,6 +121,8 @@ export function ModernScopeLayout({
   // Helper to compute allowed tabs based on permissions and integrations
   const getAllowedTabs = (): TabType[] => {
     const base: TabType[] = ["overview", "team", "projects", "burndown"];
+    // Přidej billing tab pouze pokud není readOnlyMode
+    if (!readOnlyMode) base.push("billing");
     if (isGod && integrations?.jiraApiToken && integrations?.jiraBaseUrl) base.push("jira");
     if (isGod) base.push("settings");
     return base;
@@ -142,7 +146,7 @@ export function ModernScopeLayout({
       setActiveTab(nextTab);
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scopeId]);
+  }, [scopeId, readOnlyMode]);
 
   const handleSelectTab = (tab: TabType) => {
     const allowed = getAllowedTabs();
@@ -232,6 +236,8 @@ export function ModernScopeLayout({
     { id: "overview", label: t("overview"), icon: <FiBarChart2 /> },
     { id: "team", label: t("team"), icon: <FiUsers /> },
     { id: "projects", label: t("projects"), icon: <FiFolder /> },
+    // Skryj billing tab pro readOnlyMode
+    ...(readOnlyMode ? [] : [{ id: "billing", label: t("billing"), icon: <FiDollarSign /> }]),
     { id: "burndown", label: t("burndown"), icon: <FiTrendingUp /> },
     ...(isGod && integrations?.jiraApiToken && integrations?.jiraBaseUrl ? [{ id: "jira", label: t("jira"), icon: <FiExternalLink /> }] : []),
     ...(isGod ? [{ id: "settings", label: t("settings"), icon: <FiSettings /> }] : []),
@@ -502,6 +508,17 @@ export function ModernScopeLayout({
             scopeId={scopeId}
             user={user}
             readOnlyMode={readOnlyMode}
+          />
+        );
+
+      case "billing":
+        return (
+          <BillingSection
+            scopeId={scopeId}
+            team={team}
+            projects={projects}
+            readOnlyMode={readOnlyMode}
+            activeRoles={activeRoles}
           />
         );
 

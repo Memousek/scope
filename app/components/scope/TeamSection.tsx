@@ -843,6 +843,31 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
                             </div>
                           </div>
 
+                          {/* MD Rate - Consistent with other inputs */}
+                          {!readOnlyMode && (
+                            <div className="flex items-center gap-2">
+                              <input
+                                className="w-24 bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-400 transition-all duration-200 text-center font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                type="number"
+                                min={0}
+                                step={100}
+                                value={member.mdRate || 0}
+                                onChange={(e) =>
+                                  handleEditMember(
+                                    member.id,
+                                    "mdRate",
+                                    Number(e.target.value)
+                                  )
+                                }
+                                placeholder="0"
+                                disabled={readOnlyMode}
+                              />
+                              <span className="text-sm text-gray-600 dark:text-gray-300 font-medium">
+                                CZK/den
+                              </span>
+                            </div>
+                          )}
+
                           {/* Weekly availability heatmap (2 weeks, Mon-Fri) */}
                           <div className="hidden lg:flex items-center gap-2 ml-6" title={t("availabilityWeek")}>
                             {(() => {
@@ -1019,8 +1044,8 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
                           )}
                         </div>
 
-                        {/* Role a FTE */}
-                        <div className="grid grid-cols-2 gap-3">
+                        {/* Role, FTE a MD Rate */}
+                        <div className="grid grid-cols-3 gap-2">
                           {/* Role */}
                           <div className="flex items-center gap-2">
                             {!readOnlyMode && (
@@ -1138,10 +1163,35 @@ export function TeamSection({ scopeId, team, onTeamChange, readOnlyMode = false,
                             </div>
                           </div>
 
+                          {/* MD Rate - Mobile Consistent with other inputs */}
+                          {!readOnlyMode && (
+                            <div className="flex items-center gap-2">
+                              <input
+                                className="flex-1 bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-400 transition-all duration-200 text-center font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                type="number"
+                                min={0}
+                                step={100}
+                                value={member.mdRate || 0}
+                                onChange={(e) =>
+                                  handleEditMember(
+                                    member.id,
+                                    "mdRate",
+                                    Number(e.target.value)
+                                  )
+                                }
+                                placeholder="0"
+                                disabled={readOnlyMode}
+                              />
+                              <span className="text-sm text-gray-600 dark:text-gray-300 font-medium">
+                                CZK/den
+                              </span>
+                            </div>
+                          )}
+
                           {!readOnlyMode && (
                             <button
                               type="button"
-                              className="ml-1 px-2 py-1 text-[10px] rounded-md bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700"
+                              className="col-span-3 mt-2 px-2 py-1 text-[10px] rounded-md bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700"
                               onClick={() => setVacationModal({ open: true, member, readOnly: true })}
                             >
                               {t("vacations")}
