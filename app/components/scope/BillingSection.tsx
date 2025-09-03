@@ -128,7 +128,8 @@ export function BillingSection({
         return groups;
       }, {} as Record<string, typeof team>);
 
-      const projectTeamMembers = Object.entries(roleGroups)
+      // Calculate estimated costs per role (not per member)
+      const roleCosts = Object.entries(roleGroups)
         .filter(([role]) => {
           // Zobrazuj jen role, které mají nějaké mandays na projektu
           const roleKey = role.toLowerCase().replace(/\s+/g, '');
@@ -147,40 +148,56 @@ export function BillingSection({
           const totalMdRate = members.reduce((sum, m) => sum + (m.mdRate || 0), 0);
           const avgMdRate = members.length > 0 ? totalMdRate / members.length : 0;
           
-          // Estimated cost based on role mandays and average MD rate
+          // Estimated cost based on role mandays and average MD rate (ONCE per role, not per member)
           const estimatedCost = estimatedMandays * avgMdRate;
           
-                  // Get actual hours from timesheets for each member
+          return {
+            role,
+            estimatedCost,
+            estimatedMandays,
+            avgMdRate,
+            members
+          };
+        });
+
+      // Calculate total estimated cost for the project (sum of role costs, not member costs)
+      const totalEstimatedCost = roleCosts.reduce((sum, roleCost) => sum + roleCost.estimatedCost, 0);
+
+      // Now create team member details for display
+      const projectTeamMembers = roleCosts.flatMap(roleCost => {
+        const { role, estimatedCost, estimatedMandays, avgMdRate, members } = roleCost;
+        
+        // Get actual hours from timesheets for each member
         const projectTimesheets = timesheetData.filter(ts => 
           ts.projectId === project.id && ts.role === role
         );
         
-        // Calculate actual hours from timesheets (for future use)
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const actualHours = projectTimesheets.reduce((sum, ts) => sum + ts.hours, 0);
-        
         // Calculate actual costs for each member based on their individual MD rates and actual hours
-        const memberActualCosts = members.map(member => {
+        return members.map(member => {
           // Get member's actual hours from timesheets
           const memberTimesheets = projectTimesheets.filter(ts => ts.memberId === member.id);
           const memberActualHours = memberTimesheets.reduce((sum, ts) => sum + ts.hours, 0);
           const memberActualMandays = memberActualHours / 8;
+          
+          // Calculate individual estimated cost for this member based on their MD rate and role allocation
+          // Distribute mandays equally among team members with the same role
+          const memberEstimatedMandays = estimatedMandays / members.length;
+          const memberEstimatedCost = memberEstimatedMandays * (member.mdRate || 0);
+          
           return {
             memberId: member.id,
             memberName: member.name,
             role: member.role,
             mdRate: member.mdRate || 0,
-            estimatedAllocation: estimatedMandays,
+            estimatedAllocation: memberEstimatedMandays, // Individual mandays allocation
             actualAllocation: memberActualMandays,
-            estimatedCost: estimatedCost / members.length, // Distribute estimated cost equally
+            estimatedCost: memberEstimatedCost, // Individual cost for this member
             actualCost: memberActualMandays * (member.mdRate || 0)
           };
         });
-          
-          return memberActualCosts;
-        }).flat();
+      });
 
-      const estimatedCost = projectTeamMembers.reduce((sum, member) => sum + member.estimatedCost, 0);
+      const estimatedCost = totalEstimatedCost;
       const actualCost = projectTeamMembers.reduce((sum, member) => sum + member.actualCost, 0);
       
       // Calculate overall project progress based on COSTS, not mandays
