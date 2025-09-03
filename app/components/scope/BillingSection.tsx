@@ -165,7 +165,7 @@ export function BillingSection({
 
       // Now create team member details for display
       const projectTeamMembers = roleCosts.flatMap(roleCost => {
-        const { role, estimatedCost, estimatedMandays, avgMdRate, members } = roleCost;
+        const { role, estimatedMandays, members } = roleCost;
         
         // Get actual hours from timesheets for each member
         const projectTimesheets = timesheetData.filter(ts => 
