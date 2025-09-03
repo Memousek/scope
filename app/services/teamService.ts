@@ -98,7 +98,18 @@ export class TeamService {
       .single();
 
     if (error) throw error;
-    return data;
+    
+    // Map database data to TeamMember object with proper field mapping
+    return {
+      id: data.id,
+      scopeId: data.scope_id,
+      name: data.name,
+      role: data.role,
+      fte: data.fte,
+      mdRate: data.md_rate,
+      vacations: data.vacations,
+      createdAt: new Date(data.created_at)
+    };
   }
 
   /**
@@ -127,7 +138,18 @@ export class TeamService {
       .single();
 
     if (error) throw error;
-    return data;
+    
+    // Map database data to TeamMember object with proper field mapping
+    return {
+      id: data.id,
+      scopeId: data.scope_id,
+      name: data.name,
+      role: data.role,
+      fte: data.fte,
+      mdRate: data.md_rate,
+      vacations: data.vacations,
+      createdAt: new Date(data.created_at)
+    };
   }
 
   /**
