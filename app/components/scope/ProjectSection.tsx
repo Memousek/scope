@@ -128,6 +128,7 @@ export function ProjectSection({
   const [projectAssignments, setProjectAssignments] = useState<
     Record<string, ProjectTeamAssignment[]>
   >({});
+  const [loadingAssignments, setLoadingAssignments] = useState(false);
 
   // Workflow dependencies state
   const [workflowDependencies, setWorkflowDependencies] = useState<
@@ -351,6 +352,7 @@ export function ProjectSection({
   }, [projects, updateProject, loadProjects, isUpdatingPriority]);
 
   const loadProjectAssignments = useCallback(async () => {
+    setLoadingAssignments(true);
     try {
       const manageAssignmentsService = ContainerService.getInstance().get(
         ManageProjectTeamAssignmentsService,
@@ -367,6 +369,8 @@ export function ProjectSection({
       setProjectAssignments(assignmentsMap);
     } catch (error) {
       console.error("Failed to load project assignments:", error);
+    } finally {
+      setLoadingAssignments(false);
     }
   }, [projects]);
 
@@ -909,7 +913,95 @@ export function ProjectSection({
                 </div>
               )}
 
-              {projects.length === 0 ? (
+              {/* Loading skeleton for projects */}
+              {(projectsLoading || loadingAssignments) && (
+                <div className="space-y-4">
+                  {/* Loading skeleton for priority groups */}
+                  {[1, 2, 3].map((priority) => (
+                    <div key={priority} className="space-y-4">
+                      {/* Priority Group Header Skeleton */}
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="flex items-center gap-2">
+                          <div className="h-6 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                        </div>
+                        <div className="flex-1 h-px bg-gradient-to-r from-gray-300 to-transparent dark:from-gray-600"></div>
+                      </div>
+
+                      {/* Project Card Skeleton */}
+                      <div className="relative bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-700/90 dark:via-gray-700/70 dark:to-gray-700/50 backdrop-blur-lg rounded-2xl border border-white/40 dark:border-gray-600/40 overflow-hidden">
+                        <div className={`absolute top-0 left-0 w-1 h-full bg-gradient-to-b ${getPriorityColor(priority)}`}></div>
+                        
+                        <div className="p-4 sm:p-6">
+                          {/* Desktop layout skeleton */}
+                          <div className="hidden md:flex items-center justify-between gap-6">
+                            <div className="flex items-center gap-4">
+                              <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
+                              <div className="flex items-center gap-3">
+                                <div className="h-6 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                                <div className="h-6 w-20 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-6 ml-auto">
+                              <div className="w-14 h-14 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
+                              <div className="text-right">
+                                <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-1"></div>
+                                <div className="h-6 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-1">
+                              <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse"></div>
+                              <div className="flex items-center gap-1">
+                                {[1, 2, 3, 4, 5].map((i) => (
+                                  <div key={i} className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse"></div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Mobile layout skeleton */}
+                          <div className="md:hidden space-y-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="w-6 h-6 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
+                                <div className="flex items-center gap-2">
+                                  <div className="h-5 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                                  <div className="h-6 w-16 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse"></div>
+                                <div className="flex items-center gap-1">
+                                  {[1, 2, 3, 4, 5].map((i) => (
+                                    <div key={i} className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse"></div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-4">
+                              <div className="flex items-center justify-center">
+                                <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
+                              </div>
+                              <div className="text-center">
+                                <div className="h-3 w-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-1"></div>
+                                <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                              </div>
+                              <div className="text-center">
+                                <div className="h-3 w-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-1"></div>
+                                <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {!projectsLoading && !loadingAssignments && projects.length === 0 ? (
                 <div className="text-center py-16">
                   <div className="relative mb-6">
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur-xl opacity-20"></div>
@@ -926,7 +1018,7 @@ export function ProjectSection({
                     {t("startByAddingFirstProject")}
                   </p>
                 </div>
-              ) : (
+              ) : !projectsLoading && !loadingAssignments ? (
                 sortedPriorities.priorities.map((priority: number) => {
                   const projectsInGroup = groupedProjects[priority];
 
@@ -2164,7 +2256,7 @@ export function ProjectSection({
                     </div>
                   );
                 })
-              )}
+              ) : null}
             </div>
           </div>
         </div>
