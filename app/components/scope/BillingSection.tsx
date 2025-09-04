@@ -547,7 +547,7 @@ export function BillingSection({
           </div>
 
           {!billingConfigured ? (
-            <div className="text-center py-16">
+            <div className="text-center py-16 animate-in fade-in duration-700">
               <div className="relative mb-6">
                 <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full blur-xl opacity-20"></div>
                 <div className="relative text-8xl flex items-center justify-center animate-bounce">

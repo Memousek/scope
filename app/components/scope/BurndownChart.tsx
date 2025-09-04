@@ -373,7 +373,7 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
   if (chartData.length === 0) {
     return (
       <div className="relative bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 rounded-2xl p-8 shadow-2xl">
-        <div className="text-center py-16">
+        <div className="text-center py-16 animate-in fade-in duration-700">
           <div className="relative mb-6">
             <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur-xl opacity-20"></div>
             <div className="relative text-8xl flex items-center justify-center animate-bounce">

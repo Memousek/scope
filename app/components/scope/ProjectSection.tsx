@@ -129,6 +129,9 @@ export function ProjectSection({
     Record<string, ProjectTeamAssignment[]>
   >({});
   const [loadingAssignments, setLoadingAssignments] = useState(false);
+  
+  // Unified loading state to prevent blinking
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   // Workflow dependencies state
   const [workflowDependencies, setWorkflowDependencies] = useState<
@@ -194,14 +197,13 @@ export function ProjectSection({
       const data = await timesheetService.getTimesheetsByScope(scopeId, startOfYear, now);
       setTimesheetData(data);
       
-      // Automatically sync project progress with timesheet data
-      if (data.length > 0) {
+      // Automatically sync project progress with timesheet data only if we have both projects and timesheet data
+      if (data.length > 0 && projects.length > 0) {
         try {
           const { ProjectService } = await import("@/app/services/projectService");
           await ProjectService.syncAllProjectsWithTimesheets(scopeId, data);
           
-          // Refresh projects to show updated progress
-          await loadProjects();
+          // Don't reload projects here to prevent blinking - let the main useEffect handle it
         } catch (syncError) {
           console.warn('⚠️ ProjectSection: Automatická synchronizace selhala:', syncError);
           // Don't fail the entire operation, just log the warning
@@ -212,11 +214,12 @@ export function ProjectSection({
     } finally {
       setLoadingTimesheets(false);
     }
-  }, [scopeId, loadProjects]);
+  }, [scopeId, projects.length]);
 
   // Load data on component mount
   useEffect(() => {
     const fetchProjectsAndNotes = async () => {
+      setIsInitialLoading(true);
       // Načteme projekty i tým, aby vizualizace workflow a výpočty (včetně dovolených) měly kompletní data
       try {
         // Configure calendar (holidays) from scope settings; default by locale
@@ -233,17 +236,26 @@ export function ProjectSection({
         } catch {
           setCalendarConfig({ includeHolidays: true, country: 'CZ', subdivision: null });
         }
+        // Load projects and team first
         await Promise.all([
           loadProjects(),
           loadTeam(),
-          loadTimesheetData(),
         ]);
       } catch {
         // noop – chyby se již logují v jednotlivých loader funkcích
+      } finally {
+        setIsInitialLoading(false);
       }
     };
     fetchProjectsAndNotes();
-  }, [loadProjects, loadTeam, loadTimesheetData, scopeId]);
+  }, [loadProjects, loadTeam, scopeId]);
+
+  // Load timesheet data after projects are loaded (only if there are projects)
+  useEffect(() => {
+    if (!isInitialLoading && projects.length > 0) {
+      loadTimesheetData();
+    }
+  }, [isInitialLoading, projects.length, loadTimesheetData]);
 
   // Load workflow dependencies for all projects
   const loadWorkflowDependencies = useCallback(async () => {
@@ -902,7 +914,7 @@ export function ProjectSection({
 
             <div className="space-y-6">
               {/* Loading skeleton for timesheet synchronization */}
-              {(loadingTimesheets || loadingAssignments) && (
+              {isInitialLoading && (
                 <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-4 mb-4">
                   <div className="flex items-center gap-3">
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
@@ -914,7 +926,7 @@ export function ProjectSection({
               )}
 
               {/* Loading skeleton for projects */}
-              {(projectsLoading || loadingAssignments) && (
+              {isInitialLoading && (
                 <div className="space-y-4">
                   {/* Loading skeleton for priority groups */}
                   {[1, 2, 3].map((priority) => (
@@ -1001,8 +1013,8 @@ export function ProjectSection({
                 </div>
               )}
 
-              {!projectsLoading && !loadingAssignments && projects.length === 0 ? (
-                <div className="text-center py-16">
+              {!isInitialLoading && projects.length === 0 ? (
+                <div className="text-center py-16 animate-in fade-in duration-700">
                   <div className="relative mb-6">
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur-xl opacity-20"></div>
                     <div
@@ -1018,7 +1030,7 @@ export function ProjectSection({
                     {t("startByAddingFirstProject")}
                   </p>
                 </div>
-              ) : !projectsLoading && !loadingAssignments ? (
+              ) : !isInitialLoading ? (
                 sortedPriorities.priorities.map((priority: number) => {
                   const projectsInGroup = groupedProjects[priority];
 

@@ -575,7 +575,7 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
           </div>
           
           {filteredTimesheets.length === 0 && (
-            <div className="text-center py-16">
+            <div className="text-center py-16 animate-in fade-in duration-700">
               <div className="relative mb-6">
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur-xl opacity-20"></div>
                 <div className="relative text-8xl flex items-center justify-center animate-bounce">
