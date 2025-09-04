@@ -897,6 +897,18 @@ export function ProjectSection({
             )}
 
             <div className="space-y-6">
+              {/* Loading skeleton for timesheet synchronization */}
+              {loadingTimesheets && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-4 mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                    <span className="text-blue-800 dark:text-blue-200 text-sm font-medium">
+                      {t("loadingData")}
+                    </span>
+                  </div>
+                </div>
+              )}
+
               {projects.length === 0 ? (
                 <div className="text-center py-16">
                   <div className="relative mb-6">
@@ -911,7 +923,7 @@ export function ProjectSection({
                     {t("noProjects")}
                   </p>
                   <p className="text-gray-500 dark:text-gray-400 text-sm">
-                    Začněte přidáním prvního projektu
+                    {t("startByAddingFirstProject")}
                   </p>
                 </div>
               ) : (
@@ -970,7 +982,7 @@ export function ProjectSection({
                                 relative group bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-700/90 dark:via-gray-700/70 dark:to-gray-700/50 backdrop-blur-lg rounded-2xl border border-white/40 dark:border-gray-600/40 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/10
                                 ${isDragOver ? "border-blue-500 border-2 bg-blue-50/50 dark:bg-blue-900/20 scale-105" : ""}
                                 ${isBeingDragged ? "opacity-50 scale-95 " : ""}
-                                ${isUpdatingPriority ? "pointer-events-none opacity-75" : ""}
+                                ${isUpdatingPriority || loadingTimesheets ? "pointer-events-none opacity-75" : ""}
                                 animate-in slide-in-from-bottom-8 fade-in duration-700
                               `}
                             >

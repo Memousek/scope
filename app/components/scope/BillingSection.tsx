@@ -20,7 +20,8 @@ import {
   FiFileText, 
   FiTrendingUp,
   FiUsers,
-  FiCreditCard
+  FiCreditCard,
+  FiDownloadCloud
 } from "react-icons/fi";
 
 interface BillingSectionProps {
@@ -64,6 +65,7 @@ export function BillingSection({
   const [availableCurrencies, setAvailableCurrencies] = useState<string[]>(['CZK', 'EUR', 'USD']);
   const [timesheetData, setTimesheetData] = useState<import('@/lib/domain/models/timesheet').TimesheetEntry[]>([]);
   const [loadingTimesheets, setLoadingTimesheets] = useState(false);
+  const [syncingTimesheets, setSyncingTimesheets] = useState(false);
 
   // Load timesheet data for real cost calculations and auto-sync with project progress
   useEffect(() => {
@@ -274,7 +276,15 @@ export function BillingSection({
     return formatter.format(convertedAmount);
   };
 
-  const generateCSVFromInvoiceData = (data: any) => {
+  const generateCSVFromInvoiceData = (data: {
+    projectName: string;
+    period: string;
+    currency: string;
+    estimatedCost: number;
+    actualCost: number;
+    remainingCost: number;
+    progress: number;
+  }) => {
     const csvData = [
       ['Project Name', 'Period', 'Currency', 'Estimated Cost', 'Actual Cost', 'Remaining Budget', 'Progress %'],
       [data.projectName, data.period, data.currency, data.estimatedCost.toString(), data.actualCost.toString(), data.remainingCost.toString(), data.progress.toFixed(1)]
@@ -282,7 +292,15 @@ export function BillingSection({
     return csvData.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
   };
 
-  const generateCSVFromScopeInvoiceData = (data: any) => {
+  const generateCSVFromScopeInvoiceData = (data: {
+    scopeId: string;
+    period: string;
+    currency: string;
+    totalEstimated: number;
+    totalActual: number;
+    totalRemaining: number;
+    avgProgress: number;
+  }) => {
     const csvData = [
       ['Scope ID', 'Period', 'Currency', 'Total Estimated Cost', 'Total Actual Cost', 'Total Remaining Budget', 'Average Progress %'],
       [data.scopeId, data.period, data.currency, data.totalEstimated.toString(), data.totalActual.toString(), data.totalRemaining.toString(), data.avgProgress.toFixed(1)]
@@ -363,7 +381,16 @@ export function BillingSection({
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       } else if (selectedExportFormat === 'CSV') {
-        const csvContent = generateCSVFromScopeInvoiceData(invoiceData);
+        const csvData = {
+          scopeId: invoiceData.scopeId,
+          period: invoiceData.period,
+          currency: invoiceData.currency,
+          totalEstimated: invoiceData.totalEstimated,
+          totalActual: invoiceData.totalActual,
+          totalRemaining: invoiceData.totalRemaining,
+          avgProgress: projectCosts.length > 0 ? projectCosts.reduce((sum, p) => sum + p.progress, 0) / projectCosts.length : 0
+        };
+        const csvContent = generateCSVFromScopeInvoiceData(csvData);
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -385,14 +412,12 @@ export function BillingSection({
       return;
     }
 
+    setSyncingTimesheets(true);
     try {
-      // Show loading state
-      const loadingToast = success('Synchronizuji...', 'Synchronizuji timesheet data s projektovým průběhem...');
-      
       // Sync all projects with timesheet data
       await ProjectService.syncAllProjectsWithTimesheets(scopeId, timesheetData);
       
-      // Close loading toast and show success
+      // Show success
       success('Synchronizace dokončena', 'Projektový průběh byl úspěšně synchronizován s timesheet daty.');
       
       // Optionally refresh the page or trigger a re-render
@@ -401,6 +426,8 @@ export function BillingSection({
     } catch (err) {
       console.error('Failed to sync timesheets:', err);
       error('Chyba synchronizace', 'Nepodařilo se synchronizovat timesheet data s projektovým průběhem.');
+    } finally {
+      setSyncingTimesheets(false);
     }
   };
 
@@ -474,13 +501,22 @@ export function BillingSection({
                   <div className="flex items-center gap-2">
                     <button
                       onClick={handleSyncTimesheets}
-                      disabled={timesheetData.length === 0}
+                      disabled={timesheetData.length === 0 || syncingTimesheets}
                       className="relative group bg-gradient-to-r from-purple-500 via-violet-500 to-indigo-500 text-white px-6 py-2 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/25 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                      title={timesheetData.length === 0 ? 'Žádná timesheet data k synchronizaci' : 'Synchronizovat timesheet data s projektovým průběhem'}
+                      title={timesheetData.length === 0 ? 'Žádná timesheet data k synchronizaci' : syncingTimesheets ? 'Synchronizuji...' : 'Synchronizovat timesheet data s projektovým průběhem'}
                     >
                       <span className="relative z-10 flex items-center gap-2">
-                        🔄
-                        {timesheetData.length === 0 ? 'Žádná data' : 'Sync Timesheets'}
+                        {syncingTimesheets ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                            {t("loadingData")}
+                          </>
+                        ) : (
+                          <>
+                            <FiDownloadCloud className="w-4 h-4" />
+                            {timesheetData.length === 0 ? 'Žádná data' : t("syncTimesheets")}
+                          </>
+                        )}
                       </span>
                     </button>
                     
