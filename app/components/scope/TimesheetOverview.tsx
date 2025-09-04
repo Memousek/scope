@@ -564,7 +564,7 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [viewMode, calendarView, selectedDate]);
+  }, [viewMode, calendarView, selectedDate, navigateDate]);
 
   if (loading) {
     return (
@@ -891,7 +891,7 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
                 {searchQuery && (
                   <span className="inline-flex items-center gap-1 px-3 py-1 text-xs font-medium text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/30 rounded-full">
                     <FiSearch className="w-3 h-3" />
-                    "{searchQuery}"
+                    &ldquo;{searchQuery}&rdquo;
                   </span>
                 )}
               </div>
@@ -1139,7 +1139,6 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
                   const currentMonth = selectedDate.getMonth();
                   const currentYear = selectedDate.getFullYear();
                   const firstDay = new Date(currentYear, currentMonth, 1);
-                  const lastDay = new Date(currentYear, currentMonth + 1, 0);
                   const startDate = new Date(firstDay);
                   startDate.setDate(startDate.getDate() - firstDay.getDay() + 1);
                   
@@ -1295,7 +1294,7 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
                         })}
                         
                         {/* Expanded entries with animation */}
-                        {isExpanded && dayTimesheets.slice(3).map((timesheet, idx) => {
+                        {isExpanded && dayTimesheets.slice(3).map((timesheet) => {
                           const member = team.find(m => m.id === timesheet.memberId);
                           const project = projects.find(p => p.id === timesheet.projectId);
                           return (
@@ -1303,7 +1302,7 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
                               key={timesheet.id} 
                               className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-2 border border-blue-200 dark:border-blue-800 animate-in slide-in-from-top-2 fade-in duration-300 ease-out"
                               style={{
-                                animationDelay: `${(idx + 3) * 50}ms`
+                                animationDelay: `${(dayTimesheets.slice(3).indexOf(timesheet) + 3) * 50}ms`
                               }}
                             >
                               <div className="flex items-center justify-between mb-1">
