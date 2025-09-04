@@ -240,12 +240,11 @@ export function ModernScopeLayout({
     { id: "overview", label: t("overview"), icon: <FiBarChart2 /> },
     { id: "team", label: t("team"), icon: <FiUsers /> },
     { id: "projects", label: t("projects"), icon: <FiFolder /> },
-    // Skryj billing tab pro readOnlyMode
     ...(readOnlyMode ? [] : [{ id: "billing", label: t("billing"), icon: <FiDollarSign /> }]),
-    { id: "timesheets", label: t("timesheets"), icon: <FiClock /> },
+    ...(readOnlyMode ? [] : [{ id: "timesheets", label: t("timesheets"), icon: <FiClock /> }]),
     { id: "burndown", label: t("burndown"), icon: <FiTrendingUp />},
     ...(isGod && integrations?.jiraApiToken && integrations?.jiraBaseUrl ? [{ id: "jira", label: t("jira"), icon: <FiExternalLink /> }] : []),
-    ...(isGod ? [{ id: "settings", label: t("settings"), icon: <FiSettings /> }] : []),
+    { id: "settings", label: t("settings"), icon: <FiSettings /> },
   ];
 
   const renderTabContent = () => {

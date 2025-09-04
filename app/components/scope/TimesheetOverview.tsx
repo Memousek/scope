@@ -9,6 +9,8 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from '@/lib/translation';
 import { TimesheetService } from '@/lib/domain/services/timesheet-service';
 import { TimesheetEntry } from '@/lib/domain/models/timesheet';
+import { ScopeSettingsService } from '@/app/services/scopeSettingsService';
+import { isHoliday, getHolidays } from '@/app/utils/holidays';
 import { 
   FiClock, 
   FiCalendar, 
@@ -19,7 +21,13 @@ import {
   FiChevronLeft,
   FiChevronRight,
   FiEdit,
-  FiTrash2
+  FiTrash2,
+  FiStar,
+  FiUsers,
+  FiTrendingUp,
+  FiFolder,
+  FiX,
+  FiFileText
 } from 'react-icons/fi';
 import { Modal } from '../ui/Modal';
 import { 
@@ -76,6 +84,112 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
   const [editModalOpen, setEditModalOpen] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [deletingTimesheet, setDeletingTimesheet] = useState<string | null>(null); // Used in future UI updates
+  const [calendarConfig, setCalendarConfig] = useState<{ includeHolidays: boolean; country: string; subdivision?: string | null }>({
+    includeHolidays: true,
+    country: 'CZ',
+    subdivision: null
+  });
+  const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
+  const [showMiniCalendar, setShowMiniCalendar] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Export functions
+  const exportToCSV = () => {
+    const csvData = filteredTimesheets.map(timesheet => {
+      const member = team.find(m => m.id === timesheet.memberId);
+      const project = projects.find(p => p.id === timesheet.projectId);
+      return {
+        'Datum': new Date(timesheet.date).toLocaleDateString('cs-CZ'),
+        'Člen týmu': member?.name || '',
+        'Projekt': project?.name || '',
+        'Hodiny': timesheet.hours,
+        'Popis': timesheet.description || ''
+      };
+    });
+
+    const csvContent = [
+      Object.keys(csvData[0]).join(','),
+      ...csvData.map(row => Object.values(row).map(val => `"${val}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `timesheet-${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+  };
+
+  const exportToPDF = () => {
+    // Simple PDF export using browser print
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      const content = `
+        <html>
+          <head>
+            <title>Timesheet Report</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 20px; }
+              table { width: 100%; border-collapse: collapse; }
+              th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+              th { background-color: #f2f2f2; }
+            </style>
+          </head>
+          <body>
+            <h1>Timesheet Report - ${scopeId}</h1>
+            <table>
+              <thead>
+                <tr>
+                  <th>Datum</th>
+                  <th>Člen týmu</th>
+                  <th>Projekt</th>
+                  <th>Hodiny</th>
+                  <th>Popis</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${filteredTimesheets.map(timesheet => {
+                  const member = team.find(m => m.id === timesheet.memberId);
+                  const project = projects.find(p => p.id === timesheet.projectId);
+                  return `
+                    <tr>
+                      <td>${new Date(timesheet.date).toLocaleDateString('cs-CZ')}</td>
+                      <td>${member?.name || ''}</td>
+                      <td>${project?.name || ''}</td>
+                      <td>${timesheet.hours}</td>
+                      <td>${timesheet.description || ''}</td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </body>
+        </html>
+      `;
+      printWindow.document.write(content);
+      printWindow.document.close();
+      printWindow.print();
+    }
+  };
+
+  // Load calendar configuration from scope settings
+  useEffect(() => {
+    const loadCalendarConfig = async () => {
+      try {
+        const cfg = await ScopeSettingsService.get(scopeId);
+        if (cfg?.calendar) {
+          const include = typeof cfg.calendar.includeHolidays === 'boolean' 
+            ? cfg.calendar.includeHolidays 
+            : (cfg.calendar.includeCzechHolidays ?? true);
+          const country = cfg.calendar.country || 'CZ';
+          const subdivision = cfg.calendar.subdivision || null;
+          setCalendarConfig({ includeHolidays: include, country, subdivision });
+        }
+      } catch (error) {
+        console.error('Failed to load calendar config:', error);
+      }
+    };
+    loadCalendarConfig();
+  }, [scopeId]);
 
   // Initialize date range
   useEffect(() => {
@@ -244,32 +358,16 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
     setFilters(prev => ({ ...prev, dateFrom, dateTo }));
   };
 
-  // Export functions
-  const exportToCSV = () => {
-    const headers = ['Datum', 'Člen týmu', 'Projekt', 'Role', 'Hodiny', 'Popis'];
-    const csvContent = [
-      headers.join(','),
-      ...filteredTimesheets.map(t => [
-        new Date(t.date).toLocaleDateString('cs-CZ'),
-        team.find(m => m.id === t.memberId)?.name || '',
-        projects.find(p => p.id === t.projectId)?.name || '',
-        t.role,
-        t.hours,
-        t.description || ''
-      ].join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `timesheets_${scopeId}_${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-  };
 
   // Calendar helpers
   const getWeekDays = (date: Date) => {
     const start = new Date(date);
-    start.setDate(date.getDate() - date.getDay() + 1);
+    // Get first day of week based on country (0 = Sunday, 1 = Monday)
+    const firstDayOfWeek = calendarConfig.country === 'US' ? 0 : 1;
+    const dayOfWeek = start.getDay();
+    const diff = dayOfWeek - firstDayOfWeek;
+    start.setDate(start.getDate() - diff);
+    
     const days = [];
     for (let i = 0; i < 7; i++) {
       const day = new Date(start);
@@ -286,9 +384,14 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
     const lastDay = new Date(year, month + 1, 0);
     const days = [];
     
+    // Get first day of week based on country (0 = Sunday, 1 = Monday)
+    const firstDayOfWeek = calendarConfig.country === 'US' ? 0 : 1;
+    const firstDayOfMonth = firstDay.getDay();
+    const diff = firstDayOfMonth - firstDayOfWeek;
+    
     // Add previous month days
-    for (let i = firstDay.getDay() - 1; i >= 0; i--) {
-      const day = new Date(year, month, -i);
+    for (let i = diff; i > 0; i--) {
+      const day = new Date(year, month, -i + 1);
       days.push({ date: day, isCurrentMonth: false });
     }
     
@@ -311,8 +414,103 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
   const getTimesheetsForDate = (date: Date) => {
     return filteredTimesheets.filter(t => {
       const timesheetDate = new Date(t.date);
-      return timesheetDate.toDateString() === date.toDateString();
+      const dateMatch = timesheetDate.toDateString() === date.toDateString();
+      
+      // Apply project filter
+      const projectMatch = filters.projectIds.length === 0 || filters.projectIds.includes(t.projectId);
+      
+      // Apply member filter
+      const memberMatch = filters.memberIds.length === 0 || filters.memberIds.includes(t.memberId);
+      
+      // Apply search filter
+      const searchMatch = (filters.search === '' && searchQuery === '') || 
+        t.description?.toLowerCase().includes((filters.search || searchQuery).toLowerCase()) ||
+        team.find(m => m.id === t.memberId)?.name?.toLowerCase().includes((filters.search || searchQuery).toLowerCase()) ||
+        projects.find(p => p.id === t.projectId)?.name?.toLowerCase().includes((filters.search || searchQuery).toLowerCase());
+      
+      return dateMatch && projectMatch && memberMatch && searchMatch;
     });
+  };
+
+  // Helper functions for calendar enhancements
+  const isDateHoliday = (date: Date) => {
+    if (!calendarConfig.includeHolidays) return false;
+    return isHoliday(date, calendarConfig.country, calendarConfig.subdivision);
+  };
+
+  const isWeekend = (date: Date) => {
+    const day = date.getDay();
+    // Most countries: Saturday (6) and Sunday (0) are weekends
+    // Some Middle Eastern countries might have different weekends, but we'll use standard for now
+    return day === 0 || day === 6; // Sunday or Saturday
+  };
+
+  const getDayType = (date: Date) => {
+    if (isDateHoliday(date)) return 'holiday';
+    if (isWeekend(date)) return 'weekend';
+    return 'workday';
+  };
+
+  const getDayTypeColor = (dayType: string) => {
+    switch (dayType) {
+      case 'holiday': return 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800';
+      case 'weekend': return 'bg-gray-100 dark:bg-gray-700/30 border-gray-300 dark:border-gray-600';
+      default: return 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700';
+    }
+  };
+
+  const getDayTypeTextColor = (dayType: string) => {
+    switch (dayType) {
+      case 'holiday': return 'text-red-600 dark:text-red-400';
+      case 'weekend': return 'text-gray-600 dark:text-gray-300';
+      default: return 'text-gray-900 dark:text-white';
+    }
+  };
+
+  // Get holiday name
+  const getHolidayName = (date: Date) => {
+    if (!calendarConfig.includeHolidays) return null;
+    try {
+      const holidays = getHolidays(calendarConfig.country, calendarConfig.subdivision);
+      const holidayArray = holidays.isHoliday(date);
+      const holidayName = holidayArray && holidayArray.length > 0 ? holidayArray[0].name : null;
+      if (holidayName) {
+        console.log(`Holiday found for ${date.toDateString()}: ${holidayName}`);
+      }
+      return holidayName;
+    } catch (error) {
+      console.error('Error getting holiday name:', error);
+      return null;
+    }
+  };
+
+  // Toggle expanded day
+  const toggleExpandedDay = (dateString: string) => {
+    setExpandedDays(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(dateString)) {
+        newSet.delete(dateString);
+      } else {
+        newSet.add(dateString);
+      }
+      return newSet;
+    });
+  };
+
+  // Check if current week contains today
+  const isCurrentWeek = (date: Date) => {
+    const today = new Date();
+    const startOfWeek = new Date(date);
+    // Get first day of week based on country (0 = Sunday, 1 = Monday)
+    const firstDayOfWeek = calendarConfig.country === 'US' ? 0 : 1;
+    const dayOfWeek = startOfWeek.getDay();
+    const diff = dayOfWeek - firstDayOfWeek;
+    startOfWeek.setDate(startOfWeek.getDate() - diff);
+    
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    
+    return today >= startOfWeek && today <= endOfWeek;
   };
 
   // Navigation
@@ -326,10 +524,85 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
     setSelectedDate(newDate);
   };
 
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (viewMode !== 'calendar') return;
+      
+      // Don't trigger shortcuts when typing in inputs, selects, or textareas
+      const target = event.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.tagName === 'TEXTAREA') {
+        return;
+      }
+      
+      switch (event.key) {
+        case 'ArrowLeft':
+          event.preventDefault();
+          navigateDate('prev');
+          break;
+        case 'ArrowRight':
+          event.preventDefault();
+          navigateDate('next');
+          break;
+        case 'w':
+        case 'W':
+          event.preventDefault();
+          setCalendarView('week');
+          break;
+        case 'm':
+        case 'M':
+          event.preventDefault();
+          setCalendarView('month');
+          break;
+        case 't':
+        case 'T':
+          event.preventDefault();
+          setSelectedDate(new Date());
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [viewMode, calendarView, selectedDate]);
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      <div className="space-y-6 relative bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 rounded-2xl p-8 shadow-2xl">
+        {/* Header Skeleton */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <div className="h-8 w-64 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+            <div className="h-6 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-10 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+            <div className="h-10 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+          </div>
+        </div>
+
+        {/* View Mode Skeleton */}
+        <div className="flex items-center justify-center">
+          <div className="flex gap-2">
+            <div className="h-10 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+            <div className="h-10 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+            <div className="h-10 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+          </div>
+        </div>
+
+        {/* Calendar Skeleton */}
+        <div className="grid grid-cols-7 gap-2">
+          {Array.from({ length: 14 }).map((_, i) => (
+            <div key={i} className="h-32 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse"></div>
+          ))}
+        </div>
+
+        {/* Summary Cards Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-24 bg-gray-200 dark:bg-gray-700 rounded-2xl animate-pulse"></div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -476,7 +749,7 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
               }`}
             >
               <FiCalendar className="w-4 h-4 inline mr-2" />
-              {t('calendar')}
+              {t('calendarView')}
             </button>
             <button
               onClick={() => setViewMode('charts')}
@@ -492,6 +765,140 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
           </div>
         </div>
       </div>
+
+      {/* Modern Filter Bar */}
+      {viewMode === 'calendar' && (
+        <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-2xl p-6 shadow-lg border border-gray-200/50 dark:border-gray-700/50">
+          {/* Search Section */}
+          <div className="mb-6">
+            <div className="relative max-w-md mx-auto">
+              <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Hledat v záznamech..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-12 pr-4 py-3 text-sm bg-white dark:bg-gray-700 border-0 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all duration-200 text-gray-900 dark:text-gray-100"
+              />
+            </div>
+          </div>
+
+          {/* Filter Section */}
+          <div className="flex flex-wrap items-center justify-center gap-4 mb-4">
+            {/* Project Filter */}
+            <div className="flex flex-col items-center gap-2">
+              <label className="text-xs font-medium text-gray-600 dark:text-gray-400">Projekty</label>
+              <div className="relative">
+                <select
+                  multiple
+                  value={filters.projectIds}
+                  onChange={(e) => setFilters(prev => ({
+                    ...prev,
+                    projectIds: Array.from(e.target.selectedOptions, option => option.value)
+                  }))}
+                  className="appearance-none bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 pr-8 text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer shadow-sm hover:shadow-md transition-all duration-200 min-w-[160px]"
+                  size={Math.min(projects.length, 4)}
+                >
+                  <option value="">Všechny projekty</option>
+                  {projects.map(project => (
+                    <option key={project.id} value={project.id}>
+                      {project.name}
+                    </option>
+                  ))}
+                </select>
+                <FiFolder className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              </div>
+            </div>
+
+            {/* Member Filter */}
+            <div className="flex flex-col items-center gap-2">
+              <label className="text-xs font-medium text-gray-600 dark:text-gray-400">Členové</label>
+              <div className="relative">
+                <select
+                  multiple
+                  value={filters.memberIds}
+                  onChange={(e) => setFilters(prev => ({
+                    ...prev,
+                    memberIds: Array.from(e.target.selectedOptions, option => option.value)
+                  }))}
+                  className="appearance-none bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 pr-8 text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer shadow-sm hover:shadow-md transition-all duration-200 min-w-[160px]"
+                  size={Math.min(team.length, 4)}
+                >
+                  <option value="">Všichni členové</option>
+                  {team.map(member => (
+                    <option key={member.id} value={member.id}>
+                      {member.name}
+                    </option>
+                  ))}
+                </select>
+                <FiUsers className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              </div>
+            </div>
+
+            {/* Clear Filters */}
+            {(filters.projectIds.length > 0 || filters.memberIds.length > 0 || searchQuery) && (
+              <div className="flex flex-col items-center gap-2">
+                <label className="text-xs font-medium text-transparent">Actions</label>
+                <button
+                  onClick={() => {
+                    setFilters(prev => ({ ...prev, projectIds: [], memberIds: [] }));
+                    setSearchQuery('');
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-all duration-200 shadow-sm hover:shadow-md"
+                >
+                  <FiX className="w-4 h-4" />
+                  Vymazat
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Export Actions */}
+          <div className="flex items-center justify-center gap-3">
+            <button
+              onClick={exportToCSV}
+              className="flex items-center gap-2 px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-green-500 to-green-600 rounded-full hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            >
+              <FiDownload className="w-4 h-4" />
+              Export CSV
+            </button>
+            <button
+              onClick={exportToPDF}
+              className="flex items-center gap-2 px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-blue-600 rounded-full hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            >
+              <FiFileText className="w-4 h-4" />
+              Export PDF
+            </button>
+          </div>
+
+          {/* Active Filters Display */}
+          {(filters.projectIds.length > 0 || filters.memberIds.length > 0 || searchQuery) && (
+            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Aktivní filtry:</span>
+                {filters.projectIds.length > 0 && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 text-xs font-medium text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/30 rounded-full">
+                    <FiFolder className="w-3 h-3" />
+                    {filters.projectIds.length} projekt{filters.projectIds.length > 1 ? 'ů' : ''}
+                  </span>
+                )}
+                {filters.memberIds.length > 0 && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 text-xs font-medium text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900/30 rounded-full">
+                    <FiUsers className="w-3 h-3" />
+                    {filters.memberIds.length} člen{filters.memberIds.length > 1 ? 'ů' : ''}
+                  </span>
+                )}
+                {searchQuery && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 text-xs font-medium text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/30 rounded-full">
+                    <FiSearch className="w-3 h-3" />
+                    "{searchQuery}"
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Content */}
       {viewMode === 'table' && (
@@ -597,98 +1004,337 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
       {viewMode === 'calendar' && (
         <div className="space-y-6">
           {/* Calendar Navigation */}
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => navigateDate('prev')}
-              className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
-            >
-              <FiChevronLeft className="w-5 h-5" />
-            </button>
-            
+          <div className="flex items-center justify-center mb-6">
             <div className="flex items-center gap-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              <button
+                onClick={() => navigateDate('prev')}
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 group"
+              >
+                <FiChevronLeft className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+              </button>
+              
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">
                 {selectedDate.toLocaleDateString('cs-CZ', { 
                   month: 'long', 
                   year: 'numeric' 
                 })}
               </h3>
               
-              <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+              <button
+                onClick={() => navigateDate('next')}
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 group"
+              >
+                <FiChevronRight className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+              </button>
+              
+              <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 shadow-sm ml-4">
                 <button
                   onClick={() => setCalendarView('week')}
-                  className={`px-3 py-1 rounded-md text-sm transition-all duration-200 ${
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                     calendarView === 'week'
                       ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                      : 'text-gray-600 dark:text-gray-400'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                   }`}
                 >
                   {t('week')}
                 </button>
                 <button
                   onClick={() => setCalendarView('month')}
-                  className={`px-3 py-1 rounded-md text-sm transition-all duration-200 ${
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                     calendarView === 'month'
                       ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                      : 'text-gray-600 dark:text-gray-400'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                   }`}
                 >
                   {t('month')}
                 </button>
               </div>
             </div>
-            
-            <button
-              onClick={() => navigateDate('next')}
-              className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
-            >
-              <FiChevronRight className="w-5 h-5" />
-            </button>
           </div>
+
+          {/* Calendar Legend */}
+          <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <FiCalendar className="w-4 h-4" />
+                  {t('calendarLegend')}
+                </div>
+                {calendarConfig.includeHolidays && (
+                  <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded-full">
+                    <FiStar className="w-3 h-3" />
+                    {t('holidaysIncluded')} ({calendarConfig.country})
+                  </div>
+                )}
+                {calendarView === 'week' && !isCurrentWeek(selectedDate) && (
+                  <button
+                    onClick={() => setSelectedDate(new Date())}
+                    className="flex items-center gap-1 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors duration-200"
+                    title="Klávesa T"
+                  >
+                    <FiCalendar className="w-3 h-3" />
+                    {t('today')}
+                  </button>
+                )}
+                <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full">
+                  <span>← → navigace</span>
+                  <span>W/M zobrazení</span>
+                  <span>T dnes</span>
+                </div>
+                <button
+                  onClick={() => setShowMiniCalendar(!showMiniCalendar)}
+                  className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors duration-200"
+                  title="Mini kalendář"
+                >
+                  <FiCalendar className="w-3 h-3" />
+                  {showMiniCalendar ? 'Skrýt' : 'Kalendář'}
+                </button>
+              </div>
+              <div className="flex items-center gap-4 text-xs">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded"></div>
+                  <span className="text-gray-600 dark:text-gray-400">{t('workday')}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-gray-100 dark:bg-gray-700/30 border border-gray-300 dark:border-gray-600 rounded"></div>
+                  <span className="text-gray-600 dark:text-gray-400">{t('weekend')}</span>
+                </div>
+                {calendarConfig.includeHolidays && (
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded"></div>
+                    <FiStar className="w-3 h-3 text-red-500" />
+                    <span className="text-gray-600 dark:text-gray-400">{t('holidayCalendar')}</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-blue-100 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded"></div>
+                  <span className="text-gray-600 dark:text-gray-400">{t('todayHighlighted')}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Mini Calendar */}
+          {showMiniCalendar && (
+            <div className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">Rychlá navigace</h3>
+                <button
+                  onClick={() => setShowMiniCalendar(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <FiX className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="grid grid-cols-7 gap-1 text-xs">
+                {/* Day headers */}
+                {['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'].map(day => (
+                  <div key={day} className="p-2 text-center font-medium text-gray-500 dark:text-gray-400">
+                    {day}
+                  </div>
+                ))}
+                {/* Calendar days */}
+                {(() => {
+                  const today = new Date();
+                  const currentMonth = selectedDate.getMonth();
+                  const currentYear = selectedDate.getFullYear();
+                  const firstDay = new Date(currentYear, currentMonth, 1);
+                  const lastDay = new Date(currentYear, currentMonth + 1, 0);
+                  const startDate = new Date(firstDay);
+                  startDate.setDate(startDate.getDate() - firstDay.getDay() + 1);
+                  
+                  const days = [];
+                  for (let i = 0; i < 42; i++) {
+                    const date = new Date(startDate);
+                    date.setDate(startDate.getDate() + i);
+                    const isCurrentMonth = date.getMonth() === currentMonth;
+                    const isToday = date.toDateString() === today.toDateString();
+                    const isSelected = date.toDateString() === selectedDate.toDateString();
+                    
+                    days.push(
+                      <button
+                        key={i}
+                        onClick={() => setSelectedDate(date)}
+                        className={`p-2 text-center rounded-lg transition-colors duration-200 ${
+                          isSelected
+                            ? 'bg-blue-500 text-white'
+                            : isToday
+                            ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                            : isCurrentMonth
+                            ? 'text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700'
+                            : 'text-gray-400 dark:text-gray-500'
+                        }`}
+                      >
+                        {date.getDate()}
+                      </button>
+                    );
+                  }
+                  return days;
+                })()}
+              </div>
+            </div>
+          )}
 
           {/* Calendar Grid */}
           <div className="relative overflow-hidden">
             <div className="relative z-10">
               {calendarView === 'week' ? (
-              <div className="grid grid-cols-7 gap-px bg-gray-200 dark:bg-gray-700">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-2">
                 {/* Day Headers */}
-                {getWeekDays(selectedDate).map((day, index) => (
-                  <div key={index} className="bg-gray-50 dark:bg-gray-700 p-3 text-center">
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">
-                      {day.toLocaleDateString('cs-CZ', { weekday: 'short' })}
-                    </div>
-                    <div className={`text-lg font-bold ${
-                      day.toDateString() === new Date().toDateString()
-                        ? 'text-blue-600 dark:text-blue-400'
-                        : 'text-gray-700 dark:text-gray-300'
+                {getWeekDays(selectedDate).map((day, index) => {
+                  const dayType = getDayType(day);
+                  const isToday = day.toDateString() === new Date().toDateString();
+                  
+                  const holidayName = getHolidayName(day);
+                  
+                  return (
+                    <div key={index} className={`${getDayTypeColor(dayType)} rounded-xl border-2 p-4 text-center transition-all duration-200 relative ${
+                      isToday ? 'ring-2 ring-blue-500 ring-opacity-50 shadow-lg' : 'hover:shadow-md'
                     }`}>
-                      {day.getDate()}
+                      <div className={`text-sm font-medium ${getDayTypeTextColor(dayType)}`}>
+                        {day.toLocaleDateString('cs-CZ', { weekday: 'short' })}
+                      </div>
+                      <div className={`text-xl font-bold mt-1 ${
+                        isToday 
+                          ? 'text-blue-600 dark:text-blue-400' 
+                          : getDayTypeTextColor(dayType)
+                      }`}>
+                        {day.getDate()}
+                      </div>
+                      {dayType === 'holiday' && (
+                        <div className="absolute top-2 right-2 group">
+                          <FiStar className="w-3 h-3 text-red-500 cursor-help" />
+                          <div className="absolute bottom-full right-0 mb-2 px-2 py-1 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                            {holidayName || t('holidayCalendar')}
+                            <div className="absolute top-full right-2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 dark:border-t-gray-100"></div>
+                          </div>
+                        </div>
+                      )}
+                      {holidayName && (
+                        <div className="mt-1 text-xs text-red-600 dark:text-red-400 truncate px-1" title={holidayName}>
+                          {holidayName}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
                 
                 {/* Day Content */}
                 {getWeekDays(selectedDate).map((day, index) => {
                   const dayTimesheets = getTimesheetsForDate(day);
                   const totalHours = dayTimesheets.reduce((sum, t) => sum + t.hours, 0);
+                  const dayType = getDayType(day);
+                  const isToday = day.toDateString() === new Date().toDateString();
+                  const dateString = day.toDateString();
+                  const isExpanded = expandedDays.has(dateString);
+                  const holidayName = getHolidayName(day);
                   
                   return (
-                    <div key={index} className="bg-white dark:bg-gray-800 min-h-[120px] p-2">
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                        {totalHours > 0 && `${totalHours}h`}
-                      </div>
-                      <div className="space-y-1">
-                        {dayTimesheets.slice(0, 3).map((timesheet) => {
+                    <div key={index} className={`${getDayTypeColor(dayType)} rounded-xl border-2 min-h-[140px] p-3 transition-all duration-200 relative ${
+                      isToday ? 'ring-2 ring-blue-500 ring-opacity-50 shadow-lg' : 'hover:shadow-md'
+                    }`}>
+                      {/* Holiday icon - absolute positioned */}
+                      {dayType === 'holiday' && (
+                        <div className="absolute top-2 right-2">
+                          <FiStar className="w-3 h-3 text-red-500" title={holidayName || t('holidayCalendar')} />
+                        </div>
+                      )}
+                      
+                      {/* Hours Summary */}
+                      {totalHours > 0 && (
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-1 text-sm font-medium text-blue-600 dark:text-blue-400">
+                            <FiClock className="w-3 h-3" />
+                            {totalHours}h
+                          </div>
+                          <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                            <FiUsers className="w-3 h-3" />
+                            {new Set(dayTimesheets.map(t => t.memberId)).size}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Holiday name */}
+                      {holidayName && (
+                        <div className="mb-2 text-xs text-red-600 dark:text-red-400 font-medium truncate" title={holidayName}>
+                          {holidayName}
+                        </div>
+                      )}
+                      
+                      {/* Timesheet Entries */}
+                      <div className="space-y-2">
+                        {dayTimesheets.slice(0, 3).map((timesheet, idx) => {
                           const member = team.find(m => m.id === timesheet.memberId);
+                          const project = projects.find(p => p.id === timesheet.projectId);
                           return (
-                            <div key={timesheet.id} className="text-xs p-1 bg-blue-50 dark:bg-blue-900/20 rounded text-blue-700 dark:text-blue-400">
-                              <div className="font-medium">{member?.name}</div>
-                              <div>{timesheet.hours}h - {timesheet.description?.slice(0, 20)}...</div>
+                            <div 
+                              key={timesheet.id} 
+                              className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-2 border border-blue-200 dark:border-blue-800 transition-all duration-300 ease-in-out"
+                              style={{
+                                animationDelay: `${idx * 50}ms`
+                              }}
+                            >
+                              <div className="flex items-center justify-between mb-1">
+                                <div className="font-medium text-xs text-blue-700 dark:text-blue-300 truncate">
+                                  {member?.name}
+                                </div>
+                                <div className="text-xs font-bold text-blue-600 dark:text-blue-400">
+                                  {timesheet.hours}h
+                                </div>
+                              </div>
+                              <div className="text-xs text-blue-600 dark:text-blue-400 truncate">
+                                {project?.name}
+                              </div>
+                              {timesheet.description && (
+                                <div className="text-xs text-gray-600 dark:text-gray-400 truncate mt-1">
+                                  {timesheet.description.slice(0, 25)}...
+                                </div>
+                              )}
                             </div>
                           );
                         })}
+                        
+                        {/* Expanded entries with animation */}
+                        {isExpanded && dayTimesheets.slice(3).map((timesheet, idx) => {
+                          const member = team.find(m => m.id === timesheet.memberId);
+                          const project = projects.find(p => p.id === timesheet.projectId);
+                          return (
+                            <div 
+                              key={timesheet.id} 
+                              className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-2 border border-blue-200 dark:border-blue-800 animate-in slide-in-from-top-2 fade-in duration-300 ease-out"
+                              style={{
+                                animationDelay: `${(idx + 3) * 50}ms`
+                              }}
+                            >
+                              <div className="flex items-center justify-between mb-1">
+                                <div className="font-medium text-xs text-blue-700 dark:text-blue-300 truncate">
+                                  {member?.name}
+                                </div>
+                                <div className="text-xs font-bold text-blue-600 dark:text-blue-400">
+                                  {timesheet.hours}h
+                                </div>
+                              </div>
+                              <div className="text-xs text-blue-600 dark:text-blue-400 truncate">
+                                {project?.name}
+                              </div>
+                              {timesheet.description && (
+                                <div className="text-xs text-gray-600 dark:text-gray-400 truncate mt-1">
+                                  {timesheet.description.slice(0, 25)}...
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                        
                         {dayTimesheets.length > 3 && (
-                          <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                            +{dayTimesheets.length - 3} {t('more')}
+                          <div className="text-center">
+                            <button
+                              onClick={() => toggleExpandedDay(dateString)}
+                              className="inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 hover:scale-105"
+                            >
+                              <FiTrendingUp className={`w-3 h-3 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                              {isExpanded ? t('showLess') : `+${dayTimesheets.length - 3} ${t('more')}`}
+                            </button>
                           </div>
                         )}
                       </div>
@@ -697,38 +1343,98 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
                 })}
               </div>
             ) : (
-              <div className="grid grid-cols-7 gap-px bg-gray-200 dark:bg-gray-700">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-1">
                 {/* Month Headers */}
-                {['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'].map((day) => (
-                  <div key={day} className="bg-gray-50 dark:bg-gray-700 p-2 text-center">
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">
-                      {day}
+                {(() => {
+                  const dayNames = calendarConfig.country === 'US' 
+                    ? ['Ne', 'Po', 'Út', 'St', 'Čt', 'Pá', 'So'] // Sunday first for US
+                    : ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne']; // Monday first for most countries
+                  return dayNames.map((day) => (
+                    <div key={day} className="bg-gray-100 dark:bg-gray-700 rounded-lg p-3 text-center">
+                      <div className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        {day}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ));
+                })()}
                 
                 {/* Month Days */}
                 {getMonthDays(selectedDate).map(({ date, isCurrentMonth }, index) => {
                   const dayTimesheets = getTimesheetsForDate(date);
                   const totalHours = dayTimesheets.reduce((sum, t) => sum + t.hours, 0);
                   const isToday = date.toDateString() === new Date().toDateString();
+                  const dayType = getDayType(date);
+                  const dateString = date.toDateString();
+                  const isExpanded = expandedDays.has(dateString);
+                  const holidayName = getHolidayName(date);
                   
                   return (
-                    <div key={index} className={`bg-white dark:bg-gray-800 min-h-[80px] p-1 ${
-                      !isCurrentMonth ? 'opacity-50' : ''
-                    }`}>
-                      <div className={`text-xs font-medium mb-1 ${
-                        isToday 
-                          ? 'text-blue-600 dark:text-blue-400' 
-                          : isCurrentMonth 
-                            ? 'text-gray-900 dark:text-white' 
-                            : 'text-gray-400 dark:text-gray-600'
-                      }`}>
-                        {date.getDate()}
+                    <div key={index} className={`${getDayTypeColor(dayType)} rounded-lg border min-h-[100px] p-2 transition-all duration-200 relative ${
+                      !isCurrentMonth ? 'opacity-40' : 'hover:shadow-md'
+                    } ${isToday ? 'ring-2 ring-blue-500 ring-opacity-50 shadow-lg' : ''}`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className={`text-sm font-bold ${
+                          isToday 
+                            ? 'text-blue-600 dark:text-blue-400' 
+                            : isCurrentMonth 
+                              ? getDayTypeTextColor(dayType)
+                              : 'text-gray-400 dark:text-gray-600'
+                        }`}>
+                          {date.getDate()}
+                        </div>
+                        {dayType === 'holiday' && (
+                          <div className="absolute top-1 right-1">
+                            <FiStar className="w-3 h-3 text-red-500" title={holidayName || t('holidayCalendar')} />
+                          </div>
+                        )}
                       </div>
+                      
+                      {/* Holiday name */}
+                      {holidayName && (
+                        <div className="mb-1 text-xs text-red-600 dark:text-red-400 font-medium truncate" title={holidayName}>
+                          {holidayName}
+                        </div>
+                      )}
+                      
                       {totalHours > 0 && (
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
-                          {totalHours}h
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1 text-xs font-medium text-blue-600 dark:text-blue-400">
+                            <FiClock className="w-2 h-2" />
+                            {totalHours}h
+                          </div>
+                          <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                            <FiUsers className="w-2 h-2" />
+                            {new Set(dayTimesheets.map(t => t.memberId)).size}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Show timesheet entries */}
+                      {dayTimesheets.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                          {(isExpanded ? dayTimesheets : dayTimesheets.slice(0, 1)).map((timesheet, idx) => {
+                            const member = team.find(m => m.id === timesheet.memberId);
+                            return (
+                              <div key={timesheet.id} className="bg-blue-50 dark:bg-blue-900/20 rounded p-1">
+                                <div className="text-xs font-medium text-blue-700 dark:text-blue-300 truncate">
+                                  {member?.name}
+                                </div>
+                                <div className="text-xs text-blue-600 dark:text-blue-400">
+                                  {timesheet.hours}h
+                                </div>
+                              </div>
+                            );
+                          })}
+                          {dayTimesheets.length > 1 && (
+                            <div className="text-center">
+                              <button
+                                onClick={() => toggleExpandedDay(dateString)}
+                                className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-200"
+                              >
+                                {isExpanded ? t('showLess') : `+${dayTimesheets.length - 1}`}
+                              </button>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
