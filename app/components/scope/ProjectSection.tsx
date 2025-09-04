@@ -182,7 +182,7 @@ export function ProjectSection({
   const [isUpdatingPriority, setIsUpdatingPriority] = useState(false);
   const dragRef = useRef<HTMLDivElement>(null);
 
-  // Load timesheet data for real progress tracking
+  // Load timesheet data for real progress tracking and auto-sync with project progress
   const loadTimesheetData = useCallback(async () => {
     setLoadingTimesheets(true);
     try {
@@ -192,12 +192,27 @@ export function ProjectSection({
       
       const data = await timesheetService.getTimesheetsByScope(scopeId, startOfYear, now);
       setTimesheetData(data);
+      
+      // Automatically sync project progress with timesheet data
+      if (data.length > 0) {
+        try {
+          const { ProjectService } = await import("@/app/services/projectService");
+          await ProjectService.syncAllProjectsWithTimesheets(scopeId, data);
+          console.log('✅ ProjectSection: Automaticky synchronizováno s timesheet daty');
+          
+          // Refresh projects to show updated progress
+          await loadProjects();
+        } catch (syncError) {
+          console.warn('⚠️ ProjectSection: Automatická synchronizace selhala:', syncError);
+          // Don't fail the entire operation, just log the warning
+        }
+      }
     } catch (err) {
       console.error('Failed to load timesheet data:', err);
     } finally {
       setLoadingTimesheets(false);
     }
-  }, [scopeId]);
+  }, [scopeId, loadProjects]);
 
   // Load data on component mount
   useEffect(() => {

@@ -14,6 +14,7 @@ import { useToastFunctions } from '@/app/components/ui/Toast';
 import { ScopeSettingsService } from "@/app/services/scopeSettingsService";
 import { getDefaultCurrencyForLocation, getAvailableCurrenciesForLocation, convertCurrency } from "@/app/utils/currencyUtils";
 import { TimesheetService } from "@/lib/domain/services/timesheet-service";
+import { ProjectService } from "@/app/services/projectService";
 import { 
   FiDollarSign, 
   FiFileText, 
@@ -64,7 +65,7 @@ export function BillingSection({
   const [timesheetData, setTimesheetData] = useState<import('@/lib/domain/models/timesheet').TimesheetEntry[]>([]);
   const [loadingTimesheets, setLoadingTimesheets] = useState(false);
 
-  // Load timesheet data for real cost calculations
+  // Load timesheet data for real cost calculations and auto-sync with project progress
   useEffect(() => {
     const loadTimesheetData = async () => {
       setLoadingTimesheets(true);
@@ -75,6 +76,17 @@ export function BillingSection({
         
         const data = await timesheetService.getTimesheetsByScope(scopeId, startOfYear, now);
         setTimesheetData(data);
+        
+        // Automatically sync project progress with timesheet data
+        if (data.length > 0) {
+          try {
+            await ProjectService.syncAllProjectsWithTimesheets(scopeId, data);
+            console.log('✅ Automaticky synchronizováno s timesheet daty');
+          } catch (syncError) {
+            console.warn('⚠️ Automatická synchronizace selhala:', syncError);
+            // Don't fail the entire operation, just log the warning
+          }
+        }
       } catch (err) {
         console.error('Failed to load timesheet data:', err);
       } finally {
@@ -263,7 +275,21 @@ export function BillingSection({
     return formatter.format(convertedAmount);
   };
 
-  
+  const generateCSVFromInvoiceData = (data: any) => {
+    const csvData = [
+      ['Project Name', 'Period', 'Currency', 'Estimated Cost', 'Actual Cost', 'Remaining Budget', 'Progress %'],
+      [data.projectName, data.period, data.currency, data.estimatedCost.toString(), data.actualCost.toString(), data.remainingCost.toString(), data.progress.toFixed(1)]
+    ];
+    return csvData.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+  };
+
+  const generateCSVFromScopeInvoiceData = (data: any) => {
+    const csvData = [
+      ['Scope ID', 'Period', 'Currency', 'Total Estimated Cost', 'Total Actual Cost', 'Total Remaining Budget', 'Average Progress %'],
+      [data.scopeId, data.period, data.currency, data.totalEstimated.toString(), data.totalActual.toString(), data.totalRemaining.toString(), data.avgProgress.toFixed(1)]
+    ];
+    return csvData.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+  };
 
   const handleGenerateInvoice = (projectId?: string) => {
     if (!selectedExportFormat) {
@@ -299,11 +325,8 @@ export function BillingSection({
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
         } else if (selectedExportFormat === 'CSV') {
-          const csvData = [
-            ['Project Name', 'Period', 'Currency', 'Estimated Cost', 'Actual Cost', 'Remaining Budget', 'Progress %'],
-            [project.projectName, selectedPeriod, selectedCurrency, project.estimatedCost.toString(), project.actualCost.toString(), project.remainingCost.toString(), project.progress.toFixed(1)]
-          ];
-          const csvContent = csvData.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+          // CSV export logic here
+          const csvContent = generateCSVFromInvoiceData(invoiceData);
           const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
@@ -315,62 +338,72 @@ export function BillingSection({
           URL.revokeObjectURL(url);
         }
         
-        success('Data vygenerována', `Data pro projekt ${project.projectName} byla úspěšně vygenerována ve formátu ${selectedExportFormat}.`);
+        success('Faktura vygenerována', `Faktura pro projekt ${project.projectName} byla úspěšně vygenerována.`);
       }
     } else {
       // Generate invoice for all projects
       const invoiceData = {
+        scopeId,
         period: selectedPeriod,
         currency: selectedCurrency,
         totalEstimated: totalStats.totalEstimated,
         totalActual: totalStats.totalActual,
         totalRemaining: totalStats.totalRemaining,
-        avgProgress: totalStats.avgProgress,
         projects: projectCosts,
         generatedAt: new Date().toISOString()
       };
       
-      // Generate based on selected format
       if (selectedExportFormat === 'JSON') {
         const blob = new Blob([JSON.stringify(invoiceData, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `invoice-all-projects-${selectedPeriod}.json`;
+        a.download = `scope-invoice-${selectedPeriod}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       } else if (selectedExportFormat === 'CSV') {
-        const csvData = [
-          ['Project Name', 'Period', 'Currency', 'Estimated Cost', 'Actual Cost', 'Remaining Budget', 'Progress %'],
-          ...projectCosts.map(project => [
-            project.projectName,
-            selectedPeriod,
-            selectedCurrency,
-            project.estimatedCost.toString(),
-            project.actualCost.toString(),
-            project.remainingCost.toString(),
-            project.progress.toFixed(1)
-          ])
-        ];
-        const csvContent = csvData.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+        const csvContent = generateCSVFromScopeInvoiceData(invoiceData);
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `invoice-all-projects-${selectedPeriod}.csv`;
+        a.download = `scope-invoice-${selectedPeriod}.csv`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       }
       
-      success('Data vygenerována', `Data pro všechny projekty byla úspěšně vygenerována ve formátu ${selectedExportFormat}.`);
+      success('Faktura vygenerována', 'Faktura pro celý scope byla úspěšně vygenerována.');
     }
   };
 
+  const handleSyncTimesheets = async () => {
+    if (timesheetData.length === 0) {
+      error('Žádná data', 'Nejsou k dispozici žádná timesheet data pro synchronizaci.');
+      return;
+    }
 
+    try {
+      // Show loading state
+      const loadingToast = success('Synchronizuji...', 'Synchronizuji timesheet data s projektovým průběhem...');
+      
+      // Sync all projects with timesheet data
+      await ProjectService.syncAllProjectsWithTimesheets(scopeId, timesheetData);
+      
+      // Close loading toast and show success
+      success('Synchronizace dokončena', 'Projektový průběh byl úspěšně synchronizován s timesheet daty.');
+      
+      // Optionally refresh the page or trigger a re-render
+      window.location.reload();
+      
+    } catch (err) {
+      console.error('Failed to sync timesheets:', err);
+      error('Chyba synchronizace', 'Nepodařilo se synchronizovat timesheet data s projektovým průběhem.');
+    }
+  };
 
   // Check if billing is configured (at least some team members have MD rates)
   const billingConfigured = team.some(member => member.mdRate && member.mdRate > 0);
@@ -440,6 +473,18 @@ export function BillingSection({
               {!readOnlyMode && billingConfigured && (
                 <>
                   <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleSyncTimesheets}
+                      disabled={timesheetData.length === 0}
+                      className="relative group bg-gradient-to-r from-purple-500 via-violet-500 to-indigo-500 text-white px-6 py-2 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/25 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                      title={timesheetData.length === 0 ? 'Žádná timesheet data k synchronizaci' : 'Synchronizovat timesheet data s projektovým průběhem'}
+                    >
+                      <span className="relative z-10 flex items-center gap-2">
+                        🔄
+                        {timesheetData.length === 0 ? 'Žádná data' : 'Sync Timesheets'}
+                      </span>
+                    </button>
+                    
                     <button
                       onClick={(e) => { e.preventDefault(); handleGenerateInvoice(); }}
                       disabled={!selectedExportFormat}
@@ -529,12 +574,12 @@ export function BillingSection({
                         </div>
                         {timesheetData.length > 0 && (
                           <div className="text-xs text-green-600 dark:text-green-400 font-medium">
-                            📊 Ze timesheetů
+                            📊 {t("fromTimesheets")}
                           </div>
                         )}
                         {timesheetData.length === 0 && !loadingTimesheets && (
                           <div className="text-xs text-orange-600 dark:text-orange-400 font-medium">
-                            ⚠️ Pouze odhady
+                            ⚠️ {t("onlyEstimates")}
                           </div>
                         )}
                       </div>

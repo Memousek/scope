@@ -159,14 +159,21 @@ export class SupabaseProjectRepository implements ProjectRepository {
       .from('projects')
       .update(updateData)
       .eq('id', id)
-      .select()
-      .single();
+      .select();
 
     if (error) {
       throw new Error(`Failed to update project: ${error?.message}`);
     }
 
-    return this.mapToModel(data);
+    if (!data || data.length === 0) {
+      throw new Error(`Project with id ${id} not found`);
+    }
+
+    if (data.length > 1) {
+      throw new Error(`Multiple projects found with id ${id}`);
+    }
+
+    return this.mapToModel(data[0]);
   }
 
   async delete(id: string): Promise<void> {

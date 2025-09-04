@@ -298,12 +298,23 @@ export class ProjectService {
     if (Object.keys(projectUpdates).length > 0) {
       // Použijeme repository místo přímého Supabase update, aby se zachovaly custom role data
       const projectRepository = ContainerService.getInstance().get(ProjectRepository);
-      // Převedeme projectUpdates na správný typ pro doménový model a odstraníme startedAt
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { startedAt: _, ...projectUpdatesWithoutStartedAt } = projectUpdates;
-      const domainProjectUpdates: Partial<import('../../lib/domain/models/project.model').Project> = {
-        ...projectUpdatesWithoutStartedAt
-      };
+      
+      // Map component project updates to domain project updates
+      const domainProjectUpdates: Partial<import('../../lib/domain/models/project.model').Project> = {};
+      
+      // Map standard role data from component format to domain format
+      if (projectUpdates.fe_done !== undefined) domainProjectUpdates.feDone = projectUpdates.fe_done as number;
+      if (projectUpdates.be_done !== undefined) domainProjectUpdates.beDone = projectUpdates.be_done as number;
+      if (projectUpdates.qa_done !== undefined) domainProjectUpdates.qaDone = projectUpdates.qa_done as number;
+      if (projectUpdates.pm_done !== undefined) domainProjectUpdates.pmDone = projectUpdates.pm_done as number;
+      if (projectUpdates.dpl_done !== undefined) domainProjectUpdates.dplDone = projectUpdates.dpl_done as number;
+      
+      if (projectUpdates.fe_mandays !== undefined) domainProjectUpdates.feMandays = projectUpdates.fe_mandays as number;
+      if (projectUpdates.be_mandays !== undefined) domainProjectUpdates.beMandays = projectUpdates.be_mandays as number;
+      if (projectUpdates.qa_mandays !== undefined) domainProjectUpdates.qaMandays = projectUpdates.qa_mandays as number;
+      if (projectUpdates.pm_mandays !== undefined) domainProjectUpdates.pmMandays = projectUpdates.pm_mandays as number;
+      if (projectUpdates.dpl_mandays !== undefined) domainProjectUpdates.dplMandays = projectUpdates.dpl_mandays as number;
+      
       await projectRepository.update(projectId, domainProjectUpdates);
     }
   }
@@ -449,5 +460,121 @@ export class ProjectService {
         throw resetError;
       }
     }
+  }
+
+  /**
+   * Sync project progress with timesheet data
+   * This automatically updates project progress based on actual work logged
+   */
+  static async syncProjectProgressWithTimesheets(
+    projectId: string, 
+    timesheetData: Array<{
+      memberId: string;
+      projectId: string;
+      role: string;
+      hours: number;
+      date: Date;
+    }>
+  ): Promise<void> {
+    const supabase = createClient();
+    
+    // Filter timesheets for this project
+    const projectTimesheets = timesheetData.filter(ts => ts.projectId === projectId);
+    
+    console.log(`🔄 Syncing project ${projectId} with ${projectTimesheets.length} timesheet entries`);
+    
+    if (projectTimesheets.length === 0) {
+      console.log(`⚠️ No timesheet data for project ${projectId}`);
+      return;
+    }
+    
+    // Group by role and calculate total hours
+    const roleProgress = projectTimesheets.reduce((acc, ts) => {
+      const roleKey = ts.role.toLowerCase().replace(/\s+/g, '');
+      if (!acc[roleKey]) {
+        acc[roleKey] = { hours: 0, mandays: 0 };
+      }
+      acc[roleKey].hours += ts.hours;
+      acc[roleKey].mandays = acc[roleKey].hours / 8;
+      return acc;
+    }, {} as Record<string, { hours: number; mandays: number }>);
+    
+    console.log(`📊 Role progress for project ${projectId}:`, roleProgress);
+    
+    // Get current project data to calculate progress percentages
+    const { data: project } = await supabase
+      .from('projects')
+      .select('*')
+      .eq('id', projectId)
+      .single();
+    
+    if (!project) {
+      console.log(`❌ Project ${projectId} not found`);
+      return;
+    }
+    
+    console.log(`📋 Project ${projectId} data:`, {
+      name: project.name,
+      fe_mandays: project.fe_mandays,
+      fe_done: project.fe_done
+    });
+    
+    // Calculate progress updates for each role
+    const progressUpdates: Partial<ProjectProgress> = {};
+    
+    Object.entries(roleProgress).forEach(([role, data]) => {
+      const mandaysKey = `${role}_mandays`;
+      const doneKey = `${role}_done`;
+      
+      const estimatedMandays = Number(project[mandaysKey] || 0);
+      if (estimatedMandays > 0) {
+        // Calculate progress as percentage and round to nearest integer
+        const progressPercentage = Math.min((data.mandays / estimatedMandays) * 100, 100);
+        const roundedPercentage = Math.round(progressPercentage);
+        (progressUpdates as Record<string, unknown>)[doneKey] = roundedPercentage;
+        
+        console.log(`🎯 Role ${role}: ${data.mandays} MD / ${estimatedMandays} MD = ${progressPercentage.toFixed(1)}% → ${roundedPercentage}%`);
+      } else {
+        console.log(`⚠️ No estimated mandays for role ${role} in project ${projectId}`);
+      }
+    });
+    
+    console.log(`💾 Progress updates for project ${projectId}:`, progressUpdates);
+    
+    // Save progress update if we have any changes
+    if (Object.keys(progressUpdates).length > 0) {
+      await this.saveProjectProgress(projectId, progressUpdates);
+      console.log(`✅ Successfully updated progress for project ${projectId}`);
+    } else {
+      console.log(`ℹ️ No progress updates needed for project ${projectId}`);
+    }
+  }
+
+  /**
+   * Bulk sync all projects in a scope with timesheet data
+   */
+  static async syncAllProjectsWithTimesheets(
+    scopeId: string,
+    timesheetData: Array<{
+      memberId: string;
+      projectId: string;
+      role: string;
+      hours: number;
+      date: Date;
+    }>
+  ): Promise<void> {
+    console.log(`🚀 Starting sync for scope ${scopeId} with ${timesheetData.length} timesheet entries`);
+    
+    // Get all projects for this scope
+    const projects = await this.loadProjects(scopeId);
+    console.log(`📁 Found ${projects.length} projects in scope ${scopeId}`);
+    
+    // Sync each project
+    for (const project of projects) {
+      console.log(`🔄 Syncing project: ${project.name} (ID: ${project.id})`);
+      await this.syncProjectProgressWithTimesheets(project.id, timesheetData);
+    }
+    
+    console.log(`✅ Completed sync for scope ${scopeId}`);
   }
 } 

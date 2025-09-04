@@ -747,5 +747,7 @@
     "hoursByMember": "Hodiny podle člena týmu",
     "hoursByProject": "Hodiny podle projektu",
     "hoursOverTime": "Hodiny v čase",
-    "more": "další"
+    "more": "další",
+    "fromTimesheets": "Z výkazů",
+    "onlyEstimates": "Pouze odhady"
 }
