@@ -128,7 +128,6 @@ export function ProjectSection({
   const [projectAssignments, setProjectAssignments] = useState<
     Record<string, ProjectTeamAssignment[]>
   >({});
-  const [loadingAssignments, setLoadingAssignments] = useState(false);
   
   // Unified loading state to prevent blinking
   const [isInitialLoading, setIsInitialLoading] = useState(true);
@@ -154,7 +153,6 @@ export function ProjectSection({
 
   // Timesheet data for real progress tracking
   const [timesheetData, setTimesheetData] = useState<import('@/lib/domain/models/timesheet').TimesheetEntry[]>([]);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [loadingTimesheets, setLoadingTimesheets] = useState(false); // Used in future UI updates
 
   // Note: skeleton rendering should happen in parent/layout to keep hooks order stable
@@ -364,7 +362,6 @@ export function ProjectSection({
   }, [projects, updateProject, loadProjects, isUpdatingPriority]);
 
   const loadProjectAssignments = useCallback(async () => {
-    setLoadingAssignments(true);
     try {
       const manageAssignmentsService = ContainerService.getInstance().get(
         ManageProjectTeamAssignmentsService,
@@ -381,8 +378,6 @@ export function ProjectSection({
       setProjectAssignments(assignmentsMap);
     } catch (error) {
       console.error("Failed to load project assignments:", error);
-    } finally {
-      setLoadingAssignments(false);
     }
   }, [projects]);
 
