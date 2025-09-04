@@ -902,7 +902,7 @@ export function ProjectSection({
 
             <div className="space-y-6">
               {/* Loading skeleton for timesheet synchronization */}
-              {loadingTimesheets && (
+              {(loadingTimesheets || loadingAssignments) && (
                 <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-4 mb-4">
                   <div className="flex items-center gap-3">
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
