@@ -550,7 +550,7 @@ export function BillingSection({
             <div className="text-center py-16">
               <div className="relative mb-6">
                 <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full blur-xl opacity-20"></div>
-                <div className="relative text-8xl flex items-center justify-center">
+                <div className="relative text-8xl flex items-center justify-center animate-bounce">
                   <FiCreditCard />
                 </div>
               </div>

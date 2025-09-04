@@ -373,16 +373,16 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
   if (chartData.length === 0) {
     return (
       <div className="relative bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 rounded-2xl p-8 shadow-2xl">
-        {/* Decorative background elements */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 rounded-2xl"></div>
-        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-br from-purple-400/10 to-pink-400/10 rounded-full blur-2xl"></div>
-
-        <div className="relative z-10 text-center">
-          <div className="text-6xl mb-6 flex items-center justify-center animate-bounce"><FiBarChart2 /></div>
-          <h3 className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+        <div className="text-center py-16">
+          <div className="relative mb-6">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur-xl opacity-20"></div>
+            <div className="relative text-8xl flex items-center justify-center animate-bounce">
+              <FiBarChart2 />
+            </div>
+          </div>
+          <p className="text-gray-600 dark:text-gray-300 text-xl font-medium mb-2">
             {t("noDataForChart")}
-          </h3>
+          </p>
           <p className="text-gray-500 dark:text-gray-400 text-sm">
             {t("noDataForChartDescription")}
           </p>

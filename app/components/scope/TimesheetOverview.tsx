@@ -335,13 +335,9 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 rounded-2xl p-8 shadow-2xl">
       {/* Header */}
-      <div className="relative bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 rounded-2xl p-8 shadow-2xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 rounded-2xl"></div>
-        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-br from-purple-400/10 to-pink-400/10 rounded-full blur-2xl"></div>
-
+      <div className="relative">
         <div className="relative z-10">
           <div className="flex items-center justify-between mb-6 flex-col md:flex-row gap-4">
             <div className="flex items-center gap-4">
@@ -382,8 +378,7 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
 
       {/* Filters */}
       {showFilters && (
-        <div className="relative bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 rounded-2xl p-6 shadow-2xl">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 rounded-2xl"></div>
+        <div className="relative p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Date Range */}
             <div>
@@ -459,8 +454,7 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
 
       {/* View Mode Tabs */}
       <div className="flex items-center justify-center">
-        <div className="relative bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 rounded-2xl p-2 shadow-2xl">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 rounded-2xl"></div>
+        <div className="relative p-2">
           <div className="relative z-10 flex">
             <button
               onClick={() => setViewMode('table')}
@@ -501,8 +495,7 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
 
       {/* Content */}
       {viewMode === 'table' && (
-        <div className="relative bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 rounded-2xl overflow-hidden shadow-2xl">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 rounded-2xl"></div>
+        <div className="relative overflow-hidden">
           <div className="relative z-10">
             <div className="overflow-x-auto">
             <table className="w-full">
@@ -582,10 +575,18 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
           </div>
           
           {filteredTimesheets.length === 0 && (
-            <div className="text-center py-12">
-              <FiClock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500 dark:text-gray-400">
+            <div className="text-center py-16">
+              <div className="relative mb-6">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur-xl opacity-20"></div>
+                <div className="relative text-8xl flex items-center justify-center animate-bounce">
+                  <FiClock />
+                </div>
+              </div>
+              <p className="text-gray-600 dark:text-gray-300 text-xl font-medium mb-2">
                 {t('noTimesheetsFound')}
+              </p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
+                Začněte přidáním prvního výkazu práce
               </p>
             </div>
           )}
@@ -645,8 +646,7 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
           </div>
 
           {/* Calendar Grid */}
-          <div className="relative bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 rounded-2xl overflow-hidden shadow-2xl">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 rounded-2xl"></div>
+          <div className="relative overflow-hidden">
             <div className="relative z-10">
               {calendarView === 'week' ? (
               <div className="grid grid-cols-7 gap-px bg-gray-200 dark:bg-gray-700">
@@ -744,8 +744,7 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
       {viewMode === 'charts' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Member Hours Chart */}
-          <div className="relative bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 rounded-2xl p-6 shadow-2xl">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 rounded-2xl"></div>
+          <div className="relative p-6">
             <div className="relative z-10">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 {t('hoursByMember')}
@@ -770,8 +769,7 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
           </div>
 
           {/* Project Hours Chart */}
-          <div className="relative bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 rounded-2xl p-6 shadow-2xl">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 rounded-2xl"></div>
+          <div className="relative p-6">
             <div className="relative z-10">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 {t('hoursByProject')}
