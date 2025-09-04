@@ -514,7 +514,7 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
   };
 
   // Navigation
-  const navigateDate = (direction: 'prev' | 'next') => {
+  const navigateDate = useCallback((direction: 'prev' | 'next') => {
     const newDate = new Date(selectedDate);
     if (calendarView === 'week') {
       newDate.setDate(selectedDate.getDate() + (direction === 'next' ? 7 : -7));
@@ -522,7 +522,7 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
       newDate.setMonth(selectedDate.getMonth() + (direction === 'next' ? 1 : -1));
     }
     setSelectedDate(newDate);
-  };
+  }, [selectedDate, calendarView]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -1411,7 +1411,7 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
                       {/* Show timesheet entries */}
                       {dayTimesheets.length > 0 && (
                         <div className="mt-2 space-y-1">
-                          {(isExpanded ? dayTimesheets : dayTimesheets.slice(0, 1)).map((timesheet, idx) => {
+                          {(isExpanded ? dayTimesheets : dayTimesheets.slice(0, 1)).map((timesheet) => {
                             const member = team.find(m => m.id === timesheet.memberId);
                             return (
                               <div key={timesheet.id} className="bg-blue-50 dark:bg-blue-900/20 rounded p-1">
