@@ -64,8 +64,6 @@ export class ProjectService {
    * Create a new project
    */
   static async createProject(scopeId: string, projectData: CreateProjectData): Promise<Project> {
-    console.log('ProjectService.createProject - projectData:', projectData);
-    console.log('ProjectService.createProject - start_day:', projectData.start_day);
     
     const projectRepository = ContainerService.getInstance().get(ProjectRepository);
     
@@ -481,10 +479,7 @@ export class ProjectService {
     // Filter timesheets for this project
     const projectTimesheets = timesheetData.filter(ts => ts.projectId === projectId);
     
-    console.log(`🔄 Syncing project ${projectId} with ${projectTimesheets.length} timesheet entries`);
-    
     if (projectTimesheets.length === 0) {
-      console.log(`⚠️ No timesheet data for project ${projectId}`);
       return;
     }
     
@@ -499,8 +494,6 @@ export class ProjectService {
       return acc;
     }, {} as Record<string, { hours: number; mandays: number }>);
     
-    console.log(`📊 Role progress for project ${projectId}:`, roleProgress);
-    
     // Get current project data to calculate progress percentages
     const { data: project } = await supabase
       .from('projects')
@@ -509,15 +502,8 @@ export class ProjectService {
       .single();
     
     if (!project) {
-      console.log(`❌ Project ${projectId} not found`);
       return;
     }
-    
-    console.log(`📋 Project ${projectId} data:`, {
-      name: project.name,
-      fe_mandays: project.fe_mandays,
-      fe_done: project.fe_done
-    });
     
     // Calculate progress updates for each role
     const progressUpdates: Partial<ProjectProgress> = {};
@@ -533,20 +519,12 @@ export class ProjectService {
         const roundedPercentage = Math.round(progressPercentage);
         (progressUpdates as Record<string, unknown>)[doneKey] = roundedPercentage;
         
-        console.log(`🎯 Role ${role}: ${data.mandays} MD / ${estimatedMandays} MD = ${progressPercentage.toFixed(1)}% → ${roundedPercentage}%`);
-      } else {
-        console.log(`⚠️ No estimated mandays for role ${role} in project ${projectId}`);
       }
     });
-    
-    console.log(`💾 Progress updates for project ${projectId}:`, progressUpdates);
     
     // Save progress update if we have any changes
     if (Object.keys(progressUpdates).length > 0) {
       await this.saveProjectProgress(projectId, progressUpdates);
-      console.log(`✅ Successfully updated progress for project ${projectId}`);
-    } else {
-      console.log(`ℹ️ No progress updates needed for project ${projectId}`);
     }
   }
 
@@ -563,18 +541,12 @@ export class ProjectService {
       date: Date;
     }>
   ): Promise<void> {
-    console.log(`🚀 Starting sync for scope ${scopeId} with ${timesheetData.length} timesheet entries`);
-    
     // Get all projects for this scope
     const projects = await this.loadProjects(scopeId);
-    console.log(`📁 Found ${projects.length} projects in scope ${scopeId}`);
     
     // Sync each project
     for (const project of projects) {
-      console.log(`🔄 Syncing project: ${project.name} (ID: ${project.id})`);
       await this.syncProjectProgressWithTimesheets(project.id, timesheetData);
     }
-    
-    console.log(`✅ Completed sync for scope ${scopeId}`);
   }
 } 

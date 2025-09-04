@@ -55,8 +55,6 @@ export default function ProfilePage() {
     const { error } = await supabase.auth.admin.deleteUser(user.id);
     if (error) {
       console.error(error);
-    } else {
-      console.log("User deleted");
     }
   };
 

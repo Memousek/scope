@@ -198,7 +198,6 @@ export function ProjectSection({
         try {
           const { ProjectService } = await import("@/app/services/projectService");
           await ProjectService.syncAllProjectsWithTimesheets(scopeId, data);
-          console.log('✅ ProjectSection: Automaticky synchronizováno s timesheet daty');
           
           // Refresh projects to show updated progress
           await loadProjects();
@@ -2177,7 +2176,6 @@ export function ProjectSection({
               await loadProjects();
             } else {
               console.error("Cannot update note: id is undefined");
-              console.log(noteToEdit);
             }
             setEditNoteModalOpen(false);
             setNoteToEdit(null);

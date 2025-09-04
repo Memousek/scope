@@ -81,7 +81,6 @@ export function BillingSection({
         if (data.length > 0) {
           try {
             await ProjectService.syncAllProjectsWithTimesheets(scopeId, data);
-            console.log('✅ Automaticky synchronizováno s timesheet daty');
           } catch (syncError) {
             console.warn('⚠️ Automatická synchronizace selhala:', syncError);
             // Don't fail the entire operation, just log the warning
