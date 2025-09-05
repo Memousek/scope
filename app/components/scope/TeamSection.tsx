@@ -18,6 +18,7 @@ import { TeamService } from "@/app/services/teamService";
 import { getHolidays } from "@/app/utils/holidays";
 import { ScopeSettingsService } from "@/app/services/scopeSettingsService";
 import { TimesheetService } from "@/lib/domain/services/timesheet-service";
+import { getDefaultCurrencyForLocation } from "@/app/utils/currencyUtils";
 
 import { SettingsIcon, FilterIcon, XIcon, ChevronDownIcon } from "lucide-react";
 import { FiUpload, FiCalendar, FiClock } from 'react-icons/fi';
@@ -63,6 +64,7 @@ export function TeamSection({ scopeId, team, projects, onTeamChange, readOnlyMod
   const [timesheetModal, setTimesheetModal] = useState<{ open: boolean; member: TeamMember | null }>({ open: false, member: null });
   const [reportsOpen, setReportsOpen] = useState(false);
   const [availabilityOpen, setAvailabilityOpen] = useState(false);
+  const [currencyInfo, setCurrencyInfo] = useState({ code: 'CZK', symbol: 'Kč' });
 
 
   // const manageAssignmentsService = useMemo(() => new ManageProjectTeamAssignmentsService(), []);
@@ -100,6 +102,28 @@ export function TeamSection({ scopeId, team, projects, onTeamChange, readOnlyMod
       } catch {}
     };
     void run();
+  }, [scopeId]);
+
+  // Load currency from scope settings
+  useEffect(() => {
+    const loadCurrency = async () => {
+      try {
+        const settings = await ScopeSettingsService.get(scopeId);
+        if (settings?.calendar) {
+          const country = settings.calendar.country || 'CZ';
+          const subdivision = settings.calendar.subdivision || null;
+          
+          const currency = getDefaultCurrencyForLocation(country, subdivision);
+          setCurrencyInfo({ code: currency.code, symbol: currency.symbol });
+        }
+      } catch (err) {
+        console.error('Failed to load currency settings:', err);
+        // Fallback na CZK
+        setCurrencyInfo({ code: 'CZK', symbol: 'Kč' });
+      }
+    };
+    
+    loadCurrency();
   }, [scopeId]);
 
   // Načti souhrnnou alokaci FTE a seznam projektů pro mini heatmapu
@@ -863,7 +887,7 @@ export function TeamSection({ scopeId, team, projects, onTeamChange, readOnlyMod
                                 disabled={readOnlyMode}
                               />
                               <span className="text-sm text-gray-600 dark:text-gray-300 font-medium">
-                                CZK/den
+                                {currencyInfo.code}/den
                               </span>
                             </div>
                           )}
@@ -1118,7 +1142,7 @@ export function TeamSection({ scopeId, team, projects, onTeamChange, readOnlyMod
                                 disabled={readOnlyMode}
                               />
                               <span className="text-sm text-gray-600 dark:text-gray-300 font-medium">
-                                CZK/den
+                                {currencyInfo.code}/den
                               </span>
                             </div>
                           )}
