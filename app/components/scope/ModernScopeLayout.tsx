@@ -119,7 +119,14 @@ export function ModernScopeLayout({
 
   const [activeTab, setActiveTab] = useState<TabType>("overview");
   const [importModalOpen, setImportModalOpen] = useState(false);
-  const [integrations, setIntegrations] = useState<{ jiraApiToken?: string; jiraBaseUrl?: string } | null>(null);
+  const [integrations, setIntegrations] = useState<{ jiraApiToken?: string; jiraBaseUrl?: string } | null>(() => {
+    // Initialize integrations synchronously from sessionStorage
+    try {
+      return getScopeIntegration(scopeId);
+    } catch {
+      return null;
+    }
+  });
   const isGod = user?.additional?.role === 'god';
   // Derived flag kept local; remove unused var warnings by using inline checks where needed
   const isOwnerOrGod = isOwner || isGod; // eslint-disable-line @typescript-eslint/no-unused-vars
@@ -139,15 +146,16 @@ export function ModernScopeLayout({
     return base;
   };
 
-  // Load integrations
+  // Load integrations (refresh cache from database)
   useEffect(() => {
     const loadIntegrations = async () => {
       try {
+        // This will update the sessionStorage cache and return fresh data
         const integrationsData = await getScopeIntegration(scopeId);
         setIntegrations(integrationsData);
       } catch (error) {
         console.error('Failed to load integrations:', error);
-        setIntegrations(null);
+        // Keep the initial value from sessionStorage
       }
     };
     
