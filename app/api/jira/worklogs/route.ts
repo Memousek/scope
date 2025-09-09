@@ -24,9 +24,6 @@ export async function POST(request: Request) {
     
     // First, search for issues using JQL
     const searchUrl = `${baseUrl}/rest/api/3/search`;
-    console.log('Proxying JIRA search request to:', searchUrl);
-    console.log('JQL:', jql);
-    console.log('Date range:', from, 'to', to);
 
     const searchResponse = await fetch(searchUrl, {
       method: 'POST',
@@ -57,8 +54,6 @@ export async function POST(request: Request) {
 
     const searchData = await searchResponse.json();
     const issues = searchData.issues || [];
-
-    console.log(`Found ${issues.length} issues for worklog extraction`);
 
     // Now fetch worklogs for each issue
     const allWorklogs = [];
@@ -104,7 +99,6 @@ export async function POST(request: Request) {
       }
     }
 
-    console.log(`Extracted ${allWorklogs.length} worklog entries`);
     return NextResponse.json(allWorklogs);
 
   } catch (error) {

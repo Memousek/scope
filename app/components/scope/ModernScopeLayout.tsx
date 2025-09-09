@@ -43,7 +43,7 @@ import { JiraImportModalV2 } from "./JiraImportModalV2";
 import { JiraUserMappingModal } from "./JiraUserMappingModal";
 import { JiraProjectMappingModal } from "./JiraProjectMappingModal";
 import { JiraSyncDashboard } from "./JiraSyncDashboard";
-import { ScopeSettings, getScopeIntegration } from "./ScopeSettings";
+import { ScopeSettings } from "./ScopeSettings";
 
 interface ModernScopeLayoutProps {
   scopeId: string;
@@ -119,7 +119,7 @@ export function ModernScopeLayout({
 
   const [activeTab, setActiveTab] = useState<TabType>("overview");
   const [importModalOpen, setImportModalOpen] = useState(false);
-  const integrations = typeof window !== 'undefined' ? getScopeIntegration(scopeId) : null;
+  // const integrations = typeof window !== 'undefined' ? getScopeIntegration(scopeId) : null; // Unused for now
   const isGod = user?.additional?.role === 'god';
   // Derived flag kept local; remove unused var warnings by using inline checks where needed
   const isOwnerOrGod = isOwner || isGod; // eslint-disable-line @typescript-eslint/no-unused-vars
@@ -230,18 +230,17 @@ export function ModernScopeLayout({
       "delivery_date",
       "slip",
     ];
-    const projectHeaderMap = {
-      name: t("projectName"),
-      priority: t("priority"),
-      ...roleHeaderMap,
-      delivery_date: t("deliveryDate"),
-      slip: t("slip"),
-    };
+    // const projectHeaderMap = {
+    //   name: t("projectName"),
+    //   priority: t("priority"),
+    //   ...roleHeaderMap,
+    //   delivery_date: t("deliveryDate"),
+    //   slip: t("slip"),
+    // }; // Unused for now
     downloadCSV(
       `projects-export-${scopeId}.csv`,
       projects,
       projectColumns as (keyof Project)[],
-      projectHeaderMap
     );
   };
 
@@ -263,7 +262,7 @@ export function ModernScopeLayout({
     ...(readOnlyMode ? [] : [{ id: "billing", label: t("billing"), icon: <FiDollarSign /> }]),
     ...(readOnlyMode ? [] : [{ id: "timesheets", label: t("timesheets"), icon: <FiClock /> }]),
     { id: "burndown", label: t("burndown"), icon: <FiTrendingUp />},
-    ...(integrations?.jiraApiToken && integrations?.jiraBaseUrl ? [{ id: "jira", label: t("jira"), icon: <FiExternalLink /> }] : []),
+    ...(isGod ? [{ id: "jira", label: t("jira"), icon: <FiExternalLink /> }] : []),
     { id: "settings", label: t("settings"), icon: <FiSettings /> },
   ];
 
@@ -588,6 +587,7 @@ export function ModernScopeLayout({
         );
 
       case "jira":
+        console.log('ModernScopeLayout: Rendering JIRA tab with scopeId:', scopeId);
         return (
           <div className="relative">
             <Badge

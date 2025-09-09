@@ -8,7 +8,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Modal } from '@/app/components/ui/Modal';
 // import { useTranslation } from '@/lib/translation'; // Unused for now
 import { TeamMember } from './types';
-import { JiraService } from '@/lib/services/jiraService';
+import { JiraService, JiraUser } from '@/lib/services/jiraService';
 import { ScopeSettingsService } from '@/app/services/scopeSettingsService';
 import { useToastFunctions } from '@/app/components/ui/Toast';
 import { FiUser, FiLink, FiCheck, FiX, FiRefreshCw, FiSearch } from 'react-icons/fi';
@@ -41,7 +41,7 @@ export function JiraUserMappingModal({
   // const { t } = useTranslation(); // Unused for now
   const toast = useToastFunctions();
   
-  // const [jiraUsers, setJiraUsers] = useState<JiraUser[]>([]); // Unused for now
+  const [jiraUsers, setJiraUsers] = useState<JiraUser[]>([]);
   const [mappings, setMappings] = useState<JiraUserMapping[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -81,13 +81,13 @@ export function JiraUserMappingModal({
   }, [mappings, searchFilter, showOnlyMapped]);
 
   // Load JIRA users when modal opens
-  // useEffect(() => {
-  //   if (isOpen) {
-  //     loadJiraUsers();
-  //   }
-  // }, [isOpen, scopeId]); // Disabled for now due to unused variables
+  useEffect(() => {
+    if (isOpen) {
+      loadJiraUsers();
+    }
+  }, [isOpen, scopeId]);
 
-  /* const loadJiraUsers = async () => { // Disabled for now due to unused variables
+  const loadJiraUsers = async () => {
     setLoading(true);
     setError(null);
     
@@ -149,7 +149,7 @@ export function JiraUserMappingModal({
     } finally {
       setLoading(false);
     }
-  }; */
+  };
 
   const updateMapping = (jiraAccountId: string, field: keyof JiraUserMapping, value: unknown) => {
     setMappings(prev => prev.map(mapping => {

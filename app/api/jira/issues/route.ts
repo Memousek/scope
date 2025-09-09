@@ -23,9 +23,6 @@ export async function POST(request: Request) {
     const auth = Buffer.from(`${email}:${apiToken}`).toString('base64');
     
     const searchUrl = `${baseUrl}/rest/api/3/search`;
-    console.log('Proxying JIRA issues search request to:', searchUrl);
-    console.log('JQL:', jql);
-    console.log('Max results:', maxResults);
 
     const response = await fetch(searchUrl, {
       method: 'POST',
@@ -58,7 +55,6 @@ export async function POST(request: Request) {
     }
 
     const data = await response.json();
-    console.log(`Found ${data.issues?.length || 0} issues`);
     return NextResponse.json(data);
 
   } catch (error) {

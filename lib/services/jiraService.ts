@@ -152,10 +152,6 @@ export class JiraService {
 
       // Use our API proxy to avoid CORS issues
       const proxyUrl = new URL('/api/jira/worklogs', window.location.origin);
-      
-      console.log('Fetching JIRA worklogs via proxy:', proxyUrl.toString());
-      console.log('JQL:', jql);
-      console.log('Date range:', from, 'to', to);
 
       const response = await fetch(proxyUrl.toString(), {
       method: 'POST',
@@ -214,8 +210,6 @@ export class JiraService {
       proxyUrl.searchParams.set('email', cfg.email);
       proxyUrl.searchParams.set('apiToken', cfg.apiToken);
 
-      console.log('Fetching JIRA users via proxy:', proxyUrl.toString());
-      
       const response = await fetch(proxyUrl.toString(), {
         method: 'GET',
         headers: {
@@ -261,8 +255,6 @@ export class JiraService {
       proxyUrl.searchParams.set('email', cfg.email);
       proxyUrl.searchParams.set('apiToken', cfg.apiToken);
 
-      console.log('Fetching JIRA projects via proxy:', proxyUrl.toString());
-      
       const response = await fetch(proxyUrl.toString(), {
         method: 'GET',
         headers: {
@@ -308,9 +300,6 @@ export class JiraService {
 
       // Use our API proxy to avoid CORS issues
       const proxyUrl = new URL('/api/jira/issues', window.location.origin);
-      
-      console.log('Fetching JIRA issues via proxy:', proxyUrl.toString());
-      console.log('JQL:', jql);
 
       const response = await fetch(proxyUrl.toString(), {
         method: 'POST',

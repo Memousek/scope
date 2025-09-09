@@ -8,7 +8,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Modal } from '@/app/components/ui/Modal';
 // import { useTranslation } from '@/lib/translation'; // Unused for now
 import { Project } from './types';
-import { JiraService } from '@/lib/services/jiraService';
+import { JiraService, JiraProject } from '@/lib/services/jiraService';
 import { ScopeSettingsService } from '@/app/services/scopeSettingsService';
 import { useToastFunctions } from '@/app/components/ui/Toast';
 import { FiFolder, FiLink, FiCheck, FiX, FiRefreshCw, FiSearch } from 'react-icons/fi';
@@ -40,7 +40,7 @@ export function JiraProjectMappingModal({
   
   const toast = useToastFunctions();
   
-  // const [jiraProjects, setJiraProjects] = useState<JiraProject[]>([]); // Unused for now
+  const [jiraProjects, setJiraProjects] = useState<JiraProject[]>([]);
   const [mappings, setMappings] = useState<JiraProjectMapping[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -71,13 +71,13 @@ export function JiraProjectMappingModal({
   }, [mappings, searchFilter, showOnlyMapped]);
 
   // Load JIRA projects when modal opens
-  // useEffect(() => {
-  //   if (isOpen) {
-  //     loadJiraProjects();
-  //   }
-  // }, [isOpen, scopeId]); // Disabled for now due to unused variables
+  useEffect(() => {
+    if (isOpen) {
+      loadJiraProjects();
+    }
+  }, [isOpen, scopeId]);
 
-  /* const loadJiraProjects = async () => { // Disabled for now due to unused variables
+  const loadJiraProjects = async () => {
     setLoading(true);
     setError(null);
     
@@ -138,7 +138,7 @@ export function JiraProjectMappingModal({
     } finally {
       setLoading(false);
     }
-  }; */
+  };
 
   const updateMapping = (jiraProjectKey: string, localProjectId: string) => {
     const localProject = projects.find(p => p.id === localProjectId);

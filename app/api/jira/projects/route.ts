@@ -31,11 +31,6 @@ export async function GET(request: NextRequest) {
     // Try endpoint that works with GDPR strict mode
     const projectsUrl = `${baseUrl}/rest/api/3/project`;
 
-    console.log('Proxying JIRA projects request to:', projectsUrl);
-    console.log('Auth header:', `Basic ${auth.substring(0, 20)}...`);
-    console.log('Email:', email);
-    console.log('API Token length:', apiToken.length);
-
     const response = await fetch(projectsUrl, {
       method: 'GET',
       headers: {
