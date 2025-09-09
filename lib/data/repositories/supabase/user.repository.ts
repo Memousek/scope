@@ -32,6 +32,17 @@ export class SupabaseUserRepository extends UserRepository {
       avatarUrl: data.user_metadata?.avatar_url || null,
       emailConfirmedAt: data.email_confirmed_at ? new Date(data.email_confirmed_at) : null,
       invitedAt: data.invited_at ? new Date(data.invited_at) : null,
+      role: metaData?.role || null, // Map role from user_meta
+      language: metaData?.language || null,
+      bio: metaData?.bio || null,
+      timezone: metaData?.timezone || null,
+      username: metaData?.username || null,
+      isVerified: metaData?.is_verified || false,
+      status: metaData?.status || null,
+      openApiKey: metaData?.open_api_key || null,
+      geminiApiKey: metaData?.gemini_api_key || null,
+      aiProvider: metaData?.ai_provider || null,
+      settings: metaData?.settings || null,
       additional: {
         ...data.user_metadata,
         ...(metaData || {})

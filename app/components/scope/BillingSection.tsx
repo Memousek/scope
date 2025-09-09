@@ -144,11 +144,17 @@ export function BillingSection({
       // Calculate estimated costs per role (not per member)
       const roleCosts = Object.entries(roleGroups)
         .filter(([role]) => {
-          // Zobrazuj jen role, které mají nějaké mandays na projektu
+          // Zobrazuj role, které mají nějaké mandays na projektu NEBO mají timesheet záznamy
           const roleKey = role.toLowerCase().replace(/\s+/g, '');
           const mandaysKey = `${roleKey}_mandays`;
           const estimatedMandays = Number(project[mandaysKey] || 0);
-          return estimatedMandays > 0; // Filtruj jen role s mandays > 0
+          
+          // Check if this role has any timesheet entries for this project
+          const hasTimesheetEntries = timesheetData.some(t => 
+            t.projectId === project.id && t.role.toLowerCase() === role.toLowerCase()
+          );
+          
+          return estimatedMandays > 0 || hasTimesheetEntries; // Show if has mandays OR timesheet entries
         })
         .map(([role, members]) => {
           // Get role-specific data for this project

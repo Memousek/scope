@@ -224,13 +224,29 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
         projectId: filters.projectIds.length > 0 ? filters.projectIds[0] : undefined,
         role: filters.roles.length > 0 ? filters.roles[0] : undefined
       });
+      
+      // Debug: log loaded timesheets
+      console.log('TimesheetOverview: Loaded timesheets', {
+        count: data.length,
+        timesheets: data.map(t => ({
+          id: t.id,
+          memberId: t.memberId,
+          projectId: t.projectId,
+          role: t.role,
+          hours: t.hours,
+          date: t.date
+        })),
+        team: team.map(m => ({ id: m.id, name: m.name, role: m.role })),
+        projects: projects.map(p => ({ id: p.id, name: p.name }))
+      });
+      
       setTimesheets(data);
     } catch (error) {
       console.error('Failed to load timesheets:', error);
     } finally {
       setLoading(false);
     }
-  }, [scopeId, filters]);
+  }, [scopeId, filters, team, projects]);
 
   useEffect(() => {
     loadTimesheets();
@@ -239,6 +255,10 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
   // Filtered timesheets
   const filteredTimesheets = useMemo(() => {
     let filtered = timesheets;
+
+    // Filter out very small timesheet entries (likely test data or errors) - 15mins are not allowed to be logged
+    // Less than 15mins are not allowed to be logged
+    filtered = filtered.filter(t => t.hours >= 0.245);
 
     // Search filter
     if (filters.search) {
@@ -935,6 +955,22 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
                 {filteredTimesheets.map((timesheet) => {
                   const member = team.find(m => m.id === timesheet.memberId);
                   const project = projects.find(p => p.id === timesheet.projectId);
+                  
+                  // Debug: log missing mappings
+                  if (!member) {
+                    console.warn('TimesheetOverview: Member not found for timesheet', {
+                      timesheetId: timesheet.id,
+                      memberId: timesheet.memberId,
+                      availableMembers: team.map(m => ({ id: m.id, name: m.name }))
+                    });
+                  }
+                  if (!project) {
+                    console.warn('TimesheetOverview: Project not found for timesheet', {
+                      timesheetId: timesheet.id,
+                      projectId: timesheet.projectId,
+                      availableProjects: projects.map(p => ({ id: p.id, name: p.name }))
+                    });
+                  }
                   
                   return (
                     <tr key={timesheet.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150">

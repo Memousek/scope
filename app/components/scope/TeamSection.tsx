@@ -1194,8 +1194,9 @@ export function TeamSection({ scopeId, team, projects, onTeamChange, readOnlyMod
           onClose={() => setTimesheetModal({ open: false, member: null })}
           memberName={timesheetModal.member.name}
           projects={projects}
-          roles={[timesheetModal.member.role]} // Use member's role
+          roles={rolesToUse.map(r => r.label)} // Use all available roles
           selectedDate={new Date()}
+          userRole={timesheetModal.member.role} // Pass member's role as default
           onSave={async (entries: Array<{ projectId: string; role: string; hours: number; description: string }>, date: Date) => {
             try {
               // Get timesheet service instance

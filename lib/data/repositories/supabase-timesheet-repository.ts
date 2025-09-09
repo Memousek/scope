@@ -297,6 +297,24 @@ export class SupabaseTimesheetRepository implements TimesheetRepository {
   }
 
   async createMany(data: CreateTimesheetData[]): Promise<TimesheetEntry[]> {
+    if (data.length === 0) return [];
+
+    // Get the first entry to determine member and date for cleanup
+    const firstEntry = data[0];
+    const dateStr = firstEntry.date.toISOString().split('T')[0];
+
+    // First, delete existing timesheets for this member and date to avoid duplicates
+    const { error: deleteError } = await this.supabase
+      .from('timesheets')
+      .delete()
+      .eq('member_id', firstEntry.memberId)
+      .eq('date', dateStr);
+
+    if (deleteError) {
+      throw new Error(`Failed to delete existing timesheets: ${deleteError.message}`);
+    }
+
+    // Now insert the new timesheets
     const timesheetData = data.map(item => ({
       member_id: item.memberId,
       project_id: item.projectId,

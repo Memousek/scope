@@ -1,12 +1,15 @@
 /**
  * Timesheet Entry Modal for users to log their daily work hours
  * Supports multiple projects, roles, and future Jira integration
+ * Uses unified Modal component for consistent styling
  */
 
 import React, { useState, useEffect } from 'react';
-
-import { FiClock, FiCalendar, FiFileText, FiX, FiPlus, FiTrash2 } from 'react-icons/fi';
+import { FiClock, FiCalendar, FiFileText, FiPlus, FiTrash2 } from 'react-icons/fi';
 import { useToastFunctions } from '@/app/components/ui/Toast';
+import { Modal } from '@/app/components/ui/Modal';
+import { useTranslation } from '@/lib/translation';
+import { parseTimeTracking, formatTimeTracking, isValidTimeTracking, TIME_TRACKING_EXAMPLES } from '@/app/utils/timeTrackingUtils';
 
 interface TimesheetEntry {
   id?: string;
@@ -14,6 +17,7 @@ interface TimesheetEntry {
   role: string;
   hours: number;
   description: string;
+  timeTrackingInput?: string; // Raw time tracking input (e.g., "1d 2h 30m")
 }
 
 interface TimesheetEntryModalProps {
@@ -23,6 +27,7 @@ interface TimesheetEntryModalProps {
   projects: Array<{ id: string; name: string }>;
   roles: string[];
   selectedDate?: Date;
+  userRole?: string; // User's default role
   onSave: (entries: TimesheetEntry[], date: Date) => Promise<void>;
 }
 
@@ -33,25 +38,31 @@ export function TimesheetEntryModal({
   projects,
   roles,
   selectedDate = new Date(),
+  userRole,
   onSave
 }: TimesheetEntryModalProps) {
   const { success, error } = useToastFunctions();
+  const { t } = useTranslation();
   
   const [date, setDate] = useState<Date>(selectedDate);
   const [entries, setEntries] = useState<TimesheetEntry[]>([
-    { projectId: '', role: '', hours: 0, description: '' }
+    { projectId: '', role: '', hours: 0, description: '', timeTrackingInput: '' }
   ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       setDate(selectedDate);
-      setEntries([{ projectId: '', role: '', hours: 0, description: '' }]);
+      // Set default role if userRole is provided and exists in roles
+      const defaultRole = userRole && roles.includes(userRole) ? userRole : '';
+      setEntries([{ projectId: '', role: defaultRole, hours: 0, description: '', timeTrackingInput: '' }]);
     }
-  }, [isOpen, selectedDate]);
+  }, [isOpen, selectedDate, userRole, roles]);
 
   const addEntry = () => {
-    setEntries([...entries, { projectId: '', role: '', hours: 0, description: '' }]);
+    // Set default role for new entries too
+    const defaultRole = userRole && roles.includes(userRole) ? userRole : '';
+    setEntries([...entries, { projectId: '', role: defaultRole, hours: 0, description: '', timeTrackingInput: '' }]);
   };
 
   const removeEntry = (index: number) => {
@@ -66,10 +77,26 @@ export function TimesheetEntryModal({
     setEntries(newEntries);
   };
 
+  const updateTimeTracking = (index: number, timeInput: string) => {
+    const newEntries = [...entries];
+    newEntries[index] = { 
+      ...newEntries[index], 
+      timeTrackingInput: timeInput,
+      hours: parseTimeTracking(timeInput)
+    };
+    setEntries(newEntries);
+  };
+
   const validateEntries = (): boolean => {
     // Check if all entries have required fields
     for (const entry of entries) {
       if (!entry.projectId || !entry.role || entry.hours <= 0) {
+        return false;
+      }
+      
+      // Check for minimum hours (at least 0.1 hours = 6 minutes)
+      if (entry.hours < 0.1) {
+        error(t('tooFewHours'), t('tooFewHoursDescription'));
         return false;
       }
     }
@@ -113,35 +140,16 @@ export function TimesheetEntryModal({
     return date.toISOString().split('T')[0];
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-              <FiClock className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                Výkaz práce
-              </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {memberName} - {formatDate(date)}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-          >
-            <FiX className="w-5 h-5 text-gray-500" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={t('workReport')}
+      description={`${memberName} - ${formatDate(date)}`}
+      icon={<FiClock className="w-5 h-5" />}
+      maxWidth="2xl"
+    >
+      <form onSubmit={handleSubmit} className="space-y-6">
           {/* Date Selection */}
           <div className="flex items-center gap-3">
             <FiCalendar className="w-5 h-5 text-gray-500" />
@@ -157,7 +165,7 @@ export function TimesheetEntryModal({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Záznamy práce
+                {t('workRecords')}
               </h3>
               <button
                 type="button"
@@ -165,7 +173,7 @@ export function TimesheetEntryModal({
                 className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
               >
                 <FiPlus className="w-4 h-4" />
-                Přidat záznam
+                {t('addRecord')}
               </button>
             </div>
 
@@ -174,7 +182,7 @@ export function TimesheetEntryModal({
                 {/* Project */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Projekt
+                    {t('project')}
                   </label>
                   <select
                     value={entry.projectId}
@@ -182,7 +190,7 @@ export function TimesheetEntryModal({
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                   >
-                    <option value="">Vyber projekt</option>
+                    <option value="">{t('selectProject')}</option>
                     {projects.map(project => (
                       <option key={project.id} value={project.id}>
                         {project.name}
@@ -194,7 +202,7 @@ export function TimesheetEntryModal({
                 {/* Role */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Role
+                    {t('role')}
                   </label>
                   <select
                     value={entry.role}
@@ -202,7 +210,7 @@ export function TimesheetEntryModal({
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                   >
-                    <option value="">Vyber roli</option>
+                    <option value="">{t('selectRole')}</option>
                     {roles.map(role => (
                       <option key={role} value={role}>
                         {role}
@@ -214,19 +222,27 @@ export function TimesheetEntryModal({
                 {/* Hours */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Hodiny
+                    {t('hours')}
                   </label>
                   <input
-                    type="number"
-                    min="0.25"
-                    max="24"
-                    step="0.25"
-                    value={entry.hours}
-                    onChange={(e) => updateEntry(index, 'hours', parseFloat(e.target.value) || 0)}
+                    type="text"
+                    value={entry.timeTrackingInput || entry.hours.toString()}
+                    onChange={(e) => updateTimeTracking(index, e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="0.0"
+                    placeholder={t('timeTrackingPlaceholder')}
+                    title={t('timeTrackingTitle')}
                     required
                   />
+                  {entry.timeTrackingInput && !isValidTimeTracking(entry.timeTrackingInput) && (
+                    <p className="text-xs text-red-500 mt-1">
+                      {t('invalidTimeFormat')}
+                    </p>
+                  )}
+                  {entry.hours > 0 && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      {t('equalsHours').replace('{hours}', entry.hours.toFixed(2))}
+                    </p>
+                  )}
                 </div>
 
                 {/* Actions */}
@@ -244,14 +260,14 @@ export function TimesheetEntryModal({
                 {/* Description */}
                 <div className="md:col-span-4">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Popis práce
+                    {t('workDescription')}
                   </label>
                   <input
                     type="text"
                     value={entry.description}
                     onChange={(e) => updateEntry(index, 'description', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Co jste dělali?"
+                    placeholder={t('whatDidYouDo')}
                   />
                 </div>
               </div>
@@ -261,7 +277,7 @@ export function TimesheetEntryModal({
           {/* Total Hours */}
           <div className="flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
             <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
-              Celkem hodin:
+              {t('totalHours')}:
             </span>
             <span className="text-lg font-bold text-blue-900 dark:text-blue-100">
               {entries.reduce((sum, entry) => sum + entry.hours, 0).toFixed(2)} h
@@ -275,7 +291,7 @@ export function TimesheetEntryModal({
               onClick={onClose}
               className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
             >
-              Zrušit
+              {t('cancel')}
             </button>
             <button
               type="submit"
@@ -285,18 +301,17 @@ export function TimesheetEntryModal({
               {isSubmitting ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Ukládám...
+                  {t('saving')}...
                 </>
               ) : (
                 <>
                   <FiFileText className="w-4 h-4" />
-                  Uložit výkaz
+                  {t('saveReport')}
                 </>
               )}
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }
