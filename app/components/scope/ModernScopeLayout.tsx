@@ -119,7 +119,7 @@ export function ModernScopeLayout({
 
   const [activeTab, setActiveTab] = useState<TabType>("overview");
   const [importModalOpen, setImportModalOpen] = useState(false);
-  const [integrations, setIntegrations] = useState<any>(null);
+  const [integrations, setIntegrations] = useState<{ jiraApiToken?: string; jiraBaseUrl?: string } | null>(null);
   const isGod = user?.additional?.role === 'god';
   // Derived flag kept local; remove unused var warnings by using inline checks where needed
   const isOwnerOrGod = isOwner || isGod; // eslint-disable-line @typescript-eslint/no-unused-vars
