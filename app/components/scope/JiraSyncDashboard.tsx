@@ -4,12 +4,12 @@
  * Zobrazuje stav mapování, poslední sync, chyby a statistiky
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 // import { useTranslation } from '@/lib/translation'; // Unused for now
 import { TeamMember, Project } from './types';
-// import { JiraUser, JiraProject, JiraService } from '@/lib/services/jiraService'; // Unused for now
-// import { TimesheetService } from '@/lib/domain/services/timesheet-service'; // Unused for now
-// import { ScopeSettingsService } from '@/app/services/scopeSettingsService'; // Unused for now
+import { JiraUser, JiraProject, JiraService } from '@/lib/services/jiraService';
+import { TimesheetService } from '@/lib/domain/services/timesheet-service';
+import { ScopeSettingsService } from '@/app/services/scopeSettingsService';
 // import { useToastFunctions } from '@/app/components/ui/Toast'; // Unused for now
 import { 
   FiRefreshCw, 
@@ -44,7 +44,7 @@ interface JiraSyncDashboardProps {
 }
 
 export function JiraSyncDashboard({ 
-  // scopeId, // Unused for now
+  scopeId, 
   // team, // Unused for now
   // projects, // Unused for now
   onUserMappingClick,
@@ -54,10 +54,10 @@ export function JiraSyncDashboard({
   // const { t } = useTranslation(); // Unused for now
   // const toast = useToastFunctions(); // Unused for now
   
-  // const [jiraUsers, setJiraUsers] = useState<JiraUser[]>([]); // Unused for now
-  // const [jiraProjects, setJiraProjects] = useState<JiraProject[]>([]); // Unused for now
-  // const [userMappings, setUserMappings] = useState<Record<string, string>>({}); // Unused for now
-  const [syncStats] = useState<SyncStats>({
+  const [jiraUsers, setJiraUsers] = useState<JiraUser[]>([]);
+  const [jiraProjects, setJiraProjects] = useState<JiraProject[]>([]);
+  const [userMappings, setUserMappings] = useState<Record<string, string>>({});
+  const [syncStats, setSyncStats] = useState<SyncStats>({
     totalJiraUsers: 0,
     mappedUsers: 0,
     unmappedUsers: 0,
@@ -68,15 +68,17 @@ export function JiraSyncDashboard({
     syncErrors: []
   });
   
-  // const [loading, setLoading] = useState(false); // Unused for now
-  // const [error, setError] = useState<string | null>(null); // Unused for now
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Load JIRA data and mappings
-  // useEffect(() => {
-  //   loadJiraData();
-  // }, [scopeId]); // Disabled for now due to unused variables
+  useEffect(() => {
+    if (scopeId) {
+      loadJiraData();
+    }
+  }, [scopeId]);
 
-  /* const loadJiraData = async () => { // Disabled for now due to unused variables
+  const loadJiraData = async () => {
     setLoading(true);
     setError(null);
     
@@ -178,9 +180,9 @@ export function JiraSyncDashboard({
     } finally {
       setLoading(false);
     }
-  }; */
+  };
 
-  /* const calculateSyncStats = async ( // Disabled for now due to unused variables
+  const calculateSyncStats = async (
     users: JiraUser[], 
     jiraProjects: JiraProject[], 
     mappings: Record<string, string>,
@@ -232,7 +234,7 @@ export function JiraSyncDashboard({
     } catch (err) {
       console.error('Failed to calculate sync stats:', err);
     }
-  }; */
+  };
 
   // const mappedUsers = useMemo(() => {
   //   return jiraUsers.filter(user => userMappings[user.accountId]);
@@ -251,7 +253,7 @@ export function JiraSyncDashboard({
   //   });
   // }, [jiraProjects, projects]);
 
-  if (false) { // loading disabled for now
+  if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
         <FiRefreshCw className="w-8 h-8 animate-spin text-blue-600" />
@@ -260,18 +262,18 @@ export function JiraSyncDashboard({
     );
   }
 
-  if (false) { // error disabled for now
+  if (error) {
     return (
       <div className="p-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
         <div className="flex items-center gap-3 text-red-700 dark:text-red-300">
           <FiAlertTriangle className="w-6 h-6" />
           <div>
             <div className="font-medium">Chyba při načítání JIRA dat</div>
-            <div className="text-sm">Chyba při načítání</div>
+            <div className="text-sm">{error}</div>
           </div>
         </div>
         <button
-          onClick={() => {/* loadJiraData() */}}
+          onClick={loadJiraData}
           className="mt-4 flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
         >
           <FiRefreshCw className="w-4 h-4" />
@@ -294,7 +296,7 @@ export function JiraSyncDashboard({
           </p>
         </div>
         <button
-          onClick={() => {/* loadJiraData() */}}
+          onClick={loadJiraData}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           <FiRefreshCw className="w-4 h-4" />
