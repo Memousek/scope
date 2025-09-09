@@ -65,6 +65,8 @@ export function TeamSection({ scopeId, team, projects, onTeamChange, readOnlyMod
   const [reportsOpen, setReportsOpen] = useState(false);
   const [availabilityOpen, setAvailabilityOpen] = useState(false);
   const [currencyInfo, setCurrencyInfo] = useState({ code: 'CZK', symbol: 'Kč' });
+  const [jiraMappings, setJiraMappings] = useState<Record<string, any>>({});
+  const [jiraConfigured, setJiraConfigured] = useState(false);
 
 
   // const manageAssignmentsService = useMemo(() => new ManageProjectTeamAssignmentsService(), []);
@@ -124,6 +126,45 @@ export function TeamSection({ scopeId, team, projects, onTeamChange, readOnlyMod
     };
     
     loadCurrency();
+  }, [scopeId]);
+
+  // Load JIRA mappings and check if JIRA is configured
+  useEffect(() => {
+    const loadJiraMappings = async () => {
+      try {
+        const settings = await ScopeSettingsService.get(scopeId);
+        const jiraConfig = settings?.jira || {};
+        
+        // Check if JIRA is configured
+        const isConfigured = !!(jiraConfig.baseUrl && jiraConfig.email && jiraConfig.apiToken);
+        setJiraConfigured(isConfigured);
+        
+        if (isConfigured) {
+          const mappings = settings?.jiraUserMappings || [];
+          
+          const mappingObj: Record<string, any> = {};
+          if (Array.isArray(mappings)) {
+            mappings.forEach((mapping: any) => {
+              if (mapping.teamMemberId) {
+                mappingObj[mapping.teamMemberId] = mapping;
+              }
+            });
+          }
+          
+          setJiraMappings(mappingObj);
+        } else {
+          setJiraMappings({});
+        }
+      } catch (error) {
+        console.warn('Failed to load JIRA mappings:', error);
+        setJiraConfigured(false);
+        setJiraMappings({});
+      }
+    };
+    
+    if (scopeId) {
+      loadJiraMappings();
+    }
   }, [scopeId]);
 
   // Načti souhrnnou alokaci FTE a seznam projektů pro mini heatmapu
@@ -550,7 +591,7 @@ export function TeamSection({ scopeId, team, projects, onTeamChange, readOnlyMod
 
             {/* Team stats */}
             {team.length > 0 && (
-              <div className="mt-8 mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className={`mt-8 mb-8 grid grid-cols-1 md:grid-cols-2 ${jiraConfigured ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-4`}>
                 <div className="relative group bg-gradient-to-br from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm rounded-xl p-4 border border-gray-200/50 dark:border-gray-600/50 shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/10 animate-in fade-in duration-300">
                   {/* Hover effect overlay */}
                   <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-blue-500/5 group-hover:via-purple-500/5 group-hover:to-pink-500/5 transition-all duration-300 rounded-xl"></div>
@@ -634,6 +675,38 @@ export function TeamSection({ scopeId, team, projects, onTeamChange, readOnlyMod
                     </div>
                   </div>
                 </div>
+
+                {jiraConfigured && (
+                  <div className="relative group bg-gradient-to-br from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm rounded-xl p-4 border border-gray-200/50 dark:border-gray-600/50 shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/10 animate-in fade-in duration-300">
+                    {/* Hover effect overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-blue-500/5 group-hover:via-purple-500/5 group-hover:to-pink-500/5 transition-all duration-300 rounded-xl"></div>
+                    
+                    <div className="relative">
+                      <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                        <svg
+                          className="w-4 h-4 text-orange-500"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+                          />
+                        </svg>
+                        JIRA připojení
+                      </div>
+                      <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                        {Object.keys(jiraMappings).length}/{team.length}
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {Object.keys(jiraMappings).length === team.length ? 'Všichni připojeni' : `${team.length - Object.keys(jiraMappings).length} nepřipojeno`}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -728,6 +801,31 @@ export function TeamSection({ scopeId, team, projects, onTeamChange, readOnlyMod
                                           {t("onVacation")}
                                         </span>
                                       )}
+                                      {/* JIRA status - always reserve space */}
+                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold align-middle min-w-[80px]">
+                                        {jiraConfigured ? (
+                                          jiraMappings[member.id] ? (
+                                            <span 
+                                              className="inline-flex items-center gap-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                                              title={`Připojen k JIRA: ${jiraMappings[member.id].jiraDisplayName}${jiraMappings[member.id].jiraEmail ? ` (${jiraMappings[member.id].jiraEmail})` : ''}`}
+                                            >
+                                              <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                              </svg>
+                                              JIRA
+                                            </span>
+                                          ) : (
+                                            <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300">
+                                              <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                              </svg>
+                                              Nepřipojeno
+                                            </span>
+                                          )
+                                        ) : (
+                                          <span className="invisible">Placeholder</span>
+                                        )}
+                                      </span>
                                       <button
                                         type="button"
                                         className="ml-2 p-2 rounded-lg text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20"
@@ -740,11 +838,40 @@ export function TeamSection({ scopeId, team, projects, onTeamChange, readOnlyMod
                                   </div>
                                 </>
                               )}
-                              {!readOnlyMode && isOnVacationToday(member) && (
-                                <span className="absolute -top-2 right-0 inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 align-middle">
-                                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v2h20V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zM22 10H2v9a2 2 0 002 2h16a2 2 0 002-2v-9z" /></svg>
-                                  {t("vacations")}
-                                </span>
+                              {!readOnlyMode && (
+                                <div className="flex items-center gap-2 mt-2">
+                                  {isOnVacationToday(member) && (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 align-middle">
+                                      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v2h20V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zM22 10H2v9a2 2 0 002 2h16a2 2 0 002-2v-9z" /></svg>
+                                      {t("vacations")}
+                                    </span>
+                                  )}
+                                  {/* JIRA status - always reserve space */}
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold align-middle min-w-[80px] absolute right-2 top-2">
+                                    {jiraConfigured ? (
+                                      jiraMappings[member.id] ? (
+                                        <span 
+                                          className="inline-flex items-center gap-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                                          title={`Připojen k JIRA: ${jiraMappings[member.id].jiraDisplayName}${jiraMappings[member.id].jiraEmail ? ` (${jiraMappings[member.id].jiraEmail})` : ''}`}
+                                        >
+                                          <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                          </svg>
+                                          JIRA
+                                        </span>
+                                      ) : (
+                                        <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300">
+                                          <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                          </svg>
+                                          Nepřipojeno
+                                        </span>
+                                      )
+                                    ) : (
+                                      <span className="invisible">Placeholder</span>
+                                    )}
+                                  </span>
+                                </div>
                               )}
                             </div>
                           </div>

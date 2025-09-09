@@ -39,6 +39,10 @@ import TeamImportModal from "../TeamImportModal";
 import { mutate } from "swr";
 import { TeamService } from "@/app/services/teamService";
 import { JiraImportModal } from "./JiraImportModal";
+import { JiraImportModalV2 } from "./JiraImportModalV2";
+import { JiraUserMappingModal } from "./JiraUserMappingModal";
+import { JiraProjectMappingModal } from "./JiraProjectMappingModal";
+import { JiraSyncDashboard } from "./JiraSyncDashboard";
 import { ScopeSettings, getScopeIntegration } from "./ScopeSettings";
 
 interface ModernScopeLayoutProps {
@@ -127,7 +131,7 @@ export function ModernScopeLayout({
     if (!readOnlyMode) base.push("billing");
     // Přidej timesheets tab pro všechny uživatele
     base.push("timesheets");
-    if (isGod && integrations?.jiraApiToken && integrations?.jiraBaseUrl) base.push("jira");
+    if (isGod) base.push("jira");
     if (isGod) base.push("settings");
     return base;
   };
@@ -151,6 +155,19 @@ export function ModernScopeLayout({
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scopeId, readOnlyMode]);
+
+  // Listen for custom events from import modal
+  useEffect(() => {
+    const handleOpenProjectMapping = () => {
+      setJiraProjectMappingOpen(true);
+    };
+
+    window.addEventListener('openProjectMapping', handleOpenProjectMapping);
+    
+    return () => {
+      window.removeEventListener('openProjectMapping', handleOpenProjectMapping);
+    };
+  }, []);
 
   const handleSelectTab = (tab: TabType) => {
     const allowed = getAllowedTabs();
@@ -235,6 +252,9 @@ export function ModernScopeLayout({
   const [savingMember, setSavingMember] = useState(false);
   const [savingProject, setSavingProject] = useState(false);
   const [jiraOpen, setJiraOpen] = useState(false);
+  const [jiraImportV2Open, setJiraImportV2Open] = useState(false);
+  const [jiraUserMappingOpen, setJiraUserMappingOpen] = useState(false);
+  const [jiraProjectMappingOpen, setJiraProjectMappingOpen] = useState(false);
 
   const tabs = [
     { id: "overview", label: t("overview"), icon: <FiBarChart2 /> },
@@ -243,7 +263,7 @@ export function ModernScopeLayout({
     ...(readOnlyMode ? [] : [{ id: "billing", label: t("billing"), icon: <FiDollarSign /> }]),
     ...(readOnlyMode ? [] : [{ id: "timesheets", label: t("timesheets"), icon: <FiClock /> }]),
     { id: "burndown", label: t("burndown"), icon: <FiTrendingUp />},
-    ...(isGod && integrations?.jiraApiToken && integrations?.jiraBaseUrl ? [{ id: "jira", label: t("jira"), icon: <FiExternalLink /> }] : []),
+    ...(integrations?.jiraApiToken && integrations?.jiraBaseUrl ? [{ id: "jira", label: t("jira"), icon: <FiExternalLink /> }] : []),
     { id: "settings", label: t("settings"), icon: <FiSettings /> },
   ];
 
@@ -569,24 +589,20 @@ export function ModernScopeLayout({
 
       case "jira":
         return (
-          <div className="relative bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 rounded-2xl p-8 shadow-2xl">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 rounded-2xl"></div>
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-br from-purple-400/10 to-pink-400/10 rounded-full blur-2xl"></div>
-
-            <div className="relative z-10">
-            <div className="mb-4 text-xl font-bold dark:text-white text-gray-900">{t('jiraImport')}</div>
-            <button
-              onClick={() => setJiraOpen(true)}
-              className="relative bg-gradient-to-br from-sky-600 to-blue-600 text-white rounded-xl p-4 hover:scale-105 transition-all duration-300"
-              aria-label="Jira import"
-            >
-              {t('jiraImport')}
-            </button>
-            {jiraOpen && (
-              <JiraImportModal isOpen={jiraOpen} onClose={() => setJiraOpen(false)} team={team} scopeId={scopeId} />
-            )}
-          </div>
+          <div className="relative">
+            <Badge
+              label={t("experimental")}
+              variant="info"
+              position="top-right"
+            />
+            <JiraSyncDashboard
+              scopeId={scopeId}
+              team={team}
+              projects={projects}
+              onUserMappingClick={() => setJiraUserMappingOpen(true)}
+              onProjectMappingClick={() => setJiraProjectMappingOpen(true)}
+              onImportClick={() => setJiraImportV2Open(true)}
+            />
           </div>
         );
 
@@ -698,6 +714,46 @@ export function ModernScopeLayout({
           onClose={() => setJiraOpen(false)}
           team={team}
           scopeId={scopeId}
+        />
+      )}
+
+      {jiraImportV2Open && (
+        <JiraImportModalV2
+          isOpen={jiraImportV2Open}
+          onClose={() => setJiraImportV2Open(false)}
+          team={team}
+          projects={projects}
+          scopeId={scopeId}
+          onImportComplete={() => {
+            // Refresh data after import
+            window.location.reload();
+          }}
+        />
+      )}
+
+      {jiraUserMappingOpen && (
+        <JiraUserMappingModal
+          isOpen={jiraUserMappingOpen}
+          onClose={() => setJiraUserMappingOpen(false)}
+          team={team}
+          scopeId={scopeId}
+          onMappingComplete={() => {
+            // Refresh data after mapping
+            window.location.reload();
+          }}
+        />
+      )}
+
+      {jiraProjectMappingOpen && (
+        <JiraProjectMappingModal
+          isOpen={jiraProjectMappingOpen}
+          onClose={() => setJiraProjectMappingOpen(false)}
+          projects={projects}
+          scopeId={scopeId}
+          onMappingComplete={() => {
+            // Refresh data after mapping
+            window.location.reload();
+          }}
         />
       )}
 

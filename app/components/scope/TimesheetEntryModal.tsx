@@ -9,7 +9,7 @@ import { FiClock, FiCalendar, FiFileText, FiPlus, FiTrash2 } from 'react-icons/f
 import { useToastFunctions } from '@/app/components/ui/Toast';
 import { Modal } from '@/app/components/ui/Modal';
 import { useTranslation } from '@/lib/translation';
-import { parseTimeTracking, formatTimeTracking, isValidTimeTracking, TIME_TRACKING_EXAMPLES } from '@/app/utils/timeTrackingUtils';
+import { parseTimeTracking, isValidTimeTracking } from '@/app/utils/timeTrackingUtils';
 
 interface TimesheetEntry {
   id?: string;

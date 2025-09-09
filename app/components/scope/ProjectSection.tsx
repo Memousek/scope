@@ -155,6 +155,10 @@ export function ProjectSection({
   const [timesheetData, setTimesheetData] = useState<import('@/lib/domain/models/timesheet').TimesheetEntry[]>([]);
   const [loadingTimesheets, setLoadingTimesheets] = useState(false); // Used in future UI updates
 
+  // JIRA project mappings
+  const [jiraProjectMappings, setJiraProjectMappings] = useState<Record<string, any>>({});
+  const [jiraConfigured, setJiraConfigured] = useState(false);
+
   // Note: skeleton rendering should happen in parent/layout to keep hooks order stable
 
   // Helper function to calculate real progress from timesheets (for future use)
@@ -387,6 +391,45 @@ export function ProjectSection({
       loadProjectAssignments();
     }
   }, [projects, loadProjectAssignments]);
+
+  // Load JIRA project mappings
+  useEffect(() => {
+    const loadJiraMappings = async () => {
+      try {
+        const settings = await ScopeSettingsService.get(scopeId);
+        const jiraConfig = settings?.jira || {};
+        
+        // Check if JIRA is configured
+        const isConfigured = !!(jiraConfig.baseUrl && jiraConfig.email && jiraConfig.apiToken);
+        setJiraConfigured(isConfigured);
+        
+        if (isConfigured) {
+          const mappings = settings?.jiraProjectMappings || [];
+          
+          const mappingObj: Record<string, any> = {};
+          if (Array.isArray(mappings)) {
+            mappings.forEach((mapping: any) => {
+              if (mapping.localProjectId) {
+                mappingObj[mapping.localProjectId] = mapping;
+              }
+            });
+          }
+          
+          setJiraProjectMappings(mappingObj);
+        } else {
+          setJiraProjectMappings({});
+        }
+      } catch (error) {
+        console.warn('Failed to load JIRA project mappings:', error);
+        setJiraConfigured(false);
+        setJiraProjectMappings({});
+      }
+    };
+    
+    if (scopeId) {
+      loadJiraMappings();
+    }
+  }, [scopeId]);
 
   const handleAddProject = async (
     project: Omit<Project, "id" | "scope_id" | "created_at">
@@ -1150,16 +1193,28 @@ export function ProjectSection({
                                     {/* Project name and priority */}
 
                                     <div className="flex items-center gap-3">
-                                      <h4 
-                                        className="text-xl font-bold text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200"
-                                        onClick={() =>
-                                          setExpandedProject(
-                                            isExpanded ? null : project.id
-                                          )
-                                        }
-                                      >
-                                        {project.name}
-                                      </h4>
+                                      <div className="flex flex-col gap-1">
+                                        <h4 
+                                          className="text-xl font-bold text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200"
+                                          onClick={() =>
+                                            setExpandedProject(
+                                              isExpanded ? null : project.id
+                                            )
+                                          }
+                                        >
+                                          {project.name}
+                                        </h4>
+                                        {jiraConfigured && jiraProjectMappings[project.id] && (
+                                          <div className="flex items-center gap-1">
+                                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                                              JIRA
+                                            </span>
+                                            <span className="text-sm text-gray-600 dark:text-gray-400">
+                                              {jiraProjectMappings[project.id].jiraProjectName} ({jiraProjectMappings[project.id].jiraProjectKey})
+                                            </span>
+                                          </div>
+                                        )}
+                                      </div>
                                       {project.status && (
                                         <ProjectStatusBadge
                                           status={
@@ -1393,22 +1448,34 @@ export function ProjectSection({
                                         </div>
                                       )}
 
-                                      <div className="flex items-center gap-2">
-                                        <h4 
-                                          className="text-lg font-bold text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200"
-                                          onClick={() =>
-                                            setExpandedProject(
-                                              isExpanded ? null : project.id
-                                            )
-                                          }
-                                        >
-                                          {project.name}
-                                        </h4>
-                                        <span
-                                          className={`bg-gradient-to-r ${getPriorityColor(priority)} text-white px-2 py-1 rounded-full text-xs font-semibold shadow-lg`}
-                                        >
-                                          {t("priority")} {project.priority}
-                                        </span>
+                                      <div className="flex flex-col gap-1">
+                                        <div className="flex items-center gap-2">
+                                          <h4 
+                                            className="text-lg font-bold text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200"
+                                            onClick={() =>
+                                              setExpandedProject(
+                                                isExpanded ? null : project.id
+                                              )
+                                            }
+                                          >
+                                            {project.name}
+                                          </h4>
+                                          <span
+                                            className={`bg-gradient-to-r ${getPriorityColor(priority)} text-white px-2 py-1 rounded-full text-xs font-semibold shadow-lg`}
+                                          >
+                                            {t("priority")} {project.priority}
+                                          </span>
+                                        </div>
+                                        {jiraConfigured && jiraProjectMappings[project.id] && (
+                                          <div className="flex items-center gap-1">
+                                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                                              JIRA
+                                            </span>
+                                            <span className="text-sm text-gray-600 dark:text-gray-400">
+                                              {jiraProjectMappings[project.id].jiraProjectName} ({jiraProjectMappings[project.id].jiraProjectKey})
+                                            </span>
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
 

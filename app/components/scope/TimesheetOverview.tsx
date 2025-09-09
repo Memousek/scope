@@ -43,6 +43,54 @@ import {
   Cell
 } from 'recharts';
 
+// Helper function to extract readable text from JSON description
+const extractReadableText = (description: string | undefined): string => {
+  if (!description) return '';
+  
+  try {
+    // Try to parse as JSON (JIRA worklog format)
+    const parsed = JSON.parse(description);
+    
+    // Check if it's a JIRA worklog JSON structure
+    if (parsed.type === 'doc' && parsed.content && Array.isArray(parsed.content)) {
+      // Extract text from JIRA's document structure
+      const extractText = (content: unknown[]): string => {
+        return content.map(item => {
+          const itemData = item as any;
+          if (itemData.type === 'paragraph' && itemData.content) {
+            return itemData.content.map((textItem: any) => textItem.text || '').join('');
+          }
+          if (itemData.content) {
+            return extractText(itemData.content);
+          }
+          return '';
+        }).join(' ');
+      };
+      
+      const extractedText = extractText(parsed.content);
+      return extractedText.trim() || description; // Fallback to original if extraction fails
+    }
+    
+    // If it's not a JIRA structure, return as is
+    return description;
+  } catch {
+    // If it's not valid JSON, return as is
+    return description;
+  }
+};
+
+// Helper function to check if description is from JIRA
+const isJiraDescription = (description: string | undefined): boolean => {
+  if (!description) return false;
+  
+  try {
+    const parsed = JSON.parse(description);
+    return parsed.type === 'doc' && parsed.content && Array.isArray(parsed.content);
+  } catch {
+    return false;
+  }
+};
+
 interface TimesheetOverviewProps {
   scopeId: string;
   team: Array<{ id: string; name: string; role: string }>;
@@ -103,7 +151,7 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
         'Člen týmu': member?.name || '',
         'Projekt': project?.name || '',
         'Hodiny': timesheet.hours,
-        'Popis': timesheet.description || ''
+        'Popis': extractReadableText(timesheet.description)
       };
     });
 
@@ -156,7 +204,7 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
                       <td>${member?.name || ''}</td>
                       <td>${project?.name || ''}</td>
                       <td>${timesheet.hours}</td>
-                      <td>${timesheet.description || ''}</td>
+                      <td>${extractReadableText(timesheet.description)}</td>
                     </tr>
                   `;
                 }).join('')}
@@ -264,7 +312,7 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
       filtered = filtered.filter(t => 
-        t.description?.toLowerCase().includes(searchLower) ||
+        extractReadableText(t.description)?.toLowerCase().includes(searchLower) ||
         team.find(m => m.id === t.memberId)?.name.toLowerCase().includes(searchLower) ||
         projects.find(p => p.id === t.projectId)?.name.toLowerCase().includes(searchLower)
       );
@@ -444,7 +492,7 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
       
       // Apply search filter
       const searchMatch = (filters.search === '' && searchQuery === '') || 
-        t.description?.toLowerCase().includes((filters.search || searchQuery).toLowerCase()) ||
+        extractReadableText(t.description)?.toLowerCase().includes((filters.search || searchQuery).toLowerCase()) ||
         team.find(m => m.id === t.memberId)?.name?.toLowerCase().includes((filters.search || searchQuery).toLowerCase()) ||
         projects.find(p => p.id === t.projectId)?.name?.toLowerCase().includes((filters.search || searchQuery).toLowerCase());
       
@@ -990,7 +1038,16 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
                         {timesheet.hours}h
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900 dark:text-white max-w-xs truncate">
-                        {timesheet.description || '-'}
+                        <div className="flex items-center gap-1">
+                          {isJiraDescription(timesheet.description) && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                              JIRA
+                            </span>
+                          )}
+                          <span className={isJiraDescription(timesheet.description) ? 'text-gray-600 dark:text-gray-400' : ''}>
+                            {extractReadableText(timesheet.description) || '-'}
+                          </span>
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                         <div className="flex items-center gap-2">
@@ -1320,9 +1377,9 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
                               <div className="text-xs text-blue-600 dark:text-blue-400 truncate">
                                 {project?.name}
                               </div>
-                              {timesheet.description && (
+                              {extractReadableText(timesheet.description) && (
                                 <div className="text-xs text-gray-600 dark:text-gray-400 truncate mt-1">
-                                  {timesheet.description.slice(0, 25)}...
+                                  {extractReadableText(timesheet.description).slice(0, 25)}...
                                 </div>
                               )}
                             </div>
@@ -1352,9 +1409,9 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
                               <div className="text-xs text-blue-600 dark:text-blue-400 truncate">
                                 {project?.name}
                               </div>
-                              {timesheet.description && (
+                              {extractReadableText(timesheet.description) && (
                                 <div className="text-xs text-gray-600 dark:text-gray-400 truncate mt-1">
-                                  {timesheet.description.slice(0, 25)}...
+                                  {extractReadableText(timesheet.description).slice(0, 25)}...
                                 </div>
                               )}
                             </div>
@@ -1641,8 +1698,9 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
           setEditingTimesheet(null);
         }}
         title={t('editTimesheet')}
-        icon={<FiEdit className="text-white text-2xl" />}
-        maxWidth="md"
+        description={editingTimesheet ? `${team.find(m => m.id === editingTimesheet.memberId)?.name || 'Unknown'} - ${editingTimesheet.date.toISOString().split('T')[0]}` : ''}
+        icon={<FiEdit className="w-5 h-5" />}
+        maxWidth="2xl"
       >
         {editingTimesheet && (
           <form onSubmit={(e) => {
@@ -1655,64 +1713,120 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
               role: formData.get('role') as string
             });
           }}>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {t('date')}
-                </label>
+            <div className="space-y-6">
+              {/* Date Selection */}
+              <div className="flex items-center gap-3">
+                <FiCalendar className="w-5 h-5 text-gray-500" />
                 <input
                   type="date"
                   name="date"
                   defaultValue={editingTimesheet.date.toISOString().split('T')[0]}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 />
               </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {t('hours')}
-                </label>
-                <input
-                  type="number"
-                  name="hours"
-                  min="0"
-                  max="24"
-                  step="0.5"
-                  defaultValue={editingTimesheet.hours}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  required
-                />
+
+              {/* Work Entry */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    {t('workRecords')}
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  {/* Project */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      {t('project')}
+                    </label>
+                    <select
+                      name="projectId"
+                      defaultValue={editingTimesheet.projectId}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    >
+                      <option value="">{t('selectProject')}</option>
+                      {projects.map(project => (
+                        <option key={project.id} value={project.id}>
+                          {project.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Role */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      {t('role')}
+                    </label>
+                    <select
+                      name="role"
+                      defaultValue={editingTimesheet.role}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    >
+                      <option value="">{t('selectRole')}</option>
+                      {Array.from(new Set(team.map(m => m.role))).map(role => (
+                        <option key={role} value={role}>{role}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Hours */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      {t('hours')}
+                    </label>
+                    <input
+                      type="text"
+                      name="hours"
+                      defaultValue={editingTimesheet.hours.toString()}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder={t('timeTrackingPlaceholder')}
+                      title={t('timeTrackingTitle')}
+                      required
+                    />
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-end gap-2">
+                    <button
+                      type="button"
+                      className="p-2 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                      title={t('deleteRecord')}
+                    >
+                      <FiTrash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Work Description */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {t('workDescription')}
+                  </label>
+                  <textarea
+                    name="description"
+                    defaultValue={extractReadableText(editingTimesheet.description) || ''}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder={t('workDescriptionPlaceholder')}
+                  />
+                </div>
+              </div>
+
+              {/* Total Hours */}
+              <div className="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {t('totalHours')}:
+                </span>
+                <span className="text-lg font-semibold text-gray-900 dark:text-white">
+                  {editingTimesheet.hours.toFixed(2)} h
+                </span>
               </div>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {t('role')}
-                </label>
-                <select
-                  name="role"
-                  defaultValue={editingTimesheet.role}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  required
-                >
-                  {Array.from(new Set(team.map(m => m.role))).map(role => (
-                    <option key={role} value={role}>{role}</option>
-                  ))}
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {t('description')}
-                </label>
-                <textarea
-                  name="description"
-                  defaultValue={editingTimesheet.description || ''}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                />
-              </div>
-              
+              {/* Action Buttons */}
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"
@@ -1726,9 +1840,10 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center justify-center gap-2"
                 >
-                  {t('save')}
+                  <FiFileText className="w-4 h-4" />
+                  {t('saveTimesheet')}
                 </button>
               </div>
             </div>
