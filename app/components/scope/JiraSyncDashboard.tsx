@@ -5,12 +5,12 @@
  */
 
 import React, { useState, useEffect } from 'react';
-// import { useTranslation } from '@/lib/translation'; // Unused for now
+import { useTranslation } from '@/lib/translation';
 import { TeamMember, Project } from './types';
 import { JiraUser, JiraProject, JiraService } from '@/lib/services/jiraService';
 import { TimesheetService } from '@/lib/domain/services/timesheet-service';
 import { ScopeSettingsService } from '@/app/services/scopeSettingsService';
-// import { useToastFunctions } from '@/app/components/ui/Toast'; // Unused for now
+import { useToastFunctions } from '@/app/components/ui/Toast';
 import { 
   FiRefreshCw, 
   FiUsers, 
@@ -20,6 +20,11 @@ import {
   FiSettings,
   FiDownload,
   FiTrendingUp,
+  FiPlay,
+  FiPause,
+  FiCheckCircle,
+  FiXCircle,
+  FiLoader,
 } from 'react-icons/fi';
 
 interface SyncStats {
@@ -34,6 +39,19 @@ interface SyncStats {
   syncErrors: string[];
 }
 
+interface SyncStatus {
+  isRunning: boolean;
+  lastSync?: Date;
+  lastResult?: {
+    success: boolean;
+    message: string;
+    worklogsImported?: number;
+    errors?: string[];
+    timestamp: Date;
+  };
+  nextScheduledSync?: Date;
+}
+
 interface JiraSyncDashboardProps {
   scopeId: string;
   team: TeamMember[];
@@ -45,15 +63,15 @@ interface JiraSyncDashboardProps {
 
 export function JiraSyncDashboard({ 
   scopeId, 
-  // team, // Unused for now
-  // projects, // Unused for now
+  team,
+  projects,
   onUserMappingClick,
   onProjectMappingClick,
   onImportClick 
 }: JiraSyncDashboardProps) {
   console.log('JiraSyncDashboard: Component mounted with scopeId:', scopeId);
-  // const { t } = useTranslation(); // Unused for now
-  // const toast = useToastFunctions(); // Unused for now
+  const { t } = useTranslation();
+  const toast = useToastFunctions();
   
   const [jiraUsers, setJiraUsers] = useState<JiraUser[]>([]);
   const [jiraProjects, setJiraProjects] = useState<JiraProject[]>([]);
@@ -68,6 +86,13 @@ export function JiraSyncDashboard({
     lastWeekHours: 0,
     syncErrors: []
   });
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>({
+    isRunning: false,
+    lastSync: undefined,
+    lastResult: undefined,
+    nextScheduledSync: undefined
+  });
+  const [autoSyncEnabled, setAutoSyncEnabled] = useState(false);
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,8 +102,93 @@ export function JiraSyncDashboard({
     console.log('JiraSyncDashboard: useEffect called with scopeId:', scopeId);
     if (scopeId) {
       loadJiraData();
+      loadSyncStatus();
     }
-  }, [scopeId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [scopeId]);
+
+  // Load sync status
+  const loadSyncStatus = async () => {
+    try {
+      const response = await fetch(`/api/jira/sync?scopeId=${scopeId}`);
+      if (response.ok) {
+        const status = await response.json();
+        setSyncStatus(status);
+        setAutoSyncEnabled(!!status.nextScheduledSync);
+      }
+    } catch (error) {
+      console.error('Failed to load sync status:', error);
+    }
+  };
+
+  // Manual sync
+  const handleManualSync = async () => {
+    try {
+      setSyncStatus(prev => ({ ...prev, isRunning: true }));
+      
+      const response = await fetch('/api/jira/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scopeId, action: 'sync' })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        toast.success('Synchronizace dokončena', result.message);
+        setSyncStatus(prev => ({
+          ...prev,
+          isRunning: false,
+          lastSync: new Date(),
+          lastResult: result
+        }));
+        // Reload data after successful sync
+        loadJiraData();
+      } else {
+        toast.error('Chyba při synchronizaci', result.message);
+        setSyncStatus(prev => ({
+          ...prev,
+          isRunning: false,
+          lastResult: result
+        }));
+      }
+    } catch (error) {
+      toast.error('Chyba při synchronizaci', 'Nepodařilo se synchronizovat data');
+      setSyncStatus(prev => ({
+        ...prev,
+        isRunning: false,
+        lastResult: {
+          success: false,
+          message: 'Chyba při synchronizaci',
+          timestamp: new Date()
+        }
+      }));
+    }
+  };
+
+  // Toggle auto sync
+  const handleToggleAutoSync = async () => {
+    try {
+      const action = autoSyncEnabled ? 'stop-auto-sync' : 'start-auto-sync';
+      
+      const response = await fetch('/api/jira/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scopeId, action })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setAutoSyncEnabled(!autoSyncEnabled);
+        toast.success('Automatická synchronizace', result.message);
+        loadSyncStatus(); // Reload status
+      } else {
+        toast.error('Chyba při změně automatické synchronizace', result.message);
+      }
+    } catch (error) {
+      toast.error('Chyba při změně automatické synchronizace', 'Nepodařilo se změnit nastavení automatické synchronizace');
+    }
+  }; // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadJiraData = async () => {
     console.log('JiraSyncDashboard: loadJiraData called with scopeId:', scopeId);
@@ -291,183 +401,364 @@ export function JiraSyncDashboard({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            JIRA Synchronizace
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400">
-            Monitoring a správa synchronizace s JIRA
-          </p>
+      <div className="flex items-center justify-between mb-6 flex-col md:flex-row gap-4">
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <h2 className="text-2xl font-bold dark:text-white text-gray-900">
+              <FiDownload className="inline mr-2" /> {t('jiraSync')}
+            </h2>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 bg-white/50 dark:bg-gray-700/50 px-3 py-1 rounded-full backdrop-blur-sm">
+            <span>{t('jiraSyncDescription')}</span>
+          </div>
         </div>
-        <button
-          onClick={loadJiraData}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <FiRefreshCw className="w-4 h-4" />
-          Obnovit
-        </button>
+
+        <div className="flex items-center gap-2 flex-col md:flex-row">
+          <button
+            onClick={loadJiraData}
+            className="bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 flex items-center gap-2"
+          >
+            <FiRefreshCw className="w-4 h-4" />
+            Obnovit
+          </button>
+          <button
+            onClick={handleManualSync}
+            disabled={syncStatus.isRunning}
+            className="relative group bg-gradient-to-r from-blue-500 via-violet-500 to-indigo-500 text-white px-6 py-2 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/25 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center gap-2"
+          >
+            <span className="relative z-10 flex items-center gap-2">
+              {syncStatus.isRunning ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  {t('jiraSyncManualRunning')}
+                </>
+              ) : (
+                <>
+                  <FiDownload className="w-4 h-4" />
+                  {t('jiraSyncManual')}
+                </>
+              )}
+            </span>
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {/* Users */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Uživatelé</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {syncStats.mappedUsers}/{syncStats.totalJiraUsers}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-500">
-                {syncStats.unmappedUsers} nepropojeno
-              </p>
+        <div className="relative group bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-700/90 dark:via-gray-700/70 dark:to-gray-700/50 backdrop-blur-lg rounded-2xl border border-white/40 dark:border-gray-600/40 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/10">
+          <div className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
+                <FiUsers className="text-white text-xl" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                  Uživatelé
+                </p>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {syncStats.mappedUsers}/{syncStats.totalJiraUsers}
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-500">
+                  {syncStats.unmappedUsers} nepropojeno
+                </div>
+              </div>
             </div>
-            <FiUsers className="w-8 h-8 text-blue-600" />
           </div>
         </div>
 
         {/* Projects */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Projekty</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {syncStats.mappedProjects}/{syncStats.totalProjects}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-500">
-                Automaticky mapováno
-              </p>
+        <div className="relative group bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-700/90 dark:via-gray-700/70 dark:to-gray-700/50 backdrop-blur-lg rounded-2xl border border-white/40 dark:border-gray-600/40 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-green-500/10">
+          <div className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
+                <FiFolder className="text-white text-xl" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                  Projekty
+                </p>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {syncStats.mappedProjects}/{syncStats.totalProjects}
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-500">
+                  Automaticky mapováno
+                </div>
+              </div>
             </div>
-            <FiFolder className="w-8 h-8 text-green-600" />
           </div>
         </div>
 
         {/* Total Hours */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Importované hodiny</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {syncStats.totalImportedHours.toFixed(1)}h
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-500">
-                Celkem z JIRA
-              </p>
+        <div className="relative group bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-700/90 dark:via-gray-700/70 dark:to-gray-700/50 backdrop-blur-lg rounded-2xl border border-white/40 dark:border-gray-600/40 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/10">
+          <div className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
+                <FiClock className="text-white text-xl" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                  Importované hodiny
+                </p>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {syncStats.totalImportedHours.toFixed(1)}h
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-500">
+                  Celkem z JIRA
+                </div>
+              </div>
             </div>
-            <FiClock className="w-8 h-8 text-purple-600" />
           </div>
         </div>
 
         {/* Last Week */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Poslední týden</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {syncStats.lastWeekHours.toFixed(1)}h
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-500">
-                Nové hodiny
-              </p>
+        <div className="relative group bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-700/90 dark:via-gray-700/70 dark:to-gray-700/50 backdrop-blur-lg rounded-2xl border border-white/40 dark:border-gray-600/40 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-emerald-500/10">
+          <div className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center">
+                <FiTrendingUp className="text-white text-xl" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                  Poslední týden
+                </p>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {syncStats.lastWeekHours.toFixed(1)}h
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-500">
+                  Nové hodiny
+                </div>
+              </div>
             </div>
-            <FiTrendingUp className="w-8 h-8 text-emerald-600" />
           </div>
         </div>
       </div>
 
       {/* Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         {/* User Mapping */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center gap-3 mb-4">
-            <FiSettings className="w-6 h-6 text-blue-600" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Mapování uživatelů
-            </h3>
-          </div>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
-            Propojte JIRA uživatele s členy týmu pro automatickou synchronizaci.
-          </p>
-          <div className="space-y-2 mb-4">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600 dark:text-gray-400">Propojeno:</span>
-              <span className="font-medium text-green-600">{syncStats.mappedUsers}</span>
+        <div className="relative group bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-700/90 dark:via-gray-700/70 dark:to-gray-700/50 backdrop-blur-lg rounded-2xl border border-white/40 dark:border-gray-600/40 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/10">
+          <div className="p-6">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
+                <FiSettings className="text-white text-xl" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Mapování uživatelů
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Propojte JIRA uživatele s členy týmu
+                </p>
+              </div>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600 dark:text-gray-400">Nepropojeno:</span>
-              <span className="font-medium text-red-600">{syncStats.unmappedUsers}</span>
+            <div className="space-y-2 mb-6">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600 dark:text-gray-400">Propojeno:</span>
+                <span className="font-medium text-green-600">{syncStats.mappedUsers}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600 dark:text-gray-400">Nepropojeno:</span>
+                <span className="font-medium text-red-600">{syncStats.unmappedUsers}</span>
+              </div>
             </div>
+            <button
+              onClick={onUserMappingClick}
+              className="w-full relative group bg-gradient-to-r from-blue-500 via-violet-500 to-indigo-500 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/25 active:scale-95 flex items-center justify-center gap-2"
+            >
+              <span className="relative z-10 flex items-center gap-2">
+                <FiSettings className="w-4 h-4" />
+                Spravovat mapování
+              </span>
+            </button>
           </div>
-          <button
-            onClick={onUserMappingClick}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <FiSettings className="w-4 h-4" />
-            Spravovat mapování
-          </button>
         </div>
 
         {/* Project Mapping */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center gap-3 mb-4">
-            <FiFolder className="w-6 h-6 text-purple-600" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Mapování projektů
-            </h3>
-          </div>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
-            Propojte JIRA projekty s lokálními projekty pro správné přiřazení worklogů.
-          </p>
-          <div className="space-y-2 mb-4">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600 dark:text-gray-400">Propojeno:</span>
-              <span className="font-medium text-green-600">{syncStats.mappedProjects}</span>
+        <div className="relative group bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-700/90 dark:via-gray-700/70 dark:to-gray-700/50 backdrop-blur-lg rounded-2xl border border-white/40 dark:border-gray-600/40 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-green-500/10">
+          <div className="p-6">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
+                <FiFolder className="text-white text-xl" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Mapování projektů
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Propojte JIRA projekty s lokálními projekty
+                </p>
+              </div>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600 dark:text-gray-400">Nepropojeno:</span>
-              <span className="font-medium text-red-600">{syncStats.totalProjects - syncStats.mappedProjects}</span>
+            <div className="space-y-2 mb-6">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600 dark:text-gray-400">Propojeno:</span>
+                <span className="font-medium text-green-600">{syncStats.mappedProjects}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600 dark:text-gray-400">Nepropojeno:</span>
+                <span className="font-medium text-red-600">{syncStats.totalProjects - syncStats.mappedProjects}</span>
+              </div>
             </div>
+            <button
+              onClick={onProjectMappingClick}
+              className="w-full relative group bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-green-500/25 active:scale-95 flex items-center justify-center gap-2"
+            >
+              <span className="relative z-10 flex items-center gap-2">
+                <FiFolder className="w-4 h-4" />
+                Spravovat mapování projektů
+              </span>
+            </button>
           </div>
-          <button
-            onClick={onProjectMappingClick}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-          >
-            <FiSettings className="w-4 h-4" />
-            Spravovat mapování projektů
-          </button>
         </div>
 
         {/* Import */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center gap-3 mb-4">
-            <FiDownload className="w-6 h-6 text-green-600" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Import worklogů
-            </h3>
+        <div className="relative group bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-700/90 dark:via-gray-700/70 dark:to-gray-700/50 backdrop-blur-lg rounded-2xl border border-white/40 dark:border-gray-600/40 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/10">
+          <div className="p-6">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
+                <FiDownload className="text-white text-xl" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Import worklogů
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Importujte worklogy z JIRA do timesheet systému
+                </p>
+              </div>
+            </div>
+            <div className="space-y-2 mb-6">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600 dark:text-gray-400">Poslední import:</span>
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {syncStats.lastSyncDate ? syncStats.lastSyncDate.toLocaleDateString('cs-CZ') : 'Nikdy'}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600 dark:text-gray-400">Celkem hodin:</span>
+                <span className="font-medium text-emerald-600">{syncStats.totalImportedHours.toFixed(1)}h</span>
+              </div>
+            </div>
+            <button
+              onClick={onImportClick}
+              className="w-full relative group bg-gradient-to-r from-purple-500 via-violet-500 to-indigo-500 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/25 active:scale-95 flex items-center justify-center gap-2"
+            >
+              <span className="relative z-10 flex items-center gap-2">
+                <FiDownload className="w-4 h-4" />
+                Importovat z JIRA
+              </span>
+            </button>
           </div>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
-            Importujte worklogy z JIRA do timesheet systému.
-          </p>
-          <div className="space-y-2 mb-4">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600 dark:text-gray-400">Poslední import:</span>
+        </div>
+      </div>
+
+      {/* Sync Status */}
+      <div className="relative group bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-700/90 dark:via-gray-700/70 dark:to-gray-700/50 backdrop-blur-lg rounded-2xl border border-white/40 dark:border-gray-600/40 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-orange-500/10">
+        <div className="p-6">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center">
+              <FiClock className="text-white text-xl" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {t('jiraSyncStatus')}
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Stav automatické synchronizace
+              </p>
+            </div>
+          </div>
+        
+        <div className="space-y-4">
+          {/* Current Status */}
+          <div className="flex items-center justify-between">
+            <span className="text-gray-600 dark:text-gray-400">{t('status')}:</span>
+            <div className="flex items-center gap-2">
+              {syncStatus.isRunning ? (
+                <>
+                  <FiLoader className="w-4 h-4 animate-spin text-blue-600" />
+                  <span className="text-blue-600 font-medium">{t('jiraSyncStatusRunning')}</span>
+                </>
+              ) : syncStatus.lastResult ? (
+                <>
+                  {syncStatus.lastResult.success ? (
+                    <FiCheckCircle className="w-4 h-4 text-green-600" />
+                  ) : (
+                    <FiXCircle className="w-4 h-4 text-red-600" />
+                  )}
+                  <span className={`font-medium ${syncStatus.lastResult.success ? 'text-green-600' : 'text-red-600'}`}>
+                    {syncStatus.lastResult.success ? t('jiraSyncStatusSuccess') : t('jiraSyncStatusError')}
+                  </span>
+                </>
+              ) : (
+                <span className="text-gray-500">{t('jiraSyncStatusNone')}</span>
+              )}
+            </div>
+          </div>
+
+          {/* Last Sync */}
+          {syncStatus.lastSync && (
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600 dark:text-gray-400">{t('jiraSyncLastSync')}:</span>
               <span className="font-medium text-gray-900 dark:text-white">
-                {syncStats.lastSyncDate ? syncStats.lastSyncDate.toLocaleDateString('cs-CZ') : 'Nikdy'}
+                {new Date(syncStatus.lastSync).toLocaleString('cs-CZ')}
               </span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600 dark:text-gray-400">Celkem hodin:</span>
-              <span className="font-medium text-emerald-600">{syncStats.totalImportedHours.toFixed(1)}h</span>
+          )}
+
+          {/* Next Scheduled Sync */}
+          {syncStatus.nextScheduledSync && (
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600 dark:text-gray-400">{t('jiraSyncNextSync')}:</span>
+              <span className="font-medium text-gray-900 dark:text-white">
+                {new Date(syncStatus.nextScheduledSync).toLocaleString('cs-CZ')}
+              </span>
             </div>
+          )}
+
+          {/* Last Result */}
+          {syncStatus.lastResult && (
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600 dark:text-gray-400">{t('jiraSyncResult')}:</span>
+              <span className={`font-medium ${syncStatus.lastResult.success ? 'text-green-600' : 'text-red-600'}`}>
+                {syncStatus.lastResult.message}
+              </span>
+            </div>
+          )}
+
+          {/* Auto Sync Toggle */}
+          <div className="flex items-center justify-between pt-6 border-t border-gray-200/50 dark:border-gray-600/50">
+            <div>
+              <span className="text-gray-600 dark:text-gray-400 font-medium">{t('jiraSyncAutoSync')}:</span>
+              <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
+                {t('jiraSyncAutoDescription')}
+              </p>
+            </div>
+            <button
+              onClick={handleToggleAutoSync}
+              className={`relative group px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-2xl active:scale-95 flex items-center gap-2 ${
+                autoSyncEnabled
+                  ? 'bg-gradient-to-r from-red-500 via-red-600 to-red-700 text-white hover:shadow-red-500/25'
+                  : 'bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white hover:shadow-green-500/25'
+              }`}
+            >
+              <span className="relative z-10 flex items-center gap-2">
+                {autoSyncEnabled ? (
+                  <>
+                    <FiPause className="w-4 h-4" />
+                    {t('jiraSyncAutoStop')}
+                  </>
+                ) : (
+                  <>
+                    <FiPlay className="w-4 h-4" />
+                    {t('jiraSyncAutoStart')}
+                  </>
+                )}
+              </span>
+            </button>
           </div>
-          <button
-            onClick={onImportClick}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-          >
-            <FiDownload className="w-4 h-4" />
-            Importovat z JIRA
-          </button>
+        </div>
         </div>
       </div>
     </div>

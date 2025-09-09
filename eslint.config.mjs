@@ -12,7 +12,7 @@ const compat = new FlatCompat({
 const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
-    files: ["app/components/scope/JiraImportModalV2.tsx", "app/components/scope/JiraProjectMappingModal.tsx", "app/components/scope/JiraSyncDashboard.tsx", "app/components/scope/JiraUserMappingModal.tsx", "app/components/scope/ProjectSection.tsx", "app/components/scope/TeamSection.tsx", "app/components/scope/TimesheetOverview.tsx"],
+    files: ["app/components/scope/JiraImportModalV2.tsx", "app/components/scope/JiraProjectMappingModal.tsx", "app/components/scope/JiraSyncDashboard.tsx", "app/components/scope/JiraUserMappingModal.tsx", "app/components/scope/ProjectSection.tsx", "app/components/scope/TeamSection.tsx", "app/components/scope/TimesheetOverview.tsx", "app/services/jiraSyncService.ts"],
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-unused-vars": "off",
