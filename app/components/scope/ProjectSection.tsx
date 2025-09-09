@@ -1210,7 +1210,16 @@ export function ProjectSection({
                                               JIRA
                                             </span>
                                             <span className="text-sm text-gray-600 dark:text-gray-400">
-                                              {jiraProjectMappings[project.id].jiraProjectName} ({jiraProjectMappings[project.id].jiraProjectKey})
+                                              {(() => {
+                                                const mapping = jiraProjectMappings[project.id];
+                                                if (mapping.mappingType === 'epic' && mapping.jiraEpicKey) {
+                                                  return `${mapping.jiraEpicKey} - Epic (${mapping.jiraProjectKey})`;
+                                                } else if (mapping.mappingType === 'issue' && mapping.jiraIssueKey) {
+                                                  return `${mapping.jiraIssueKey} - Issue (${mapping.jiraProjectKey})`;
+                                                } else {
+                                                  return `${mapping.jiraProjectName} (${mapping.jiraProjectKey})`;
+                                                }
+                                              })()}
                                             </span>
                                           </div>
                                         )}
@@ -1472,7 +1481,16 @@ export function ProjectSection({
                                               JIRA
                                             </span>
                                             <span className="text-sm text-gray-600 dark:text-gray-400">
-                                              {jiraProjectMappings[project.id].jiraProjectName} ({jiraProjectMappings[project.id].jiraProjectKey})
+                                              {(() => {
+                                                const mapping = jiraProjectMappings[project.id];
+                                                if (mapping.mappingType === 'epic' && mapping.jiraEpicKey) {
+                                                  return `${mapping.jiraEpicKey} - Epic (${mapping.jiraProjectKey})`;
+                                                } else if (mapping.mappingType === 'issue' && mapping.jiraIssueKey) {
+                                                  return `${mapping.jiraIssueKey} - Issue (${mapping.jiraProjectKey})`;
+                                                } else {
+                                                  return `${mapping.jiraProjectName} (${mapping.jiraProjectKey})`;
+                                                }
+                                              })()}
                                             </span>
                                           </div>
                                         )}

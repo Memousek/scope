@@ -615,7 +615,6 @@ export function ModernScopeLayout({
         );
 
       case "jira":
-        console.log('ModernScopeLayout: Rendering JIRA tab with scopeId:', scopeId);
         return (
           <div className="relative">
             <Badge

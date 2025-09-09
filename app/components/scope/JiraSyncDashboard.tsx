@@ -69,7 +69,6 @@ export function JiraSyncDashboard({
   onProjectMappingClick,
   onImportClick 
 }: JiraSyncDashboardProps) {
-  console.log('JiraSyncDashboard: Component mounted with scopeId:', scopeId);
   const { t } = useTranslation();
   const toast = useToastFunctions();
   
@@ -99,7 +98,6 @@ export function JiraSyncDashboard({
 
   // Load JIRA data and mappings
   useEffect(() => {
-    console.log('JiraSyncDashboard: useEffect called with scopeId:', scopeId);
     if (scopeId) {
       loadJiraData();
       loadSyncStatus();
@@ -191,7 +189,6 @@ export function JiraSyncDashboard({
   }; // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadJiraData = async () => {
-    console.log('JiraSyncDashboard: loadJiraData called with scopeId:', scopeId);
     setLoading(true);
     setError(null);
     
@@ -396,8 +393,6 @@ export function JiraSyncDashboard({
     );
   }
 
-  console.log('JiraSyncDashboard: Rendering dashboard with loading:', loading, 'error:', error);
-  
   return (
     <div className="space-y-6">
       {/* Header */}

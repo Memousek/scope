@@ -12,6 +12,7 @@ export interface JiraWorklogEntry {
   projectKey?: string;
   hours: number;
   comment?: string;
+  worklogId?: string; // JIRA worklog ID
 }
 
 export interface JiraUser {
@@ -43,26 +44,29 @@ export interface JiraProject {
 export interface JiraIssue {
   id: string;
   key: string;
-  summary: string;
-  project: JiraProject;
-  issuetype: {
-    id: string;
-    name: string;
-    iconUrl?: string;
-  };
-  status: {
-    id: string;
-    name: string;
-    statusCategory: {
-      id: number;
-      key: string;
-      colorName: string;
+  expand?: string;
+  fields: {
+    summary: string;
+    project: JiraProject;
+    issuetype: {
+      id: string;
+      name: string;
+      iconUrl?: string;
     };
+    status: {
+      id: string;
+      name: string;
+      statusCategory: {
+        id: number;
+        key: string;
+        colorName: string;
+      };
+    };
+    assignee?: JiraUser;
+    reporter?: JiraUser;
+    created: string;
+    updated: string;
   };
-  assignee?: JiraUser;
-  reporter?: JiraUser;
-  created: string;
-  updated: string;
 }
 
 export class JiraService {

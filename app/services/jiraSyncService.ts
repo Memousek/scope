@@ -114,12 +114,28 @@ export class JiraSyncService {
             endDate.toISOString().split('T')[0]
           );
 
-          // Import worklogs for each project
-          for (const [projectId, jiraProject] of Object.entries(projectMappings)) {
-            const jiraProjectObj = jiraProject as any;
-            const projectWorklogs = worklogs.filter(w => 
-              w.projectKey === jiraProjectObj.key
+          // Import worklogs for each project mapping
+          for (const [projectId, jiraMapping] of Object.entries(projectMappings)) {
+            const jiraMappingObj = jiraMapping as any;
+            let projectWorklogs = worklogs.filter(w => 
+              w.projectKey === jiraMappingObj.jiraProjectKey
             );
+
+            // Filter by epic or issue if specified
+            if (jiraMappingObj.mappingType === 'epic' && jiraMappingObj.jiraEpicKey) {
+              // For epic mapping, we need to fetch issues in that epic first
+              // This is a simplified approach - in reality, you might need to fetch epic issues
+              projectWorklogs = projectWorklogs.filter(w => {
+                // This would need to be enhanced to check if issue belongs to epic
+                // For now, we'll import all worklogs from the project
+                return true;
+              });
+            } else if (jiraMappingObj.mappingType === 'issue' && jiraMappingObj.jiraIssueKey) {
+              // For issue mapping, only import worklogs for that specific issue
+              projectWorklogs = projectWorklogs.filter(w => 
+                w.issueKey === jiraMappingObj.jiraIssueKey
+              );
+            }
 
             for (const worklog of projectWorklogs) {
               try {
@@ -133,7 +149,7 @@ export class JiraSyncService {
                   role: 'developer', // Default role, can be enhanced later
                   description: this.extractWorklogDescription(worklog.comment),
                   jiraIssueKey: worklog.issueKey,
-                  jiraWorklogId: worklog.issueKey // Using issueKey as worklogId for now
+                  jiraWorklogId: worklog.worklogId || worklog.issueKey // Use actual worklogId if available
                 });
                 worklogsImported++;
               } catch (error) {

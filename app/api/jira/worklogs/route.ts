@@ -90,7 +90,8 @@ export async function POST(request: Request) {
             issueKey: issue.key,
             projectKey,
             hours: (log.timeSpentSeconds || 0) / 3600,
-            comment: log.comment
+            comment: log.comment,
+            worklogId: log.id
           });
         }
       } catch (error) {
