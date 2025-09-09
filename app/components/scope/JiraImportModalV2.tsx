@@ -307,7 +307,7 @@ export function JiraImportModalV2({
       title="JIRA Import" 
       description="Import worklogů z JIRA s automatickým mapováním"
     >
-      <div className="space-y-6">
+      <div className="space-y-6 bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-800/90 dark:via-gray-800/70 dark:to-gray-800/50 backdrop-blur-lg rounded-2xl border border-white/40 dark:border-gray-700/40 shadow-xl p-6">
         {/* Configuration */}
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -396,7 +396,7 @@ export function JiraImportModalV2({
             <button
               onClick={previewImport}
               disabled={loading || !from || !to}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
             >
               {loading ? (
                 <FiRefreshCw className="w-4 h-4 animate-spin" />
@@ -404,14 +404,6 @@ export function JiraImportModalV2({
                 <FiDownload className="w-4 h-4" />
               )}
               Náhled importu
-            </button>
-            
-            <button
-              onClick={() => {/* setShowUserMapping(true) */}}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-            >
-              <FiSettings className="w-4 h-4" />
-              Mapování uživatelů
             </button>
           </div>
         </div>
@@ -519,7 +511,7 @@ export function JiraImportModalV2({
               <button
                 onClick={executeImport}
                 disabled={importing || preview.mappedUsers === 0}
-                className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-lg hover:from-emerald-700 hover:to-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
               >
                 {importing ? (
                   <FiRefreshCw className="w-4 h-4 animate-spin" />
@@ -536,7 +528,7 @@ export function JiraImportModalV2({
         <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+            className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
           >
             Zrušit
           </button>
