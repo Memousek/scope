@@ -43,7 +43,7 @@ import { JiraImportModalV2 } from "./JiraImportModalV2";
 import { JiraUserMappingModal } from "./JiraUserMappingModal";
 import { JiraProjectMappingModal } from "./JiraProjectMappingModal";
 import { JiraSyncDashboard } from "./JiraSyncDashboard";
-import { ScopeSettings } from "./ScopeSettings";
+import { ScopeSettings, getScopeIntegration } from "./ScopeSettings";
 
 interface ModernScopeLayoutProps {
   scopeId: string;
@@ -119,7 +119,7 @@ export function ModernScopeLayout({
 
   const [activeTab, setActiveTab] = useState<TabType>("overview");
   const [importModalOpen, setImportModalOpen] = useState(false);
-  // const integrations = typeof window !== 'undefined' ? getScopeIntegration(scopeId) : null; // Unused for now
+  const [integrations, setIntegrations] = useState<any>(null);
   const isGod = user?.additional?.role === 'god';
   // Derived flag kept local; remove unused var warnings by using inline checks where needed
   const isOwnerOrGod = isOwner || isGod; // eslint-disable-line @typescript-eslint/no-unused-vars
@@ -131,10 +131,30 @@ export function ModernScopeLayout({
     if (!readOnlyMode) base.push("billing");
     // Přidej timesheets tab pro všechny uživatele
     base.push("timesheets");
-    if (isGod) base.push("jira");
+    // Přidej JIRA tab pouze pokud je JIRA nakonfigurováno
+    if (integrations?.jiraApiToken && integrations?.jiraBaseUrl) {
+      base.push("jira");
+    }
     if (isGod) base.push("settings");
     return base;
   };
+
+  // Load integrations
+  useEffect(() => {
+    const loadIntegrations = async () => {
+      try {
+        const integrationsData = await getScopeIntegration(scopeId);
+        setIntegrations(integrationsData);
+      } catch (error) {
+        console.error('Failed to load integrations:', error);
+        setIntegrations(null);
+      }
+    };
+    
+    if (scopeId) {
+      loadIntegrations();
+    }
+  }, [scopeId]);
 
   // Initialize active tab from URL or localStorage
   useEffect(() => {
@@ -262,7 +282,7 @@ export function ModernScopeLayout({
     ...(readOnlyMode ? [] : [{ id: "billing", label: t("billing"), icon: <FiDollarSign /> }]),
     ...(readOnlyMode ? [] : [{ id: "timesheets", label: t("timesheets"), icon: <FiClock /> }]),
     { id: "burndown", label: t("burndown"), icon: <FiTrendingUp />},
-    ...(isGod ? [{ id: "jira", label: t("jira"), icon: <FiExternalLink /> }] : []),
+    ...(integrations?.jiraApiToken && integrations?.jiraBaseUrl ? [{ id: "jira", label: t("jira"), icon: <FiExternalLink /> }] : []),
     { id: "settings", label: t("settings"), icon: <FiSettings /> },
   ];
 
