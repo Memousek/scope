@@ -9,11 +9,10 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { Project, TeamMember } from './types';
 import { calculatePriorityDatesWithAssignments, isWorkday } from '@/app/utils/dateUtils';
 import { ProjectTeamAssignment } from '@/lib/domain/models/project-team-assignment.model';
-import { Payload } from "recharts/types/component/DefaultLegendContent";
 import { useTranslation } from "@/lib/translation";
 import { useScopeRoles } from '@/app/hooks/useScopeRoles';
 import { FiBarChart2, FiTrendingUp, FiClock } from 'react-icons/fi';
@@ -42,7 +41,6 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
   const { t } = useTranslation();
   const { activeRoles } = useScopeRoles(scopeId);
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
-  const [activeLegend, setActiveLegend] = useState<string | null>(null);
   const [hiddenProjects, setHiddenProjects] = useState<Set<string>>(new Set());
   const [showIdealLine, setShowIdealLine] = useState<boolean>(true);
   const chartRef = useRef<HTMLDivElement>(null);
@@ -441,7 +439,6 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
           <div className="space-y-2 mb-3">
             {payload.map((entry, index: number) => {
               const isIdeal = entry.dataKey === 'idealProgress';
-              const isRemaining = entry.dataKey === 'totalProgress';
               return (
                 <div key={index} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -557,13 +554,6 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
     color: getProjectColor(index),
   }));
 
-  // Legend handlers
-  const handleLegendMouseEnter = (o: Payload) => {
-    setActiveLegend(o.dataKey as string);
-  };
-  const handleLegendMouseLeave = () => {
-    setActiveLegend(null);
-  };
 
   // Toggle project visibility
   const toggleProject = (projectKey: string) => {
@@ -780,12 +770,10 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
                       type="monotone"
                       dataKey={project.key}
                       stroke={project.color}
-                      strokeWidth={activeLegend === project.key ? 4 : 1}
+                      strokeWidth={1}
                       name={project.label}
                       dot={{ fill: project.color, strokeWidth: 2, r: 3 }}
-                      opacity={
-                        !activeLegend || activeLegend === project.key ? 1 : 0.2
-                      }
+                      opacity={1}
                     />
                   ))}
 
@@ -797,9 +785,7 @@ export function BurndownChart({ projects, team, projectAssignments = {}, workflo
                   strokeWidth={4}
                   name={t("remainingWork")}
                   dot={{ fill: "#4ade80", strokeWidth: 2, r: 5 }}
-                  opacity={
-                    !activeLegend || activeLegend === "totalProgress" ? 1 : 0.2
-                  }
+                  opacity={1}
                 />
 
                 {/* Ideální průběh */}
