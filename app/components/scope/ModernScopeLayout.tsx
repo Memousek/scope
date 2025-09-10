@@ -599,11 +599,6 @@ export function ModernScopeLayout({
       case "burndown":
         return (
           <div className="relative">
-            <Badge
-              label={t("experimental")}
-              variant="info"
-              position="top-right"
-            />
             <BurndownChart
               projects={projects}
               team={team}
