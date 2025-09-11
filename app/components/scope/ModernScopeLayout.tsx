@@ -702,7 +702,7 @@ export function ModernScopeLayout({
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Tab Content */}
-        <div className="flex-1 p-6">
+        <div className="flex-1 p-6 pr-6 lg:pr-0">
           {renderTabContent()}
         </div>
       </div>
