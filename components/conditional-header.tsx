@@ -29,6 +29,9 @@ export function ConditionalHeader() {
   const isAuthPage = pathname?.startsWith('/auth/');
   if (isAuthPage) return null;
 
+  // Na scope stránkách zobrazit header ale skrýt mobile menu
+  const isScopePage = pathname?.startsWith('/scopes/');
+  
   // Vždy renderovat Header, předat user a loading
-  return <Header user={user} loading={loading} />;
+  return <Header user={user} loading={loading} hideMobileMenu={isScopePage} />;
 } 

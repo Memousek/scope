@@ -35,9 +35,10 @@ import { NotifyCentrum } from "./notifycentrum";
 interface HeaderProps {
   user?: User | null;
   loading?: boolean;
+  hideMobileMenu?: boolean;
 }
 
-export function Header({ user, loading }: HeaderProps) {
+export function Header({ user, loading, hideMobileMenu = false }: HeaderProps) {
   const { t } = useTranslation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -131,16 +132,18 @@ export function Header({ user, loading }: HeaderProps) {
           )}
         </div>
         {/* Hamburger for mobile */}
-        <button
-          className="md:hidden flex items-center justify-center p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
-          onClick={() => setMobileOpen(true)}
-          aria-label={t("open_menu")}
-        >
-          <Menu className="w-6 h-6" />
-          <span className="sr-only">{t("open_menu")}</span>
-        </button>
+        {!hideMobileMenu && (
+          <button
+            className="md:hidden flex items-center justify-center p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+            onClick={() => setMobileOpen(true)}
+            aria-label={t("open_menu")}
+          >
+            <Menu className="w-6 h-6" />
+            <span className="sr-only">{t("open_menu")}</span>
+          </button>
+        )}
         {/* Mobile drawer */}
-        {mobileOpen && mounted && createPortal(
+        {!hideMobileMenu && mobileOpen && mounted && createPortal(
           <div className="fixed inset-0 bg-black/50 flex z-[9999]">
             <div className="dark:bg-gray-800 dark:text-gray-100 bg-white w-4/5 max-w-xs h-full shadow-xl flex flex-col p-6 animate-slide-in-left relative z-[10000]">
               <button

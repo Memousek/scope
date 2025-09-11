@@ -30,10 +30,11 @@ import {
   FiSearch,
   FiFolder,
   FiUpload,
-  FiSettings,
-  FiExternalLink,
-  FiDollarSign,
-  FiClock
+  // FiSettings,
+  // FiExternalLink,
+  // FiDollarSign,
+  // FiClock,
+  // FiCalendar
 } from "react-icons/fi";
 import TeamImportModal from "../TeamImportModal";
 import { mutate } from "swr";
@@ -44,6 +45,9 @@ import { JiraUserMappingModal } from "./JiraUserMappingModal";
 import { JiraProjectMappingModal } from "./JiraProjectMappingModal";
 import { JiraSyncDashboard } from "./JiraSyncDashboard";
 import { ScopeSettings, getScopeIntegration } from "./ScopeSettings";
+import { AllocationTable } from "./AllocationTable";
+import { ScopeSidebar } from "./ScopeSidebar";
+// import { UnifiedMobileMenu } from "./UnifiedMobileMenu";
 
 interface ModernScopeLayoutProps {
   scopeId: string;
@@ -91,9 +95,12 @@ interface ModernScopeLayoutProps {
   user?: import("@/lib/domain/models/user.model").User;
   loadingTeam?: boolean;
   isOwner?: boolean;
+  onLogout?: () => void;
+  activeTab?: TabType;
+  onTabChange?: (tab: TabType) => void;
 }
 
-type TabType = "overview" | "team" | "projects" | "billing" | "timesheets" | "burndown" | "jira" | "settings";
+type TabType = "overview" | "team" | "projects" | "billing" | "timesheets" | "burndown" | "allocation" | "jira" | "settings";
 
 export function ModernScopeLayout({
   scopeId,
@@ -111,13 +118,18 @@ export function ModernScopeLayout({
   user,
   loadingTeam = false,
   isOwner = false,
+  // onLogout,
+  activeTab: externalActiveTab,
+  onTabChange: externalOnTabChange,
 }: ModernScopeLayoutProps) {
   const { t } = useTranslation();
   const { activeRoles, loadRoles } = useScopeRoles(scopeId);
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const [activeTab, setActiveTab] = useState<TabType>("overview");
+  const [internalActiveTab, setInternalActiveTab] = useState<TabType>("overview");
+  const activeTab = externalActiveTab || internalActiveTab;
+  const setActiveTab = externalOnTabChange || setInternalActiveTab;
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [integrations, setIntegrations] = useState<{ jiraApiToken?: string; jiraBaseUrl?: string } | null>(() => {
     // Initialize integrations synchronously from sessionStorage
@@ -138,6 +150,8 @@ export function ModernScopeLayout({
     if (!readOnlyMode) base.push("billing");
     // Přidej timesheets tab pro všechny uživatele
     base.push("timesheets");
+    // Přidej allocation tab pro všechny uživatele
+    base.push("allocation");
     // Přidej JIRA tab pouze pokud je JIRA nakonfigurováno
     if (integrations?.jiraApiToken && integrations?.jiraBaseUrl) {
       base.push("jira");
@@ -300,16 +314,21 @@ export function ModernScopeLayout({
   const [jiraUserMappingOpen, setJiraUserMappingOpen] = useState(false);
   const [jiraProjectMappingOpen, setJiraProjectMappingOpen] = useState(false);
 
-  const tabs = [
-    { id: "overview", label: t("overview"), icon: <FiBarChart2 /> },
-    { id: "team", label: t("team"), icon: <FiUsers /> },
-    { id: "projects", label: t("projects"), icon: <FiFolder /> },
-    ...(readOnlyMode ? [] : [{ id: "billing", label: t("billing"), icon: <FiDollarSign /> }]),
-    ...(readOnlyMode ? [] : [{ id: "timesheets", label: t("timesheets"), icon: <FiClock /> }]),
-    { id: "burndown", label: t("burndown"), icon: <FiTrendingUp />},
-    ...(integrations?.jiraApiToken && integrations?.jiraBaseUrl ? [{ id: "jira", label: t("jira"), icon: <FiExternalLink /> }] : []),
-    { id: "settings", label: t("settings"), icon: <FiSettings /> },
-  ];
+  // const allTabs = [
+  //   { id: "overview", label: t("overview"), icon: <FiBarChart2 /> },
+  //   { id: "team", label: t("team"), icon: <FiUsers /> },
+  //   { id: "projects", label: t("projects"), icon: <FiFolder /> },
+  //   { id: "billing", label: t("billing"), icon: <FiDollarSign /> },
+  //   { id: "timesheets", label: t("timesheets"), icon: <FiClock /> },
+  //   { id: "burndown", label: t("burndown"), icon: <FiTrendingUp />},
+  //   { id: "allocation", label: t("allocationTable"), icon: <FiCalendar />},
+  //   { id: "jira", label: t("jira"), icon: <FiExternalLink /> },
+  //   { id: "settings", label: t("settings"), icon: <FiSettings /> },
+  // ];
+
+  // Filter tabs based on permissions and integrations
+  // const allowedTabs = getAllowedTabs();
+  // const tabs = allTabs.filter(tab => allowedTabs.includes(tab.id as TabType));
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -626,6 +645,18 @@ export function ModernScopeLayout({
           </div>
         );
 
+      case "allocation":
+        return (
+          <div className="relative">
+            <AllocationTable
+              scopeId={scopeId}
+              team={team}
+              projects={projects}
+              readOnlyMode={readOnlyMode}
+            />
+          </div>
+        );
+
       case "jira":
         return (
           <div className="relative">
@@ -658,48 +689,23 @@ export function ModernScopeLayout({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Tab Navigation */}
-      <div className="pl-4 pr-4 relative bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 rounded-2xl p-2 shadow-2xl">
-        {/* Decorative background elements */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 rounded-2xl"></div>
-        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-br from-purple-400/10 to-pink-400/10 rounded-full blur-2xl"></div>
-
-        <div
-          className="relative z-10 flex space-x-1"
-          role="tablist"
-          aria-label="Scope tabs"
-        >
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => handleSelectTab(tab.id as TabType)}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold transition-all duration-300 relative ${
-                activeTab === tab.id
-                  ? "z-10 relative bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 text-white shadow-2xl shadow-blue-500/25 scale-105"
-                  : "text-gray-600 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-700/50 hover:scale-105 hover:shadow-lg motion-reduce:scale-100 motion-reduce:transition-none"
-              }`}
-              aria-label={tab.label}
-              role="tab"
-              aria-selected={activeTab === tab.id}
-              id={`tab-${tab.id}`}
-              aria-current={activeTab === tab.id ? "page" : undefined}
-            >
-              {activeTab === tab.id && (
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              )}
-              <span className="relative z-10 text-lg">{tab.icon}</span>
-              <span className="relative z-10 hidden sm:inline font-medium">
-                {tab.label}
-              </span>
-            </button>
-          ))}
-        </div>
+    <div className="flex flex-col lg:flex-row">
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:block lg:w-auto lg:flex-shrink-0">
+        <ScopeSidebar
+          activeTab={activeTab}
+          onTabChange={handleSelectTab}
+          allowedTabs={getAllowedTabs()}
+        />
       </div>
 
-      {/* Tab Content - automatická výška */}
-      <div>{renderTabContent()}</div>
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col">
+        {/* Tab Content */}
+        <div className="flex-1 p-6">
+          {renderTabContent()}
+        </div>
+      </div>
 
       {/* Modals */}
       {addMemberModalOpen && onAddMember && (

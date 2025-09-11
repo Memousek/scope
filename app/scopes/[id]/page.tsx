@@ -14,6 +14,7 @@ import { ModernScopeLayout } from "@/app/components/scope/ModernScopeLayout";
 import { ShareModal } from "@/app/components/scope/ShareModal";
 import { AiChatModal } from "@/app/components/scope/AiChatModal";
 import { AiChatButton } from "@/app/components/scope/AiChatButton";
+import { UnifiedMobileMenu } from "@/app/components/scope/UnifiedMobileMenu";
 import { TeamMember, Project } from "@/app/components/scope/types";
 import { useAuth } from "@/lib/auth";
 import { useTranslation } from "@/lib/translation";
@@ -48,6 +49,7 @@ export default function ScopePage({
   const { userId } = useAuth();
   const toast = useToastFunctions();
   const [user, setUser] = useState<User | null>(null);
+  const [activeTab, setActiveTab] = useState<"overview" | "team" | "projects" | "billing" | "timesheets" | "burndown" | "allocation" | "jira" | "settings">("overview");
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const { t } = useTranslation();
@@ -502,6 +504,18 @@ export default function ScopePage({
             {/* Main header with scope info and share button */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
+                {/* Mobile hamburger menu */}
+                <div className="lg:hidden">
+                  <UnifiedMobileMenu
+                    activeTab={activeTab}
+                    onTabChange={setActiveTab}
+                    allowedTabs={["overview", "team", "projects", "billing", "timesheets", "burndown", "allocation", "jira", "settings"]}
+                    user={user}
+                    onLogout={() => {
+                      window.location.href = '/';
+                    }}
+                  />
+                </div>
                 <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-lg hidden md:flex">
                   <span className="text-white text-2xl font-bold">
                     {scope.name.charAt(0).toUpperCase()}
@@ -567,6 +581,12 @@ export default function ScopePage({
           user={user!}
           loadingTeam={teamLoading}
           isOwner={isOwner}
+          onLogout={() => {
+            // Handle logout - redirect to home or show login
+            window.location.href = '/';
+          }}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
         />
       </div>
 
