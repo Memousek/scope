@@ -31,6 +31,10 @@ import { ManageScopeRolesService } from "@/lib/domain/services/manage-scope-role
 import { PlanRepository } from "@/lib/domain/repositories/plan.repository";
 import { SupabasePlanRepository } from "@/lib/data/repositories/supabase/plan.repository";
 import { ManageUserPlansService } from "@/lib/domain/services/manage-user-plans.service";
+import { ProjectNoteRepository } from "@/lib/domain/repositories/project-note.repository";
+import { SupabaseProjectNoteRepository } from "@/lib/data/repositories/supabase/project-note.repository";
+import { DomainPlanAssignmentRepository } from "@/lib/domain/repositories/domain-plan-assignment.repository";
+import { SupabaseDomainPlanAssignmentRepository } from "@/lib/data/repositories/supabase/domain-plan-assignment.repository";
 
 
 export class DataContainerModule implements ContainerModule {
@@ -56,6 +60,8 @@ export class DataContainerModule implements ContainerModule {
     container.bind(ManageScopeRolesService).toSelf().inSingletonScope();
     container.bind(PlanRepository).to(SupabasePlanRepository).inSingletonScope();
     container.bind(ManageUserPlansService).toSelf().inSingletonScope();
+    container.bind(ProjectNoteRepository).to(SupabaseProjectNoteRepository).inSingletonScope();
+    container.bind(DomainPlanAssignmentRepository).to(SupabaseDomainPlanAssignmentRepository).inSingletonScope();
   }
 
 }

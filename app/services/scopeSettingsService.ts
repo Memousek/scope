@@ -4,6 +4,8 @@
  */
 
 import { createClient } from '@/lib/supabase/client';
+import { ContainerService } from '@/lib/container.service';
+import { ScopeRepository } from '@/lib/domain/repositories/scope.repository';
 
 export interface ScopeSettings {
   jira?: {
@@ -27,17 +29,12 @@ export interface ScopeSettings {
 export class ScopeSettingsService {
   static async get(scopeId: string): Promise<ScopeSettings | null> {
     try {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('scopes')
-        .select('settings')
-        .eq('id', scopeId)
-        .maybeSingle();
-      if (error) {
-        console.warn('ScopeSettingsService.get error', error);
+      const scopeRepository = ContainerService.getInstance().get(ScopeRepository);
+      const scope = await scopeRepository.findById(scopeId);
+      if (!scope) {
         return null;
       }
-      return (data?.settings as ScopeSettings) || null;
+      return (scope.settings as ScopeSettings) || null;
     } catch (err) {
       console.error('ScopeSettingsService.get failed:', err);
       throw new Error(`Failed to load scope settings: ${err instanceof Error ? err.message : 'Unknown error'}`);
@@ -46,18 +43,13 @@ export class ScopeSettingsService {
 
   static async upsert(scopeId: string, settings: ScopeSettings): Promise<ScopeSettings> {
     try {
-      const supabase = createClient();
+      const scopeRepository = ContainerService.getInstance().get(ScopeRepository);
       // Načteme aktuální settings a mergneme
       const current = await this.get(scopeId);
       const merged = { ...(current || {}), ...settings } as Record<string, unknown>;
-      const { data, error } = await supabase
-        .from('scopes')
-        .update({ settings: merged })
-        .eq('id', scopeId)
-        .select('settings')
-        .single();
-      if (error) throw error;
-      return (data.settings as ScopeSettings) || {};
+      
+      const updatedScope = await scopeRepository.update(scopeId, { settings: merged });
+      return (updatedScope.settings as ScopeSettings) || {};
     } catch (err) {
       console.error('ScopeSettingsService.upsert failed:', err);
       throw new Error(`Failed to save scope settings: ${err instanceof Error ? err.message : 'Unknown error'}`);

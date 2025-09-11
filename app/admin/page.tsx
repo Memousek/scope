@@ -7,6 +7,7 @@ import { UserRepository } from '@/lib/domain/repositories/user.repository';
 import { createClient } from '@/lib/supabase/client';
 import { Plan } from '@/lib/domain/models/plan.model';
 import { ManageUserPlansService } from '@/lib/domain/services/manage-user-plans.service';
+import { DomainPlanAssignmentRepository } from '@/lib/domain/repositories/domain-plan-assignment.repository';
 
 export default function AdminPage() {
   const { t } = useTranslation();
@@ -52,9 +53,15 @@ export default function AdminPage() {
         const allPlans = await managePlans.getAvailablePlans();
         setPlans(allPlans);
         // assignments
-        const { data } = await supabase.from('domain_plan_assignments').select('*').order('domain');
-        type Row = { id: string; domain: string; plan_id: string };
-        const withNames = ((data || []) as Row[]).map((r) => ({ id: r.id, domain: r.domain, planId: r.plan_id, originalDomain: r.domain, planName: allPlans.find(p=>p.id===r.plan_id)?.displayName || allPlans.find(p=>p.id===r.plan_id)?.name }));
+        const domainPlanAssignmentRepository = ContainerService.getInstance().get(DomainPlanAssignmentRepository);
+        const assignments = await domainPlanAssignmentRepository.findAll();
+        const withNames = assignments.map((r) => ({ 
+          id: r.id, 
+          domain: r.domain, 
+          planId: r.plan_id, 
+          originalDomain: r.domain, 
+          planName: allPlans.find(p=>p.id===r.plan_id)?.displayName || allPlans.find(p=>p.id===r.plan_id)?.name 
+        }));
         setItems(withNames);
       } finally {
         setLoading(false);
@@ -70,19 +77,19 @@ export default function AdminPage() {
     const current = items.find(i => i.id === id);
     setItems(prev => prev.filter(i => i.id !== id));
     if (current?.domain) {
-      const supabase = createClient();
-      await supabase.from('domain_plan_assignments').delete().eq('domain', current.domain.toLowerCase());
+      const domainPlanAssignmentRepository = ContainerService.getInstance().get(DomainPlanAssignmentRepository);
+      await domainPlanAssignmentRepository.delete(current.domain);
     }
   };
 
   // Persist just one row (so Apply now nemusí čekat na Save)
   const persistRow = async (row: { domain: string; planId: string; prevDomain?: string }) => {
-    const supabase = createClient();
+    const domainPlanAssignmentRepository = ContainerService.getInstance().get(DomainPlanAssignmentRepository);
     const newDomain = row.domain.trim().toLowerCase();
     if (!newDomain) return;
-    await supabase.from('domain_plan_assignments').upsert({ domain: newDomain, plan_id: row.planId } as { domain: string; plan_id: string }, { onConflict: 'domain' as unknown as undefined });
+    await domainPlanAssignmentRepository.upsert({ domain: newDomain, plan_id: row.planId });
     if (row.prevDomain && row.prevDomain !== newDomain) {
-      await supabase.from('domain_plan_assignments').delete().eq('domain', row.prevDomain);
+      await domainPlanAssignmentRepository.delete(row.prevDomain);
     }
   };
 
@@ -98,11 +105,16 @@ export default function AdminPage() {
 
   const applyAll = async () => {
     const supabase = createClient();
+    const domainPlanAssignmentRepository = ContainerService.getInstance().get(DomainPlanAssignmentRepository);
     // Nejprve upsertni aktuální konfiguraci, aby se aplikovala čerstvá data bez kliku na Save
     const payload = items
       .filter(i => i.domain.trim() && i.planId)
-      .map(i => ({ domain: i.domain.trim().toLowerCase(), plan_id: i.planId } as { domain: string; plan_id: string }));
-    if (payload.length > 0) await supabase.from('domain_plan_assignments').upsert(payload);
+      .map(i => ({ domain: i.domain.trim().toLowerCase(), plan_id: i.planId }));
+    if (payload.length > 0) {
+      for (const item of payload) {
+        await domainPlanAssignmentRepository.upsert(item);
+      }
+    }
     const { data, error } = await supabase.rpc('apply_all_domain_plan_assignments');
     if (!error) alert(`Updated users: ${data ?? 0}`);
   };
@@ -136,6 +148,9 @@ export default function AdminPage() {
   };
 
   const updateUserPlanInline = async (userId: string, planId: string | null) => {
+    const userRepository = ContainerService.getInstance().get(UserRepository);
+    // Note: This would need a method in UserRepository to update plan_id
+    // For now, keeping the direct Supabase call as it's a specific admin operation
     const supabase = createClient();
     await supabase.from('user_meta').update({ plan_id: planId }).eq('user_id', userId);
     setUserResults(prev => prev.map(u => u.userId === userId ? { ...u, planId } : u));

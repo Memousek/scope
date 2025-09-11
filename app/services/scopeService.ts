@@ -4,6 +4,8 @@
  */
 
 import { createClient } from '@/lib/supabase/client';
+import { ContainerService } from '@/lib/container.service';
+import { ScopeRepository } from '@/lib/domain/repositories/scope.repository';
 
 export interface ScopeData {
   id: string;
@@ -16,48 +18,33 @@ export class ScopeService {
    * Load scope by ID
    */
   static async loadScope(scopeId: string): Promise<ScopeData | null> {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from('scopes')
-      .select('*')
-      .eq('id', scopeId)
-      .single();
-
-    if (error) {
-      console.error('Chyba při načítání scope:', error);
+    const scopeRepository = ContainerService.getInstance().get(ScopeRepository);
+    const scope = await scopeRepository.findById(scopeId);
+    
+    if (!scope) {
       return null;
     }
 
-    return data;
+    return {
+      id: scope.id,
+      name: scope.name,
+      description: scope.description
+    };
   }
 
   /**
    * Update scope description
    */
   static async updateScopeDescription(scopeId: string, description: string): Promise<void> {
-    const supabase = createClient();
-    const { error } = await supabase
-      .from('scopes')
-      .update({ description })
-      .eq('id', scopeId);
-
-    if (error) {
-      throw new Error('Chyba při ukládání popisu');
-    }
+    const scopeRepository = ContainerService.getInstance().get(ScopeRepository);
+    await scopeRepository.update(scopeId, { description });
   }
 
   /**
    * Update scope name
    */
   static async updateScopeName(scopeId: string, name: string): Promise<void> {
-    const supabase = createClient();
-    const { error } = await supabase
-      .from('scopes')
-      .update({ name: name.trim() })
-      .eq('id', scopeId);
-
-    if (error) {
-      throw new Error('Chyba při ukládání názvu');
-    }
+    const scopeRepository = ContainerService.getInstance().get(ScopeRepository);
+    await scopeRepository.update(scopeId, { name: name.trim() });
   }
 }

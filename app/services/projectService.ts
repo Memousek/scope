@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { Project, ProjectProgress } from '@/app/components/scope/types';
 import { ContainerService } from '@/lib/container.service';
 import { ProjectRepository } from '@/lib/domain/repositories/project.repository';
+import { ProjectProgressRepository } from '@/lib/domain/repositories/project-progress.repository';
 
 export interface CreateProjectData {
   name: string;
@@ -258,10 +259,10 @@ export class ProjectService {
    */
   static async deleteProject(projectId: string): Promise<boolean> {
     const projectRepository = ContainerService.getInstance().get(ProjectRepository);
+    const projectProgressRepository = ContainerService.getInstance().get(ProjectProgressRepository);
     
     // Delete associated progress data first
-    const supabase = createClient();
-    await supabase.from('project_progress').delete().eq('project_id', projectId);
+    await projectProgressRepository.deleteByProjectId(projectId);
     
     // Delete the project
     await projectRepository.delete(projectId);
@@ -272,7 +273,7 @@ export class ProjectService {
    * Save project progress changes
    */
   static async saveProjectProgress(projectId: string, progressData: Partial<ProjectProgress>): Promise<void> {
-    const supabase = createClient();
+    const projectProgressRepository = ContainerService.getInstance().get(ProjectProgressRepository);
     
     // Filtrujeme pouze standardní role data pro project_progress
     const standardRoleKeys = ['fe', 'be', 'qa', 'pm', 'dpl'];
@@ -285,14 +286,13 @@ export class ProjectService {
       }
     });
     
-    const progress: ProjectProgress = {
+    const createProgressData = {
       project_id: projectId,
       date: new Date().toISOString(),
       ...filteredProgressData
     };
 
-    const { error } = await supabase.from('project_progress').insert([progress]);
-    if (error) throw error;
+    await projectProgressRepository.create(createProgressData);
 
     // Also update the current project values
     const projectUpdates: Partial<Project> = {};
@@ -339,43 +339,30 @@ export class ProjectService {
    * Load project progress history
    */
   static async loadProjectProgress(projectId: string): Promise<ProjectProgress[]> {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from('project_progress')
-      .select('*')
-      .eq('project_id', projectId)
-      .order('date', { ascending: false });
-
-    if (error) throw error;
-    return data || [];
+    const projectProgressRepository = ContainerService.getInstance().get(ProjectProgressRepository);
+    return await projectProgressRepository.findByProjectId(projectId);
   }
 
   /**
    * Update project progress entry
    */
   static async updateProjectProgress(progressId: string, updates: Partial<ProjectProgress>): Promise<void> {
-    const supabase = createClient();
+    const projectProgressRepository = ContainerService.getInstance().get(ProjectProgressRepository);
     
     // First, get the progress entry to find the project_id
-    const { data: progressData, error: progressError } = await supabase
-      .from('project_progress')
-      .select('project_id')
-      .eq('id', progressId)
-      .single();
-
-    if (progressError) {
-      throw progressError;
+    const progressData = await projectProgressRepository.findById(progressId);
+    if (!progressData) {
+      throw new Error('Project progress entry not found');
     }
 
     // Update the progress entry
-    const { error: updateError } = await supabase
-      .from('project_progress')
-      .update(updates)
-      .eq('id', progressId);
-
-    if (updateError) {
-      throw updateError;
-    }
+    const updateData: Record<string, number | undefined> = {};
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
+        updateData[key] = value as number;
+      }
+    });
+    await projectProgressRepository.update(progressId, updateData);
 
     // Also update the current project values
     const projectUpdates: Partial<Project> = {};
@@ -395,25 +382,25 @@ export class ProjectService {
     if (updates.dpl_mandays !== undefined) projectUpdates.dpl_mandays = updates.dpl_mandays;
 
     if (Object.keys(projectUpdates).length > 0) {
-      // Try to get the current project data first
-      const { error: getProjectError } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('id', progressData.project_id)
-        .single();
-
-      if (getProjectError) {
-        throw getProjectError;
-      }
+      const projectRepository = ContainerService.getInstance().get(ProjectRepository);
       
-      const { error: projectError } = await supabase
-        .from('projects')
-        .update(projectUpdates)
-        .eq('id', progressData.project_id);
-
-      if (projectError) {
-        throw projectError;
-      }
+      // Map component project updates to domain project updates
+      const domainProjectUpdates: Partial<import('../../lib/domain/models/project.model').Project> = {};
+      
+      // Map standard role data from component format to domain format
+      if (projectUpdates.fe_done !== undefined) domainProjectUpdates.feDone = projectUpdates.fe_done as number;
+      if (projectUpdates.be_done !== undefined) domainProjectUpdates.beDone = projectUpdates.be_done as number;
+      if (projectUpdates.qa_done !== undefined) domainProjectUpdates.qaDone = projectUpdates.qa_done as number;
+      if (projectUpdates.pm_done !== undefined) domainProjectUpdates.pmDone = projectUpdates.pm_done as number;
+      if (projectUpdates.dpl_done !== undefined) domainProjectUpdates.dplDone = projectUpdates.dpl_done as number;
+      
+      if (projectUpdates.fe_mandays !== undefined) domainProjectUpdates.feMandays = projectUpdates.fe_mandays as number;
+      if (projectUpdates.be_mandays !== undefined) domainProjectUpdates.beMandays = projectUpdates.be_mandays as number;
+      if (projectUpdates.qa_mandays !== undefined) domainProjectUpdates.qaMandays = projectUpdates.qa_mandays as number;
+      if (projectUpdates.pm_mandays !== undefined) domainProjectUpdates.pmMandays = projectUpdates.pm_mandays as number;
+      if (projectUpdates.dpl_mandays !== undefined) domainProjectUpdates.dplMandays = projectUpdates.dpl_mandays as number;
+      
+      await projectRepository.update(progressData.project_id, domainProjectUpdates);
     }
   }
 
@@ -421,60 +408,37 @@ export class ProjectService {
    * Delete project progress entry
    */
   static async deleteProjectProgress(progressId: string): Promise<void> {
-    const supabase = createClient();
+    const projectProgressRepository = ContainerService.getInstance().get(ProjectProgressRepository);
+    const projectRepository = ContainerService.getInstance().get(ProjectRepository);
     
     // First, get the progress entry to find the project_id
-    const { data: progressData, error: progressError } = await supabase
-      .from('project_progress')
-      .select('project_id')
-      .eq('id', progressId)
-      .single();
-
-    if (progressError) {
-      throw progressError;
+    const progressData = await projectProgressRepository.findById(progressId);
+    if (!progressData) {
+      throw new Error('Project progress entry not found');
     }
 
     // Delete the progress entry
-    const { error: deleteError } = await supabase
-      .from('project_progress')
-      .delete()
-      .eq('id', progressId);
-
-    if (deleteError) {
-      throw deleteError;
-    }
+    await projectProgressRepository.delete(progressId);
 
     // Check if this was the last progress entry for the project
-    const { data: remainingProgress, error: countError } = await supabase
-      .from('project_progress')
-      .select('id')
-      .eq('project_id', progressData.project_id);
-
-    if (countError) {
-      throw countError;
-    }
+    const remainingProgress = await projectProgressRepository.findByProjectId(progressData.project_id);
 
     // If no progress entries remain, reset the project values to 0
     if (!remainingProgress || remainingProgress.length === 0) {
-      const { error: resetError } = await supabase
-        .from('projects')
-        .update({
-          fe_done: 0,
-          be_done: 0,
-          qa_done: 0,
-          pm_done: 0,
-          dpl_done: 0,
-          fe_mandays: null,
-          be_mandays: null,
-          qa_mandays: null,
-          pm_mandays: null,
-          dpl_mandays: null
-        })
-        .eq('id', progressData.project_id);
-
-      if (resetError) {
-        throw resetError;
-      }
+      const domainProjectUpdates: Partial<import('../../lib/domain/models/project.model').Project> = {
+        feDone: 0,
+        beDone: 0,
+        qaDone: 0,
+        pmDone: 0,
+        dplDone: 0,
+        feMandays: 0,
+        beMandays: 0,
+        qaMandays: 0,
+        pmMandays: 0,
+        dplMandays: 0
+      };
+      
+      await projectRepository.update(progressData.project_id, domainProjectUpdates);
     }
   }
 
@@ -513,11 +477,8 @@ export class ProjectService {
     }, {} as Record<string, { hours: number; mandays: number }>);
     
     // Get current project data to calculate progress percentages
-    const { data: project } = await supabase
-      .from('projects')
-      .select('*')
-      .eq('id', projectId)
-      .single();
+    const projectRepository = ContainerService.getInstance().get(ProjectRepository);
+    const project = await projectRepository.findById(projectId);
     
     if (!project) {
       return;
@@ -527,7 +488,7 @@ export class ProjectService {
     const progressUpdates: Partial<ProjectProgress> = {};
     
     Object.entries(roleProgress).forEach(([role, data]) => {
-      const mandaysKey = `${role}_mandays`;
+      const mandaysKey = `${role}Mandays` as keyof typeof project;
       const doneKey = `${role}_done`;
       
       const estimatedMandays = Number(project[mandaysKey] || 0);

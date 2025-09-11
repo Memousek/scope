@@ -5,6 +5,8 @@
 
 import { createClient } from '@/lib/supabase/client';
 import { TeamMember } from '@/app/components/scope/types';
+import { ContainerService } from '@/lib/container.service';
+import { TeamMemberRepository } from '@/lib/domain/repositories/team-member.repository';
 
 export interface CreateTeamMemberData {
   name: string;
@@ -20,117 +22,111 @@ export class TeamService {
    * Load all team members for a scope
    */
   static async loadTeam(scopeId: string): Promise<TeamMember[]> {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from('team_members')
-      .select('*')
-      .eq('scope_id', scopeId)
-      .order('name', { ascending: true });
-
-    if (error) throw error;
+    const teamMemberRepository = ContainerService.getInstance().get(TeamMemberRepository);
+    const domainTeamMembers = await teamMemberRepository.findByScopeId(scopeId);
     
-    // Map database data to TeamMember objects with proper field mapping
-    return (data || []).map(item => this.mapToModel(item));
+    // Map domain team members to component team members
+    return domainTeamMembers.map(domainMember => ({
+      id: domainMember.id,
+      scopeId: domainMember.scopeId,
+      name: domainMember.name,
+      role: domainMember.role,
+      fte: domainMember.fte,
+      mdRate: domainMember.mdRate,
+      costMdRate: domainMember.costMdRate,
+      vacations: domainMember.vacations,
+      createdAt: domainMember.createdAt
+    }));
   }
 
   /**
    * Get single team member by id (includes vacations when column exists)
    */
   static async getTeamMemberById(memberId: string): Promise<TeamMember | null> {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from('team_members')
-      .select('*')
-      .eq('id', memberId)
-      .maybeSingle();
-
-    if (error) {
-      console.error('teamService.getTeamMemberById error', error);
-      return null;
-    }
+    const teamMemberRepository = ContainerService.getInstance().get(TeamMemberRepository);
+    const domainMember = await teamMemberRepository.findById(memberId);
     
-    if (!data) return null;
+    if (!domainMember) return null;
     
-    return this.mapToModel(data);
+    return {
+      id: domainMember.id,
+      scopeId: domainMember.scopeId,
+      name: domainMember.name,
+      role: domainMember.role,
+      fte: domainMember.fte,
+      mdRate: domainMember.mdRate,
+      costMdRate: domainMember.costMdRate,
+      vacations: domainMember.vacations,
+      createdAt: domainMember.createdAt
+    };
   }
 
   /**
    * Create a new team member
    */
   static async createTeamMember(scopeId: string, memberData: CreateTeamMemberData): Promise<TeamMember> {
-    const supabase = createClient();
+    const teamMemberRepository = ContainerService.getInstance().get(TeamMemberRepository);
     
-    // Map camelCase fields to snake_case for database
-    const dbData: Record<string, unknown> = {
-      scope_id: scopeId,
+    const domainMember = await teamMemberRepository.create({
+      scopeId,
       name: memberData.name,
       role: memberData.role,
       fte: memberData.fte,
+      mdRate: memberData.mdRate,
+      costMdRate: memberData.costMdRate,
       vacations: memberData.vacations
+    });
+    
+    return {
+      id: domainMember.id,
+      scopeId: domainMember.scopeId,
+      name: domainMember.name,
+      role: domainMember.role,
+      fte: domainMember.fte,
+      mdRate: domainMember.mdRate,
+      costMdRate: domainMember.costMdRate,
+      vacations: domainMember.vacations,
+      createdAt: domainMember.createdAt
     };
-    
-    if (memberData.mdRate !== undefined) {
-      dbData.md_rate = memberData.mdRate;
-    }
-    
-    if (memberData.costMdRate !== undefined) {
-      dbData.cost_md_rate = memberData.costMdRate;
-    }
-
-    const { data, error } = await supabase
-      .from('team_members')
-      .insert([dbData])
-      .select()
-      .single();
-
-    if (error) throw error;
-    
-    return this.mapToModel(data);
   }
 
   /**
    * Update an existing team member
    */
   static async updateTeamMember(memberId: string, updates: Partial<TeamMember>): Promise<TeamMember> {
-    const supabase = createClient();
+    const teamMemberRepository = ContainerService.getInstance().get(TeamMemberRepository);
     
-    // Map camelCase fields to snake_case for database
-    const dbUpdates: Record<string, unknown> = {};
-    Object.entries(updates).forEach(([key, value]) => {
-      if (key === 'mdRate') {
-        dbUpdates.md_rate = value;
-      } else if (key === 'costMdRate') {
-        dbUpdates.cost_md_rate = value;
-      } else if (key === 'scopeId') {
-        dbUpdates.scope_id = value;
-      } else {
-        dbUpdates[key] = value;
-      }
-    });
+    // Map component updates to domain updates
+    const domainUpdates: Partial<import('../../lib/domain/models/team-member.model').TeamMember> = {};
+    if (updates.name !== undefined) domainUpdates.name = updates.name;
+    if (updates.role !== undefined) domainUpdates.role = updates.role;
+    if (updates.fte !== undefined) domainUpdates.fte = updates.fte;
+    if (updates.mdRate !== undefined) domainUpdates.mdRate = updates.mdRate;
+    if (updates.costMdRate !== undefined) domainUpdates.costMdRate = updates.costMdRate;
+    if (updates.vacations !== undefined) domainUpdates.vacations = updates.vacations;
+    if (updates.scopeId !== undefined) domainUpdates.scopeId = updates.scopeId;
 
-    const { data, error } = await supabase
-      .from('team_members')
-      .update(dbUpdates)
-      .eq('id', memberId)
-      .select()
-      .single();
-
-    if (error) throw error;
+    const domainMember = await teamMemberRepository.update(memberId, domainUpdates);
     
-    return this.mapToModel(data);
+    return {
+      id: domainMember.id,
+      scopeId: domainMember.scopeId,
+      name: domainMember.name,
+      role: domainMember.role,
+      fte: domainMember.fte,
+      mdRate: domainMember.mdRate,
+      costMdRate: domainMember.costMdRate,
+      vacations: domainMember.vacations,
+      createdAt: domainMember.createdAt
+    };
   }
 
   /**
    * Delete a team member
    */
   static async deleteTeamMember(memberId: string): Promise<boolean> {
-    const supabase = createClient();
-    const { error } = await supabase
-      .from('team_members')
-      .delete()
-      .eq('id', memberId);
-
-    if (error) throw error;
+    const teamMemberRepository = ContainerService.getInstance().get(TeamMemberRepository);
+    await teamMemberRepository.delete(memberId);
     return true;
   }
 
@@ -157,31 +153,4 @@ export class TeamService {
     return [...new Set(team.map(member => member.role))];
   }
 
-  /**
-   * Map database data to TeamMember object
-   */
-  private static mapToModel(data: {
-    id: string;
-    scope_id: string;
-    name: string;
-    role: string;
-    fte: number;
-    md_rate: number;
-    cost_md_rate: number;
-    vacations?: string;
-    created_at: string;
-    updated_at: string;
-  }): TeamMember {
-    return {
-      id: data.id,
-      scopeId: data.scope_id,
-      name: data.name,
-      role: data.role,
-      fte: data.fte,
-      mdRate: data.md_rate,
-      costMdRate: data.cost_md_rate,
-      vacations: data.vacations ? JSON.parse(data.vacations) : undefined,
-      createdAt: new Date(data.created_at)
-    };
-  }
 } 

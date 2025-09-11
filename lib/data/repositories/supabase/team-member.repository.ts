@@ -30,16 +30,22 @@ export class SupabaseTeamMemberRepository implements TeamMemberRepository {
 
   async create(teamMember: Omit<TeamMember, 'id' | 'createdAt'>): Promise<TeamMember> {
     const supabase = createClient();
+    const insertData: Record<string, any> = {
+      scope_id: teamMember.scopeId,
+      name: teamMember.name,
+      role: teamMember.role,
+      fte: teamMember.fte,
+      md_rate: teamMember.mdRate,
+      cost_md_rate: teamMember.costMdRate
+    };
+
+    if (teamMember.vacations) {
+      insertData.vacations = JSON.stringify(teamMember.vacations);
+    }
+
     const { data, error } = await supabase
       .from('team_members')
-      .insert({
-        scope_id: teamMember.scopeId,
-        name: teamMember.name,
-        role: teamMember.role,
-        fte: teamMember.fte,
-        md_rate: teamMember.mdRate,
-        cost_md_rate: teamMember.costMdRate
-      })
+      .insert(insertData)
       .select()
       .single();
 
@@ -52,17 +58,21 @@ export class SupabaseTeamMemberRepository implements TeamMemberRepository {
 
   async update(id: string, teamMember: Partial<TeamMember>): Promise<TeamMember> {
     const supabase = createClient();
+    const updateData: Record<string, any> = {};
+
+    if (teamMember.scopeId !== undefined) updateData.scope_id = teamMember.scopeId;
+    if (teamMember.name !== undefined) updateData.name = teamMember.name;
+    if (teamMember.role !== undefined) updateData.role = teamMember.role;
+    if (teamMember.fte !== undefined) updateData.fte = teamMember.fte;
+    if (teamMember.mdRate !== undefined) updateData.md_rate = teamMember.mdRate;
+    if (teamMember.costMdRate !== undefined) updateData.cost_md_rate = teamMember.costMdRate;
+    if (teamMember.vacations !== undefined) {
+      updateData.vacations = teamMember.vacations ? JSON.stringify(teamMember.vacations) : null;
+    }
+
     const { data, error } = await supabase
       .from('team_members')
-      .update({
-        scope_id: teamMember.scopeId,
-        name: teamMember.name,
-        role: teamMember.role,
-        fte: teamMember.fte,
-        md_rate: teamMember.mdRate,
-        cost_md_rate: teamMember.costMdRate,
-        vacations: teamMember.vacations,
-      })
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();
@@ -108,7 +118,7 @@ export class SupabaseTeamMemberRepository implements TeamMemberRepository {
       fte: data.fte,
       mdRate: data.md_rate,
       costMdRate: data.cost_md_rate,
-      vacations: data.vacations,
+      vacations: data.vacations ? (typeof data.vacations === 'string' ? JSON.parse(data.vacations) : data.vacations) : undefined,
       createdAt: new Date(data.created_at)
     };
   }

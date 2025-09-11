@@ -23,6 +23,27 @@ export class SupabaseUserRepository extends UserRepository {
       return this.mapToModel(data.user, metaData);
   }
 
+  async findByEmail(email: string): Promise<User | null> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('user_meta')
+      .select('*')
+      .eq('email', email)
+      .single();
+
+    if (error || !data) {
+      return null;
+    }
+
+    // Get auth user data
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData?.user || authData.user.id !== data.user_id) {
+      return null;
+    }
+
+    return this.mapToModel(authData.user, data);
+  }
+
   // eslint-disable-next-line
   private mapToModel(data: any, metaData?: any): User {
     return {

@@ -5,6 +5,10 @@
 
 import { createClient } from '@/lib/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
+import { ContainerService } from '@/lib/container.service';
+import { ScopeEditorRepository } from '@/lib/domain/repositories/scope-editor.repository';
+import { ScopeRepository } from '@/lib/domain/repositories/scope.repository';
+import { UserRepository } from '@/lib/domain/repositories/user.repository';
 
 export interface InviteEditorData {
   scopeId: string;
@@ -20,27 +24,18 @@ export class ScopeEditorService {
    * Check if editor already exists for scope and email
    */
   static async checkExistingEditor(scopeId: string, email: string): Promise<boolean> {
-    const supabase = createClient();
-    const { data } = await supabase
-      .from('scope_editors')
-      .select('id')
-      .eq('scope_id', scopeId)
-      .eq('email', email);
-    
-    return !!(data && data.length > 0);
+    const scopeEditorRepository = ContainerService.getInstance().get(ScopeEditorRepository);
+    const editors = await scopeEditorRepository.findByScopeIdAndEmail(scopeId, email);
+    return editors.length > 0;
   }
 
   /**
    * Check if user exists in auth.users
    */
   static async findUserByEmail(email: string): Promise<string | null> {
-    const supabase = createClient();
-    const { data } = await supabase
-  .from('user_meta')
-      .select('user_id')
-      .eq('email', email);
-
-    return data && data.length > 0 ? data[0].user_id : null;
+    const userRepository = ContainerService.getInstance().get(UserRepository);
+    const user = await userRepository.findByEmail(email);
+    return user?.id || null;
   }
 
   /**
@@ -50,17 +45,12 @@ export class ScopeEditorService {
     const { scopeId } = createData;
     
     const token = uuidv4();
-    const insertObj = { 
-      scope_id: scopeId, 
-      invite_token: token 
-    };
-
-    const supabase = createClient();
-    const { error } = await supabase.from('scope_editors').insert([insertObj]);
+    const scopeEditorRepository = ContainerService.getInstance().get(ScopeEditorRepository);
     
-    if (error) {
-      throw new Error('INVITE_LINK_CREATION_FAILED');
-    }
+    await scopeEditorRepository.create({
+      scopeId,
+      inviteToken: token
+    });
 
     return token;
   }
@@ -69,29 +59,18 @@ export class ScopeEditorService {
    * Check if user is the owner of the scope
    */
   static async checkScopeOwnership(scopeId: string, userId: string): Promise<boolean> {
-    const supabase = createClient();
-    const { data } = await supabase
-      .from('scopes')
-      .select('owner_id')
-      .eq('id', scopeId)
-      .single();
-    
-    return data?.owner_id === userId;
+    const scopeRepository = ContainerService.getInstance().get(ScopeRepository);
+    const scope = await scopeRepository.findById(scopeId);
+    return scope?.ownerId === userId;
   }
 
   /**
    * Check if user is an editor of the scope
    */
   static async checkScopeEditor(scopeId: string, userId: string): Promise<boolean> {
-    const supabase = createClient();
-    const { data } = await supabase
-      .from('scope_editors')
-      .select('id')
-      .eq('scope_id', scopeId)
-      .eq('user_id', userId)
-      .not('accepted_at', 'is', null);
-    
-    return !!(data && data.length > 0);
+    const scopeEditorRepository = ContainerService.getInstance().get(ScopeEditorRepository);
+    const editors = await scopeEditorRepository.findByScopeIdAndUserId(scopeId, userId);
+    return editors.some(editor => editor.acceptedAt !== null);
   }
 
   /**
@@ -118,37 +97,27 @@ export class ScopeEditorService {
     }
     
     const token = uuidv4();
-    const insertObj: Record<string, unknown> = { 
-      scope_id: scopeId, 
-      email: email, 
-      invite_token: token 
+    const scopeEditorRepository = ContainerService.getInstance().get(ScopeEditorRepository);
+    
+    const createData: any = {
+      scopeId,
+      email,
+      inviteToken: token
     };
     
     if (userId) {
-      insertObj.user_id = userId;
-      insertObj.accepted_at = new Date().toISOString();
+      createData.userId = userId;
+      createData.acceptedAt = new Date();
     }
 
-    const supabase = createClient();
-    const { error } = await supabase.from('scope_editors').insert([insertObj]);
-    
-    if (error) {
-      throw new Error('INVITE_FAILED');
-    }
+    await scopeEditorRepository.create(createData);
   }
 
   /**
    * Remove editor from scope
    */
   static async removeEditor(editorId: string): Promise<void> {
-    const supabase = createClient();
-    const { error } = await supabase
-      .from('scope_editors')
-      .delete()
-      .eq('id', editorId);
-
-    if (error) {
-      throw new Error('REMOVE_FAILED');
-    }
+    const scopeEditorRepository = ContainerService.getInstance().get(ScopeEditorRepository);
+    await scopeEditorRepository.delete(editorId);
   }
 }

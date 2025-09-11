@@ -7,6 +7,9 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams, useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { ContainerService } from "@/lib/container.service";
+import { ScopeEditorRepository } from "@/lib/domain/repositories/scope-editor.repository";
+import { ScopeRepository } from "@/lib/domain/repositories/scope.repository";
 
 export default function AcceptScopePage() {
   const router = useRouter();
@@ -36,24 +39,18 @@ export default function AcceptScopePage() {
       // Pokud není token, použij univerzální link
       if (!token) {
         // Zkontroluj, zda je uživatel vlastníkem scope
-        const { data: scopeData } = await supabase
-          .from('scopes')
-          .select('owner_id')
-          .eq('id', scopeId)
-          .single();
+        const scopeRepository = ContainerService.getInstance().get(ScopeRepository);
+        const scope = await scopeRepository.findById(scopeId);
         
-        if (scopeData?.owner_id === user.id) {
+        if (scope?.ownerId === user.id) {
           setStatus('error');
           setMessage('Nemůžete se přidat jako editor k vlastnímu scope.');
           return;
         }
         
         // Zjisti, jestli už je editor
-        const { data: existing } = await supabase
-          .from('scope_editors')
-          .select('*')
-          .eq('scope_id', scopeId)
-          .eq('user_id', user.id);
+        const scopeEditorRepository = ContainerService.getInstance().get(ScopeEditorRepository);
+        const existing = await scopeEditorRepository.findByScopeIdAndUserId(scopeId, user.id);
         if (existing && existing.length > 0) {
           setStatus('success');
           setMessage('Již jste editor tohoto scope.');
@@ -61,26 +58,20 @@ export default function AcceptScopePage() {
           return;
         }
         // Přidej uživatele jako editora
-        const { error: insertError } = await supabase.from('scope_editors').insert([
-          { scope_id: scopeId, user_id: user.id, accepted_at: new Date().toISOString() }
-        ]);
-        if (insertError) {
-          setStatus('error');
-          setMessage('Chyba při přidávání do scope.');
-          return;
-        }
+        await scopeEditorRepository.create({
+          scopeId,
+          userId: user.id,
+          acceptedAt: new Date()
+        });
         setStatus('success');
         setMessage('Scope byl přidán do vašeho účtu. Přesměrovávám...');
         setTimeout(() => router.push(`/scopes/${scopeId}`), 1500);
         return;
       }
       // Najdi pozvánku podle tokenu a scope
-      const { data: editors, error } = await supabase
-        .from('scope_editors')
-        .select('*')
-        .eq('scope_id', scopeId)
-        .eq('invite_token', token);
-      if (error || !editors || editors.length === 0) {
+      const scopeEditorRepository = ContainerService.getInstance().get(ScopeEditorRepository);
+      const editors = await scopeEditorRepository.findByScopeIdAndToken(scopeId, token);
+      if (!editors || editors.length === 0) {
         setStatus('error');
         setMessage('Pozvánka nenalezena nebo je neplatná.');
         return;
@@ -88,35 +79,27 @@ export default function AcceptScopePage() {
       const editor = editors[0];
       
       // Zkontroluj, zda je uživatel vlastníkem scope
-      const { data: scopeData } = await supabase
-        .from('scopes')
-        .select('owner_id')
-        .eq('id', scopeId)
-        .single();
+      const scopeRepository = ContainerService.getInstance().get(ScopeRepository);
+      const scope = await scopeRepository.findById(scopeId);
       
-      if (scopeData?.owner_id === user.id) {
+      if (scope?.ownerId === user.id) {
         setStatus('error');
         setMessage('Nemůžete se přidat jako editor k vlastnímu scope.');
         return;
       }
       
       // Pokud už je accepted, jen přesměruj
-      if (editor.accepted_at && editor.user_id === user.id) {
+      if (editor.acceptedAt && editor.userId === user.id) {
         setStatus('success');
         setMessage('Již jste editor tohoto scope.');
         setTimeout(() => router.push(`/scopes/${scopeId}`), 1500);
         return;
       }
       // Nastav user_id a accepted_at
-      const { error: updateError } = await supabase
-        .from('scope_editors')
-        .update({ user_id: user.id, accepted_at: new Date().toISOString() })
-        .eq('id', editor.id);
-      if (updateError) {
-        setStatus('error');
-        setMessage('Chyba při přijímání pozvánky.');
-        return;
-      }
+      await scopeEditorRepository.update(editor.id, { 
+        userId: user.id, 
+        acceptedAt: new Date() 
+      });
       setStatus('success');
       setMessage('Scope byl přidán do vašeho účtu. Přesměrovávám...');
       setTimeout(() => router.push(`/scopes/${scopeId}`), 1500);

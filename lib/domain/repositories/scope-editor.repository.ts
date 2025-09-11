@@ -7,6 +7,12 @@ export abstract class ScopeEditorRepository {
 
   abstract findByUserId(userId: string): Promise<ScopeEditor[]>;
 
+  abstract findByScopeIdAndEmail(scopeId: string, email: string): Promise<ScopeEditor[]>;
+
+  abstract findByScopeIdAndUserId(scopeId: string, userId: string): Promise<ScopeEditor[]>;
+
+  abstract findByScopeIdAndToken(scopeId: string, token: string): Promise<ScopeEditor[]>;
+
   abstract findBy(params: {
     email: string | null,
     scopeId?: string | null;
