@@ -8,6 +8,20 @@ export interface CreateProjectNoteData {
   updated_at?: string;
 }
 
+interface ProjectNoteWithAuthor {
+  id: string;
+  text: string;
+  author_id: string;
+  created_at: string;
+  updated_at: string;
+  author?: {
+    user_id: string;
+    full_name: string | null;
+    email: string | null;
+    avatar_url: string | null;
+  } | null;
+}
+
 export class ProjectNoteService {
   static async updateNote(noteId: string, newText: string) {
     const supabase = createClient();
@@ -100,7 +114,7 @@ export class ProjectNoteService {
       });
     }
     
-    return (data || []).map((note: any) => ({
+    return (data || []).map((note: ProjectNoteWithAuthor) => ({
       id: note.id,
       text: note.text,
       author: note.author ? {
