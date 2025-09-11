@@ -3,6 +3,7 @@ export interface Scope {
   name: string;
   description?: string;
   ownerId: string;
+  settings?: Record<string, unknown>;
   createdAt: Date;
   updatedAt: Date;
 }

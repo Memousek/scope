@@ -42,13 +42,19 @@ export class SupabaseScopeRepository implements ScopeRepository {
 
   async create(scope: Omit<Scope, 'id' | 'createdAt' | 'updatedAt'>): Promise<Scope> {
     const supabase = createClient();
+    const insertData: Record<string, unknown> = {
+      name: scope.name,
+      description: scope.description,
+      owner_id: scope.ownerId
+    };
+
+    if (scope.settings) {
+      insertData.settings = scope.settings;
+    }
+
     const { data, error } = await supabase
       .from('scopes')
-      .insert({
-        name: scope.name,
-        description: scope.description,
-        owner_id: scope.ownerId
-      })
+      .insert(insertData)
       .select()
       .single();
 
@@ -61,14 +67,18 @@ export class SupabaseScopeRepository implements ScopeRepository {
 
   async update(id: string, scope: Partial<Scope>): Promise<Scope> {
     const supabase = createClient();
+    const updateData: Record<string, unknown> = {
+      updated_at: new Date().toISOString()
+    };
+
+    if (scope.name !== undefined) updateData.name = scope.name;
+    if (scope.description !== undefined) updateData.description = scope.description;
+    if (scope.ownerId !== undefined) updateData.owner_id = scope.ownerId;
+    if (scope.settings !== undefined) updateData.settings = scope.settings;
+
     const { data, error } = await supabase
       .from('scopes')
-      .update({
-        name: scope.name,
-        description: scope.description,
-        owner_id: scope.ownerId,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();
@@ -99,6 +109,7 @@ export class SupabaseScopeRepository implements ScopeRepository {
       name: data.name,
       description: data.description,
       ownerId: data.owner_id,
+      settings: data.settings,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at)
     };
