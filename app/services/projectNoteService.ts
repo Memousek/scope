@@ -62,7 +62,7 @@ export class ProjectNoteService {
     
     // Načteme autory z user_meta tabulky
     const authorIds = [...new Set(notesData.map(note => note.author_id).filter(Boolean))];
-    let authorsMap = new Map();
+    const authorsMap = new Map();
     
     if (authorIds.length > 0) {
       // Načteme autory z user_meta tabulky najednou
