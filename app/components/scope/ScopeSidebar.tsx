@@ -142,6 +142,7 @@ export function ScopeSidebar({ activeTab, onTabChange, allowedTabs }: ScopeSideb
             );
           })}
         </nav>
+        <p className="text-xs text-gray-600 dark:text-gray-400 mt-4 flex justify-center items-center text-center">&copy; {new Date().getFullYear()} ScopeBurndown Team.</p>
         </div>
       </div>
     </>

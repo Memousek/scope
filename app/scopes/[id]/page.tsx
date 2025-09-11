@@ -543,10 +543,10 @@ export default function ScopePage({
                 {(isOwner || isEditor) && (
                   <button
                     onClick={() => setShareModalOpen(true)}
-                    className="flex items-center gap-2 relative group bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white px-4 py-2 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/25 active:scale-95"
+                    className="fw-full flex items-center gap-3 px-4 py-3 text-sm rounded-xl transition-all duration-300 relative group bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white shadow-2xl shadow-blue-500/25 scale-105 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/25 active:scale-95"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <div className="relative z-10 flex items-center gap-2 ">
+                    <div className="relative z-10 flex justify-center items-center text-left font-medium gap-2">
                       <FiShare2 className="text-sm" /> {t('share')}
                     </div>
                   </button>
