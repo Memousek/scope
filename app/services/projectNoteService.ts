@@ -46,11 +46,60 @@ export class ProjectNoteService {
 
   static async getNotes(project_id: string) {
     const supabase = createClient();
-    const { data, error } = await supabase
-      .from('project_notes')
-      .select('*, author:user_meta(user_id, full_name, email, avatar_url)')
-      .eq('project_id', project_id);
-    if (error) throw new Error(error.message);
+    
+    // Použijeme SQL dotaz místo Supabase join syntaxe
+    const { data, error } = await supabase.rpc('get_project_notes_with_author', {
+      project_id_param: project_id
+    });
+    
+    if (error) {
+      // Fallback na jednoduchý dotaz bez join
+      const { data: notesData, error: notesError } = await supabase
+        .from('project_notes')
+        .select('*')
+        .eq('project_id', project_id);
+      
+      if (notesError) throw new Error(notesError.message);
+      
+      // Načteme autory samostatně
+      const authorIds = [...new Set(notesData?.map(note => note.author_id) || [])];
+      const { data: authorsData, error: authorsError } = await supabase
+        .from('user_meta')
+        .select('user_id, full_name, email, avatar_url')
+        .in('user_id', authorIds);
+      
+      if (authorsError) throw new Error(authorsError.message);
+      
+      const authorsMap = new Map(authorsData?.map(author => [author.user_id, author]) || []);
+      
+      return (notesData || []).map(note => {
+        const author = authorsMap.get(note.author_id);
+        return {
+          id: note.id,
+          text: note.text,
+          author: author ? {
+            id: author.user_id,
+            fullName: author.full_name || '',
+            email: author.email || '',
+            createdAt: new Date(0),
+            updatedAt: new Date(0),
+            additional: {
+              avatar_url: author.avatar_url || undefined
+            },
+          } : {
+            id: note.author_id,
+            fullName: '',
+            email: '',
+            createdAt: new Date(0),
+            updatedAt: new Date(0),
+            additional: {},
+          },
+          createdAt: note.created_at,
+          updatedAt: note.updated_at,
+        };
+      });
+    }
+    
     return (data || []).map(note => ({
       id: note.id,
       text: note.text,

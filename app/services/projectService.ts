@@ -28,6 +28,10 @@ export class ProjectService {
     const domainProjects = await projectRepository.findByScopeId(scopeId);
     
     const componentProjects = await Promise.all(domainProjects.map(async domainProject => {
+      // Načteme poznámky pro tento projekt
+      const { ProjectNoteService } = await import('./projectNoteService');
+      const notes = await ProjectNoteService.getNotes(domainProject.id);
+      
       const componentProject = {
         id: domainProject.id,
         name: domainProject.name,
@@ -48,7 +52,9 @@ export class ProjectService {
         pm_done: domainProject.pmDone,
         dpl_done: domainProject.dplDone,
         // Map custom role data from customRoleData property
-        ...(domainProject.customRoleData || {})
+        ...(domainProject.customRoleData || {}),
+        // Přidáme poznámky
+        notes: notes
       } as Project;
       
       // Remove domain-specific properties to avoid conflicts
@@ -121,6 +127,10 @@ export class ProjectService {
       ...(Object.keys(customRoleData).length > 0 ? { customRoleData } : {})
     });
     
+    // Načteme poznámky pro nový projekt
+    const { ProjectNoteService } = await import('./projectNoteService');
+    const notes = await ProjectNoteService.getNotes(domainProject.id);
+    
     // Map domain project to component project
     return {
       id: domainProject.id,
@@ -142,7 +152,9 @@ export class ProjectService {
       pm_done: domainProject.pmDone,
       dpl_done: domainProject.dplDone,
       // Map custom role data from customRoleData property only
-      ...(domainProject.customRoleData || {})
+      ...(domainProject.customRoleData || {}),
+      // Přidáme poznámky
+      notes: notes
     } as Project;
   }
 
@@ -210,6 +222,10 @@ export class ProjectService {
     
     const domainProject = await projectRepository.update(projectId, domainProjectUpdates);
     
+    // Načteme poznámky pro aktualizovaný projekt
+    const { ProjectNoteService } = await import('./projectNoteService');
+    const notes = await ProjectNoteService.getNotes(domainProject.id);
+    
     // Map domain project to component project
     return {
       id: domainProject.id,
@@ -231,7 +247,9 @@ export class ProjectService {
       pm_done: domainProject.pmDone,
       dpl_done: domainProject.dplDone,
       // Map custom role data from customRoleData property
-      ...(domainProject.customRoleData || {})
+      ...(domainProject.customRoleData || {}),
+      // Přidáme poznámky
+      notes: notes
     } as Project;
   }
 
