@@ -82,6 +82,9 @@ export class JiraSyncService {
         apiToken: scopeSettings.jira.apiToken || undefined
       };
 
+      // Get subtask handling configuration (default to 'parent' for robust behavior)
+      const subtaskHandling = scopeSettings.jira?.subtaskHandling || 'parent';
+
       // Get user mappings
       const userMappings = (scopeSettings as any).jiraUserMappings || {};
       const projectMappings = (scopeSettings as any).jiraProjectMappings || {};
@@ -132,14 +135,36 @@ export class JiraSyncService {
               });
             } else if (jiraMappingObj.mappingType === 'issue' && jiraMappingObj.jiraIssueKey) {
               // For issue mapping, only import worklogs for that specific issue
-              projectWorklogs = projectWorklogs.filter(w => 
-                w.issueKey === jiraMappingObj.jiraIssueKey
-              );
+              // Use effectiveIssueKey for subtasks to match parent issues
+              projectWorklogs = projectWorklogs.filter(w => {
+                const effectiveKey = w.effectiveIssueKey || w.issueKey;
+                return effectiveKey === jiraMappingObj.jiraIssueKey;
+              });
             }
 
             for (const worklog of projectWorklogs) {
               try {
+                // Apply subtask handling configuration
+                if (worklog.isSubtask) {
+                  if (subtaskHandling === 'exclude') {
+                    // Skip subtask worklogs entirely
+                    continue;
+                  } else if (subtaskHandling === 'parent' && worklog.parentKey) {
+                    // Use parent issue key for mapping (already handled in effectiveIssueKey)
+                    // This is the default robust behavior
+                  }
+                  // If subtaskHandling === 'include', process subtasks as regular issues
+                }
+
                 const timesheetService = new TimesheetService();
+                
+                // Create enhanced description that includes subtask information
+                let description = this.extractWorklogDescription(worklog.comment);
+                if (worklog.isSubtask && worklog.parentKey) {
+                  const subtaskInfo = `[Subtask: ${worklog.issueKey} → Parent: ${worklog.parentKey}]`;
+                  description = description ? `${subtaskInfo} ${description}` : subtaskInfo;
+                }
+                
                 await timesheetService.createTimesheet({
                   memberId: teamMemberId,
                   projectId: projectId,
@@ -147,13 +172,18 @@ export class JiraSyncService {
                   date: new Date(worklog.date),
                   hours: worklog.hours,
                   role: 'developer', // Default role, can be enhanced later
-                  description: this.extractWorklogDescription(worklog.comment),
-                  jiraIssueKey: worklog.issueKey,
-                  jiraWorklogId: worklog.worklogId || worklog.issueKey // Use actual worklogId if available
+                  description: description,
+                  jiraIssueKey: worklog.issueKey, // Keep original issue key for tracking
+                  jiraWorklogId: worklog.worklogId || worklog.issueKey, // Use actual worklogId if available
+                  // Store additional metadata for better tracking
+                  externalId: worklog.effectiveIssueKey || worklog.issueKey // Use effective key for external reference
                 });
                 worklogsImported++;
               } catch (error) {
-                errors.push(`Chyba při importu worklogu ${worklog.issueKey}: ${error}`);
+                const issueInfo = worklog.isSubtask ? 
+                  `${worklog.issueKey} (subtask of ${worklog.parentKey})` : 
+                  worklog.issueKey;
+                errors.push(`Chyba při importu worklogu ${issueInfo}: ${error}`);
               }
             }
           }

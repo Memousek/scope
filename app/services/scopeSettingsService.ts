@@ -10,6 +10,7 @@ export interface ScopeSettings {
     baseUrl?: string | null;
     email?: string | null;
     apiToken?: string | null;
+    subtaskHandling?: 'include' | 'exclude' | 'parent'; // How to handle subtasks
   };
   debug?: { enabled?: boolean };
   calendar?: {

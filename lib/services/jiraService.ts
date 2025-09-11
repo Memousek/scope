@@ -8,11 +8,17 @@ export interface JiraWorklogEntry {
   date: string; // ISO YYYY-MM-DD
   authorAccountId: string;
   authorEmail?: string;
-  issueKey: string;
+  issueKey: string; // Original issue key
+  effectiveIssueKey?: string; // Key to use for project mapping (parent for subtasks)
   projectKey?: string;
+  issueType?: string; // Issue type (e.g., "Story", "Sub-task")
+  isSubtask?: boolean; // Whether this worklog is from a subtask
+  parentKey?: string; // Parent issue key for subtasks
   hours: number;
   comment?: string;
   worklogId?: string; // JIRA worklog ID
+  issueSummary?: string; // Issue summary for better tracking
+  parentSummary?: string; // Parent issue summary for subtasks
 }
 
 export interface JiraUser {

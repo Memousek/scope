@@ -30,6 +30,7 @@ export function ScopeSettings({ scopeId }: Props) {
   const [jiraBaseUrl, setJiraBaseUrl] = useState('');
   const [jiraEmail, setJiraEmail] = useState('');
   const [jiraApiToken, setJiraApiToken] = useState('');
+  const [jiraSubtaskHandling, setJiraSubtaskHandling] = useState<'include' | 'exclude' | 'parent'>('parent');
   const [debugEnabled, setDebugEnabled] = useState(false);
   const [includeHolidays, setIncludeHolidays] = useState<boolean>(true);
   const [holidayCountry, setHolidayCountry] = useState<string>('CZ');
@@ -78,6 +79,7 @@ export function ScopeSettings({ scopeId }: Props) {
           setJiraBaseUrl(cfg.jira.baseUrl || '');
           setJiraEmail(cfg.jira.email || '');
           setJiraApiToken(cfg.jira.apiToken || '');
+          setJiraSubtaskHandling(cfg.jira.subtaskHandling || 'parent');
         }
         setDebugEnabled(Boolean(cfg.debug?.enabled));
         const include = typeof cfg.calendar?.includeHolidays === 'boolean'
@@ -112,7 +114,7 @@ export function ScopeSettings({ scopeId }: Props) {
       await ScopeService.updateScopeName(scopeId, scopeName);
       await ScopeService.updateScopeDescription(scopeId, scopeDescription);
 
-      await ScopeSettingsService.upsert(scopeId, { jira: { baseUrl: jiraBaseUrl, email: jiraEmail, apiToken: jiraApiToken }, debug: { enabled: debugEnabled }, calendar: { includeHolidays, country: holidayCountry, subdivision: holidaySubdivision || null } });
+      await ScopeSettingsService.upsert(scopeId, { jira: { baseUrl: jiraBaseUrl, email: jiraEmail, apiToken: jiraApiToken, subtaskHandling: jiraSubtaskHandling }, debug: { enabled: debugEnabled }, calendar: { includeHolidays, country: holidayCountry, subdivision: holidaySubdivision || null } });
       try { sessionStorage.setItem(`scope:${scopeId}:integrations-cache`, JSON.stringify({ jiraBaseUrl, jiraEmail, jiraApiToken, debugEnabled, includeHolidays, holidayCountry, holidaySubdivision })); } catch {}
       // Notifikuj ostatní části aplikace o změně kalendáře (pro přepočty)
       try {
@@ -181,6 +183,19 @@ export function ScopeSettings({ scopeId }: Props) {
               <label className="block text-sm mb-1">{t('scopeSettings.apiToken')}</label>
               <input type="password" value={jiraApiToken} onChange={(e) => setJiraApiToken(e.target.value)} className="w-full rounded-lg border px-3 py-2 bg-white dark:bg-gray-900" placeholder="********" />
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('scopeSettings.apiTokenHint')}</p>
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm mb-1">{t('scopeSettings.subtaskHandling')}</label>
+              <select 
+                value={jiraSubtaskHandling} 
+                onChange={(e) => setJiraSubtaskHandling(e.target.value as 'include' | 'exclude' | 'parent')}
+                className="w-full rounded-lg border px-3 py-2 bg-white dark:bg-gray-900"
+              >
+                <option value="parent">{t('scopeSettings.subtaskHandlingParent')}</option>
+                <option value="include">{t('scopeSettings.subtaskHandlingInclude')}</option>
+                <option value="exclude">{t('scopeSettings.subtaskHandlingExclude')}</option>
+              </select>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('scopeSettings.subtaskHandlingHint')}</p>
             </div>
           </div>
           <div className="relative z-10 flex items-center gap-2 mt-4">
