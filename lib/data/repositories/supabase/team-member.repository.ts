@@ -37,7 +37,8 @@ export class SupabaseTeamMemberRepository implements TeamMemberRepository {
         name: teamMember.name,
         role: teamMember.role,
         fte: teamMember.fte,
-        md_rate: teamMember.mdRate
+        md_rate: teamMember.mdRate,
+        cost_md_rate: teamMember.costMdRate
       })
       .select()
       .single();
@@ -59,6 +60,7 @@ export class SupabaseTeamMemberRepository implements TeamMemberRepository {
         role: teamMember.role,
         fte: teamMember.fte,
         md_rate: teamMember.mdRate,
+        cost_md_rate: teamMember.costMdRate,
         vacations: teamMember.vacations,
       })
       .eq('id', id)
@@ -105,6 +107,7 @@ export class SupabaseTeamMemberRepository implements TeamMemberRepository {
       role: data.role,
       fte: data.fte,
       mdRate: data.md_rate,
+      costMdRate: data.cost_md_rate,
       vacations: data.vacations,
       createdAt: new Date(data.created_at)
     };

@@ -42,11 +42,14 @@ interface ProjectCost {
     memberId: string;
     memberName: string;
     role: string;
-    mdRate: number;
+    mdRate: number;              // Prodejní MD Rate
+    costMdRate: number;          // Nákladový MD Rate
     estimatedAllocation: number;  // Odhadované mandays pro roli
     actualAllocation: number;     // Skutečně odpracované hodiny
-    estimatedCost: number;        // Odhadované náklady
-    actualCost: number;           // Skutečné náklady
+    estimatedCost: number;        // Odhadované náklady (prodejní)
+    actualCost: number;           // Skutečné náklady (nákladový)
+    estimatedProfit: number;      // Odhadovaný zisk
+    actualProfit: number;         // Skutečný zisk
   }>;
 }
 
@@ -163,9 +166,11 @@ export function BillingSection({
           
           const estimatedMandays = Number(project[mandaysKey] || 0);
           
-          // Calculate average MD rate for this role
+          // Calculate average MD rates for this role
           const totalMdRate = members.reduce((sum, m) => sum + (m.mdRate || 0), 0);
+          const totalCostMdRate = members.reduce((sum, m) => sum + (m.costMdRate || 0), 0);
           const avgMdRate = members.length > 0 ? totalMdRate / members.length : 0;
+          const avgCostMdRate = members.length > 0 ? totalCostMdRate / members.length : 0;
           
           // Estimated cost based on role mandays and average MD rate (ONCE per role, not per member)
           const estimatedCost = estimatedMandays * avgMdRate;
@@ -202,16 +207,22 @@ export function BillingSection({
           // Distribute mandays equally among team members with the same role
           const memberEstimatedMandays = estimatedMandays / members.length;
           const memberEstimatedCost = memberEstimatedMandays * (member.mdRate || 0);
+          const memberActualCost = memberActualMandays * (member.costMdRate || 0);
+          const memberEstimatedProfit = memberEstimatedCost - (memberEstimatedMandays * (member.costMdRate || 0));
+          const memberActualProfit = (memberActualMandays * (member.mdRate || 0)) - memberActualCost;
           
           return {
             memberId: member.id,
             memberName: member.name,
             role: member.role,
             mdRate: member.mdRate || 0,
+            costMdRate: member.costMdRate || 0,
             estimatedAllocation: memberEstimatedMandays, // Individual mandays allocation
             actualAllocation: memberActualMandays,
-            estimatedCost: memberEstimatedCost, // Individual cost for this member
-            actualCost: memberActualMandays * (member.mdRate || 0)
+            estimatedCost: memberEstimatedCost, // Individual cost for this member (prodejní)
+            actualCost: memberActualCost, // Skutečné náklady (nákladový)
+            estimatedProfit: memberEstimatedProfit,
+            actualProfit: memberActualProfit
           };
         });
       });
@@ -438,7 +449,7 @@ export function BillingSection({
   };
 
   // Check if billing is configured (at least some team members have MD rates)
-  const billingConfigured = team.some(member => member.mdRate && member.mdRate > 0);
+  const billingConfigured = team.some(member => (member.mdRate && member.mdRate > 0) || (member.costMdRate && member.costMdRate > 0));
 
   return (
     <section className="space-y-6">
@@ -588,9 +599,9 @@ export function BillingSection({
                       <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-green-500 rounded-xl flex items-center justify-center">
                         <FiTrendingUp className="text-white text-xl" />
                       </div>
-                      <div>
+                      <div title={t('billing.estimatedCostsTooltip')}>
                         <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
-                          {t("estimatedCost")}
+                          {t("billing.estimatedCosts")}
                         </p>
                         <div className="text-2xl font-bold text-gray-900 dark:text-white">
                           {formatCurrency(totalStats.totalEstimated)}
@@ -606,9 +617,9 @@ export function BillingSection({
                       <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
                         <FiDollarSign className="text-white text-xl" />
                       </div>
-                      <div>
+                      <div title={t('billing.actualCostsTooltip')}>
                         <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
-                          {t("actualCost")}
+                          {t("billing.actualCosts")}
                         </p>
                         <div className="text-2xl font-bold text-gray-900 dark:text-white">
                           {formatCurrency(totalStats.totalActual)}
@@ -634,9 +645,9 @@ export function BillingSection({
                       <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
                         <FiTrendingUp className="text-white text-xl" />
                       </div>
-                      <div>
+                      <div title={t('billing.remainingBudgetTooltip')}>
                         <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
-                          {t("remainingBudget")}
+                          {t("billing.remainingBudget")}
                         </p>
                         <div className="text-2xl font-bold text-gray-900 dark:text-white">
                           {formatCurrency(totalStats.totalRemaining)}
@@ -652,9 +663,9 @@ export function BillingSection({
                       <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center">
                         <FiUsers className="text-white text-xl" />
                       </div>
-                      <div>
+                      <div title={t('billing.budgetUtilizationTooltip')}>
                         <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
-                          {t("budgetUtilization")}
+                          {t("billing.budgetUtilization")}
                         </p>
                         <div className="text-2xl font-bold text-gray-900 dark:text-white">
                           {totalStats.budgetUtilization.toFixed(1)}%
@@ -721,20 +732,20 @@ export function BillingSection({
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                          <div className="text-center">
-                            <p className="text-sm text-gray-600 dark:text-gray-400">{t("estimatedCost")}</p>
+                          <div className="text-center" title={t('billing.estimatedCostsTooltip')}>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{t("billing.estimatedCosts")}</p>
                             <p className="text-xl font-bold text-gray-900 dark:text-white">
                               {formatCurrency(project.estimatedCost)}
                             </p>
                           </div>
-                          <div className="text-center">
-                            <p className="text-sm text-gray-600 dark:text-gray-400">{t("actualCost")}</p>
+                          <div className="text-center" title={t('billing.actualCostsTooltip')}>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{t("billing.actualCosts")}</p>
                             <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
                               {formatCurrency(project.actualCost)}
                             </p>
                           </div>
-                          <div className="text-center">
-                            <p className="text-sm text-gray-600 dark:text-gray-400">{t("remainingBudget")}</p>
+                          <div className="text-center" title={t('billing.remainingBudgetTooltip')}>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{t("billing.remainingBudget")}</p>
                             <p className="text-xl font-bold text-purple-600 dark:text-purple-400">
                               {formatCurrency(project.remainingCost)}
                             </p>
@@ -779,11 +790,27 @@ export function BillingSection({
                                     </span>
                                   </div>
                                   <div className="flex items-center justify-between mt-1 text-xs">
-                                    <span className="text-gray-500 dark:text-gray-400">
-                                      Skutečné: {member.actualAllocation.toFixed(1)} MD
+                                    <span className="text-gray-500 dark:text-gray-500" title={t('billing.costsTooltip')}>
+                                      {t('billing.costs')}: {formatCurrency(member.costMdRate)}/MD
                                     </span>
-                                    <span className="font-medium text-blue-600 dark:text-blue-400">
+                                    <span className={`font-medium ${member.estimatedProfit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`} title={t('billing.estimatedProfitTooltip')}>
+                                      {t('billing.estimatedProfit')}: {formatCurrency(member.estimatedProfit)}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center justify-between mt-1 text-xs">
+                                    <span className="text-gray-500 dark:text-gray-400" title={t('billing.reportedTooltip')}>
+                                      {t('billing.reported')}: {member.actualAllocation.toFixed(1)} MD
+                                    </span>
+                                    <span className="font-medium text-blue-600 dark:text-blue-400" title={t('billing.actualCostsTooltip')}>
                                       {formatCurrency(member.actualCost)}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center justify-between mt-1 text-xs">
+                                    <span className="text-gray-500 dark:text-gray-500" title={t('billing.incomeTooltip')}>
+                                      {t('billing.income')}: {formatCurrency(member.actualAllocation * member.mdRate)}
+                                    </span>
+                                    <span className={`font-medium ${member.actualProfit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`} title={t('billing.actualProfitTooltip')}>
+                                      {t('billing.actualProfit')}: {formatCurrency(member.actualProfit)}
                                     </span>
                                   </div>
                                 </div>

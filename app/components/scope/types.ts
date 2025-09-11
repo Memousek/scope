@@ -10,7 +10,8 @@ export interface TeamMember {
   name: string;
   role: string;
   fte: number;
-  mdRate?: number; // MD Rate (daily rate) for billing calculations
+  mdRate?: number; // Prodejní MD Rate (co se prodává klientu)
+  costMdRate?: number; // Nákladový MD Rate (reálné náklady včetně osobních financí)
   vacations?: VacationRange[]; // optional UI-level metadata (persisted in localStorage)
   timesheets?: TimesheetEntry[]; // optional: stored per member as JSON
   createdAt: Date; // Creation date

@@ -11,6 +11,7 @@ export interface CreateTeamMemberData {
   role: string;
   fte: number;
   mdRate?: number;
+  costMdRate?: number;
   vacations?: Array<{ start: string; end: string; note?: string }>;
 }
 
@@ -29,16 +30,7 @@ export class TeamService {
     if (error) throw error;
     
     // Map database data to TeamMember objects with proper field mapping
-    return (data || []).map(item => ({
-      id: item.id,
-      scopeId: item.scope_id,
-      name: item.name,
-      role: item.role,
-      fte: item.fte,
-      mdRate: item.md_rate,
-      vacations: item.vacations,
-      createdAt: new Date(item.created_at)
-    }));
+    return (data || []).map(item => this.mapToModel(item));
   }
 
   /**
@@ -59,17 +51,7 @@ export class TeamService {
     
     if (!data) return null;
     
-    // Map database data to TeamMember object with proper field mapping
-    return {
-      id: data.id,
-      scopeId: data.scope_id,
-      name: data.name,
-      role: data.role,
-      fte: data.fte,
-      mdRate: data.md_rate,
-      vacations: data.vacations,
-      createdAt: new Date(data.created_at)
-    };
+    return this.mapToModel(data);
   }
 
   /**
@@ -90,6 +72,10 @@ export class TeamService {
     if (memberData.mdRate !== undefined) {
       dbData.md_rate = memberData.mdRate;
     }
+    
+    if (memberData.costMdRate !== undefined) {
+      dbData.cost_md_rate = memberData.costMdRate;
+    }
 
     const { data, error } = await supabase
       .from('team_members')
@@ -99,17 +85,7 @@ export class TeamService {
 
     if (error) throw error;
     
-    // Map database data to TeamMember object with proper field mapping
-    return {
-      id: data.id,
-      scopeId: data.scope_id,
-      name: data.name,
-      role: data.role,
-      fte: data.fte,
-      mdRate: data.md_rate,
-      vacations: data.vacations,
-      createdAt: new Date(data.created_at)
-    };
+    return this.mapToModel(data);
   }
 
   /**
@@ -123,6 +99,8 @@ export class TeamService {
     Object.entries(updates).forEach(([key, value]) => {
       if (key === 'mdRate') {
         dbUpdates.md_rate = value;
+      } else if (key === 'costMdRate') {
+        dbUpdates.cost_md_rate = value;
       } else if (key === 'scopeId') {
         dbUpdates.scope_id = value;
       } else {
@@ -139,17 +117,7 @@ export class TeamService {
 
     if (error) throw error;
     
-    // Map database data to TeamMember object with proper field mapping
-    return {
-      id: data.id,
-      scopeId: data.scope_id,
-      name: data.name,
-      role: data.role,
-      fte: data.fte,
-      mdRate: data.md_rate,
-      vacations: data.vacations,
-      createdAt: new Date(data.created_at)
-    };
+    return this.mapToModel(data);
   }
 
   /**
@@ -187,5 +155,22 @@ export class TeamService {
    */
   static getUniqueRoles(team: TeamMember[]): string[] {
     return [...new Set(team.map(member => member.role))];
+  }
+
+  /**
+   * Map database data to TeamMember object
+   */
+  private static mapToModel(data: any): TeamMember {
+    return {
+      id: data.id,
+      scopeId: data.scope_id,
+      name: data.name,
+      role: data.role,
+      fte: data.fte,
+      mdRate: data.md_rate,
+      costMdRate: data.cost_md_rate,
+      vacations: data.vacations,
+      createdAt: new Date(data.created_at)
+    };
   }
 } 

@@ -237,7 +237,14 @@ export function TeamSection({ scopeId, team, projects, onTeamChange, readOnlyMod
   ) => {
     setSavingMember(true);
     try {
-      await TeamService.updateTeamMember(memberId, { [field]: value } as Partial<TeamMember>);
+      const updatedMember = await TeamService.updateTeamMember(memberId, { [field]: value } as Partial<TeamMember>);
+      
+      // Aktualizuj UI s nejnovějšími daty z databáze
+      const updatedTeam = team.map(member => 
+        member.id === memberId ? updatedMember : member
+      );
+      onTeamChange(updatedTeam);
+      
       toast.success('Změny uloženy', 'Informace o členovi týmu byly úspěšně aktualizovány.');
     } catch (error) {
       console.error('Chyba při ukládání člena týmu:', error);
@@ -245,7 +252,7 @@ export function TeamSection({ scopeId, team, projects, onTeamChange, readOnlyMod
     } finally {
       setSavingMember(false);
     }
-  }, [toast]);
+  }, [toast, team, onTeamChange]);
 
   const handleEditMember = useCallback((
     memberId: string,
@@ -1005,28 +1012,78 @@ export function TeamSection({ scopeId, team, projects, onTeamChange, readOnlyMod
                             </div>
                           </div>
 
-                          {/* MD Rate - Consistent with other inputs */}
+                          {/* MD Rates - Prodejní a Nákladový */}
                           {!readOnlyMode && (
-                            <div className="flex items-center gap-2">
-                              <input
-                                className="w-24 bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-400 transition-all duration-200 text-center font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                type="number"
-                                min={0}
-                                step={100}
-                                value={member.mdRate || 0}
-                                onChange={(e) =>
-                                  handleEditMember(
-                                    member.id,
-                                    "mdRate",
-                                    Number(e.target.value)
-                                  )
-                                }
-                                placeholder="0"
-                                disabled={readOnlyMode}
-                              />
-                              <span className="text-sm text-gray-600 dark:text-gray-300 font-medium">
-                                {currencyInfo.code}/den
-                              </span>
+                            <div className="flex flex-col gap-2">
+                              {/* Prodejní MD Rate */}
+                              <div className="flex items-center gap-2">
+                                <input
+                                  className="w-20 bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-400 transition-all duration-200 text-center font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                  type="number"
+                                  min={0}
+                                  step={100}
+                                  value={member.mdRate || 0}
+                                  onChange={(e) =>
+                                    handleEditMember(
+                                      member.id,
+                                      "mdRate",
+                                      Number(e.target.value)
+                                    )
+                                  }
+                                  onFocus={(e) => {
+                                    if (e.target.value === '0') {
+                                      e.target.value = '';
+                                    }
+                                  }}
+                                  onBlur={(e) => {
+                                    if (e.target.value === '') {
+                                      e.target.value = '0';
+                                      handleEditMember(member.id, "mdRate", 0);
+                                    }
+                                  }}
+                                  placeholder="0"
+                                  disabled={readOnlyMode}
+                                  title={t('mdRate.sellingTooltip')}
+                                />
+                                <span className="text-xs text-gray-600 dark:text-gray-300 font-medium">
+                                  {t('mdRate.selling')}
+                                </span>
+                              </div>
+                              
+                              {/* Nákladový MD Rate */}
+                              <div className="flex items-center gap-2">
+                                <input
+                                  className="w-20 bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-400 transition-all duration-200 text-center font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                  type="number"
+                                  min={0}
+                                  step={100}
+                                  value={member.costMdRate || 0}
+                                  onChange={(e) =>
+                                    handleEditMember(
+                                      member.id,
+                                      "costMdRate",
+                                      Number(e.target.value)
+                                    )
+                                  }
+                                  onFocus={(e) => {
+                                    if (e.target.value === '0') {
+                                      e.target.value = '';
+                                    }
+                                  }}
+                                  onBlur={(e) => {
+                                    if (e.target.value === '') {
+                                      e.target.value = '0';
+                                      handleEditMember(member.id, "costMdRate", 0);
+                                    }
+                                  }}
+                                  placeholder="0"
+                                  disabled={readOnlyMode}
+                                  title={t('mdRate.costTooltip')}
+                                />
+                                <span className="text-xs text-gray-600 dark:text-gray-300 font-medium">
+                                  {t('mdRate.cost')}
+                                </span>
+                              </div>
                             </div>
                           )}
 
@@ -1260,28 +1317,78 @@ export function TeamSection({ scopeId, team, projects, onTeamChange, readOnlyMod
                             </div>
                           </div>
 
-                          {/* MD Rate - Mobile Consistent with other inputs */}
+                          {/* MD Rates - Mobile */}
                           {!readOnlyMode && (
-                            <div className="flex items-center gap-2">
-                              <input
-                                className="flex-1 bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-400 transition-all duration-200 text-center font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                type="number"
-                                min={0}
-                                step={100}
-                                value={member.mdRate || 0}
-                                onChange={(e) =>
-                                  handleEditMember(
-                                    member.id,
-                                    "mdRate",
-                                    Number(e.target.value)
-                                  )
-                                }
-                                placeholder="0"
-                                disabled={readOnlyMode}
-                              />
-                              <span className="text-sm text-gray-600 dark:text-gray-300 font-medium">
-                                {currencyInfo.code}/den
-                              </span>
+                            <div className="flex flex-col gap-3">
+                              {/* Prodejní MD Rate */}
+                              <div className="flex items-center gap-2">
+                                <input
+                                  className="flex-1 bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-400 transition-all duration-200 text-center font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                  type="number"
+                                  min={0}
+                                  step={100}
+                                  value={member.mdRate || 0}
+                                  onChange={(e) =>
+                                    handleEditMember(
+                                      member.id,
+                                      "mdRate",
+                                      Number(e.target.value)
+                                    )
+                                  }
+                                  onFocus={(e) => {
+                                    if (e.target.value === '0') {
+                                      e.target.value = '';
+                                    }
+                                  }}
+                                  onBlur={(e) => {
+                                    if (e.target.value === '') {
+                                      e.target.value = '0';
+                                      handleEditMember(member.id, "mdRate", 0);
+                                    }
+                                  }}
+                                  placeholder="0"
+                                  disabled={readOnlyMode}
+                                  title={t('mdRate.sellingTooltip')}
+                                />
+                                <span className="text-sm text-gray-600 dark:text-gray-300 font-medium">
+                                  {t('mdRate.selling')}
+                                </span>
+                              </div>
+                              
+                              {/* Nákladový MD Rate */}
+                              <div className="flex items-center gap-2">
+                                <input
+                                  className="flex-1 bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-400 transition-all duration-200 text-center font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                  type="number"
+                                  min={0}
+                                  step={100}
+                                  value={member.costMdRate || 0}
+                                  onChange={(e) =>
+                                    handleEditMember(
+                                      member.id,
+                                      "costMdRate",
+                                      Number(e.target.value)
+                                    )
+                                  }
+                                  onFocus={(e) => {
+                                    if (e.target.value === '0') {
+                                      e.target.value = '';
+                                    }
+                                  }}
+                                  onBlur={(e) => {
+                                    if (e.target.value === '') {
+                                      e.target.value = '0';
+                                      handleEditMember(member.id, "costMdRate", 0);
+                                    }
+                                  }}
+                                  placeholder="0"
+                                  disabled={readOnlyMode}
+                                  title={t('mdRate.costTooltip')}
+                                />
+                                <span className="text-sm text-gray-600 dark:text-gray-300 font-medium">
+                                  {t('mdRate.cost')}
+                                </span>
+                              </div>
                             </div>
                           )}
 

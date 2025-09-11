@@ -104,7 +104,10 @@ export class TimesheetService {
     hours: number;
     mandays: number;
     mdRate: number;
-    cost: number;
+    costMdRate: number;
+    sellingCost: number;
+    actualCost: number;
+    profit: number;
   }>> {
     const timesheets = await this.getTimesheetsByScope(scopeId, dateFrom, dateTo);
     
@@ -122,7 +125,10 @@ export class TimesheetService {
           hours: 0,
           mandays: 0,
           mdRate: 0, // Would need to get from team_members
-          cost: 0
+          costMdRate: 0, // Would need to get from team_members
+          sellingCost: 0,
+          actualCost: 0,
+          profit: 0
         };
       }
       
@@ -139,7 +145,10 @@ export class TimesheetService {
       hours: number;
       mandays: number;
       mdRate: number;
-      cost: number;
+      costMdRate: number;
+      sellingCost: number;
+      actualCost: number;
+      profit: number;
     }>);
 
     // Convert to array and calculate costs (when MD rates are available)
