@@ -41,7 +41,7 @@ export function useScopeNavigation() {
   const categories: SidebarCategory[] = useMemo(() => [
     {
       id: 'analytics',
-      label: 'Analýza',
+      label: t('analytics'),
       icon: React.createElement(FiBarChart2, { className: "w-5 h-5" }),
       tabs: [
         { id: 'overview', label: t('overview'), icon: React.createElement(FiBarChart2) },
@@ -51,7 +51,7 @@ export function useScopeNavigation() {
     },
     {
       id: 'team-projects',
-      label: 'Tým & Projekty',
+      label: t('teamProjects'),
       icon: React.createElement(FiUsers, { className: "w-5 h-5" }),
       tabs: [
         { id: 'team', label: t('team'), icon: React.createElement(FiUsers) },
@@ -61,7 +61,7 @@ export function useScopeNavigation() {
     },
     {
       id: 'finance',
-      label: 'Finance',
+      label: t('finance'),
       icon: React.createElement(FiDollarSign, { className: "w-5 h-5" }),
       tabs: [
         { id: 'billing', label: t('billing'), icon: React.createElement(FiDollarSign) }
@@ -69,7 +69,7 @@ export function useScopeNavigation() {
     },
     {
       id: 'integration-settings',
-      label: 'Integrace & Nastavení',
+      label: t('integrationSettings'),
       icon: React.createElement(FiSettings, { className: "w-5 h-5" }),
       tabs: [
         { id: 'jira', label: t('jira'), icon: React.createElement(FiExternalLink) },
