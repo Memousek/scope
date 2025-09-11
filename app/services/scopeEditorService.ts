@@ -8,6 +8,7 @@ import { ContainerService } from '@/lib/container.service';
 import { ScopeEditorRepository } from '@/lib/domain/repositories/scope-editor.repository';
 import { ScopeRepository } from '@/lib/domain/repositories/scope.repository';
 import { UserRepository } from '@/lib/domain/repositories/user.repository';
+import { ScopeEditor } from '@/lib/domain/models/scope-editor.model';
 
 export interface InviteEditorData {
   scopeId: string;
