@@ -62,25 +62,6 @@ function formatIso(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-function getCalendarRange(base: Date): Date[] {
-  const first = new Date(base.getFullYear(), base.getMonth(), 1);
-  const last = new Date(base.getFullYear(), base.getMonth() + 1, 0);
-  
-  // Start on Monday, end on Sunday
-  const startDay = (first.getDay() + 6) % 7; // 0 = Monday
-  const calStart = new Date(first);
-  calStart.setDate(first.getDate() - startDay);
-  
-  const endDay = (last.getDay() + 6) % 7;
-  const calEnd = new Date(last);
-  calEnd.setDate(last.getDate() + (6 - endDay));
-
-  const days: Date[] = [];
-  for (let d = new Date(calStart); d <= calEnd; d.setDate(d.getDate() + 1)) {
-    days.push(new Date(d));
-  }
-  return days;
-}
 
 function getWeekRange(base: Date): Date[] {
   const days: Date[] = [];

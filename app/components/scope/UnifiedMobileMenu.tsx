@@ -15,30 +15,22 @@
 
 import React, { useState } from 'react';
 import { useTranslation } from '@/lib/translation';
+import { useScopeNavigation, TabType } from '@/app/hooks/useScopeNavigation';
 // import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
   FiMenu,
   FiX,
-  FiBarChart2,
-  FiTrendingUp,
-  FiClock,
-  FiUsers,
-  FiFolder,
-  FiCalendar,
-  FiDollarSign,
-  FiExternalLink,
-  FiSettings,
-  FiChevronDown,
-  FiChevronRight,
   FiUser,
+  FiSettings,
   FiShield,
-  FiLogOut
+  FiLogOut,
+  FiChevronDown,
+  FiChevronRight
 } from 'react-icons/fi';
 import { User } from '@/lib/domain/models/user.model';
 
-type TabType = "overview" | "team" | "projects" | "billing" | "timesheets" | "burndown" | "allocation" | "jira" | "settings";
 
 interface UnifiedMobileMenuProps {
   activeTab: TabType;
@@ -48,16 +40,6 @@ interface UnifiedMobileMenuProps {
   onLogout?: () => void;
 }
 
-interface SidebarCategory {
-  id: string;
-  label: string;
-  icon: React.ReactNode;
-  tabs: {
-    id: TabType;
-    label: string;
-    icon: React.ReactNode;
-  }[];
-}
 
 export function UnifiedMobileMenu({ 
   activeTab, 
@@ -69,59 +51,7 @@ export function UnifiedMobileMenu({
   const { t } = useTranslation();
   // const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['analytics', 'team-projects']));
-
-  const categories: SidebarCategory[] = [
-    {
-      id: 'analytics',
-      label: 'Analýza',
-      icon: <FiBarChart2 className="w-5 h-5" />,
-      tabs: [
-        { id: 'overview', label: t('overview'), icon: <FiBarChart2 /> },
-        { id: 'burndown', label: t('burndown'), icon: <FiTrendingUp /> },
-        { id: 'timesheets', label: t('timesheets'), icon: <FiClock /> }
-      ]
-    },
-    {
-      id: 'team-projects',
-      label: 'Tým & Projekty',
-      icon: <FiUsers className="w-5 h-5" />,
-      tabs: [
-        { id: 'team', label: t('team'), icon: <FiUsers /> },
-        { id: 'projects', label: t('projects'), icon: <FiFolder /> },
-        { id: 'allocation', label: t('allocationTable'), icon: <FiCalendar /> }
-      ]
-    },
-    {
-      id: 'finance',
-      label: 'Finance',
-      icon: <FiDollarSign className="w-5 h-5" />,
-      tabs: [
-        { id: 'billing', label: t('billing'), icon: <FiDollarSign /> }
-      ]
-    },
-    {
-      id: 'integration-settings',
-      label: 'Integrace & Nastavení',
-      icon: <FiSettings className="w-5 h-5" />,
-      tabs: [
-        { id: 'jira', label: t('jira'), icon: <FiExternalLink /> },
-        { id: 'settings', label: t('settings'), icon: <FiSettings /> }
-      ]
-    }
-  ];
-
-  const toggleCategory = (categoryId: string) => {
-    const newExpanded = new Set(expandedCategories);
-    if (newExpanded.has(categoryId)) {
-      newExpanded.delete(categoryId);
-    } else {
-      newExpanded.add(categoryId);
-    }
-    setExpandedCategories(newExpanded);
-  };
-
-  const isTabAllowed = (tabId: TabType) => allowedTabs.includes(tabId);
+  const { categories, expandedCategories, toggleCategory, isTabAllowed } = useScopeNavigation();
 
   const handleTabClick = (tab: TabType) => {
     onTabChange(tab);
@@ -262,7 +192,7 @@ export function UnifiedMobileMenu({
             
             <nav className="space-y-3">
               {categories.map((category) => {
-                const hasAllowedTabs = category.tabs.some(tab => isTabAllowed(tab.id));
+                const hasAllowedTabs = category.tabs.some(tab => isTabAllowed(tab.id, allowedTabs));
                 if (!hasAllowedTabs) return null;
 
                 const isExpanded = expandedCategories.has(category.id);
@@ -287,7 +217,7 @@ export function UnifiedMobileMenu({
                     {isExpanded && (
                       <div className="ml-4 space-y-1">
                         {category.tabs.map((tab) => {
-                          if (!isTabAllowed(tab.id)) return null;
+                          if (!isTabAllowed(tab.id, allowedTabs)) return null;
                           
                           const isActive = activeTab === tab.id;
                           
