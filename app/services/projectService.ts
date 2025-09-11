@@ -3,7 +3,6 @@
  * Centralizes all Supabase calls for projects
  */
 
-import { createClient } from '@/lib/supabase/client';
 import { Project, ProjectProgress } from '@/app/components/scope/types';
 import { ContainerService } from '@/lib/container.service';
 import { ProjectRepository } from '@/lib/domain/repositories/project.repository';

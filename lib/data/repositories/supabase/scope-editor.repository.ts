@@ -5,7 +5,7 @@ import { ScopeEditor } from "@/lib/domain/models/scope-editor.model";
 export class SupabaseScopeEditorRepository extends ScopeEditorRepository {
   async create(scopeEditor: Omit<ScopeEditor, "id" | "createdAt">): Promise<ScopeEditor> {
     const supabase = createClient();
-    const insertData: Record<string, any> = {
+    const insertData: Record<string, unknown> = {
       scope_id: scopeEditor.scopeId,
       email: scopeEditor.email
     };
@@ -197,7 +197,6 @@ export class SupabaseScopeEditorRepository extends ScopeEditorRepository {
     return this.mapToModel(data);
   }
 
-  // eslint-disable-next-line
   private mapToModel(data: unknown): ScopeEditor {
     return {
       id: data.id,
