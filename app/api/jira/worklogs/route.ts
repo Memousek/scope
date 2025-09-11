@@ -115,7 +115,7 @@ export async function POST(request: Request) {
           if (isoDate < from || isoDate > to) continue;
 
           // Determine the effective project key for subtasks
-          let effectiveProjectKey = projectKey;
+          const effectiveProjectKey = projectKey;
           let effectiveIssueKey = issue.key;
           let isSubtaskWorklog = false;
 

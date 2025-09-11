@@ -168,9 +168,9 @@ export function BillingSection({
           
           // Calculate average MD rates for this role
           const totalMdRate = members.reduce((sum, m) => sum + (m.mdRate || 0), 0);
-          const totalCostMdRate = members.reduce((sum, m) => sum + (m.costMdRate || 0), 0);
+          // const totalCostMdRate = members.reduce((sum, m) => sum + (m.costMdRate || 0), 0);
           const avgMdRate = members.length > 0 ? totalMdRate / members.length : 0;
-          const avgCostMdRate = members.length > 0 ? totalCostMdRate / members.length : 0;
+          // const avgCostMdRate = members.length > 0 ? totalCostMdRate / members.length : 0;
           
           // Estimated cost based on role mandays and average MD rate (ONCE per role, not per member)
           const estimatedCost = estimatedMandays * avgMdRate;

@@ -64,7 +64,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
         const projectMappings = settings?.jiraProjectMappings || [];
         
         if (Array.isArray(projectMappings)) {
-          const isMapped = projectMappings.some((mapping: any) => 
+          const isMapped = projectMappings.some((mapping: { localProjectId: string; jiraProjectKey: string }) => 
             mapping.localProjectId === project.id && mapping.jiraProjectKey
           );
           setIsJiraMapped(isMapped);

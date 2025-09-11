@@ -160,7 +160,18 @@ export class TeamService {
   /**
    * Map database data to TeamMember object
    */
-  private static mapToModel(data: any): TeamMember {
+  private static mapToModel(data: {
+    id: string;
+    scope_id: string;
+    name: string;
+    role: string;
+    fte: number;
+    md_rate: number;
+    cost_md_rate: number;
+    vacations?: string;
+    created_at: string;
+    updated_at: string;
+  }): TeamMember {
     return {
       id: data.id,
       scopeId: data.scope_id,
@@ -169,7 +180,7 @@ export class TeamService {
       fte: data.fte,
       mdRate: data.md_rate,
       costMdRate: data.cost_md_rate,
-      vacations: data.vacations,
+      vacations: data.vacations ? JSON.parse(data.vacations) : undefined,
       createdAt: new Date(data.created_at)
     };
   }
