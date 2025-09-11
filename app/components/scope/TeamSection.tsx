@@ -923,6 +923,17 @@ export function TeamSection({ scopeId, team, projects, onTeamChange, readOnlyMod
                                         Number(e.target.value)
                                       )
                                     }
+                                    onFocus={(e) => {
+                                      if (e.target.value === '1') {
+                                        e.target.value = '';
+                                      }
+                                    }}
+                                    onBlur={(e) => {
+                                      if (e.target.value === '') {
+                                        e.target.value = '1';
+                                        handleEditMember(member.id, "fte", 1);
+                                      }
+                                    }}
                                     disabled={readOnlyMode}
                                   />
                                   <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-gray-500 dark:text-gray-400">

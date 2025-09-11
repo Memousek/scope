@@ -265,6 +265,17 @@ export function ProjectTeamAssignmentModal({
                   step="0.1"
                   value={allocationFte}
                   onChange={(e) => setAllocationFte(Number(e.target.value))}
+                  onFocus={(e) => {
+                    if (e.target.value === '0') {
+                      e.target.value = '';
+                    }
+                  }}
+                  onBlur={(e) => {
+                    if (e.target.value === '') {
+                      e.target.value = '0';
+                      setAllocationFte(0);
+                    }
+                  }}
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   disabled={loading}
                 />

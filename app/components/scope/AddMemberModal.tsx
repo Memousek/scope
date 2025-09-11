@@ -142,6 +142,17 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
             className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
             value={newMember.fte}
             onChange={e => setNewMember(m => ({ ...m, fte: Number(e.target.value) }))}
+            onFocus={(e) => {
+              if (e.target.value === '1') {
+                e.target.value = '';
+              }
+            }}
+            onBlur={(e) => {
+              if (e.target.value === '') {
+                e.target.value = '1';
+                setNewMember(m => ({ ...m, fte: 1 }));
+              }
+            }}
             disabled={savingMember}
             required
           />
