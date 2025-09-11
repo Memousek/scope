@@ -175,11 +175,11 @@ export function ScopeSettings({ scopeId }: Props) {
             </div>
             <div>
               <label className="block text-sm mb-1">{t('scopeSettings.email')}</label>
-              <input value={jiraEmail} onChange={(e) => setJiraEmail(e.target.value)} className="w-full rounded-lg border px-3 py-2 bg-white dark:bg-gray-900" />
+              <input value={jiraEmail} onChange={(e) => setJiraEmail(e.target.value)} className="w-full rounded-lg border px-3 py-2 bg-white dark:bg-gray-900" placeholder="your@email.com" />
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm mb-1">{t('scopeSettings.apiToken')}</label>
-              <input type="password" value={jiraApiToken} onChange={(e) => setJiraApiToken(e.target.value)} className="w-full rounded-lg border px-3 py-2 bg-white dark:bg-gray-900" />
+              <input type="password" value={jiraApiToken} onChange={(e) => setJiraApiToken(e.target.value)} className="w-full rounded-lg border px-3 py-2 bg-white dark:bg-gray-900" placeholder="********" />
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('scopeSettings.apiTokenHint')}</p>
             </div>
           </div>
