@@ -150,9 +150,26 @@ export function ModernScopeLayout({
   useEffect(() => {
     const loadIntegrations = async () => {
       try {
-        // This will update the sessionStorage cache and return fresh data
-        const integrationsData = await getScopeIntegration(scopeId);
-        setIntegrations(integrationsData);
+        // Load fresh data from database via ScopeSettingsService
+        const { ScopeSettingsService } = await import('@/app/services/scopeSettingsService');
+        const settings = await ScopeSettingsService.get(scopeId);
+        
+        if (settings?.jira) {
+          const integrationsData = {
+            jiraBaseUrl: settings.jira.baseUrl || undefined,
+            jiraApiToken: settings.jira.apiToken || undefined,
+            jiraEmail: settings.jira.email || undefined
+          };
+          
+          // Update sessionStorage cache
+          try {
+            sessionStorage.setItem(`scope:${scopeId}:integrations-cache`, JSON.stringify(integrationsData));
+          } catch {}
+          
+          setIntegrations(integrationsData);
+        } else {
+          setIntegrations(null);
+        }
       } catch (error) {
         console.error('Failed to load integrations:', error);
         // Keep the initial value from sessionStorage
@@ -182,7 +199,7 @@ export function ModernScopeLayout({
       setActiveTab(nextTab);
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scopeId, readOnlyMode]);
+  }, [scopeId, readOnlyMode, integrations]);
 
   // Listen for custom events from import modal
   useEffect(() => {
