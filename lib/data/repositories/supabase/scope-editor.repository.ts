@@ -197,7 +197,8 @@ export class SupabaseScopeEditorRepository extends ScopeEditorRepository {
     return this.mapToModel(data);
   }
 
-  private mapToModel(data: unknown): ScopeEditor {
+  // eslint-disable-next-line
+  private mapToModel(data: any): ScopeEditor {
     return {
       id: data.id,
       scopeId: data.scope_id,
