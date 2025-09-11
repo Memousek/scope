@@ -206,7 +206,7 @@ const [currentProjectSlippage, setCurrentProjectSlippage] = React.useState<numbe
             <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
               {getCurrentProgress(project)}%
             </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">Aktuální</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">{t("currentProgress")}</div>
           </div>
           
           <div className="text-center">
