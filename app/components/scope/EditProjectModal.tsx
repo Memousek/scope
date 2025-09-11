@@ -11,10 +11,11 @@ import { Project } from './types';
 import { ProjectService } from '@/app/services/projectService';
 import { useTranslation } from '@/lib/translation';
 import { Modal } from '@/app/components/ui/Modal';
-import { FiEdit } from 'react-icons/fi';
+import { FiEdit, FiInfo } from 'react-icons/fi';
 import { ProjectStatusSelector } from './ProjectStatusSelector';
 import { ProjectStatus } from './ProjectStatusBadge';
 import { useToastFunctions } from '@/app/components/ui/Toast';
+import { ScopeSettingsService } from '@/app/services/scopeSettingsService';
 
 interface EditProjectModalProps {
   isOpen: boolean;
@@ -28,6 +29,7 @@ interface EditProjectModalProps {
     done: string;
     color: string;
   }>;
+  scopeId: string;
 }
 
 export const EditProjectModal: React.FC<EditProjectModalProps> = ({
@@ -36,11 +38,13 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
   project,
   onProjectChange,
   projectRoles,
+  scopeId,
 }) => {
   const { t } = useTranslation();
   const toast = useToastFunctions();
   const [editProject, setEditProject] = useState<Project>({ ...project });
   const initialEditState = useRef<Project>({ ...project });
+  const [isJiraMapped, setIsJiraMapped] = useState(false);
 
   // Aktualizujeme editProject když se změní project nebo projectRoles
   useEffect(() => {
@@ -49,6 +53,32 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
       initialEditState.current = { ...project };
     }
   }, [project]);
+
+  // Načteme Jira mapování pro detekci, jestli je projekt namapovaný na Jiru
+  useEffect(() => {
+    const checkJiraMapping = async () => {
+      if (!isOpen || !scopeId || !project) return;
+      
+      try {
+        const settings = await ScopeSettingsService.get(scopeId);
+        const projectMappings = settings?.jiraProjectMappings || [];
+        
+        if (Array.isArray(projectMappings)) {
+          const isMapped = projectMappings.some((mapping: any) => 
+            mapping.localProjectId === project.id && mapping.jiraProjectKey
+          );
+          setIsJiraMapped(isMapped);
+        } else {
+          setIsJiraMapped(false);
+        }
+      } catch (error) {
+        console.warn('Failed to check Jira mapping:', error);
+        setIsJiraMapped(false);
+      }
+    };
+
+    checkJiraMapping();
+  }, [isOpen, scopeId, project]);
 
   const handleSaveEditProject = async () => {
     // Validace: pouze role, které už v projektu mají mandays > 0, musí mít nenulový odhad
@@ -163,6 +193,18 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
         <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
           <h4 className="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200">{t('roleAndProgress')}</h4>
           
+          {isJiraMapped && (
+            <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg">
+              <div className="flex items-start gap-2">
+                <FiInfo className="w-4 h-4 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
+                <div className="text-sm text-yellow-800 dark:text-yellow-300">
+                  <p className="font-medium mb-1">{t('jiraProjectDetected')}</p>
+                  <p>{t('jiraProjectExplanation')}</p>
+                </div>
+              </div>
+            </div>
+          )}
+          
           {projectRoles.length === 0 ? (
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6 text-center">
               <div className="text-blue-600 dark:text-blue-400 mb-2">
@@ -208,12 +250,27 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
                             e.target.value = '';
                           }
                         }}
+                        onBlur={(e) => {
+                          if (e.target.value === '') {
+                            e.target.value = '0';
+                            setEditProject(p => ({ 
+                              ...p, 
+                              [role.mandays]: 0 
+                            } as Project));
+                          }
+                        }}
                         required
                       />
                     </div>
                     <div>
                       <label htmlFor={`${role.key}-done`} className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
                         % {t('done')}
+                        {isJiraMapped && (
+                          <span className="ml-2 inline-flex items-center text-xs text-yellow-600 dark:text-yellow-400">
+                            <FiInfo className="w-3 h-3 mr-1" />
+                            {t('jiraSynced')}
+                          </span>
+                        )}
                       </label>
                       <input
                         id={`${role.key}-done`}
@@ -221,12 +278,32 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
                         min="0"
                         max="100"
                         step="1"
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                        className={`w-full px-3 py-2 border rounded-lg transition-all duration-200 ${
+                          isJiraMapped 
+                            ? 'border-yellow-300 dark:border-yellow-600 bg-yellow-50 dark:bg-yellow-900/20 text-gray-500 dark:text-gray-400 cursor-not-allowed' 
+                            : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                        }`}
                         value={(editProject as unknown as Record<string, unknown>)[role.done] as number || 0}
                         onChange={e => setEditProject(p => ({ 
                           ...p, 
                           [role.done]: Number(e.target.value) 
                         } as Project))}
+                        onFocus={(e) => {
+                          if (!isJiraMapped && e.target.value === '0') {
+                            e.target.value = '';
+                          }
+                        }}
+                        onBlur={(e) => {
+                          if (!isJiraMapped && e.target.value === '') {
+                            e.target.value = '0';
+                            setEditProject(p => ({ 
+                              ...p, 
+                              [role.done]: 0 
+                            } as Project));
+                          }
+                        }}
+                        disabled={isJiraMapped}
+                        title={isJiraMapped ? t('jiraSyncedTooltip') : undefined}
                       />
                     </div>
                   </div>

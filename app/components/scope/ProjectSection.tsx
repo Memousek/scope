@@ -2416,6 +2416,7 @@ export function ProjectSection({
           project={editProject}
           onProjectChange={handleProjectChange}
           projectRoles={projectRoles}
+          scopeId={scopeId}
         />
       )}
 
