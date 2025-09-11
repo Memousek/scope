@@ -8,20 +8,6 @@ export interface CreateProjectNoteData {
   updated_at?: string;
 }
 
-interface ProjectNoteWithAuthor {
-  id: string;
-  text: string;
-  author_id: string;
-  created_at: string;
-  updated_at: string;
-  author?: {
-    user_id: string;
-    full_name: string | null;
-    email: string | null;
-    avatar_url: string | null;
-  } | null;
-}
-
 export class ProjectNoteService {
   static async updateNote(noteId: string, newText: string) {
     const supabase = createClient();
@@ -61,81 +47,63 @@ export class ProjectNoteService {
   static async getNotes(project_id: string) {
     const supabase = createClient();
     
-    // Použijeme SQL dotaz místo Supabase join syntaxe
-    const { data, error } = await supabase.rpc('get_project_notes_with_author', {
-      project_id_param: project_id
-    });
+    // Načteme poznámky z project_notes tabulky
+    const { data: notesData, error: notesError } = await supabase
+      .from('project_notes')
+      .select('*')
+      .eq('project_id', project_id)
+      .order('created_at', { ascending: false });
     
-    if (error) {
-      // Fallback na jednoduchý dotaz bez join
-      const { data: notesData, error: notesError } = await supabase
-        .from('project_notes')
-        .select('*')
-        .eq('project_id', project_id);
-      
-      if (notesError) throw new Error(notesError.message);
-      
-      // Načteme autory samostatně
-      const authorIds = [...new Set(notesData?.map(note => note.author_id) || [])];
+    if (notesError) throw new Error(notesError.message);
+    
+    if (!notesData || notesData.length === 0) {
+      return [];
+    }
+    
+    // Načteme autory z user_meta tabulky
+    const authorIds = [...new Set(notesData.map(note => note.author_id).filter(Boolean))];
+    let authorsMap = new Map();
+    
+    if (authorIds.length > 0) {
+      // Načteme autory z user_meta tabulky najednou
       const { data: authorsData, error: authorsError } = await supabase
         .from('user_meta')
         .select('user_id, full_name, email, avatar_url')
         .in('user_id', authorIds);
       
-      if (authorsError) throw new Error(authorsError.message);
-      
-      const authorsMap = new Map(authorsData?.map(author => [author.user_id, author]) || []);
-      
-      return (notesData || []).map(note => {
-        const author = authorsMap.get(note.author_id);
-        return {
-          id: note.id,
-          text: note.text,
-          author: author ? {
-            id: author.user_id,
-            fullName: author.full_name || '',
-            email: author.email || '',
-            createdAt: new Date(0),
-            updatedAt: new Date(0),
-            additional: {
-              avatar_url: author.avatar_url || undefined
-            },
-          } : {
-            id: note.author_id,
-            fullName: '',
-            email: '',
-            createdAt: new Date(0),
-            updatedAt: new Date(0),
-            additional: {},
-          },
-          createdAt: note.created_at,
-          updatedAt: note.updated_at,
-        };
-      });
+      if (!authorsError && authorsData) {
+        authorsData.forEach(author => {
+          authorsMap.set(author.user_id, author);
+        });
+      }
     }
     
-    return (data || []).map((note: ProjectNoteWithAuthor) => ({
-      id: note.id,
-      text: note.text,
-      author: note.author ? {
-        id: note.author.user_id,
-        fullName: note.author.full_name || '',
-        email: note.author.email || '',
-        createdAt: new Date(0),
-        updatedAt: new Date(0),
-        additional: {
-          avatar_url: note.author.avatar_url || undefined
+    // Zkombinujeme poznámky s autory
+    return notesData.map(note => {
+      const author = authorsMap.get(note.author_id);
+      return {
+        id: note.id,
+        text: note.text,
+        author: author ? {
+          id: author.user_id,
+          fullName: author.full_name || '',
+          email: author.email || '',
+          createdAt: new Date(0),
+          updatedAt: new Date(0),
+          additional: {
+            avatar_url: author.avatar_url || undefined
+          },
+        } : {
+          id: note.author_id,
+          fullName: 'Neznámý uživatel',
+          email: '',
+          createdAt: new Date(0),
+          updatedAt: new Date(0),
+          additional: {},
         },
-      } : {
-        id: note.author_id,
-        fullName: '',
-        email: '',
-        createdAt: new Date(0),
-        updatedAt: new Date(0),
-        additional: {},
-      },
-      createdAt: note.created_at,
-      updatedAt: note.updated_at,
-    }));
+        createdAt: note.created_at,
+        updatedAt: note.updated_at,
+      };
+    });
   }
 }

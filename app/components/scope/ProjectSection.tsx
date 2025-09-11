@@ -2135,7 +2135,8 @@ export function ProjectSection({
                                                   />
                                                   <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
                                                     {note.author.fullName ||
-                                                      note.author.email}
+                                                      note.author.email ||
+                                                      `Neznámý uživatel`}
                                                   </span>
                                                   <div className="flex gap-2 ml-auto">
                                                     {isAuthor && (

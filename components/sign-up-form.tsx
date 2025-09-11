@@ -52,7 +52,7 @@ export function SignUpForm({
     }
 
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -60,6 +60,26 @@ export function SignUpForm({
         },
       });
       if (error) throw error;
+      
+      // Pokud se uživatel úspěšně zaregistroval, vytvoříme záznam v user_meta
+      if (data.user) {
+        const { error: metaError } = await supabase
+          .from('user_meta')
+          .insert({
+            user_id: data.user.id,
+            email: data.user.email,
+            full_name: data.user.user_metadata?.full_name || null,
+            avatar_url: data.user.user_metadata?.avatar_url || null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+        
+        if (metaError) {
+          console.warn('Nepodařilo se vytvořit záznam v user_meta:', metaError);
+          // Pokračujeme i při chybě - uživatel se zaregistroval
+        }
+      }
+      
       router.push("/auth/sign-up-success");
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : t('registration_error'));
@@ -73,7 +93,12 @@ export function SignUpForm({
     setError(null);
     const supabase = createClient();
     try {
-      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
+      const { data, error } = await supabase.auth.signInWithOAuth({ 
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`
+        }
+      });
       if (error) throw error;
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : t('google_registration_error'));
