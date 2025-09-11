@@ -478,6 +478,7 @@
   "cancel": "Cancel",
   "of": "of",
   "remaining": "Remaining",
+  "approachingLimit": "Approaching limit",
   "limitReached": "Limit reached",
   "upgradeToIncreaseLimits": "Upgrade your plan to increase limits",
   "projectsLimit": "Projects",

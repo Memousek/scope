@@ -82,7 +82,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
       icon={<FiUserPlus size={24} className="text-white" />}
       maxWidth="lg"
     >
-      {usage && limits && (
+      {usage && limits && (limits.maxTeamMembers - usage.teamMembers) <= 5 && (
         <div className="mb-3 flex items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 p-3 bg-gray-50 dark:bg-gray-800/50">
           <div className="text-sm text-gray-700 dark:text-gray-300">
             {t('teamMembers')}: <span className="font-semibold">{usage.teamMembers}</span> {t('of')} <span className="font-semibold">{limits.maxTeamMembers}</span>

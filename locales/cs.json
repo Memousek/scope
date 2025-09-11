@@ -563,6 +563,7 @@
   "scopes": "Scopy",
   "of": "z",
   "remaining": "Zbývá",
+  "approachingLimit": "Blíží se limit",
   "limitReached": "Limit vyčerpán",
   "upgradeToIncreaseLimits": "Pro navýšení limitů přejděte na vyšší plán",
   "projectsLimit": "Projekty",

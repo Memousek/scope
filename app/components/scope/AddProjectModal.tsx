@@ -170,7 +170,7 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
       icon={<FiPlus size={24} className="text-white" />}
     >
       {/* Plan usage chip */}
-      {usage && limits && (
+      {usage && limits && (limits.maxProjects - usage.projects) <= 5 && (
         <div className="mb-4 flex items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 p-3 bg-gray-50 dark:bg-gray-800/50">
           <div className="text-sm text-gray-700 dark:text-gray-300">
             {t('projectsLimit')}: <span className="font-semibold">{usage.projects}</span> {t('of')} <span className="font-semibold">{limits.maxProjects}</span>
