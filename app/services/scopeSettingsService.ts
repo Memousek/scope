@@ -3,7 +3,6 @@
  * Persistuje nastavení scopu (např. Jira) v DB (tabulka scope_settings)
  */
 
-import { createClient } from '@/lib/supabase/client';
 import { ContainerService } from '@/lib/container.service';
 import { ScopeRepository } from '@/lib/domain/repositories/scope.repository';
 

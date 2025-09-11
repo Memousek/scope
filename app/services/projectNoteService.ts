@@ -1,4 +1,3 @@
-import { createClient } from '@/lib/supabase/client';
 import { ContainerService } from '@/lib/container.service';
 import { ProjectNoteRepository } from '@/lib/domain/repositories/project-note.repository';
 

@@ -456,8 +456,6 @@ export class ProjectService {
       date: Date;
     }>
   ): Promise<void> {
-    const supabase = createClient();
-    
     // Filter timesheets for this project
     const projectTimesheets = timesheetData.filter(ts => ts.projectId === projectId);
     

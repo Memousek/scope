@@ -30,7 +30,7 @@ export class SupabaseTeamMemberRepository implements TeamMemberRepository {
 
   async create(teamMember: Omit<TeamMember, 'id' | 'createdAt'>): Promise<TeamMember> {
     const supabase = createClient();
-    const insertData: Record<string, any> = {
+    const insertData: Record<string, unknown> = {
       scope_id: teamMember.scopeId,
       name: teamMember.name,
       role: teamMember.role,
@@ -58,7 +58,7 @@ export class SupabaseTeamMemberRepository implements TeamMemberRepository {
 
   async update(id: string, teamMember: Partial<TeamMember>): Promise<TeamMember> {
     const supabase = createClient();
-    const updateData: Record<string, any> = {};
+    const updateData: Record<string, unknown> = {};
 
     if (teamMember.scopeId !== undefined) updateData.scope_id = teamMember.scopeId;
     if (teamMember.name !== undefined) updateData.name = teamMember.name;

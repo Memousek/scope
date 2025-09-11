@@ -47,7 +47,6 @@ export default function AdminPage() {
     const load = async () => {
       try {
         setLoading(true);
-        const supabase = createClient();
         // plans
         const managePlans = ContainerService.getInstance().get(ManageUserPlansService);
         const allPlans = await managePlans.getAvailablePlans();
@@ -148,7 +147,6 @@ export default function AdminPage() {
   };
 
   const updateUserPlanInline = async (userId: string, planId: string | null) => {
-    const userRepository = ContainerService.getInstance().get(UserRepository);
     // Note: This would need a method in UserRepository to update plan_id
     // For now, keeping the direct Supabase call as it's a specific admin operation
     const supabase = createClient();

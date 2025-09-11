@@ -3,7 +3,6 @@
  * Centralizes all operations for scope editors and invitations
  */
 
-import { createClient } from '@/lib/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 import { ContainerService } from '@/lib/container.service';
 import { ScopeEditorRepository } from '@/lib/domain/repositories/scope-editor.repository';
@@ -99,7 +98,7 @@ export class ScopeEditorService {
     const token = uuidv4();
     const scopeEditorRepository = ContainerService.getInstance().get(ScopeEditorRepository);
     
-    const createData: any = {
+    const createData: Partial<ScopeEditor> = {
       scopeId,
       email,
       inviteToken: token

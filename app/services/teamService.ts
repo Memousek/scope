@@ -3,7 +3,6 @@
  * Centralizes all Supabase calls for team members
  */
 
-import { createClient } from '@/lib/supabase/client';
 import { TeamMember } from '@/app/components/scope/types';
 import { ContainerService } from '@/lib/container.service';
 import { TeamMemberRepository } from '@/lib/domain/repositories/team-member.repository';
