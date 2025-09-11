@@ -99,16 +99,14 @@ export class ScopeEditorService {
     const token = uuidv4();
     const scopeEditorRepository = ContainerService.getInstance().get(ScopeEditorRepository);
     
-    const createData: Partial<ScopeEditor> = {
+    const createData: Omit<ScopeEditor, "id" | "createdAt"> = {
       scopeId,
       email,
-      inviteToken: token
+      inviteToken: token,
+      userId: userId || null,
+      acceptedAt: userId ? new Date() : null,
+      invitedAt: new Date()
     };
-    
-    if (userId) {
-      createData.userId = userId;
-      createData.acceptedAt = new Date();
-    }
 
     await scopeEditorRepository.create(createData);
   }
