@@ -14,6 +14,7 @@ export interface TimesheetEntry {
   description?: string;
   jiraIssueKey?: string;
   jiraWorklogId?: string;
+  externalId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -28,6 +29,7 @@ export interface CreateTimesheetData {
   description?: string;
   jiraIssueKey?: string;
   jiraWorklogId?: string;
+  externalId?: string;
 }
 
 export interface UpdateTimesheetData {

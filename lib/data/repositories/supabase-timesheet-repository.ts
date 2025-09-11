@@ -40,7 +40,8 @@ export class SupabaseTimesheetRepository implements TimesheetRepository {
         role: data.role,
         description: data.description,
         jira_issue_key: data.jiraIssueKey,
-        jira_worklog_id: data.jiraWorklogId
+        jira_worklog_id: data.jiraWorklogId,
+        external_id: data.externalId
       })
       .select()
       .single();
@@ -324,7 +325,8 @@ export class SupabaseTimesheetRepository implements TimesheetRepository {
       role: item.role,
       description: item.description,
       jira_issue_key: item.jiraIssueKey,
-      jira_worklog_id: item.jiraWorklogId
+      jira_worklog_id: item.jiraWorklogId,
+      external_id: item.externalId
     }));
 
     const { data: timesheets, error } = await this.supabase
@@ -415,6 +417,7 @@ export class SupabaseTimesheetRepository implements TimesheetRepository {
       description: dbTimesheet.description as string,
       jiraIssueKey: (dbTimesheet.jira_issue_key as string | null) || undefined,
       jiraWorklogId: (dbTimesheet.jira_worklog_id as string | null) || undefined,
+      externalId: (dbTimesheet.external_id as string | null) || undefined,
       createdAt: new Date(dbTimesheet.created_at as string),
       updatedAt: new Date(dbTimesheet.updated_at as string)
     };
