@@ -130,7 +130,6 @@ export function TimesheetOverview({ scopeId, team, projects }: TimesheetOverview
   const [calendarView, setCalendarView] = useState<'week' | 'month'>('week');
   const [editingTimesheet, setEditingTimesheet] = useState<TimesheetEntry | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [deletingTimesheet, setDeletingTimesheet] = useState<string | null>(null); // Used in future UI updates
   const [calendarConfig, setCalendarConfig] = useState<{ includeHolidays: boolean; country: string; subdivision?: string | null }>({
     includeHolidays: true,

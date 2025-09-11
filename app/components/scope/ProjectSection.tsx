@@ -162,7 +162,6 @@ export function ProjectSection({
   // Note: skeleton rendering should happen in parent/layout to keep hooks order stable
 
   // Helper function to calculate real progress from timesheets (for future use)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getRealProgressFromTimesheets = useCallback((projectId: string, role: string) => {
     if (timesheetData.length === 0) return null;
     

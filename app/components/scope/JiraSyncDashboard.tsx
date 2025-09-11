@@ -186,7 +186,7 @@ export function JiraSyncDashboard({
     } catch (error) {
       toast.error('Chyba při změně automatické synchronizace', 'Nepodařilo se změnit nastavení automatické synchronizace');
     }
-  }; // eslint-disable-line react-hooks/exhaustive-deps
+  };
 
   const loadJiraData = async () => {
     setLoading(true);

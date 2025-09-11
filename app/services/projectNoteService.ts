@@ -100,7 +100,7 @@ export class ProjectNoteService {
       });
     }
     
-    return (data || []).map(note => ({
+    return (data || []).map((note: any) => ({
       id: note.id,
       text: note.text,
       author: note.author ? {
