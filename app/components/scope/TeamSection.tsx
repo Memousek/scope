@@ -1207,7 +1207,7 @@ export function TeamSection({ scopeId, team, projects, onTeamChange, readOnlyMod
 
 
                                 <select
-                                  className="flex-1 bg-gradient-to-r from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 font-medium text-sm"
+                                  className="flex-1 bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl text-gray-900 dark:text-gray-100 border border-white/30 dark:border-gray-600/30 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-300 font-medium text-sm"
                                   value={member.role}
                                   onChange={(e) =>
                                     handleEditMember(

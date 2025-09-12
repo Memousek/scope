@@ -482,7 +482,7 @@ export function BillingSection({
               <select
                 value={selectedCurrency}
                 onChange={(e) => setSelectedCurrency(e.target.value as 'CZK' | 'EUR' | 'USD')}
-                className="bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-400 transition-all duration-200"
+                className="bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl text-gray-900 dark:text-gray-100 border border-white/30 dark:border-gray-600/30 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-400 transition-all duration-300"
               >
                 {availableCurrencies.map(currency => (
                   <option key={currency} value={currency}>
@@ -504,7 +504,7 @@ export function BillingSection({
               <select
                 value={selectedPeriod}
                 onChange={(e) => setSelectedPeriod(e.target.value as 'current' | 'monthly' | 'quarterly')}
-                className="bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200/50 dark:border-gray-600/50 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-400 transition-all duration-200"
+                className="bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl text-gray-900 dark:text-gray-100 border border-white/30 dark:border-gray-600/30 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-400 transition-all duration-300"
               >
                 <option value="current">Celkový přehled</option>
                 <option value="monthly">Měsíční náklady</option>

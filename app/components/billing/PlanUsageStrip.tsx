@@ -47,7 +47,7 @@ export function PlanUsageStrip({ userId }: Props) {
   if (!usage || !limits) return null;
 
   const Item = ({ icon, label, used, max }: { icon: ReactNode; label: string; used: number; max: number }) => (
-    <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-white/60 dark:bg-gray-800/60 border border-white/30 dark:border-gray-700/50">
+    <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 shadow-lg hover:scale-105 transition-all duration-300">
       {icon}
       <div className="min-w-[110px]">
         <div className="text-xs text-gray-600 dark:text-gray-400">{label}</div>

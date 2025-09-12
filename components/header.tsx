@@ -48,7 +48,7 @@ export function Header({ user, loading, hideMobileMenu = false }: HeaderProps) {
   }, []);
 
   return (
-    <nav className="z-50 w-full flex justify-center border-b border-b-foreground/10 h-16 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
+    <nav className="z-50 w-full flex justify-center h-16 bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border-b border-white/30 dark:border-gray-600/30 shadow-lg">
       <div className="mx-auto container flex justify-between items-center p-3 px-5 text-sm">
         <div className="flex gap-5 items-center font-semibold">
           <Link
@@ -67,10 +67,15 @@ export function Header({ user, loading, hideMobileMenu = false }: HeaderProps) {
               <Link
                 href="/admin"
                 aria-label="Admin"
-                className="p-2 rounded-full text-gray-600 dark:text-gray-300 hover:text-white hover:bg-gradient-to-r from-indigo-600 to-purple-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
                 title="Admin"
               >
-                <Shield className="w-4 h-4" />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 rounded-xl shadow-lg hover:scale-105 transition-all duration-300"
+                >
+                  <Shield className="w-4 h-4" />
+                </Button>
               </Link>
               <NotifyCentrum />
             </>
@@ -85,21 +90,21 @@ export function Header({ user, loading, hideMobileMenu = false }: HeaderProps) {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
-                    variant={"ghost"}
-                    size={"sm"}
+                    variant="ghost"
+                    size="sm"
                     aria-label={t("profile")}
-                    className="rounded-full w-auto"
+                    className="bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 rounded-xl shadow-lg hover:scale-105 transition-all duration-300 p-0"
                   >
                     {user.additional?.avatar_url ? (
                       <Image
                         src={typeof user.additional.avatar_url === "string" ? user.additional.avatar_url : ""}
                         alt={t("profile")}
-                        width={40}
-                        height={40}
+                        width={32}
+                        height={32}
                         className="object-cover rounded-full"
                       />
                     ) : (
-                      <UserIcon size={18} className="text-muted-foreground" />
+                      <UserIcon size={20} className="text-muted-foreground" />
                     )}
                     <span className="sr-only">{t("profile")}</span>
                   </Button>
@@ -134,7 +139,7 @@ export function Header({ user, loading, hideMobileMenu = false }: HeaderProps) {
         {/* Hamburger for mobile */}
         {!hideMobileMenu && (
           <button
-            className="md:hidden flex items-center justify-center p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+            className="md:hidden flex items-center justify-center p-3 bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 rounded-xl shadow-lg text-gray-700 dark:text-gray-300 hover:scale-105 transition-all duration-300"
             onClick={() => setMobileOpen(true)}
             aria-label={t("open_menu")}
           >
@@ -144,10 +149,10 @@ export function Header({ user, loading, hideMobileMenu = false }: HeaderProps) {
         )}
         {/* Mobile drawer */}
         {!hideMobileMenu && mobileOpen && mounted && createPortal(
-          <div className="fixed inset-0 bg-black/50 flex z-[9999]">
-            <div className="dark:bg-gray-800 dark:text-gray-100 bg-white w-4/5 max-w-xs h-full shadow-xl flex flex-col p-6 animate-slide-in-left relative z-[10000]">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex z-[9999]">
+            <div className="w-4/5 max-w-xs h-full bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border-r border-white/30 dark:border-gray-600/30 shadow-2xl flex flex-col p-6 animate-slide-in-left relative z-[10000]">
               <button
-                className="absolute top-4 right-4 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                className="absolute top-4 right-4 p-2 bg-white/20 dark:bg-gray-700/20 backdrop-blur-sm border border-white/20 dark:border-gray-600/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 hover:bg-white/30 dark:hover:bg-gray-600/30 transition-all duration-200"
                 onClick={() => setMobileOpen(false)}
                 aria-label={t("close_menu")}
               >
@@ -180,7 +185,7 @@ export function Header({ user, loading, hideMobileMenu = false }: HeaderProps) {
                     {user?.additional?.role === "god" && (
                       <Link
                         href="/admin"
-                        className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 transition"
+                        className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-white/30 dark:hover:bg-gray-600/30 rounded-xl transition-all duration-200 backdrop-blur-sm border border-white/20 dark:border-gray-600/20"
                         onClick={() => setMobileOpen(false)}
                       >
                         <Shield className="w-5 h-5" /> Admin
@@ -188,14 +193,14 @@ export function Header({ user, loading, hideMobileMenu = false }: HeaderProps) {
                     )}
                     <Link
                       href="/profile"
-                      className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 transition"
+                      className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-white/30 dark:hover:bg-gray-600/30 rounded-xl transition-all duration-200 backdrop-blur-sm border border-white/20 dark:border-gray-600/20"
                       onClick={() => setMobileOpen(false)}
                     >
                       <UserIcon className="w-5 h-5" /> {t("profile")}
                     </Link>
                     <Link
                       href="/settings"
-                      className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 transition"
+                      className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-white/30 dark:hover:bg-gray-600/30 rounded-xl transition-all duration-200 backdrop-blur-sm border border-white/20 dark:border-gray-600/20"
                       onClick={() => setMobileOpen(false)}
                     >
                       <SettingsIcon className="w-5 h-5" /> {t("settings")}
@@ -205,7 +210,7 @@ export function Header({ user, loading, hideMobileMenu = false }: HeaderProps) {
                 ) : (
                   <Link
                     href="/auth/login"
-                    className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 transition"
+                    className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-white/30 dark:hover:bg-gray-600/30 rounded-xl transition-all duration-200 backdrop-blur-sm border border-white/20 dark:border-gray-600/20"
                     onClick={() => setMobileOpen(false)}
                   >
                     {t("login")}

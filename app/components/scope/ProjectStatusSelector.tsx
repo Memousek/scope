@@ -33,7 +33,7 @@ export function ProjectStatusSelector({ value, onChange, className = '', disable
         value={value}
         onChange={(e) => onChange(e.target.value as ProjectStatus)}
         disabled={disabled}
-        className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full px-3 py-2 bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
       >
         {statusOptions.map((status) => {
           const translationKey = status === 'not_started' ? 'statusNotStarted' :

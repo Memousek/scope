@@ -32,7 +32,7 @@ export function AuthButton() {
             </div>
           )}
         </Link>
-        <Link href="/settings" className="flex items-center gap-2 text-gray-700 dark:text-gray-200 hover:text-blue-600 transition px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+        <Link href="/settings" className="flex items-center gap-2 text-gray-700 dark:text-gray-200 hover:text-blue-600 transition px-3 py-2 rounded-lg bg-white/20 dark:bg-gray-700/20 backdrop-blur-sm border border-white/20 dark:border-gray-600/20 hover:bg-white/30 dark:hover:bg-gray-600/30">
           <SettingsIcon className="w-4 h-4" />
           <span className="text-sm font-medium">{t('settings')}</span>
         </Link>
@@ -45,14 +45,14 @@ export function AuthButton() {
     <div className="flex gap-3">
       <Link 
         href="/auth/sign-up"
-        className="group bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-white dark:hover:bg-gray-700 transition-all duration-200 hover:scale-105 shadow-lg inline-flex items-center gap-2"
+        className="group bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-xl text-sm font-semibold hover:scale-105 transition-all duration-300 shadow-lg inline-flex items-center gap-2"
       >
         {t('create_account')}
         <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />
       </Link>
       <Link
         href="/auth/login"
-        className="group bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-200 hover:scale-105 shadow-lg inline-flex items-center gap-2"
+        className="group bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 transition-all duration-300 hover:scale-105 shadow-lg inline-flex items-center gap-2"
       >
         {t('login')}
         <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />

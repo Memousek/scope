@@ -136,7 +136,7 @@ export function Modal({
       {/* Modal s animací */}
       <div
         ref={containerRef}
-        className={`relative bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-full ${maxWidthClasses[maxWidth]} mx-4 overflow-hidden transform transition-all duration-300 scale-100`}
+        className={`relative bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-900/80 dark:via-gray-900/60 dark:to-gray-900/40 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 rounded-3xl shadow-2xl w-full ${maxWidthClasses[maxWidth]} mx-4 overflow-hidden transform transition-all duration-300 scale-100`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
@@ -146,7 +146,7 @@ export function Modal({
         <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 p-6 relative">
           <button 
             ref={closeButtonRef}
-            className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors duration-200 p-2 rounded-full hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/70"
+            className="absolute top-4 right-4 text-white/80 hover:text-white transition-all duration-300 p-2 rounded-full hover:bg-white/20 backdrop-blur-sm border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/70 hover:scale-105"
             onClick={onClose}
             aria-label={t('close')}
           >

@@ -66,7 +66,7 @@ export const LanguageSwitcher: React.FC = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size={"sm"} className="relative">
+        <Button variant="ghost" size={"sm"} className="relative bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 rounded-xl shadow-lg hover:scale-105 transition-all duration-300">
           <Globe size={ICON_SIZE} className={""} />
           {currentLanguage && (
             <Image
@@ -96,7 +96,7 @@ export const LanguageSwitcher: React.FC = () => {
             return (
               <DropdownMenuRadioItem
                 key={l.code}
-                className="flex gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-200 hover:bg-gray-100 cursor-pointer"
+                className="flex gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 value={l.code}
               >
                 <div className="flex items-center gap-2">
