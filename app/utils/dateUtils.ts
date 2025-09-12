@@ -194,16 +194,20 @@ export function calculateProjectDeliveryInfo(
 export async function calculateProjectDeliveryInfoWithAllocation(
   project: Project,
   team: TeamMember[],
-  _projectAssignments: Array<{ teamMemberId: string; role: string }> = [],
+  projectAssignments: Array<{ teamMemberId: string; role: string }> = [],
   allocationSettings?: {
     enabled?: boolean;
     calculationMode?: 'allocation' | 'fte' | 'hybrid';
     includeExternalProjects?: boolean;
     defaultAllocationFte?: number;
   },
-  _dateFrom?: Date,
-  _dateTo?: Date
+  dateFrom?: Date,
+  dateTo?: Date
 ): Promise<ProjectDeliveryInfo & { allocationDetails?: unknown }> {
+  // Suppress unused parameter warnings - these are part of the interface
+  void projectAssignments;
+  void dateFrom;
+  void dateTo;
   // If allocation is not enabled or not available, fall back to standard calculation
   if (!allocationSettings?.enabled) {
     return calculateProjectDeliveryInfo(project, team);

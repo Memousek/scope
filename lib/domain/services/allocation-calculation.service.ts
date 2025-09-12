@@ -64,11 +64,13 @@ export class AllocationCalculationService {
   async calculateProjectDeliveryInfoWithAllocation(
     project: Project,
     team: TeamMember[],
-    _projectAssignments: Array<{ teamMemberId: string; role: string }> = [],
+    projectAssignments: Array<{ teamMemberId: string; role: string }> = [],
     settings: ScopeSettings,
     dateFrom?: Date,
     dateTo?: Date
   ): Promise<AllocationCalculationResult> {
+    // Suppress unused parameter warning - this is part of the interface
+    void projectAssignments;
     const allocationSettings = settings.allocation || {};
     const allocationEnabled = allocationSettings.enabled ?? false;
     const calculationMode = allocationSettings.calculationMode ?? 'fte';
