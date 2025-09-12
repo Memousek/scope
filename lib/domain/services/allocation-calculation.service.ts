@@ -87,8 +87,8 @@ export class AllocationCalculationService {
     let totalMaxDays = 0;
 
     for (const roleKey of roleKeys) {
-      const mandays = Number((project as Record<string, unknown>)[`${roleKey}_mandays`]) || 0;
-      const done = Number((project as Record<string, unknown>)[`${roleKey}_done`]) || 0;
+      const mandays = Number((project as unknown as Record<string, unknown>)[`${roleKey}_mandays`]) || 0;
+      const done = Number((project as unknown as Record<string, unknown>)[`${roleKey}_done`]) || 0;
       const remainingMandays = mandays * (1 - (done / 100));
 
       if (remainingMandays <= 0) continue;
@@ -153,15 +153,15 @@ export class AllocationCalculationService {
     
     // Use project start date if available, otherwise use today
     let startDate = new Date();
-    if (project.start_date) {
-      startDate = new Date(project.start_date);
+    if (project.startedAt) {
+      startDate = new Date(project.startedAt);
     } else if (dateFrom) {
       startDate = dateFrom;
     }
     
     const calculatedDeliveryDate = this.addWorkdays(startDate, remainingWorkdays);
     
-    const deliveryDate = project.delivery_date ? new Date(project.delivery_date) : null;
+    const deliveryDate = project.deliveryDate ? new Date(project.deliveryDate) : null;
     
     let diffWorkdays: number | null = null;
     if (deliveryDate) {
