@@ -294,7 +294,8 @@ export function EnhancedAllocationTable({ scopeId, team, projects, readOnlyMode 
     return viewMode === 'monthly' ? getMonthRange(selectedDate) : getWeekRange(selectedDate);
   }, [selectedDate, viewMode]);
   
-  const today = new Date();
+  // Today date as useMemo to avoid re-creation on every render
+  const today = useMemo(() => new Date(), []);
   
   // Check if today is visible in current view
   const isTodayVisible = useMemo(() => {
