@@ -170,7 +170,7 @@ export const ScopeList: React.FC<ScopeListProps> = ({
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 transition={{ duration: 0.5, delay: idx * 0.1 }}
-                className="relative group bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-700/90 dark:via-gray-700/70 dark:to-gray-700/50 backdrop-blur-lg rounded-2xl border border-white/40 dark:border-gray-600/40 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/10"
+                className="relative group bg-gradient-to-br from-white/95 via-white/85 to-white/75 dark:from-slate-800/90 dark:via-slate-700/80 dark:to-slate-600/70 backdrop-blur-xl rounded-2xl border border-white/40 dark:border-slate-400/50 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/10 h-full"
               >
                 {/* Priority indicator */}
                 <div className={`absolute top-0 left-0 w-1 h-full bg-gradient-to-b ${scopeItem.type === ScopeType.OWNED ? 'from-blue-500 to-purple-500' : 'from-green-500 to-emerald-500'}`}></div>
@@ -178,7 +178,7 @@ export const ScopeList: React.FC<ScopeListProps> = ({
                 {/* Hover effect overlay */}
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-blue-500/5 group-hover:via-purple-500/5 group-hover:to-pink-500/5 transition-all duration-300 rounded-2xl"></div>
                 
-                <div className="p-4 sm:p-6 relative">
+                <div className="p-4 sm:p-6 relative flex flex-col h-full">
                   {/* Header with icon and badge */}
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 sm:mb-6 gap-4">
                     <div className="flex items-center gap-3 sm:gap-4">
@@ -208,7 +208,7 @@ export const ScopeList: React.FC<ScopeListProps> = ({
                   
                   {/* Quick stats */}
                   <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
-                    <div className="bg-gradient-to-br from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-gray-200/50 dark:border-gray-600/50 shadow-lg">
+                    <div className="bg-gradient-to-br from-white/95 via-white/85 to-white/75 dark:from-slate-700/90 dark:via-slate-600/80 dark:to-slate-500/70 backdrop-blur-xl rounded-lg sm:rounded-xl p-2 sm:p-3 border border-white/50 dark:border-slate-300/50 shadow-lg">
                       <div className="flex items-center gap-1 sm:gap-2 mb-1">
                         <span className="w-2 h-2 sm:w-3 sm:h-3 bg-emerald-600 rounded-full"></span>
                         <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{t("members")}</span>
@@ -221,7 +221,7 @@ export const ScopeList: React.FC<ScopeListProps> = ({
                         )}
                       </div>
                     </div>
-                    <div className="bg-gradient-to-br from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-gray-200/50 dark:border-gray-600/50 shadow-lg">
+                    <div className="bg-gradient-to-br from-white/95 via-white/85 to-white/75 dark:from-slate-700/90 dark:via-slate-600/80 dark:to-slate-500/70 backdrop-blur-xl rounded-lg sm:rounded-xl p-2 sm:p-3 border border-white/50 dark:border-slate-300/50 shadow-lg">
                       <div className="flex items-center gap-1 sm:gap-2 mb-1">
                         <span className="w-2 h-2 sm:w-3 sm:h-3 bg-blue-500 rounded-full"></span>
                         <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{t("projects")}</span>
@@ -246,7 +246,7 @@ export const ScopeList: React.FC<ScopeListProps> = ({
                   )}
 
                   {/* Footer with actions */}
-                  <div className="flex flex-col sm:items-center sm:justify-between flex-col lg:flex-row gap-3 pt-4 border-t border-gray-200/50 dark:border-gray-600/50">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 border-t border-gray-200/50 dark:border-gray-600/50 mt-auto">
                     <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                       <span>{t("created")}: {new Date(scopeItem.scope.createdAt).toLocaleDateString()}</span>
                     </div>
