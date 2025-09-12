@@ -265,17 +265,17 @@ export class SupabasePlannedAllocationRepository implements PlannedAllocationRep
 
   private mapToModel(data: Record<string, unknown>): PlannedAllocation {
     return {
-      id: data.id,
-      scopeId: data.scope_id,
-      teamMemberId: data.team_member_id,
-      projectId: data.project_id,
-      date: new Date(data.date),
+      id: data.id as string,
+      scopeId: data.scope_id as string,
+      teamMemberId: data.team_member_id as string,
+      projectId: data.project_id as string | null,
+      date: new Date(data.date as string),
       allocationFte: Number(data.allocation_fte),
-      role: data.role,
-      externalProjectName: data.external_project_name,
-      description: data.description,
-      createdAt: new Date(data.created_at),
-      updatedAt: new Date(data.updated_at)
+      role: data.role as string,
+      externalProjectName: data.external_project_name as string | undefined,
+      description: data.description as string | undefined,
+      createdAt: new Date(data.created_at as string),
+      updatedAt: new Date(data.updated_at as string)
     };
   }
 }
