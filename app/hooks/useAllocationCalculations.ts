@@ -63,7 +63,7 @@ export function useAllocationCalculations(scopeId: string): UseAllocationCalcula
         startedAt: project.started_at ? new Date(project.started_at) : undefined,
         startDay: project.start_day ? new Date(project.start_day) : undefined,
         customRoleData: project.custom_role_data,
-        status: project.status as any
+        status: project.status as 'not_started' | 'in_progress' | 'paused' | 'completed' | 'cancelled' | 'archived' | 'suspended'
       };
 
       // Calculate project delivery with allocation
