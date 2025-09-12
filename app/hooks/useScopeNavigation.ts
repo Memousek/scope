@@ -57,7 +57,7 @@ export function useScopeNavigation() {
       tabs: [
         { id: 'team', label: t('team'), icon: React.createElement(FiUsers) },
         { id: 'projects', label: t('projects'), icon: React.createElement(FiFolder) },
-        { id: 'allocation', label: t('allocationTable'), icon: React.createElement(FiCalendar) }
+        { id: 'allocation', label: t('allocationTable'), icon: React.createElement(FiCalendar), experimental: true }
       ]
     },
     {

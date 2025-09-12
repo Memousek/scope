@@ -22,6 +22,12 @@ export interface ScopeSettings {
     // Backward compatibility with older setting
     includeCzechHolidays?: boolean;
   };
+  allocation?: {
+    enabled?: boolean; // Whether to use allocation table in calculations
+    calculationMode?: 'allocation' | 'fte' | 'hybrid'; // How to calculate capacity
+    includeExternalProjects?: boolean; // Whether to include external projects in calculations
+    defaultAllocationFte?: number; // Default FTE when no allocation is set (0.0-2.0)
+  };
   [key: string]: unknown;
 }
 

@@ -102,6 +102,7 @@ export function Header({ user, loading, hideMobileMenu = false }: HeaderProps) {
                         width={32}
                         height={32}
                         className="object-cover rounded-full"
+                        style={{ width: '32px', height: '32px' }}
                       />
                     ) : (
                       <UserIcon size={20} className="text-muted-foreground" />

@@ -10,6 +10,8 @@ import {
   PlannedAllocationSummary 
 } from '../models/planned-allocation.model';
 
+export const PlannedAllocationRepositorySymbol = Symbol('PlannedAllocationRepository');
+
 export interface PlannedAllocationRepository {
   findById(id: string): Promise<PlannedAllocation | null>;
   findByFilter(filter: PlannedAllocationFilter): Promise<PlannedAllocation[]>;

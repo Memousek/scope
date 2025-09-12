@@ -188,6 +188,42 @@ export function calculateProjectDeliveryInfo(
 }
 
 /**
+ * Enhanced project delivery calculation with allocation support
+ * This function can be used when allocation settings are available
+ */
+export async function calculateProjectDeliveryInfoWithAllocation(
+  project: Project,
+  team: TeamMember[],
+  projectAssignments: Array<{ teamMemberId: string; role: string }> = [],
+  allocationSettings?: {
+    enabled?: boolean;
+    calculationMode?: 'allocation' | 'fte' | 'hybrid';
+    includeExternalProjects?: boolean;
+    defaultAllocationFte?: number;
+  },
+  dateFrom?: Date,
+  dateTo?: Date
+): Promise<ProjectDeliveryInfo & { allocationDetails?: any }> {
+  // If allocation is not enabled or not available, fall back to standard calculation
+  if (!allocationSettings?.enabled) {
+    return calculateProjectDeliveryInfo(project, team);
+  }
+
+  // For now, return standard calculation with allocation details placeholder
+  // In a real implementation, this would use the AllocationCalculationService
+  const standardResult = calculateProjectDeliveryInfo(project, team);
+  
+  return {
+    ...standardResult,
+    allocationDetails: {
+      calculationMode: allocationSettings.calculationMode || 'fte',
+      allocationEnabled: allocationSettings.enabled,
+      note: 'Allocation calculation would be implemented here'
+    }
+  };
+}
+
+/**
  * Calculate slippage against priority deadline
  * Returns positive number for reserve, negative for slippage
  */

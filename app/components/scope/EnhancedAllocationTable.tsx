@@ -168,11 +168,12 @@ export function EnhancedAllocationTable({ scopeId, team, projects, readOnlyMode 
   const [selectedAllocations, setSelectedAllocations] = useState<string[]>([]);
   const [newAllocation, setNewAllocation] = useState<Partial<DailyAllocation>>({
     teamMemberId: '',
-    projectId: null,
+    projectId: '',
     role: '',
     allocationFte: 1.0,
     externalProjectName: '',
-    description: ''
+    description: '',
+    date: ''
   });
   const [endDate, setEndDate] = useState<string>('');
   
@@ -950,7 +951,7 @@ export function EnhancedAllocationTable({ scopeId, team, projects, readOnlyMode 
                     {t('teamMember')}
                   </label>
                   <select
-                    value={newAllocation.teamMemberId}
+                    value={newAllocation.teamMemberId || ''}
                     onChange={(e) => {
                       const selectedMember = team.find(m => m.id === e.target.value);
                       setNewAllocation({ 
@@ -997,7 +998,7 @@ export function EnhancedAllocationTable({ scopeId, team, projects, readOnlyMode 
                   </label>
                   <input
                     type="text"
-                    value={newAllocation.role}
+                    value={newAllocation.role || ''}
                     onChange={(e) => setNewAllocation({ ...newAllocation, role: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                     placeholder={t('enterRole')}
@@ -1014,7 +1015,7 @@ export function EnhancedAllocationTable({ scopeId, team, projects, readOnlyMode 
                     min="0.1"
                     max="2.0"
                     step="0.1"
-                    value={newAllocation.allocationFte}
+                    value={newAllocation.allocationFte || 1.0}
                     onChange={(e) => setNewAllocation({ ...newAllocation, allocationFte: Number(e.target.value) })}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                   />
@@ -1028,7 +1029,7 @@ export function EnhancedAllocationTable({ scopeId, team, projects, readOnlyMode 
                     </label>
                     <input
                       type="date"
-                      value={newAllocation.date}
+                      value={newAllocation.date || ''}
                       onChange={(e) => setNewAllocation({ ...newAllocation, date: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                     />
@@ -1043,7 +1044,7 @@ export function EnhancedAllocationTable({ scopeId, team, projects, readOnlyMode 
                     </label>
                     <input
                       type="date"
-                      value={endDate}
+                      value={endDate || ''}
                       onChange={(e) => setEndDate(e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                       placeholder={t('toDateDescription')}
@@ -1065,7 +1066,7 @@ export function EnhancedAllocationTable({ scopeId, team, projects, readOnlyMode 
                   </label>
                   <input
                     type="text"
-                    value={newAllocation.externalProjectName}
+                    value={newAllocation.externalProjectName || ''}
                     onChange={(e) => setNewAllocation({ ...newAllocation, externalProjectName: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                     placeholder={t('enterExternalProjectName')}
@@ -1079,7 +1080,7 @@ export function EnhancedAllocationTable({ scopeId, team, projects, readOnlyMode 
                   Popis
                 </label>
                 <textarea
-                  value={newAllocation.description}
+                  value={newAllocation.description || ''}
                   onChange={(e) => setNewAllocation({ ...newAllocation, description: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                   rows={3}

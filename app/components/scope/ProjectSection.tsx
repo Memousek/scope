@@ -34,6 +34,7 @@ import {
   calculateProjectDeliveryInfoWithWorkflow,
   calculatePriorityDatesWithAssignments,
   calculatePrioritySlippage,
+  calculateProjectDeliveryInfoWithAllocation,
 } from "@/app/utils/dateUtils";
 import { ContainerService } from "@/lib/container.service";
 import { ManageProjectTeamAssignmentsService } from "@/lib/domain/services/manage-project-team-assignments.service";
@@ -72,6 +73,9 @@ export function ProjectSection({
   const toast = useToastFunctions();
   const [editNoteModalOpen, setEditNoteModalOpen] = useState(false);
   const [noteToEdit, setNoteToEdit] = useState<ProjectNote | null>(null);
+  const [allocationSettings, setAllocationSettings] = useState<any>(null);
+  const [allocationCalculations, setAllocationCalculations] = useState<Record<string, any>>({});
+  const [allocationLoading, setAllocationLoading] = useState(false);
   // Funkce pro editaci a mazání poznámek
   const handleEditNote = (note: ProjectNote) => {
     setNoteToEdit(note);
@@ -187,6 +191,16 @@ export function ProjectSection({
   const [isUpdatingPriority, setIsUpdatingPriority] = useState(false);
   const dragRef = useRef<HTMLDivElement>(null);
 
+  // Load allocation settings
+  const loadAllocationSettings = useCallback(async () => {
+    try {
+      const settings = await ScopeSettingsService.get(scopeId);
+      setAllocationSettings(settings?.allocation || null);
+    } catch (error) {
+      console.error('Failed to load allocation settings:', error);
+    }
+  }, [scopeId]);
+
   // Load timesheet data for real progress tracking and auto-sync with project progress
   const loadTimesheetData = useCallback(async () => {
     setLoadingTimesheets(true);
@@ -234,6 +248,9 @@ export function ProjectSection({
           } else {
             setCalendarConfig({ includeHolidays: true, country: 'CZ', subdivision: null });
           }
+          
+          // Load allocation settings
+          setAllocationSettings(cfg?.allocation || null);
         } catch {
           setCalendarConfig({ includeHolidays: true, country: 'CZ', subdivision: null });
         }
@@ -257,6 +274,81 @@ export function ProjectSection({
       loadTimesheetData();
     }
   }, [isInitialLoading, projects.length, loadTimesheetData]);
+
+  // Load allocation calculations when allocation is enabled
+  useEffect(() => {
+    const loadAllocationCalculations = async () => {
+      if (!allocationSettings?.enabled || projects.length === 0 || team.length === 0) {
+        setAllocationCalculations({});
+        return;
+      }
+
+      setAllocationLoading(true);
+      console.log('🔄 Starting allocation calculations for', projects.length, 'projects');
+      try {
+        const { useAllocationCalculations } = await import('@/app/hooks/useAllocationCalculations');
+        const calculations: Record<string, any> = {};
+
+        for (const project of projects) {
+          try {
+            // Get AllocationCalculationService from container
+            const { AllocationCalculationService } = await import('@/lib/domain/services/allocation-calculation.service');
+            const { ContainerService } = await import('@/lib/container.service');
+            const container = ContainerService.getInstance();
+            const allocationService = container.get(AllocationCalculationService);
+
+            // Convert project to domain model format
+            const domainProject = {
+              ...project, // Include all role-specific fields first
+              scopeId: scopeId,
+              status: project.status || 'not_started'
+            };
+
+            // Calculate priority start date for this project
+            const projectAssignmentsForCalc = projectAssignments[project.id] || [];
+            const formattedAssignmentsForCalc = projectAssignmentsForCalc.map(assignment => ({
+              teamMemberId: assignment.teamMemberId,
+              role: assignment.role,
+              allocationFte: assignment.allocationFte || 1,
+            }));
+            
+            const standardPriorityDates = calculatePriorityDatesWithAssignments(
+              [project],
+              { [project.id]: formattedAssignmentsForCalc },
+              workflowDependencies,
+              team
+            );
+            const projectPriorityStartDate = standardPriorityDates[project.id]?.priorityStartDate || new Date();
+            
+            const result = await allocationService.calculateProjectDeliveryInfoWithAllocation(
+              domainProject as any,
+              team,
+              projectAssignments[project.id] || [],
+              { allocation: allocationSettings },
+              projectPriorityStartDate,
+              new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+            );
+
+            calculations[project.id] = result;
+            console.log(`✅ Allocation calculated for project ${project.name}:`, result);
+          } catch (error) {
+            console.error(`❌ Failed to calculate allocation for project ${project.id}:`, error);
+            calculations[project.id] = null;
+          }
+        }
+
+        setAllocationCalculations(calculations);
+        console.log('🎯 Allocation calculations completed:', calculations);
+      } catch (error) {
+        console.error('❌ Failed to load allocation calculations:', error);
+        setAllocationCalculations({});
+      } finally {
+        setAllocationLoading(false);
+      }
+    };
+
+    loadAllocationCalculations();
+  }, [allocationSettings, projects, team, projectAssignments]);
 
   // Load workflow dependencies for all projects
   const loadWorkflowDependencies = useCallback(async () => {
@@ -660,6 +752,13 @@ export function ProjectSection({
 
   // Optimalizace výpočtů pro každý projekt
   const projectCalculations = useMemo(() => {
+    console.log('🔄 ProjectCalculations useMemo triggered', {
+      projectsLength: projects.length,
+      teamLength: team.length,
+      allocationSettingsEnabled: allocationSettings?.enabled,
+      allocationCalculationsKeys: Object.keys(allocationCalculations || {})
+    });
+    
     const calculations: Record<
       string,
       {
@@ -694,28 +793,89 @@ export function ProjectSection({
       }));
     });
 
-    const priorityDates = calculatePriorityDatesWithAssignments(
-      projects,
-      formattedAssignments,
-      workflowDependencies,
-      team
-    );
+    // Calculate priority dates - use allocation-aware calculation if enabled
+    let priorityDates: Record<string, { 
+      priorityStartDate: Date; 
+      priorityEndDate: Date; 
+      blockingProjectName?: string;
+      lostWorkdaysDueToVacations?: number; 
+    }> = {};
+
+    if (allocationSettings?.enabled && allocationCalculations && Object.keys(allocationCalculations).length > 0) {
+      // Use allocation-aware priority dates calculation
+      console.log('🎯 Using allocation-aware priority dates calculation');
+      // For now, use standard calculation but with allocation results
+      priorityDates = calculatePriorityDatesWithAssignments(
+        projects,
+        formattedAssignments,
+        workflowDependencies,
+        team
+      );
+      
+      // Override priority dates with allocation results if available
+      projects.forEach(project => {
+        const allocationResult = allocationCalculations[project.id];
+        if (allocationResult && allocationResult.calculatedDeliveryDate) {
+          // Use allocation result to adjust priority dates
+          const existingPriority = priorityDates[project.id];
+          if (existingPriority) {
+            console.log(`🎯 Overriding priority date for project ${project.name}:`, {
+              old: existingPriority.priorityEndDate,
+              new: allocationResult.calculatedDeliveryDate
+            });
+            priorityDates[project.id] = {
+              ...existingPriority,
+              priorityEndDate: allocationResult.calculatedDeliveryDate
+            };
+          }
+        }
+      });
+    } else {
+      // Use standard priority dates calculation
+      priorityDates = calculatePriorityDatesWithAssignments(
+        projects,
+        formattedAssignments,
+        workflowDependencies,
+        team
+      );
+    }
 
     projects.forEach((project) => {
       // Use workflow-aware calculation if dependencies are available
       const projectDeps = workflowDependencies[project.id];
-      const info = projectDeps
-        ? calculateProjectDeliveryInfoWithWorkflow(
+      let info;
+      
+      if (projectDeps) {
+        info = calculateProjectDeliveryInfoWithWorkflow(
           project,
           team,
           projectAssignments[project.id] || [],
           projectDeps
-        )
-        : calculateProjectDeliveryInfoWithAssignments(
+        );
+      } else if (allocationSettings?.enabled && allocationCalculations[project.id]) {
+        // Use allocation-aware calculation if available
+        const allocationResult = allocationCalculations[project.id];
+        console.log(`🎯 Using allocation result for project ${project.name}:`, allocationResult);
+        info = {
+          calculatedDeliveryDate: allocationResult.calculatedDeliveryDate,
+          diffWorkdays: allocationResult.diffWorkdays,
+          deliveryDate: allocationResult.deliveryDate
+        };
+      } else if (allocationSettings?.enabled) {
+        // Allocation is enabled but calculation not ready yet, use standard calculation
+        info = calculateProjectDeliveryInfoWithAssignments(
           project,
           team,
           projectAssignments[project.id] || []
         );
+      } else {
+        // Use standard assignment-based calculation
+        info = calculateProjectDeliveryInfoWithAssignments(
+          project,
+          team,
+          projectAssignments[project.id] || []
+        );
+      }
 
       const totalProgress = calculateTotalProgress(
         project as unknown as Record<string, unknown>,
@@ -723,14 +883,23 @@ export function ProjectSection({
       );
 
       // Calculate slippage against priority deadline
-      const prioritySlippage = priorityDates[project.id]?.priorityEndDate
-        ? calculatePrioritySlippage(
+      let prioritySlippage = 0;
+      
+      if (allocationSettings?.enabled && allocationCalculations[project.id]) {
+        // Use allocation result for slippage calculation
+        const allocationResult = allocationCalculations[project.id];
+        if (allocationResult && allocationResult.diffWorkdays !== null) {
+          prioritySlippage = allocationResult.diffWorkdays;
+        }
+      } else if (priorityDates[project.id]?.priorityEndDate) {
+        // Use standard slippage calculation
+        prioritySlippage = calculatePrioritySlippage(
           project,
           priorityDates[project.id].priorityEndDate,
           team,
           projectAssignments[project.id] || []
-        )
-        : 0;
+        );
+      }
 
       calculations[project.id] = {
         info,
@@ -739,10 +908,19 @@ export function ProjectSection({
         formattedAssignments,
         prioritySlippage,
       };
+      
+      // Debug log for priority dates
+      if (allocationSettings?.enabled && allocationCalculations[project.id]) {
+        console.log(`🎯 Final priority dates for project ${project.name}:`, {
+          priorityStartDate: priorityDates[project.id]?.priorityStartDate,
+          priorityEndDate: priorityDates[project.id]?.priorityEndDate,
+          allocationResult: allocationCalculations[project.id]
+        });
+      }
     });
 
     return calculations;
-  }, [projects, team, projectAssignments, activeRoles, workflowDependencies]);
+  }, [projects, team, projectAssignments, activeRoles, workflowDependencies, allocationSettings, allocationCalculations]);
 
   // Skupinování projektů podle priority s filtrováním podle statusu
   const groupedProjects = useMemo(() => {

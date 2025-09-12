@@ -67,9 +67,7 @@ export class SupabaseScopeRepository implements ScopeRepository {
 
   async update(id: string, scope: Partial<Scope>): Promise<Scope> {
     const supabase = createClient();
-    const updateData: Record<string, unknown> = {
-      updated_at: new Date().toISOString()
-    };
+    const updateData: Record<string, unknown> = {};
 
     if (scope.name !== undefined) updateData.name = scope.name;
     if (scope.description !== undefined) updateData.description = scope.description;
@@ -111,7 +109,7 @@ export class SupabaseScopeRepository implements ScopeRepository {
       ownerId: data.owner_id,
       settings: data.settings,
       createdAt: new Date(data.created_at),
-      updatedAt: new Date(data.updated_at)
+      updatedAt: data.updated_at ? new Date(data.updated_at) : new Date(data.created_at)
     };
   }
 }

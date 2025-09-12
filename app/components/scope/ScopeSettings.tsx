@@ -10,7 +10,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from '@/lib/translation';
 import { ScopeSettingsService } from '@/app/services/scopeSettingsService';
 import { ScopeService } from '@/app/services/scopeService';
-import { FiCalendar, FiSettings, FiTrash2 } from 'react-icons/fi';
+import { FiCalendar, FiSettings, FiTrash2, FiUsers } from 'react-icons/fi';
 
 interface Props { scopeId: string; }
 
@@ -35,6 +35,10 @@ export function ScopeSettings({ scopeId }: Props) {
   const [includeHolidays, setIncludeHolidays] = useState<boolean>(true);
   const [holidayCountry, setHolidayCountry] = useState<string>('CZ');
   const [holidaySubdivision, setHolidaySubdivision] = useState<string>('');
+  const [allocationEnabled, setAllocationEnabled] = useState<boolean>(false);
+  const [calculationMode, setCalculationMode] = useState<'allocation' | 'fte' | 'hybrid'>('fte');
+  const [includeExternalProjects, setIncludeExternalProjects] = useState<boolean>(false);
+  const [defaultAllocationFte, setDefaultAllocationFte] = useState<number>(1.0);
   const [saved, setSaved] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -88,6 +92,15 @@ export function ScopeSettings({ scopeId }: Props) {
         setIncludeHolidays(include);
         setHolidayCountry(cfg.calendar?.country || 'CZ');
         setHolidaySubdivision(cfg.calendar?.subdivision || '');
+        
+        // Load allocation settings
+        if (cfg.allocation) {
+          setAllocationEnabled(Boolean(cfg.allocation.enabled));
+          setCalculationMode(cfg.allocation.calculationMode || 'fte');
+          setIncludeExternalProjects(Boolean(cfg.allocation.includeExternalProjects));
+          setDefaultAllocationFte(cfg.allocation.defaultAllocationFte || 1.0);
+        }
+        
         try { sessionStorage.setItem(`scope:${scopeId}:integrations-cache`, JSON.stringify({ jiraBaseUrl: cfg.jira?.baseUrl, jiraEmail: cfg.jira?.email, jiraApiToken: cfg.jira?.apiToken, debugEnabled: Boolean(cfg.debug?.enabled), includeHolidays: include, holidayCountry: cfg.calendar?.country || 'CZ', holidaySubdivision: cfg.calendar?.subdivision || '' })); } catch {}
       }
     })();
@@ -114,7 +127,17 @@ export function ScopeSettings({ scopeId }: Props) {
       await ScopeService.updateScopeName(scopeId, scopeName);
       await ScopeService.updateScopeDescription(scopeId, scopeDescription);
 
-      await ScopeSettingsService.upsert(scopeId, { jira: { baseUrl: jiraBaseUrl, email: jiraEmail, apiToken: jiraApiToken, subtaskHandling: jiraSubtaskHandling }, debug: { enabled: debugEnabled }, calendar: { includeHolidays, country: holidayCountry, subdivision: holidaySubdivision || null } });
+      await ScopeSettingsService.upsert(scopeId, { 
+        jira: { baseUrl: jiraBaseUrl, email: jiraEmail, apiToken: jiraApiToken, subtaskHandling: jiraSubtaskHandling }, 
+        debug: { enabled: debugEnabled }, 
+        calendar: { includeHolidays, country: holidayCountry, subdivision: holidaySubdivision || null },
+        allocation: { 
+          enabled: allocationEnabled, 
+          calculationMode: calculationMode, 
+          includeExternalProjects: includeExternalProjects, 
+          defaultAllocationFte: defaultAllocationFte 
+        }
+      });
       try { sessionStorage.setItem(`scope:${scopeId}:integrations-cache`, JSON.stringify({ jiraBaseUrl, jiraEmail, jiraApiToken, debugEnabled, includeHolidays, holidayCountry, holidaySubdivision })); } catch {}
       // Notifikuj ostatní části aplikace o změně kalendáře (pro přepočty)
       try {
@@ -241,6 +264,85 @@ export function ScopeSettings({ scopeId }: Props) {
               <label className="block text-sm mb-1">{t('scopeSettings.regionOptional')}</label>
               <input value={holidaySubdivision} onChange={(e)=>setHolidaySubdivision(e.target.value)} placeholder="např. CA/ON/NY…" className="w-full rounded-lg border px-3 py-2 bg-white dark:bg-gray-900" />
             </div>
+          </div>
+        </section>
+
+        <section className="relative bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 rounded-2xl p-6 shadow-2xl">
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400/10 to-indigo-400/10 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-br from-indigo-400/10 to-purple-400/10 rounded-full blur-2xl"></div>
+          </div>
+          <header className="relative z-10 mb-5 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 text-white flex items-center justify-center shadow-lg">
+              <FiUsers className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100">Alokační tabulka</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Nastavení pro výpočty s alokační tabulkou</p>
+            </div>
+          </header>
+          <div className="relative z-10 space-y-4">
+            <div className="flex items-center gap-2">
+              <input 
+                id="allocationEnabled" 
+                type="checkbox" 
+                checked={allocationEnabled} 
+                onChange={(e) => setAllocationEnabled(e.target.checked)} 
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" 
+              />
+              <label htmlFor="allocationEnabled" className="text-sm font-medium">
+                Použít alokační tabulku ve výpočtech
+              </label>
+            </div>
+            
+            {allocationEnabled && (
+              <div className="space-y-4 pl-6 border-l-2 border-blue-200 dark:border-blue-800">
+                <div>
+                  <label className="block text-sm mb-1">Režim výpočtu</label>
+                  <select 
+                    value={calculationMode} 
+                    onChange={(e) => setCalculationMode(e.target.value as 'allocation' | 'fte' | 'hybrid')}
+                    className="w-full rounded-lg border px-3 py-2 bg-white dark:bg-gray-900"
+                  >
+                    <option value="fte">Pouze FTE (standardní)</option>
+                    <option value="allocation">Pouze alokační tabulka</option>
+                    <option value="hybrid">Hybridní (alokace + FTE)</option>
+                  </select>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Určuje, jak se počítá dostupná kapacita týmu
+                  </p>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <input 
+                    id="includeExternalProjects" 
+                    type="checkbox" 
+                    checked={includeExternalProjects} 
+                    onChange={(e) => setIncludeExternalProjects(e.target.checked)} 
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" 
+                  />
+                  <label htmlFor="includeExternalProjects" className="text-sm">
+                    Zahrnout externí projekty do výpočtů
+                  </label>
+                </div>
+                
+                <div>
+                  <label className="block text-sm mb-1">Výchozí FTE při chybějící alokaci</label>
+                  <input 
+                    type="number" 
+                    min="0" 
+                    max="2" 
+                    step="0.1" 
+                    value={defaultAllocationFte} 
+                    onChange={(e) => setDefaultAllocationFte(Number(e.target.value))}
+                    className="w-full rounded-lg border px-3 py-2 bg-white dark:bg-gray-900"
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Hodnota FTE použita, když není definována alokace (0.0 - 2.0)
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </section>
       </div>
