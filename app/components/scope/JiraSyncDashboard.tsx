@@ -19,12 +19,7 @@ import {
   FiAlertTriangle,
   FiSettings,
   FiDownload,
-  FiTrendingUp,
-  FiPlay,
-  FiPause,
-  FiCheckCircle,
-  FiXCircle,
-  FiLoader,
+  FiTrendingUp
 } from 'react-icons/fi';
 
 interface SyncStats {
@@ -441,7 +436,7 @@ export function JiraSyncDashboard({
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {/* Users */}
-        <div className="relative group bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-700/90 dark:via-gray-700/70 dark:to-gray-700/50 backdrop-blur-lg rounded-2xl border border-white/40 dark:border-gray-600/40 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/10">
+        <div className="relative group bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl rounded-2xl border border-white/30 dark:border-gray-600/30 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-emerald-500/10">
           <div className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
@@ -463,7 +458,7 @@ export function JiraSyncDashboard({
         </div>
 
         {/* Projects */}
-        <div className="relative group bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-700/90 dark:via-gray-700/70 dark:to-gray-700/50 backdrop-blur-lg rounded-2xl border border-white/40 dark:border-gray-600/40 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-green-500/10">
+        <div className="relative group bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl rounded-2xl border border-white/30 dark:border-gray-600/30 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-emerald-500/10">
           <div className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
@@ -485,7 +480,7 @@ export function JiraSyncDashboard({
         </div>
 
         {/* Total Hours */}
-        <div className="relative group bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-700/90 dark:via-gray-700/70 dark:to-gray-700/50 backdrop-blur-lg rounded-2xl border border-white/40 dark:border-gray-600/40 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/10">
+        <div className="relative group bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl rounded-2xl border border-white/30 dark:border-gray-600/30 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-emerald-500/10">
           <div className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
@@ -507,7 +502,7 @@ export function JiraSyncDashboard({
         </div>
 
         {/* Last Week */}
-        <div className="relative group bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-700/90 dark:via-gray-700/70 dark:to-gray-700/50 backdrop-blur-lg rounded-2xl border border-white/40 dark:border-gray-600/40 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-emerald-500/10">
+        <div className="relative group bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl rounded-2xl border border-white/30 dark:border-gray-600/30 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-emerald-500/10">
           <div className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center">
@@ -532,7 +527,7 @@ export function JiraSyncDashboard({
       {/* Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         {/* User Mapping */}
-        <div className="relative group bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-700/90 dark:via-gray-700/70 dark:to-gray-700/50 backdrop-blur-lg rounded-2xl border border-white/40 dark:border-gray-600/40 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/10">
+        <div className="relative group bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl rounded-2xl border border-white/30 dark:border-gray-600/30 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-emerald-500/10">
           <div className="p-6">
             <div className="flex items-center gap-4 mb-4">
               <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
@@ -570,7 +565,7 @@ export function JiraSyncDashboard({
         </div>
 
         {/* Project Mapping */}
-        <div className="relative group bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-700/90 dark:via-gray-700/70 dark:to-gray-700/50 backdrop-blur-lg rounded-2xl border border-white/40 dark:border-gray-600/40 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-green-500/10">
+        <div className="relative group bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl rounded-2xl border border-white/30 dark:border-gray-600/30 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-emerald-500/10">
           <div className="p-6">
             <div className="flex items-center gap-4 mb-4">
               <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
@@ -608,7 +603,7 @@ export function JiraSyncDashboard({
         </div>
 
         {/* Import */}
-        <div className="relative group bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-700/90 dark:via-gray-700/70 dark:to-gray-700/50 backdrop-blur-lg rounded-2xl border border-white/40 dark:border-gray-600/40 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/10">
+        <div className="relative group bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl rounded-2xl border border-white/30 dark:border-gray-600/30 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-emerald-500/10">
           <div className="p-6">
             <div className="flex items-center gap-4 mb-4">
               <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
@@ -645,115 +640,6 @@ export function JiraSyncDashboard({
               </span>
             </button>
           </div>
-        </div>
-      </div>
-
-      {/* Sync Status */}
-      <div className="relative group bg-gradient-to-br from-white/90 via-white/70 to-white/50 dark:from-gray-700/90 dark:via-gray-700/70 dark:to-gray-700/50 backdrop-blur-lg rounded-2xl border border-white/40 dark:border-gray-600/40 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-orange-500/10">
-        <div className="p-6">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center">
-              <FiClock className="text-white text-xl" />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {t('jiraSyncStatus')}
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Stav automatické synchronizace
-              </p>
-            </div>
-          </div>
-        
-        <div className="space-y-4">
-          {/* Current Status */}
-          <div className="flex items-center justify-between">
-            <span className="text-gray-600 dark:text-gray-400">{t('status')}:</span>
-            <div className="flex items-center gap-2">
-              {syncStatus.isRunning ? (
-                <>
-                  <FiLoader className="w-4 h-4 animate-spin text-blue-600" />
-                  <span className="text-blue-600 font-medium">{t('jiraSyncStatusRunning')}</span>
-                </>
-              ) : syncStatus.lastResult ? (
-                <>
-                  {syncStatus.lastResult.success ? (
-                    <FiCheckCircle className="w-4 h-4 text-green-600" />
-                  ) : (
-                    <FiXCircle className="w-4 h-4 text-red-600" />
-                  )}
-                  <span className={`font-medium ${syncStatus.lastResult.success ? 'text-green-600' : 'text-red-600'}`}>
-                    {syncStatus.lastResult.success ? t('jiraSyncStatusSuccess') : t('jiraSyncStatusError')}
-                  </span>
-                </>
-              ) : (
-                <span className="text-gray-500">{t('jiraSyncStatusNone')}</span>
-              )}
-            </div>
-          </div>
-
-          {/* Last Sync */}
-          {syncStatus.lastSync && (
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600 dark:text-gray-400">{t('jiraSyncLastSync')}:</span>
-              <span className="font-medium text-gray-900 dark:text-white">
-                {new Date(syncStatus.lastSync).toLocaleString('cs-CZ')}
-              </span>
-            </div>
-          )}
-
-          {/* Next Scheduled Sync */}
-          {syncStatus.nextScheduledSync && (
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600 dark:text-gray-400">{t('jiraSyncNextSync')}:</span>
-              <span className="font-medium text-gray-900 dark:text-white">
-                {new Date(syncStatus.nextScheduledSync).toLocaleString('cs-CZ')}
-              </span>
-            </div>
-          )}
-
-          {/* Last Result */}
-          {syncStatus.lastResult && (
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600 dark:text-gray-400">{t('jiraSyncResult')}:</span>
-              <span className={`font-medium ${syncStatus.lastResult.success ? 'text-green-600' : 'text-red-600'}`}>
-                {syncStatus.lastResult.message}
-              </span>
-            </div>
-          )}
-
-          {/* Auto Sync Toggle */}
-          <div className="flex items-center justify-between pt-6 border-t border-gray-200/50 dark:border-gray-600/50">
-            <div>
-              <span className="text-gray-600 dark:text-gray-400 font-medium">{t('jiraSyncAutoSync')}:</span>
-              <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
-                {t('jiraSyncAutoDescription')}
-              </p>
-            </div>
-            <button
-              onClick={handleToggleAutoSync}
-              className={`relative group px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-2xl active:scale-95 flex items-center gap-2 ${
-                autoSyncEnabled
-                  ? 'bg-gradient-to-r from-red-500 via-red-600 to-red-700 text-white hover:shadow-red-500/25'
-                  : 'bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white hover:shadow-green-500/25'
-              }`}
-            >
-              <span className="relative z-10 flex items-center gap-2">
-                {autoSyncEnabled ? (
-                  <>
-                    <FiPause className="w-4 h-4" />
-                    {t('jiraSyncAutoStop')}
-                  </>
-                ) : (
-                  <>
-                    <FiPlay className="w-4 h-4" />
-                    {t('jiraSyncAutoStart')}
-                  </>
-                )}
-              </span>
-            </button>
-          </div>
-        </div>
         </div>
       </div>
     </div>

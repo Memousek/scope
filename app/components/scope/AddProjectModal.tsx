@@ -189,7 +189,7 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
           <div>
             <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">{t('projectName')}</label>
             <input
-              className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
+              className="w-full bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl text-gray-900 dark:text-gray-100 border border-white/30 dark:border-gray-600/30 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
               placeholder={t('projectName')}
               value={newProject.name as string || ''}
               onChange={e => setNewProject(p => ({ ...p, name: e.target.value }))}
@@ -201,7 +201,7 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
             <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">{t('deliveryDate')}</label>
             <input
               type="date"
-              className="w-full bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
+              className="w-full bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-gray-800/80 dark:via-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl text-gray-900 dark:text-gray-100 border border-white/30 dark:border-gray-600/30 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200"
               value={(newProject.delivery_date as string) || ''}
               onChange={e => setNewProject(p => ({ ...p, delivery_date: e.target.value || null }))}
             />
