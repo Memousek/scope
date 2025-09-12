@@ -13,6 +13,21 @@ import {
 } from '@/lib/domain/models/planned-allocation.model';
 import { PlannedAllocationRepository } from '@/lib/domain/repositories/planned-allocation.repository';
 
+// Types for Supabase query results
+interface SupabaseAllocationSummaryItem {
+  team_member_id: string;
+  team_members: {
+    name: string;
+  };
+  project_id: string | null;
+  projects: {
+    name: string;
+  } | null;
+  allocation_fte: number;
+  date: string;
+  external_project_name?: string;
+}
+
 export class SupabasePlannedAllocationRepository implements PlannedAllocationRepository {
   async findById(id: string): Promise<PlannedAllocation | null> {
     const supabase = createClient();
@@ -210,7 +225,7 @@ export class SupabasePlannedAllocationRepository implements PlannedAllocationRep
     }
 
     // Group by team member
-    const grouped = (data || []).reduce((acc, item: any) => {
+    const grouped = (data || []).reduce((acc, item: SupabaseAllocationSummaryItem) => {
       const memberId = item.team_member_id;
       if (!acc[memberId]) {
         acc[memberId] = {
@@ -226,7 +241,7 @@ export class SupabasePlannedAllocationRepository implements PlannedAllocationRep
       
       // Add to project breakdown
       const projectId = item.project_id;
-      const projectName = item.project_id ? (item.projects as any)?.name || 'Neznámý projekt' : item.external_project_name || 'Externí projekt';
+      const projectName = item.project_id ? item.projects?.name || 'Neznámý projekt' : item.external_project_name || 'Externí projekt';
       
       let projectBreakdown = acc[memberId].projectBreakdown.find(p => p.projectId === projectId);
       if (!projectBreakdown) {
