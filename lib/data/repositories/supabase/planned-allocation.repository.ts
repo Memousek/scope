@@ -248,7 +248,7 @@ export class SupabasePlannedAllocationRepository implements PlannedAllocationRep
     return Object.values(grouped);
   }
 
-  private mapToModel(data: any): PlannedAllocation {
+  private mapToModel(data: Record<string, unknown>): PlannedAllocation {
     return {
       id: data.id,
       scopeId: data.scope_id,

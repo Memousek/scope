@@ -13,24 +13,20 @@
  * - Responsive design with modern UI
  */
 
-import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from '@/lib/translation';
 import { TeamMember, Project } from './types';
 import { getHolidays, isHoliday } from '@/app/utils/holidays';
 import { ScopeSettingsService } from '@/app/services/scopeSettingsService';
 import { ContainerService } from '@/lib/container.service';
 import { ManageProjectTeamAssignmentsService, ProjectTeamAssignmentWithDetails } from '@/lib/domain/services/manage-project-team-assignments.service';
-import { useToastFunctions } from '@/app/components/ui/Toast';
 import { EnhancedAllocationTable } from './EnhancedAllocationTable';
 import { 
   FiCalendar, 
   FiUsers, 
   FiChevronLeft, 
   FiChevronRight, 
-  FiPlus,
-  FiEdit3,
-  FiSave,
-  FiTrash2
+  FiEdit3
 } from 'react-icons/fi';
 
 interface AllocationTableProps {
@@ -43,15 +39,6 @@ interface AllocationTableProps {
 type TabType = 'allocation' | 'availability';
 type ViewMode = 'daily' | 'monthly';
 
-interface DailyAllocation {
-  id?: string;
-  teamMemberId: string;
-  projectId: string | 'external';
-  role: string;
-  allocationFte: number;
-  date: string; // ISO date string
-  externalProjectName?: string;
-}
 
 interface AllocationByMember {
   [memberId: string]: number;

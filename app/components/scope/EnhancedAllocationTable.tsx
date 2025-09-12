@@ -21,15 +21,11 @@ import { useToastFunctions } from '@/app/components/ui/Toast';
 import { Modal } from '@/app/components/ui/Modal';
 import { 
   FiCalendar, 
-  FiUsers, 
   FiChevronLeft, 
   FiChevronRight, 
   FiPlus,
-  FiEdit3,
-  FiSave,
   FiTrash2,
-  FiX,
-  FiCheck
+  FiSave
 } from 'react-icons/fi';
 
 interface AllocationTableProps {
@@ -344,8 +340,6 @@ export function EnhancedAllocationTable({ scopeId, team, projects, readOnlyMode 
         toast.success('Alokace přidány', `Plánované alokace byly úspěšně přidány pro ${results.length} dnů.`);
       } else if (endDate && newAllocation.date) {
         // Create allocations for date range
-        const startDate = new Date(newAllocation.date);
-        const endDateObj = new Date(endDate);
         const dateRange = getDateRange(newAllocation.date, endDate);
         
         const baseAllocation = {

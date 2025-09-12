@@ -264,12 +264,19 @@ export class PlannedAllocationService {
       acc[key].totalAllocated += allocation.allocationFte;
       acc[key].allocations.push(allocation);
       return acc;
-    }, {} as Record<string, any>);
+    }, {} as Record<string, {
+      teamMemberId: string;
+      teamMemberName: string;
+      date: Date;
+      totalAllocated: number;
+      maxFte: number;
+      allocations: PlannedAllocation[];
+    }>);
 
     // Find conflicts
     const conflicts = Object.values(grouped)
-      .filter((group: any) => group.totalAllocated > group.maxFte)
-      .map((group: any) => ({
+      .filter((group) => group.totalAllocated > group.maxFte)
+      .map((group) => ({
         teamMemberId: group.teamMemberId,
         teamMemberName: group.teamMemberName,
         date: group.date,
