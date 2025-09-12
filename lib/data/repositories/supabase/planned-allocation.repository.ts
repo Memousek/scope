@@ -18,11 +18,11 @@ interface SupabaseAllocationSummaryItem {
   team_member_id: string;
   team_members: {
     name: string;
-  };
+  }[];
   project_id: string | null;
   projects: {
     name: string;
-  } | null;
+  }[] | null;
   allocation_fte: number;
   date: string;
   external_project_name?: string;
@@ -230,7 +230,7 @@ export class SupabasePlannedAllocationRepository implements PlannedAllocationRep
       if (!acc[memberId]) {
         acc[memberId] = {
           teamMemberId: memberId,
-          teamMemberName: item.team_members?.name || 'Neznámý člen',
+          teamMemberName: item.team_members?.[0]?.name || 'Neznámý člen',
           totalAllocatedFte: 0,
           dateRange: { from: dateFrom, to: dateTo },
           projectBreakdown: []
@@ -241,7 +241,7 @@ export class SupabasePlannedAllocationRepository implements PlannedAllocationRep
       
       // Add to project breakdown
       const projectId = item.project_id;
-      const projectName = item.project_id ? item.projects?.name || 'Neznámý projekt' : item.external_project_name || 'Externí projekt';
+      const projectName = item.project_id ? item.projects?.[0]?.name || 'Neznámý projekt' : item.external_project_name || 'Externí projekt';
       
       let projectBreakdown = acc[memberId].projectBreakdown.find(p => p.projectId === projectId);
       if (!projectBreakdown) {
