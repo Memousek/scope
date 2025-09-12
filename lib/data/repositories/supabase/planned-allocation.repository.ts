@@ -210,12 +210,12 @@ export class SupabasePlannedAllocationRepository implements PlannedAllocationRep
     }
 
     // Group by team member
-    const grouped = (data || []).reduce((acc, item) => {
+    const grouped = (data || []).reduce((acc, item: any) => {
       const memberId = item.team_member_id;
       if (!acc[memberId]) {
         acc[memberId] = {
           teamMemberId: memberId,
-          teamMemberName: item.team_members.name,
+          teamMemberName: item.team_members?.name || 'Neznámý člen',
           totalAllocatedFte: 0,
           dateRange: { from: dateFrom, to: dateTo },
           projectBreakdown: []
@@ -226,7 +226,7 @@ export class SupabasePlannedAllocationRepository implements PlannedAllocationRep
       
       // Add to project breakdown
       const projectId = item.project_id;
-      const projectName = item.project_id ? item.projects?.name || 'Neznámý projekt' : item.external_project_name || 'Externí projekt';
+      const projectName = item.project_id ? (item.projects as any)?.name || 'Neznámý projekt' : item.external_project_name || 'Externí projekt';
       
       let projectBreakdown = acc[memberId].projectBreakdown.find(p => p.projectId === projectId);
       if (!projectBreakdown) {
