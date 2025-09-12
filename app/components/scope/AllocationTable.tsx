@@ -21,6 +21,7 @@ import { ScopeSettingsService } from '@/app/services/scopeSettingsService';
 import { ContainerService } from '@/lib/container.service';
 import { ManageProjectTeamAssignmentsService, ProjectTeamAssignmentWithDetails } from '@/lib/domain/services/manage-project-team-assignments.service';
 import { useToastFunctions } from '@/app/components/ui/Toast';
+import { EnhancedAllocationTable } from './EnhancedAllocationTable';
 import { 
   FiCalendar, 
   FiUsers, 
@@ -40,6 +41,7 @@ interface AllocationTableProps {
 }
 
 type TabType = 'allocation' | 'availability';
+type ViewMode = 'daily' | 'monthly';
 
 interface DailyAllocation {
   id?: string;
@@ -73,6 +75,31 @@ function getWeekRange(base: Date): Date[] {
   return days;
 }
 
+function getMonthRange(base: Date): Date[] {
+  const days: Date[] = [];
+  const year = base.getFullYear();
+  const month = base.getMonth();
+  
+  // Get first day of month and adjust to Monday start
+  const firstDay = new Date(year, month, 1);
+  const startDate = new Date(firstDay);
+  startDate.setDate(firstDay.getDate() - ((firstDay.getDay() + 6) % 7));
+  
+  // Get last day of month and adjust to Sunday end
+  const lastDay = new Date(year, month + 1, 0);
+  const endDate = new Date(lastDay);
+  endDate.setDate(lastDay.getDate() + (6 - lastDay.getDay()));
+  
+  // Generate all days in the range
+  const current = new Date(startDate);
+  while (current <= endDate) {
+    days.push(new Date(current));
+    current.setDate(current.getDate() + 1);
+  }
+  
+  return days;
+}
+
 function isVacationOn(member: TeamMember, dateIso: string): boolean {
   if (!Array.isArray(member.vacations)) return false;
   return member.vacations.some(r => r.start <= dateIso && dateIso <= r.end);
@@ -80,24 +107,10 @@ function isVacationOn(member: TeamMember, dateIso: string): boolean {
 
 export function AllocationTable({ scopeId, team, projects, readOnlyMode = false }: AllocationTableProps) {
   const { t } = useTranslation();
-  const toast = useToastFunctions();
-  const toastRef = useRef(toast);
-  toastRef.current = toast;
   
   // Tab management
   const [activeTab, setActiveTab] = useState<TabType>('allocation');
-  
-  // Allocation tab state
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [editingCell, setEditingCell] = useState<{memberId: string, date: string} | null>(null);
-  const [newAllocation, setNewAllocation] = useState<Partial<DailyAllocation>>({
-    teamMemberId: '',
-    projectId: '',
-    role: '',
-    allocationFte: 0.1,
-    externalProjectName: ''
-  });
+  const [viewMode, setViewMode] = useState<ViewMode>('daily');
   
   // Availability tab state
   const [monthAnchor, setMonthAnchor] = useState<Date>(() => {
@@ -109,7 +122,6 @@ export function AllocationTable({ scopeId, team, projects, readOnlyMode = false 
     country: 'CZ', 
     subdivision: null 
   });
-  
   
   const [assignments, setAssignments] = useState<ProjectTeamAssignmentWithDetails[]>([]);
   const [loading, setLoading] = useState(false);
@@ -131,7 +143,7 @@ export function AllocationTable({ scopeId, team, projects, readOnlyMode = false 
     loadRegion();
   }, [scopeId]);
 
-  // Load assignments
+  // Load assignments for availability overview
   const loadAssignments = useCallback(async () => {
     setLoading(true);
     try {
@@ -140,17 +152,18 @@ export function AllocationTable({ scopeId, team, projects, readOnlyMode = false 
       setAssignments(data);
     } catch (error) {
       console.error('Failed to load assignments:', error);
-      toastRef.current.error('Chyba při načítání', 'Nepodařilo se načíst alokace.');
     } finally {
       setLoading(false);
     }
   }, [scopeId]);
 
   useEffect(() => {
+    if (activeTab === 'availability') {
     loadAssignments();
-  }, [loadAssignments]); // Include loadAssignments in dependencies
+    }
+  }, [loadAssignments, activeTab]);
 
-  // Calculate allocation by member
+  // Calculate allocation by member for availability overview
   const allocationByMember: AllocationByMember = useMemo(() => {
     const map: AllocationByMember = {};
     assignments.forEach(a => {
@@ -169,12 +182,20 @@ export function AllocationTable({ scopeId, team, projects, readOnlyMode = false 
   }, [team, roleFilter]);
 
   // Get calendar days for availability tab
-  const days = useMemo(() => getWeekRange(monthAnchor), [monthAnchor]);
+  const days = useMemo(() => {
+    return viewMode === 'monthly' ? getMonthRange(monthAnchor) : getWeekRange(monthAnchor);
+  }, [monthAnchor, viewMode]);
   const monthLabel = useMemo(() => 
     monthAnchor.toLocaleString('cs-CZ', { month: 'long', year: 'numeric' }), 
     [monthAnchor]
   );
   const todayIso = useMemo(() => formatIso(new Date()), []);
+  const today = new Date();
+  
+  // Check if today is visible in current view
+  const isTodayVisible = useMemo(() => {
+    return days.some(d => formatIso(d) === todayIso);
+  }, [days, todayIso]);
 
   // Cell color function for availability heatmap
   function cellColor(member: TeamMember, date: Date): { className: string; label: string } {
@@ -195,81 +216,6 @@ export function AllocationTable({ scopeId, team, projects, readOnlyMode = false 
     return { className: 'bg-red-500', label: t('overAllocated') };
   }
 
-  // Handle adding new allocation
-  const handleAddAllocation = async () => {
-    if (!newAllocation.teamMemberId || !newAllocation.projectId || !newAllocation.role) {
-      toast.error('Chyba', 'Vyplňte všechna povinná pole.');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const allocationData = {
-        projectId: newAllocation.projectId as string,
-        teamMemberId: newAllocation.teamMemberId,
-        role: newAllocation.role,
-        allocationFte: newAllocation.allocationFte || 0.1
-      };
-
-      const service = ContainerService.getInstance().get(ManageProjectTeamAssignmentsService, { autobind: true });
-      await service.createAssignment(allocationData);
-      await loadAssignments();
-      
-      setNewAllocation({
-        teamMemberId: '',
-        projectId: '',
-        role: '',
-        allocationFte: 0.1,
-        externalProjectName: ''
-      });
-      setShowAddForm(false);
-      setEditingCell(null);
-      
-      toast.success('Alokace přidána', 'Alokace byla úspěšně přidána.');
-    } catch (error) {
-      console.error('Failed to add allocation:', error);
-      toast.error('Chyba při přidávání', 'Nepodařilo se přidat alokaci.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Handle removing allocation
-  const handleRemoveAllocation = async (assignmentId: string) => {
-    setLoading(true);
-    try {
-      const service = ContainerService.getInstance().get(ManageProjectTeamAssignmentsService, { autobind: true });
-      await service.deleteAssignment(assignmentId);
-      await loadAssignments();
-      toast.success('Alokace odstraněna', 'Alokace byla úspěšně odstraněna.');
-    } catch (error) {
-      console.error('Failed to remove allocation:', error);
-      toast.error('Chyba při odstraňování', 'Nepodařilo se odstranit alokaci.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Handle cell click for editing
-  const handleCellClick = (memberId: string, date: string) => {
-    if (readOnlyMode) return;
-    
-    const member = team.find(m => m.id === memberId);
-    if (!member) return;
-    
-    // Check if there's already an allocation for this member
-    const existingAssignment = assignments.find(a => a.teamMemberId === memberId);
-    
-    setEditingCell({ memberId, date });
-    setNewAllocation({
-      teamMemberId: memberId,
-      projectId: existingAssignment?.projectId || '',
-      role: existingAssignment?.role || member.role,
-      allocationFte: existingAssignment?.allocationFte || 0.1,
-      externalProjectName: ''
-    });
-    setShowAddForm(true);
-  };
 
   // Legend for availability heatmap
   const legend = (
@@ -324,6 +270,34 @@ export function AllocationTable({ scopeId, team, projects, readOnlyMode = false 
               <span>{t('allocationManagement')}</span>
             </div>
           </div>
+          
+          {/* View Mode Switcher - only show for availability tab */}
+          {activeTab === 'availability' && (
+            <div className="flex items-center gap-2 bg-white/50 dark:bg-gray-700/50 rounded-xl p-1">
+              <button
+                onClick={() => setViewMode('daily')}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+                  viewMode === 'daily'
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg'
+                    : 'text-gray-600 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-600/50'
+                }`}
+              >
+                <FiCalendar className="w-4 h-4" />
+                {t('dailyView')}
+              </button>
+              <button
+                onClick={() => setViewMode('monthly')}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+                  viewMode === 'monthly'
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg'
+                    : 'text-gray-600 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-600/50'
+                }`}
+              >
+                <FiCalendar className="w-4 h-4" />
+                {t('monthlyView')}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Tab Navigation */}
@@ -354,322 +328,14 @@ export function AllocationTable({ scopeId, team, projects, readOnlyMode = false 
 
         {/* Tab Content */}
         {activeTab === 'allocation' && (
-          <div className="space-y-6">
-            {/* Controls */}
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <button
-                  type="button"
-                  onClick={() => setSelectedDate(new Date(selectedDate.getTime() - 7 * 24 * 60 * 60 * 1000))}
-                  className="p-2 rounded-lg border hover:bg-gray-50 dark:hover:bg-gray-800"
-                  aria-label={t('previousWeek')}
-                >
-                  <FiChevronLeft />
-                </button>
-                <div className="font-semibold select-none min-w-[10rem] text-center">
-                  {selectedDate.toLocaleDateString('cs-CZ', { 
-                    day: '2-digit', 
-                    month: '2-digit', 
-                    year: 'numeric' 
-                  })}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setSelectedDate(new Date(selectedDate.getTime() + 7 * 24 * 60 * 60 * 1000))}
-                  className="p-2 rounded-lg border hover:bg-gray-50 dark:hover:bg-gray-800"
-                  aria-label={t('nextWeek')}
-                >
-                  <FiChevronRight />
-                </button>
-              </div>
-              {!readOnlyMode && (
-                <button
-                  onClick={() => setShowAddForm(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all duration-200"
-                >
-                  <FiPlus className="w-4 h-4" />
-                  {t('addAllocation')}
-                </button>
-              )}
-            </div>
-
-            {/* Allocation Table */}
-            <div className="overflow-x-auto rounded-xl border bg-white/70 dark:bg-gray-700/70">
-              <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-gray-50 dark:bg-gray-800 z-10">
-                  <tr>
-                    <th className="p-1 text-left w-40 sticky left-0 z-30 bg-gray-50 dark:bg-gray-800 border-r font-semibold">
-                      {t('teamMember')}
-                    </th>
-                    {Array.from({ length: 7 }, (_, i) => {
-                      const date = new Date(selectedDate);
-                      date.setDate(selectedDate.getDate() - 3 + i);
-                      const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-                      const isToday = date.toDateString() === new Date().toDateString();
-                      return (
-                        <th 
-                          key={i} 
-                          className={`p-1 text-center font-medium whitespace-nowrap min-w-[50px] ${
-                            isWeekend ? 'text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700' : ''
-                          } ${isToday ? 'text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20' : ''}`}
-                        >
-                          <div className="text-xs">
-                            {date.toLocaleDateString('cs-CZ', { day: '2-digit', month: '2-digit' })}
-                          </div>
-                          <div className="text-[10px] text-gray-500">
-                            {date.toLocaleDateString('cs-CZ', { weekday: 'short' })}
-                          </div>
-                        </th>
-                      );
-                    })}
-                  </tr>
-                </thead>
-                <tbody>
-                  {team.map((member) => {
-                    const memberAssignments = assignments.filter(a => a.teamMemberId === member.id);
-                    return (
-                      <tr key={member.id} className="border-t hover:bg-gray-50 dark:hover:bg-gray-800/40">
-                        <td className="p-1 align-middle sticky left-0 z-20 bg-white dark:bg-gray-900 border-r">
-                          <div className="flex items-center gap-3">
-                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 text-white flex items-center justify-center text-[10px] font-bold">
-                              {member.name.charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                              <div className="font-medium text-gray-900 dark:text-white">
-                                {member.name}
-                              </div>
-                              <div className="text-xs text-gray-500 dark:text-gray-400">
-                                {member.role} • {member.fte.toFixed(1)} FTE
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        {Array.from({ length: 7 }, (_, i) => {
-                          const date = new Date(selectedDate);
-                          date.setDate(selectedDate.getDate() - 3 + i);
-                          const dateIso = formatIso(date);
-                          const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-                          const isToday = date.toDateString() === new Date().toDateString();
-                          const isHolidayDay = isHoliday(date, region.country, region.subdivision ?? undefined);
-                          const isVacation = isVacationOn(member, dateIso);
-                          
-                          // Find assignment for this member and date
-                          const dayAssignment = memberAssignments.find(() => {
-                            // For now, we'll show all assignments (not date-specific)
-                            // In a real implementation, you'd filter by date
-                            return true;
-                          });
-
-                          let cellContent = '';
-                          let cellClass = 'bg-white dark:bg-gray-800';
-                          
-                          if (isHolidayDay) {
-                            cellContent = t('holiday');
-                            cellClass = 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300';
-                          } else if (isVacation) {
-                            cellContent = t('onVacation');
-                            cellClass = 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300';
-                          } else if (dayAssignment) {
-                            cellContent = dayAssignment.project?.name || t('externalProject');
-                            cellClass = 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300';
-                          } else {
-                            cellContent = '';
-                            cellClass = 'bg-gray-50 dark:bg-gray-700/50';
-                          }
-
-                          return (
-                            <td 
-                              key={i} 
-                              onClick={() => handleCellClick(member.id, dateIso)}
-                              className={`p-1 text-center text-xs border-r cursor-pointer transition-all duration-200 hover:shadow-md ${
-                                isWeekend ? 'bg-gray-100 dark:bg-gray-700' : ''
-                              } ${isToday ? 'bg-blue-50 dark:bg-blue-900/10' : ''} ${cellClass} ${
-                                !readOnlyMode && !isHolidayDay && !isVacation ? 'hover:bg-blue-100 dark:hover:bg-blue-800/30' : ''
-                              }`}
-                              title={!readOnlyMode && !isHolidayDay && !isVacation ? 'Klikněte pro přidání alokace' : ''}
-                            >
-                              <div className="truncate" title={cellContent}>
-                                {cellContent}
-                              </div>
-                              {dayAssignment && (
-                                <div className="text-[10px] text-gray-500 mt-1">
-                                  {dayAssignment.allocationFte.toFixed(1)} FTE
-                                </div>
-                              )}
-                              {!readOnlyMode && !isHolidayDay && !isVacation && !dayAssignment && (
-                                <div className="text-[10px] text-gray-400 mt-1 opacity-0 hover:opacity-100 transition-opacity">
-                                  Klikněte
-                                </div>
-                              )}
-                              {!readOnlyMode && dayAssignment && (
-                                <div className="text-[10px] text-red-400 mt-1 opacity-0 hover:opacity-100 transition-opacity">
-                                  Klikněte pro úpravu
-                                </div>
-                              )}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Loading indicator for allocation tab */}
-            {loading && (
-              <div className="text-center text-sm opacity-70 py-4">{t('loading')}…</div>
-            )}
-
-            {/* Add Allocation Form */}
-            {showAddForm && !readOnlyMode && (
-              <div className="bg-white/70 dark:bg-gray-700/70 rounded-xl p-6 border border-gray-200/50 dark:border-gray-600/50">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  {editingCell ? 'Upravit alokaci' : t('addNewAllocation')}
-                </h3>
-                {editingCell && (
-                  <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                    <p className="text-sm text-blue-700 dark:text-blue-300">
-                      <strong>Člen týmu:</strong> {team.find(m => m.id === editingCell.memberId)?.name}<br/>
-                      <strong>Datum:</strong> {new Date(editingCell.date).toLocaleDateString('cs-CZ')}
-                    </p>
-                  </div>
-                )}
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Team Member */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      {t('teamMember')}
-                    </label>
-                    <select
-                      value={newAllocation.teamMemberId}
-                      onChange={(e) => setNewAllocation({ ...newAllocation, teamMemberId: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                    >
-                      <option value="">{t('selectTeamMember')}</option>
-                      {team.map((member) => (
-                        <option key={member.id} value={member.id}>
-                          {member.name} ({member.role})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Project */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      {t('project')}
-                    </label>
-                    <select
-                      value={newAllocation.projectId}
-                      onChange={(e) => setNewAllocation({ ...newAllocation, projectId: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                    >
-                      <option value="">{t('selectProject')}</option>
-                      {projects.map((project) => (
-                        <option key={project.id} value={project.id}>
-                          {project.name}
-                        </option>
-                      ))}
-                      <option value="external">{t('externalProject')}</option>
-                    </select>
-                  </div>
-
-                  {/* Role */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      {t('role')}
-                    </label>
-                    <input
-                      type="text"
-                      value={newAllocation.role}
-                      onChange={(e) => setNewAllocation({ ...newAllocation, role: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                      placeholder={t('enterRole')}
-                    />
-                  </div>
-
-                  {/* FTE */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      {t('fte')}
-                    </label>
-                    <input
-                      type="number"
-                      min="0.1"
-                      max="2"
-                      step="0.1"
-                      value={newAllocation.allocationFte}
-                      onChange={(e) => setNewAllocation({ ...newAllocation, allocationFte: Number(e.target.value) })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                    />
-                  </div>
-                </div>
-
-                {/* External Project Name */}
-                {newAllocation.projectId === 'external' && (
-                  <div className="mt-4">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      {t('externalProjectName')}
-                    </label>
-                    <input
-                      type="text"
-                      value={newAllocation.externalProjectName}
-                      onChange={(e) => setNewAllocation({ ...newAllocation, externalProjectName: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                      placeholder={t('enterExternalProjectName')}
-                    />
-                  </div>
-                )}
-
-                {/* Form Actions */}
-                <div className="flex gap-3 mt-6">
-                  <button
-                    onClick={handleAddAllocation}
-                    disabled={loading || !newAllocation.teamMemberId || !newAllocation.projectId || !newAllocation.role}
-                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <FiSave className="w-4 h-4" />
-                    {editingCell ? 'Uložit změny' : t('save')}
-                  </button>
-                  {editingCell && (
-                    <button
-                      onClick={async () => {
-                        const existingAssignment = assignments.find(a => a.teamMemberId === editingCell.memberId);
-                        if (existingAssignment) {
-                          await handleRemoveAllocation(existingAssignment.id);
-                          setShowAddForm(false);
-                          setEditingCell(null);
-                        }
-                      }}
-                      disabled={loading}
-                      className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <FiTrash2 className="w-4 h-4" />
-                      Smazat
-                    </button>
-                  )}
-                  <button
-                    onClick={() => {
-                      setShowAddForm(false);
-                      setEditingCell(null);
-                      setNewAllocation({
-                        teamMemberId: '',
-                        projectId: '',
-                        role: '',
-                        allocationFte: 0.1,
-                        externalProjectName: ''
-                      });
-                    }}
-                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200"
-                  >
-                    {t('cancel')}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+          <EnhancedAllocationTable
+            scopeId={scopeId}
+            team={team}
+            projects={projects}
+            readOnlyMode={readOnlyMode}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+          />
         )}
 
         {activeTab === 'availability' && (
@@ -679,23 +345,61 @@ export function AllocationTable({ scopeId, team, projects, readOnlyMode = false 
               <div className="flex items-center gap-4">
                 <button
                   type="button"
-                  onClick={() => setMonthAnchor(new Date(monthAnchor.getFullYear(), monthAnchor.getMonth() - 1, 1))}
+                  onClick={() => {
+                    if (viewMode === 'monthly') {
+                      setMonthAnchor(new Date(monthAnchor.getFullYear(), monthAnchor.getMonth() - 1, 1));
+                    } else {
+                      // For daily view, move by week
+                      const newDate = new Date(monthAnchor);
+                      newDate.setDate(newDate.getDate() - 7);
+                      setMonthAnchor(newDate);
+                    }
+                  }}
                   className="p-2 rounded-lg border hover:bg-gray-50 dark:hover:bg-gray-800"
-                  aria-label={t('previousMonth')}
+                  aria-label={viewMode === 'monthly' ? t('previousMonth') : t('previousWeek')}
                 >
                   <FiChevronLeft />
                 </button>
                 <div className="font-semibold select-none min-w-[10rem] text-center">
-                  {monthLabel}
+                  {viewMode === 'monthly' ? monthLabel : 
+                   `${monthAnchor.toLocaleDateString('cs-CZ', { day: '2-digit', month: '2-digit' })} - ${new Date(monthAnchor.getTime() + 6 * 24 * 60 * 60 * 1000).toLocaleDateString('cs-CZ', { day: '2-digit', month: '2-digit' })}`}
                 </div>
                 <button
                   type="button"
-                  onClick={() => setMonthAnchor(new Date(monthAnchor.getFullYear(), monthAnchor.getMonth() + 1, 1))}
+                  onClick={() => {
+                    if (viewMode === 'monthly') {
+                      setMonthAnchor(new Date(monthAnchor.getFullYear(), monthAnchor.getMonth() + 1, 1));
+                    } else {
+                      // For daily view, move by week
+                      const newDate = new Date(monthAnchor);
+                      newDate.setDate(newDate.getDate() + 7);
+                      setMonthAnchor(newDate);
+                    }
+                  }}
                   className="p-2 rounded-lg border hover:bg-gray-50 dark:hover:bg-gray-800"
-                  aria-label={t('nextMonth')}
+                  aria-label={viewMode === 'monthly' ? t('nextMonth') : t('nextWeek')}
                 >
                   <FiChevronRight />
                 </button>
+                {!isTodayVisible && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (viewMode === 'monthly') {
+                        setMonthAnchor(new Date(today.getFullYear(), today.getMonth(), 1));
+                      } else {
+                        // For daily view, go to current week (Monday of current week)
+                        const startOfWeek = new Date(today);
+                        startOfWeek.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+                        setMonthAnchor(startOfWeek);
+                      }
+                    }}
+                    className="px-3 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 bg-white/80 dark:bg-gray-700/80 border border-gray-200/50 dark:border-gray-600/50 rounded-lg hover:bg-white dark:hover:bg-gray-700 transition-colors"
+                    aria-label={t('today')}
+                  >
+                    {t('today')}
+                  </button>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('filterByRole')}</label>
@@ -714,11 +418,11 @@ export function AllocationTable({ scopeId, team, projects, readOnlyMode = false 
             {legend}
 
             {/* Calendar grid */}
-            <div className="overflow-x-auto rounded-xl border bg-white/70 dark:bg-gray-700/70">
-              <table className="w-full text-sm">
+            <div className={`overflow-x-auto rounded-xl border bg-white/70 dark:bg-gray-700/70 ${viewMode === 'monthly' ? 'scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200' : ''}`}>
+              <table className={`text-sm ${viewMode === 'monthly' ? 'min-w-[1200px]' : 'w-full'}`}>
                 <thead className="sticky top-0 bg-gray-50 dark:bg-gray-800 z-10">
                   <tr>
-                    <th className="p-1 text-left w-40 sticky left-0 z-30 bg-gray-50 dark:bg-gray-800 border-r font-semibold">
+                    <th className={`p-1 text-left sticky left-0 z-30 bg-gray-50 dark:bg-gray-800 border-r font-semibold ${viewMode === 'monthly' ? 'w-32' : 'w-40'}`}>
                       {t('teamMember')}
                     </th>
                     {days.map((d, idx) => {
@@ -730,14 +434,19 @@ export function AllocationTable({ scopeId, team, projects, readOnlyMode = false 
                       return (
                         <th 
                           key={idx} 
-                          className={`p-1 text-center font-medium whitespace-nowrap min-w-[50px] ${inMonth ? '' : 'opacity-40'} ${isMon ? 'border-l' : ''} ${isWeekend ? 'text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700' : ''} ${isToday ? 'text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20' : ''}`}
+                          className={`p-1 text-center font-medium whitespace-nowrap ${viewMode === 'monthly' ? 'min-w-[32px]' : 'min-w-[50px]'} ${inMonth ? '' : 'opacity-40'} ${isMon ? 'border-l' : ''} ${isWeekend ? 'text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700' : ''} ${isToday ? 'text-white bg-gradient-to-r from-blue-500 to-purple-500 font-bold shadow-lg' : ''}`}
                         >
-                          <div className="text-xs">
-                            {d.toLocaleDateString('cs-CZ', { day: '2-digit', month: '2-digit' })}
+                          <div className={`${viewMode === 'monthly' ? 'text-[10px]' : 'text-xs'} ${isToday ? 'relative' : ''}`}>
+                            {viewMode === 'monthly' ? d.getDate() : d.toLocaleDateString('cs-CZ', { day: '2-digit', month: '2-digit' })}
+                            {isToday && (
+                              <div className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
+                            )}
                           </div>
+                          {viewMode === 'daily' && (
                           <div className="text-[10px] text-gray-500">
                             {d.toLocaleDateString('cs-CZ', { weekday: 'short' })}
                           </div>
+                          )}
                         </th>
                       );
                     })}
@@ -748,18 +457,20 @@ export function AllocationTable({ scopeId, team, projects, readOnlyMode = false 
                     const memberAlloc = allocationByMember[member.id] || 0;
                     return (
                       <tr key={member.id} className="border-t hover:bg-gray-50 dark:hover:bg-gray-800/40">
-                        <td className="p-1 align-middle sticky left-0 z-20 bg-white dark:bg-gray-900 border-r">
-                          <div className="flex items-center gap-3">
-                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 text-white flex items-center justify-center text-[10px] font-bold">
+                        <td className={`p-1 align-middle sticky left-0 z-20 bg-white dark:bg-gray-900 border-r ${viewMode === 'monthly' ? 'w-32' : 'w-40'}`}>
+                          <div className={`flex items-center gap-2 ${viewMode === 'monthly' ? 'flex-col' : 'gap-3'}`}>
+                            <div className={`${viewMode === 'monthly' ? 'w-5 h-5' : 'w-6 h-6'} rounded-full bg-gradient-to-br from-blue-500 to-purple-500 text-white flex items-center justify-center text-[10px] font-bold`}>
                               {member.name.charAt(0).toUpperCase()}
                             </div>
-                            <div>
-                              <div className="font-medium text-gray-900 dark:text-white">
-                                {member.name}
+                            <div className={viewMode === 'monthly' ? 'text-center' : ''}>
+                              <div className={`font-medium text-gray-900 dark:text-white ${viewMode === 'monthly' ? 'text-xs' : ''}`}>
+                                {viewMode === 'monthly' ? member.name.substring(0, 8) + (member.name.length > 8 ? '...' : '') : member.name}
                               </div>
+                              {viewMode === 'daily' && (
                               <div className="text-xs text-gray-500 dark:text-gray-400">
                                 {member.role} • {member.fte.toFixed(1)} FTE • {t('allocated')}: {memberAlloc.toFixed(1)} FTE
                               </div>
+                              )}
                             </div>
                           </div>
                         </td>
@@ -772,10 +483,10 @@ export function AllocationTable({ scopeId, team, projects, readOnlyMode = false 
                           return (
                             <td 
                               key={idx} 
-                              className={`p-1 text-center text-xs border-r ${isMon ? 'border-l' : ''} ${isToday ? 'bg-blue-50 dark:bg-blue-900/10' : isWeekend ? 'bg-gray-100 dark:bg-gray-700' : ''}`}
+                              className={`p-1 text-center text-xs border-r ${isMon ? 'border-l' : ''} ${isToday ? 'bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30 border-2 border-blue-400 dark:border-blue-500' : isWeekend ? 'bg-gray-100 dark:bg-gray-700' : ''}`}
                             >
                               <div
-                                className={`mx-auto w-5 h-5 rounded ${className}`}
+                                className={`mx-auto ${viewMode === 'monthly' ? 'w-4 h-4' : 'w-5 h-5'} rounded ${className}`}
                                 title={`${member.name} • ${iso} • ${label}`}
                                 aria-label={`${member.name} ${iso} ${label}`}
                               />
