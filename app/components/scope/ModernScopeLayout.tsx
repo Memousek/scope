@@ -21,7 +21,6 @@ import { TeamMember, Project } from "./types";
 import { downloadCSV } from "../../utils/csvUtils";
 import { useTranslation } from "@/lib/translation";
 import { ProjectTeamAssignment } from "@/lib/domain/models/project-team-assignment.model";
-import { Badge } from "../ui/Badge";
 import { useScopeRoles } from "@/app/hooks/useScopeRoles";
 import {
   FiUsers,
@@ -601,35 +600,21 @@ export function ModernScopeLayout({
 
       case "billing":
         return (
-          <div className="relative">
-            <Badge
-              label={t("experimental")}
-              variant="info"
-              position="top-right"
-            />
           <BillingSection
             scopeId={scopeId}
             team={team}
             projects={projects}
             readOnlyMode={readOnlyMode}
           />
-          </div>
         );
 
       case "timesheets":
         return (
-          <div className="relative">
-            <Badge
-              label={t("experimental")}
-              variant="info"
-              position="top-right"
-            />
-            <TimesheetOverview
-              scopeId={scopeId}
-              team={team}
-              projects={projects}
-            />
-          </div>
+          <TimesheetOverview
+            scopeId={scopeId}
+            team={team}
+            projects={projects}
+          />
         );
 
       case "burndown":
@@ -659,21 +644,14 @@ export function ModernScopeLayout({
 
       case "jira":
         return (
-          <div className="relative">
-            <Badge
-              label={t("experimental")}
-              variant="info"
-              position="top-right"
-            />
-            <JiraSyncDashboard
-              scopeId={scopeId}
-              team={team}
-              projects={projects}
-              onUserMappingClick={() => setJiraUserMappingOpen(true)}
-              onProjectMappingClick={() => setJiraProjectMappingOpen(true)}
-              onImportClick={() => setJiraImportV2Open(true)}
-            />
-          </div>
+          <JiraSyncDashboard
+            scopeId={scopeId}
+            team={team}
+            projects={projects}
+            onUserMappingClick={() => setJiraUserMappingOpen(true)}
+            onProjectMappingClick={() => setJiraProjectMappingOpen(true)}
+            onImportClick={() => setJiraImportV2Open(true)}
+          />
         );
 
       case "settings":

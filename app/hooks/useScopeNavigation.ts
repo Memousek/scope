@@ -29,6 +29,7 @@ export interface SidebarCategory {
     id: TabType;
     label: string;
     icon: React.ReactNode;
+    experimental?: boolean;
   }[];
 }
 
@@ -46,7 +47,7 @@ export function useScopeNavigation() {
       tabs: [
         { id: 'overview', label: t('overview'), icon: React.createElement(FiBarChart2) },
         { id: 'burndown', label: t('burndown'), icon: React.createElement(FiTrendingUp) },
-        { id: 'timesheets', label: t('timesheets'), icon: React.createElement(FiClock) }
+        { id: 'timesheets', label: t('timesheets'), icon: React.createElement(FiClock), experimental: true }
       ]
     },
     {
@@ -64,7 +65,7 @@ export function useScopeNavigation() {
       label: t('finance'),
       icon: React.createElement(FiDollarSign, { className: "w-5 h-5" }),
       tabs: [
-        { id: 'billing', label: t('billing'), icon: React.createElement(FiDollarSign) }
+        { id: 'billing', label: t('billing'), icon: React.createElement(FiDollarSign), experimental: true }
       ]
     },
     {
@@ -72,7 +73,7 @@ export function useScopeNavigation() {
       label: t('integrationSettings'),
       icon: React.createElement(FiSettings, { className: "w-5 h-5" }),
       tabs: [
-        { id: 'jira', label: t('jira'), icon: React.createElement(FiExternalLink) },
+        { id: 'jira', label: t('jira'), icon: React.createElement(FiExternalLink), experimental: true },
         { id: 'settings', label: t('settings'), icon: React.createElement(FiSettings) }
       ]
     }
