@@ -404,6 +404,14 @@ export function AllocationTable({ scopeId, team, projects, readOnlyMode = false 
 
             {legend}
 
+            {/* Loading indicator */}
+            {loading && (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                <span className="ml-2 text-gray-600 dark:text-gray-400">{t('loading')}</span>
+              </div>
+            )}
+
             {/* Calendar grid */}
             <div className={`overflow-x-auto rounded-xl border bg-white/70 dark:bg-gray-700/70 ${viewMode === 'monthly' ? 'scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200' : ''}`}>
               <table className={`text-sm ${viewMode === 'monthly' ? 'min-w-[1200px]' : 'w-full'}`}>
