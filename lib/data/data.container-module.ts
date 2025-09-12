@@ -35,7 +35,7 @@ import { ProjectNoteRepository } from "@/lib/domain/repositories/project-note.re
 import { SupabaseProjectNoteRepository } from "@/lib/data/repositories/supabase/project-note.repository";
 import { DomainPlanAssignmentRepository } from "@/lib/domain/repositories/domain-plan-assignment.repository";
 import { SupabaseDomainPlanAssignmentRepository } from "@/lib/data/repositories/supabase/domain-plan-assignment.repository";
-import { PlannedAllocationRepository, PlannedAllocationRepositorySymbol } from "@/lib/domain/repositories/planned-allocation.repository";
+import { PlannedAllocationRepositorySymbol } from "@/lib/domain/repositories/planned-allocation.repository";
 import { SupabasePlannedAllocationRepository } from "@/lib/data/repositories/supabase/planned-allocation.repository";
 import { AllocationCalculationService } from "@/lib/domain/services/allocation-calculation.service";
 

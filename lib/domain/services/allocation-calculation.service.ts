@@ -64,7 +64,7 @@ export class AllocationCalculationService {
   async calculateProjectDeliveryInfoWithAllocation(
     project: Project,
     team: TeamMember[],
-    projectAssignments: Array<{ teamMemberId: string; role: string }> = [],
+    _projectAssignments: Array<{ teamMemberId: string; role: string }> = [],
     settings: ScopeSettings,
     dateFrom?: Date,
     dateTo?: Date

@@ -6,15 +6,14 @@
 import { useCallback, useState } from 'react';
 import { ContainerService } from '@/lib/container.service';
 import { AllocationCalculationService } from '@/lib/domain/services/allocation-calculation.service';
-import { PlannedAllocationRepositorySymbol } from '@/lib/domain/repositories/planned-allocation.repository';
 import { ScopeSettingsService } from '@/app/services/scopeSettingsService';
 import { Project } from '@/app/components/scope/types';
 import { TeamMember } from '@/lib/domain/models/team-member.model';
 
 export interface UseAllocationCalculationsResult {
-  calculateProjectDelivery: (project: Project, team: TeamMember[], projectAssignments?: Array<{ teamMemberId: string; role: string }>) => Promise<any>;
-  calculateTeamCapacity: (team: TeamMember[], dateFrom: Date, dateTo: Date) => Promise<any>;
-  calculateProjectCapacity: (projectId: string, team: TeamMember[], dateFrom: Date, dateTo: Date) => Promise<any>;
+  calculateProjectDelivery: (project: Project, team: TeamMember[], projectAssignments?: Array<{ teamMemberId: string; role: string }>) => Promise<unknown>;
+  calculateTeamCapacity: (team: TeamMember[], dateFrom: Date, dateTo: Date) => Promise<unknown>;
+  calculateProjectCapacity: (projectId: string, team: TeamMember[], dateFrom: Date, dateTo: Date) => Promise<unknown>;
   loading: boolean;
   error: string | null;
 }
