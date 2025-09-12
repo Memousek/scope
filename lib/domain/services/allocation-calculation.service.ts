@@ -4,7 +4,8 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { PlannedAllocationRepository, PlannedAllocationRepositorySymbol } from '../repositories/planned-allocation.repository';
+import type { PlannedAllocationRepository } from '../repositories/planned-allocation.repository';
+import { PlannedAllocationRepositorySymbol } from '../repositories/planned-allocation.repository';
 import { PlannedAllocation, PlannedAllocationFilter } from '../models/planned-allocation.model';
 import { TeamMember } from '../models/team-member.model';
 import { Project } from '../models/project.model';
@@ -86,8 +87,8 @@ export class AllocationCalculationService {
     let totalMaxDays = 0;
 
     for (const roleKey of roleKeys) {
-      const mandays = Number(project[`${roleKey}_mandays`]) || 0;
-      const done = Number(project[`${roleKey}_done`]) || 0;
+      const mandays = Number((project as Record<string, unknown>)[`${roleKey}_mandays`]) || 0;
+      const done = Number((project as Record<string, unknown>)[`${roleKey}_done`]) || 0;
       const remainingMandays = mandays * (1 - (done / 100));
 
       if (remainingMandays <= 0) continue;
