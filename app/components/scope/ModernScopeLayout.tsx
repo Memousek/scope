@@ -7,7 +7,7 @@
  * - Responsive design with smooth transitions
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { TeamSection } from "./TeamSection";
 import { ProjectSection } from "./ProjectSection";
@@ -44,6 +44,7 @@ import { JiraUserMappingModal } from "./JiraUserMappingModal";
 import { JiraProjectMappingModal } from "./JiraProjectMappingModal";
 import { JiraSyncDashboard } from "./JiraSyncDashboard";
 import { ScopeSettings, getScopeIntegration } from "./ScopeSettings";
+import type { ScopeSettings as ScopeSettingsConfig } from "@/app/services/scopeSettingsService";
 import { AllocationTable } from "./AllocationTable";
 import { ScopeSidebar } from "./ScopeSidebar";
 // import { UnifiedMobileMenu } from "./UnifiedMobileMenu";
@@ -138,20 +139,41 @@ export function ModernScopeLayout({
       return null;
     }
   });
+  const [scopeSettingsConfig, setScopeSettingsConfig] = useState<ScopeSettingsConfig | null>(null);
   const isGod = user?.additional?.role === 'god';
   // Derived flag kept local; remove unused var warnings by using inline checks where needed
   const isOwnerOrGod = isOwner || isGod; // eslint-disable-line @typescript-eslint/no-unused-vars
 
   // Helper to compute allowed tabs based on permissions and integrations
+  const allocationAvailable = Boolean(
+    scopeSettingsConfig?.allocation?.enabled &&
+      team.length > 0 &&
+      projects.length > 0
+  );
+  const billingAvailable = useMemo(() => {
+    if (readOnlyMode) {
+      return false;
+    }
+    return team.some(member => {
+      const billableRate = Number(member.mdRate ?? member.costMdRate ?? 0);
+      return Number.isFinite(billableRate) && billableRate > 0;
+    });
+  }, [team, readOnlyMode]);
+  const timesheetsAvailable = useMemo(() => {
+    return team.length > 0 || projects.length > 0;
+  }, [team.length, projects.length]);
+
   const getAllowedTabs = (): TabType[] => {
     const base: TabType[] = ["overview", "team", "projects", "burndown"];
-    // Přidej billing tab pouze pokud není readOnlyMode
-    if (!readOnlyMode) base.push("billing");
-    // Přidej timesheets tab pro všechny uživatele
-    base.push("timesheets");
-    // Přidej allocation tab pro všechny uživatele
-    base.push("allocation");
-    // Přidej JIRA tab pouze pokud je JIRA nakonfigurováno
+    if (billingAvailable) {
+      base.push("billing");
+    }
+    if (timesheetsAvailable) {
+      base.push("timesheets");
+    }
+    if (allocationAvailable) {
+      base.push("allocation");
+    }
     if (integrations?.jiraApiToken && integrations?.jiraBaseUrl) {
       base.push("jira");
     }
@@ -167,6 +189,8 @@ export function ModernScopeLayout({
         const { ScopeSettingsService } = await import('@/app/services/scopeSettingsService');
         const settings = await ScopeSettingsService.get(scopeId);
         
+        setScopeSettingsConfig(settings || null);
+
         if (settings?.jira) {
           const integrationsData = {
             jiraBaseUrl: settings.jira.baseUrl || undefined,
@@ -212,7 +236,7 @@ export function ModernScopeLayout({
       setActiveTab(nextTab);
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scopeId, readOnlyMode, integrations]);
+  }, [scopeId, readOnlyMode, integrations, billingAvailable, allocationAvailable, timesheetsAvailable]);
 
   // Listen for custom events from import modal
   useEffect(() => {

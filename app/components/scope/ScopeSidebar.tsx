@@ -127,11 +127,6 @@ export function ScopeSidebar({ activeTab, onTabChange, allowedTabs }: ScopeSideb
                               : 'text-gray-600 dark:text-gray-400 hover:bg-white/20 dark:hover:bg-gray-700/20 hover:text-gray-900 dark:hover:text-white hover:scale-[1.02] hover:shadow-lg backdrop-blur-sm border border-white/10 dark:border-gray-600/10'
                           }`}
                         >
-                          {tab.experimental && (
-                            <span className="absolute -top-1 -right-1 text-xs bg-gradient-to-r from-blue-500 to-blue-600 text-white px-2 py-0.5 rounded-full font-semibold shadow-lg z-20">
-                              {t('experimental')}
-                            </span>
-                          )}
                           {isActive && (
                             <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                           )}
