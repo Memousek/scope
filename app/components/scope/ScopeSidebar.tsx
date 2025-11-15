@@ -14,7 +14,6 @@
 
 import React, { useState } from 'react';
 import { useScopeNavigation, TabType } from '@/app/hooks/useScopeNavigation';
-import { useTranslation } from '@/lib/translation';
 import {
   FiChevronDown,
   FiChevronRight,
@@ -32,7 +31,6 @@ interface ScopeSidebarProps {
 export function ScopeSidebar({ activeTab, onTabChange, allowedTabs }: ScopeSidebarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { categories, expandedCategories, toggleCategory, isTabAllowed } = useScopeNavigation();
-  const { t } = useTranslation();
 
   return (
     <>
