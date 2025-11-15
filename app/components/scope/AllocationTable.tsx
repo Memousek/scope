@@ -21,6 +21,7 @@ import { ScopeSettingsService } from '@/app/services/scopeSettingsService';
 import { ContainerService } from '@/lib/container.service';
 import { ManageProjectTeamAssignmentsService, ProjectTeamAssignmentWithDetails } from '@/lib/domain/services/manage-project-team-assignments.service';
 import { EnhancedAllocationTable } from './EnhancedAllocationTable';
+import { AllocationRoadmap } from './AllocationRoadmap';
 import { 
   FiCalendar, 
   FiUsers, 
@@ -246,6 +247,7 @@ export function AllocationTable({ scopeId, team, projects, readOnlyMode = false 
       <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-br from-purple-400/10 to-pink-400/10 rounded-full blur-2xl"></div>
       
       <div className="relative z-10">
+        <AllocationRoadmap projects={projects} team={team} />
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
